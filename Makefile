@@ -59,7 +59,7 @@ example_elf: all
 	$(MAKE) -C playground/
 
 clean:
-	$(MAKE) -C examples/ clean
-	$(MAKE) -C playground/ clean
-	$(MAKE) -C test/ clean
+#	$(MAKE) -C examples/ clean
+#	$(MAKE) -C playground/ clean
+#	$(MAKE) -C test/ clean
 	rm -rf $(BDIRS) $(EXECUTABLE)
