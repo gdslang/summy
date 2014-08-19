@@ -19,9 +19,9 @@ class edge;
 class cfg {
 private:
   std::vector<node> nodes;
-  std::vector<std::map<size_t, edge>> edges;
+  std::vector<std::map<size_t, edge*>> edges;
 public:
-  cfg(std::vector<node> nodes, std::vector<std::map<size_t, edge>> edges) : nodes(nodes), edges(edges) {
+  cfg(std::vector<node> nodes, std::vector<std::map<size_t, edge*>> edges) : nodes(nodes), edges(edges) {
   }
 
   void dot(std::ostream &stream);

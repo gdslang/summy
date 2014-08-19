@@ -15,13 +15,14 @@ namespace cfg {
 
 class edge {
 private:
-  uint64_t address;
-
-
+  gdsl::rreil::statement *stmt;
 public:
+  edge(gdsl::rreil::statement *stmt) :
+      stmt(stmt) {
+  }
+
   void dot(std::ostream &stream);
 };
 
 }
-
 

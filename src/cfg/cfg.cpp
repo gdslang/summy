@@ -20,7 +20,7 @@ void cfg::cfg::dot(std::ostream &stream) {
     auto &c = edges[i];
     for(auto it = c.begin(); it != c.end(); it++) {
       stream << "  " << i << " -> " << it->first << " [label=";
-      it->second.dot(stream);
+      it->second->dot(stream);
       stream << "];" << endl;
     }
   }

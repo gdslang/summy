@@ -16,9 +16,9 @@
 using namespace gdsl::rreil;
 using namespace std;
 
-map<size_t, cfg::edge> next(size_t i) {
-  map<size_t, cfg::edge> edge;
-  edge[i + 1] = cfg::edge();
+map<size_t, cfg::edge*> next(size_t i, statement *stmt) {
+  map<size_t, cfg::edge*> edge;
+  edge[i + 1] = new cfg::edge(stmt);
   return edge;
 }
 
@@ -42,20 +42,20 @@ int main(void) {
   for(statement *s : *rreil)
     printf("%s\n", s->to_string().c_str());
 
-  for(statement *s : *rreil)
-    delete s;
-  delete rreil;
-
-  vector<map<size_t, cfg::edge>> edges;
-  edges.push_back(next(0));
-  edges.push_back(next(1));
-  edges.push_back(next(2));
+  vector<map<size_t, cfg::edge*>> edges;
+  for(size_t i = 0; i < rreil->size(); i++) {
+    edges.push_back(next(i, rreil->operator [](i)));
+  }
 
   vector<cfg::node> nodes;
 
   cfg::cfg cfg(nodes, edges);
 
   cfg.dot(cout);
+
+  for(statement *s : *rreil)
+    delete s;
+  delete rreil;
 
   return 0;
 }
