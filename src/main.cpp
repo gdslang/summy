@@ -12,6 +12,7 @@
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/node.h>
 #include <summy/cfg/edge.h>
+#include <summy/cfg/bfs_iterator.h>
 #include <iostream>
 #include <fstream>
 
@@ -49,6 +50,9 @@ int main(void) {
   cfg.dot(dot_fs);
 
   dot_fs.close();
+
+  for(auto a : cfg)
+    printf("id: %zu", 99);
 
   for(auto stmt : *rreil)
     delete stmt;

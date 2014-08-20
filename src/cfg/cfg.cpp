@@ -12,6 +12,7 @@
 #include <summy/cfg/edge.h>
 #include <summy/cfg/node.h>
 #include <summy/cfg/start_node.h>
+#include <summy/cfg/bfs_iterator.h>
 #include <map>
 
 using namespace std;
@@ -57,4 +58,20 @@ void cfg::cfg::dot(std::ostream &stream) {
     }
   }
   stream << "}" << endl;
+}
+
+cfg::node *cfg::cfg::get_node(size_t id) {
+  return nodes[id];
+}
+
+std::map<size_t, cfg::edge*> &cfg::cfg::out_edges(size_t id) {
+  return edges[id];
+}
+
+cfg::bfs_iterator cfg::cfg::begin() {
+  return bfs_iterator(*this);
+}
+
+bool cfg::cfg::end() {
+  return true;
 }
