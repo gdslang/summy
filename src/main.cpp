@@ -18,17 +18,11 @@
 using namespace gdsl::rreil;
 using namespace std;
 
-map<size_t, cfg::edge*> next(size_t i, statement *stmt) {
-  map<size_t, cfg::edge*> edge;
-  edge[i + 1] = new cfg::edge(stmt);
-  return edge;
-}
-
 int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  uint16_t buffer = 0x0000;
+  uint32_t buffer = 0x00c1e910;
   g.set_code((char*)&buffer, sizeof(buffer), 0);
 
   gdsl::instruction insn = g.decode();
@@ -44,11 +38,6 @@ int main(void) {
   for(statement *s : *rreil)
     printf("%s\n", s->to_string().c_str());
 
-  vector<map<size_t, cfg::edge*>> edges;
-  for(size_t i = 0; i < rreil->size(); i++) {
-    edges.push_back(next(i, rreil->operator [](i)));
-  }
-
   vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
   prog.push_back(make_tuple(932, rreil));
 
@@ -61,8 +50,8 @@ int main(void) {
 
   dot_fs.close();
 
-  for(statement *s : *rreil)
-    delete s;
+  for(auto stmt : *rreil)
+    delete stmt;
   delete rreil;
 
   return 0;

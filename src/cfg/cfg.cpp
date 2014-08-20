@@ -34,6 +34,14 @@ cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statemen
   nodes.push_back(new node(nodes.size()));
 }
 
+cfg::cfg::~cfg() {
+  for(auto node : nodes)
+    delete node;
+  for(auto node_edges : edges)
+    for(auto edge_it : node_edges)
+      delete edge_it.second;
+}
+
 void cfg::cfg::dot(std::ostream &stream) {
   stream << "digraph G {" << endl;
   for(size_t i = 0; i < edges.size(); i++) {

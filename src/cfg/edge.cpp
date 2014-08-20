@@ -7,6 +7,9 @@
 
 #include <summy/cfg/edge.h>
 
+cfg::edge::~edge() {
+}
+
 void cfg::edge::dot(std::ostream &stream) {
   stream << "\"" << *stmt << "\"";
 }

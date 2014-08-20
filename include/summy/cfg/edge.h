@@ -20,6 +20,7 @@ public:
   edge(gdsl::rreil::statement *stmt) :
       stmt(stmt) {
   }
+  ~edge();
 
   void dot(std::ostream &stream);
 };
