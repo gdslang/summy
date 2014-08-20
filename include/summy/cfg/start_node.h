@@ -11,12 +11,15 @@
 
 namespace cfg {
 
-class start_node : public node {
+class start_node: public node {
 private:
   size_t address;
 public:
-  start_node(size_t address) : address(address) {
+  start_node(size_t id, size_t address) :
+      node(id), address(address) {
   }
+
+  virtual void dot(std::ostream &stream);
 };
 
 }

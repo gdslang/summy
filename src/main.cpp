@@ -7,11 +7,13 @@
 
 #include <vector>
 #include <map>
+#include <tuple>
 
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/node.h>
 #include <summy/cfg/edge.h>
 #include <iostream>
+#include <fstream>
 
 using namespace gdsl::rreil;
 using namespace std;
@@ -47,11 +49,17 @@ int main(void) {
     edges.push_back(next(i, rreil->operator [](i)));
   }
 
-  vector<cfg::node> nodes;
+  vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
+  prog.push_back(make_tuple(932, rreil));
 
-  cfg::cfg cfg(nodes, edges);
+  cfg::cfg cfg(prog);
 
-  cfg.dot(cout);
+  ofstream dot_fs;
+  dot_fs.open("output.dot", ios::out);
+
+  cfg.dot(dot_fs);
+
+  dot_fs.close();
 
   for(statement *s : *rreil)
     delete s;

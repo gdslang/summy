@@ -10,6 +10,10 @@
 #include <iosfwd>
 #include <vector>
 #include <map>
+#include <tuple>
+#include <stdint.h>
+
+#include <cppgdsl/rreil/statement/statement.h>
 
 namespace cfg {
 
@@ -18,11 +22,10 @@ class edge;
 
 class cfg {
 private:
-  std::vector<node> nodes;
+  std::vector<node*> nodes;
   std::vector<std::map<size_t, edge*>> edges;
 public:
-  cfg(std::vector<node> nodes, std::vector<std::map<size_t, edge*>> edges) : nodes(nodes), edges(edges) {
-  }
+  cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary);
 
   void dot(std::ostream &stream);
 };
