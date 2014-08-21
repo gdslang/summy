@@ -20,20 +20,21 @@ class cfg;
 class bfs_iterator: std::iterator<std::input_iterator_tag, node*> {
   friend class cfg;
 private:
-  cfg &_cfg;
+  cfg *_cfg;
   std::set<size_t> seen;
   std::queue<size_t> q;
+  bool end;
 
-  bfs_iterator(cfg &cfg);
-  bfs_iterator(cfg &cfg, size_t init_id);
+  bfs_iterator(cfg *cfg);
+  bfs_iterator(cfg *cfg, size_t init_id);
 public:
   node *operator*();
   bfs_iterator &operator++();
   friend bool operator==(const bfs_iterator &a, const bfs_iterator &b);
-  friend bool operator==(const bfs_iterator &a, const bool b);
+  friend bool operator!=(const bfs_iterator &a, const bfs_iterator &b);
 };
 
 bool operator==(const bfs_iterator &a, const bfs_iterator &b);
-bool operator==(const bfs_iterator &a, const bool b);
+bool operator!=(const bfs_iterator &a, const bfs_iterator &b);
 
 }

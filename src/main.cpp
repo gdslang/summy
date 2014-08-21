@@ -52,7 +52,7 @@ int main(void) {
   dot_fs.close();
 
   for(auto a : cfg)
-    printf("id: %zu", 99);
+    printf("id: %zu\n", a->get_id());
 
   for(auto stmt : *rreil)
     delete stmt;

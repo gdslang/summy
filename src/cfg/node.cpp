@@ -9,5 +9,5 @@
 #include <summy/cfg/node.h>
 
 void cfg::node::dot(std::ostream &stream) {
-  stream << id;
+  stream << id << ";";
 }

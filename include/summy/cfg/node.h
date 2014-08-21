@@ -22,6 +22,10 @@ public:
   virtual ~node() {
   }
 
+  size_t get_id() {
+    return id;
+  }
+
   virtual void dot(std::ostream &stream);
 };
 

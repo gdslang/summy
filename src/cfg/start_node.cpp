@@ -8,5 +8,5 @@
 #include <summy/cfg/start_node.h>
 
 void cfg::start_node::dot(std::ostream &stream) {
-  stream << address;
+  stream << get_id() << " [label=" << address << ", shape=box];";
 }

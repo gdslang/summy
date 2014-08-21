@@ -26,6 +26,8 @@ class cfg {
 private:
   std::vector<node*> nodes;
   std::vector<std::map<size_t, edge*>> edges;
+
+  void add_node(node *n);
 public:
   cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary);
   ~cfg();
@@ -34,7 +36,7 @@ public:
   std::map<size_t, edge*> &out_edges(size_t id);
 
   bfs_iterator begin();
-  bool end();
+  bfs_iterator end();
 
   void dot(std::ostream &stream);
 };

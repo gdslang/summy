@@ -17,22 +17,28 @@
 
 using namespace std;
 
+void cfg::cfg::add_node(node *n) {
+  nodes.push_back(n);
+  edges.push_back(map<size_t, edge*>());
+}
+
 cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary) {
   for(auto elem : translated_binary) {
     size_t address;
     vector<gdsl::rreil::statement*> *statements;
     tie(address, statements) = elem;
-    nodes.push_back(new start_node(nodes.size(), address));
+    size_t from_node = nodes.size();
+    add_node(new start_node(from_node, address));
     for(auto stmt : *statements) {
-      map<size_t, edge*> node_edges;
-      size_t node_id = nodes.size();
-      node_edges[node_id] = new edge(stmt);
+      size_t to_node = nodes.size();
+      add_node(new node(to_node));
 
-      nodes.push_back(new node(nodes.size()));
-      edges.push_back(node_edges);
+      map<size_t, edge*> &from_edges = edges[from_node];
+      from_edges[to_node] = new edge(stmt);
+
+      from_node = to_node;
     }
   }
-  nodes.push_back(new node(nodes.size()));
 }
 
 cfg::cfg::~cfg() {
@@ -45,14 +51,16 @@ cfg::cfg::~cfg() {
 
 void cfg::cfg::dot(std::ostream &stream) {
   stream << "digraph G {" << endl;
+  for(auto node : nodes) {
+    stream << "  ";
+    node->dot(stream);
+    stream << endl;
+  }
+  stream << endl;
   for(size_t i = 0; i < edges.size(); i++) {
     auto &c = edges[i];
     for(auto it = c.begin(); it != c.end(); it++) {
-      stream << "  ";
-      nodes[i]->dot(stream);
-      stream << " -> ";
-      nodes[it->first]->dot(stream);
-      stream << " [label=";
+      stream << "  " << nodes[i]->get_id() << " -> " << nodes[it->first]->get_id() << " [label=";
       it->second->dot(stream);
       stream << "];" << endl;
     }
@@ -69,9 +77,9 @@ std::map<size_t, cfg::edge*> &cfg::cfg::out_edges(size_t id) {
 }
 
 cfg::bfs_iterator cfg::cfg::begin() {
-  return bfs_iterator(*this);
+  return bfs_iterator(this, 0);
 }
 
-bool cfg::cfg::end() {
-  return true;
+cfg::bfs_iterator cfg::cfg::end() {
+  return bfs_iterator(this);
 }
