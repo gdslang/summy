@@ -27,10 +27,11 @@ cfg::node *cfg::bfs_iterator::operator *() {
 cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
   if(q.empty()) throw string("No more nodes");
   size_t next = q.front();
+  seen.insert(next);
   q.pop();
   auto edges = _cfg->out_edges(next);
   for(auto edge : edges)
-    q.push(edge.first);
+    if(seen.find(edge.first) == seen.end()) q.push(edge.first);
   end = q.empty();
   return *this;
 }
