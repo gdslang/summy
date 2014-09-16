@@ -16,6 +16,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <summy/transformers/decomposer.h>
+
 using namespace gdsl::rreil;
 using namespace std;
 
@@ -44,15 +46,13 @@ int main(void) {
 
   cfg::cfg cfg(prog);
 
+  decomposer *d = new decomposer(&cfg);
+  d->transform();
+
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
-
   cfg.dot(dot_fs);
-
   dot_fs.close();
-
-  for(auto a : cfg)
-    printf("id: %zu\n", a->get_id());
 
   for(auto stmt : *rreil)
     delete stmt;

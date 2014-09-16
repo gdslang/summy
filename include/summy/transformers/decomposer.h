@@ -7,3 +7,13 @@
 
 #pragma once
 
+#include "transformer.h"
+
+class decomposer: public transformer {
+public:
+  decomposer(cfg::cfg *cfg) :
+      transformer(cfg) {
+  }
+
+  virtual void transform();
+};

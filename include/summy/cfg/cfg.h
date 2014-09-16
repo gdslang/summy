@@ -27,12 +27,19 @@ private:
   std::vector<node*> nodes;
   std::vector<std::map<size_t, edge*>> edges;
 
-  void add_node(node *n);
 public:
   cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary);
   ~cfg();
 
+  void add_node(node *n);
+  void add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node);
+
+  size_t next_node_id();
   node *get_node(size_t id);
+
+  /*
+   * Caution: edge map may get changed
+   */
   std::map<size_t, edge*> &out_edges(size_t id);
 
   bfs_iterator begin();

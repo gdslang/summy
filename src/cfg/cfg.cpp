@@ -17,11 +17,6 @@
 
 using namespace std;
 
-void cfg::cfg::add_node(node *n) {
-  nodes.push_back(n);
-  edges.push_back(map<size_t, edge*>());
-}
-
 cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary) {
   for(auto elem : translated_binary) {
     size_t address;
@@ -29,15 +24,7 @@ cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statemen
     tie(address, statements) = elem;
     size_t from_node = nodes.size();
     add_node(new start_node(from_node, address));
-    for(auto stmt : *statements) {
-      size_t to_node = nodes.size();
-      add_node(new node(to_node));
-
-      map<size_t, edge*> &from_edges = edges[from_node];
-      from_edges[to_node] = new edge(stmt);
-
-      from_node = to_node;
-    }
+    add_nodes(statements, from_node);
   }
 }
 
@@ -47,6 +34,23 @@ cfg::cfg::~cfg() {
   for(auto node_edges : edges)
     for(auto edge_it : node_edges)
       delete edge_it.second;
+}
+
+void cfg::cfg::add_node(node *n) {
+  nodes.push_back(n);
+  edges.push_back(map<size_t, edge*>());
+}
+
+void cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node) {
+  for(auto stmt : *statements) {
+    size_t to_node = nodes.size();
+    add_node(new node(to_node));
+
+    map<size_t, edge*> &from_edges = edges[from_node];
+    from_edges[to_node] = new edge(stmt);
+
+    from_node = to_node;
+  }
 }
 
 void cfg::cfg::dot(std::ostream &stream) {
@@ -66,6 +70,10 @@ void cfg::cfg::dot(std::ostream &stream) {
     }
   }
   stream << "}" << endl;
+}
+
+size_t cfg::cfg::next_node_id() {
+  return nodes.size();
 }
 
 cfg::node *cfg::cfg::get_node(size_t id) {

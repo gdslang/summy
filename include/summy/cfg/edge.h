@@ -22,6 +22,10 @@ public:
   }
   ~edge();
 
+  gdsl::rreil::statement *get_stmt() {
+    return stmt;
+  }
+
   void dot(std::ostream &stream);
 };
 
