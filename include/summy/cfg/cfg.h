@@ -32,7 +32,7 @@ public:
   ~cfg();
 
   void add_node(node *n);
-  void add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node);
+  size_t add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node);
 
   size_t next_node_id();
   node *get_node(size_t id);

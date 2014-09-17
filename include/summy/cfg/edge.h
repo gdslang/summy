@@ -25,8 +25,8 @@ public:
   virtual ~edge() {
   }
 
-  virtual void dot(std::ostream &stream) = 0;
-  virtual void accept(edge_visitor &v) = 0;
+  virtual void dot(std::ostream &stream);
+  virtual void accept(edge_visitor &v);
 };
 
 class stmt_edge: public edge {
@@ -68,11 +68,18 @@ public:
 
 class edge_visitor {
 private:
+  std::function<void(edge*)> edge_callback = NULL;
   std::function<void(stmt_edge*)> stmt_edge_callback = NULL;
   std::function<void(cond_edge*)> cond_edge_callback = NULL;
 
 public:
   virtual ~edge_visitor() {
+  }
+
+  virtual void visit(edge *se) {
+    if(edge_callback != NULL)
+      edge_callback(se);
+    _default();
   }
 
   virtual void visit(stmt_edge *se) {
@@ -88,6 +95,10 @@ public:
   }
 
   virtual void _default() {
+  }
+
+  void _(std::function<void(edge*)> edge_callback) {
+    this->edge_callback = edge_callback;
   }
 
   void _(std::function<void(stmt_edge*)> stmt_edge_callback) {

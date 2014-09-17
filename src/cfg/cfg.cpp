@@ -41,9 +41,10 @@ void cfg::cfg::add_node(node *n) {
   edges.push_back(map<size_t, edge*>());
 }
 
-void cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node) {
+size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node) {
+  size_t to_node = from_node;
   for(auto stmt : *statements) {
-    size_t to_node = nodes.size();
+    to_node = nodes.size();
     add_node(new node(to_node));
 
     map<size_t, edge*> &from_edges = edges[from_node];
@@ -51,6 +52,7 @@ void cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_
 
     from_node = to_node;
   }
+  return to_node;
 }
 
 void cfg::cfg::dot(std::ostream &stream) {

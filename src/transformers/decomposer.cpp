@@ -28,31 +28,41 @@ void decomposer::transform() {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](ite *i) {
-              //        del = true;
+          del = true;
+
+          /*
+           * then branch
+           */
 
           node *then_node = new node(cfg->next_node_id());
           cfg->add_node(then_node);
-          cfg->add_nodes(i->get_then_branch(), then_node->get_id());
+          size_t last_then = cfg->add_nodes(i->get_then_branch(), then_node->get_id());
+          edges[then_node->get_id()] = new cond_edge(i->get_cond(), true);
+
+          auto &then_last_out_edges = cfg->out_edges(last_then);
+          then_last_out_edges[edge_it->first] = new (class edge)();
+
+          /*
+           * else branch
+           */
 
           node *else_node = new node(cfg->next_node_id());
           cfg->add_node(else_node);
-          cfg->add_nodes(i->get_then_branch(), else_node->get_id());
+          size_t last_else = cfg->add_nodes(i->get_else_branch(), else_node->get_id());
+          edges[else_node->get_id()] = new cond_edge(i->get_cond(), false);
 
-          //        node *fiep = new node(cfg->next_node_id());
-          //        cfg->add_node(fiep);
-          //
-          //        edges[fiep->get_id()] = new edge(i->get_then_branch()->operator[](0));
+          auto &else_last_out_edges = cfg->out_edges(last_else);
+          else_last_out_edges[edge_it->first] = new (class edge)();
 
           printf(":-)\n");
         });
-    stmt->accept(v);
-
-    if(del)
-    edges.erase(edge_it++);
-    else
-    edge_it++;
-  });
+        stmt->accept(v);
+      });
       edge_it->second->accept(ev);
+      if(del)
+        edges.erase(edge_it++);
+      else
+        edge_it++;
 
     }
 
