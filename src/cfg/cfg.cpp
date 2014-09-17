@@ -47,7 +47,7 @@ void cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_
     add_node(new node(to_node));
 
     map<size_t, edge*> &from_edges = edges[from_node];
-    from_edges[to_node] = new edge(stmt);
+    from_edges[to_node] = new stmt_edge(stmt);
 
     from_node = to_node;
   }

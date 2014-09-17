@@ -18,32 +18,42 @@
 using namespace gdsl::rreil;
 using namespace cfg;
 
-
 void decomposer::transform() {
   for(auto a : *cfg) {
     auto &edges = cfg->out_edges(a->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end();) {
       bool del = false;
-      statement *stmt = edge_it->second->get_stmt();
-      statement_visitor v;
-      v._([&](ite *i) {
-//        del = true;
+      edge_visitor ev;
+      ev._([&](stmt_edge *edge) {
+        statement *stmt = edge->get_stmt();
+        statement_visitor v;
+        v._([&](ite *i) {
+              //        del = true;
 
-        cfg->add_nodes(i->get_then_branch(), a->get_id());
+          node *then_node = new node(cfg->next_node_id());
+          cfg->add_node(then_node);
+          cfg->add_nodes(i->get_then_branch(), then_node->get_id());
 
-//        node *fiep = new node(cfg->next_node_id());
-//        cfg->add_node(fiep);
-//
-//        edges[fiep->get_id()] = new edge(i->get_then_branch()->operator[](0));
+          node *else_node = new node(cfg->next_node_id());
+          cfg->add_node(else_node);
+          cfg->add_nodes(i->get_then_branch(), else_node->get_id());
 
-        printf(":-)\n");
-      });
-      stmt->accept(v);
+          //        node *fiep = new node(cfg->next_node_id());
+          //        cfg->add_node(fiep);
+          //
+          //        edges[fiep->get_id()] = new edge(i->get_then_branch()->operator[](0));
 
-      if(del)
-        edges.erase(edge_it++);
-      else
-        edge_it++;
+          printf(":-)\n");
+        });
+    stmt->accept(v);
+
+    if(del)
+    edges.erase(edge_it++);
+    else
+    edge_it++;
+  });
+      edge_it->second->accept(ev);
+
     }
 
     printf("id: %zu\n", a->get_id());
