@@ -30,31 +30,17 @@ void decomposer::transform() {
         v._([&](ite *i) {
           del = true;
 
-          /*
-           * then branch
-           */
+          auto branch = [&](std::vector<statement*> *branch, bool positive) {
+            node *then_node = new node(cfg->next_node_id());
+            cfg->add_node(then_node);
+            size_t last_then = cfg->add_nodes(branch, then_node->get_id());
+            edges[then_node->get_id()] = new cond_edge(i->get_cond(), positive);
 
-          node *then_node = new node(cfg->next_node_id());
-          cfg->add_node(then_node);
-          size_t last_then = cfg->add_nodes(i->get_then_branch(), then_node->get_id());
-          edges[then_node->get_id()] = new cond_edge(i->get_cond(), true);
-
-          auto &then_last_out_edges = cfg->out_edges(last_then);
-          then_last_out_edges[edge_it->first] = new (class edge)();
-
-          /*
-           * else branch
-           */
-
-          node *else_node = new node(cfg->next_node_id());
-          cfg->add_node(else_node);
-          size_t last_else = cfg->add_nodes(i->get_else_branch(), else_node->get_id());
-          edges[else_node->get_id()] = new cond_edge(i->get_cond(), false);
-
-          auto &else_last_out_edges = cfg->out_edges(last_else);
-          else_last_out_edges[edge_it->first] = new (class edge)();
-
-          printf(":-)\n");
+            auto &then_last_out_edges = cfg->out_edges(last_then);
+            then_last_out_edges[edge_it->first] = new (class edge)();
+          };
+          branch(i->get_then_branch(), true);
+          branch(i->get_else_branch(), false);
         });
         stmt->accept(v);
       });
