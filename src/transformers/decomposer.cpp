@@ -19,8 +19,12 @@ using namespace gdsl::rreil;
 using namespace cfg;
 
 void decomposer::transform() {
+  int i = 0;
   for(auto a : *cfg) {
+    if(++i > 3)
+      break;
     auto &edges = cfg->out_edges(a->get_id());
+    edges[0xf] = new edge();//Todo Remove dummy code
     for(auto edge_it = edges.begin(); edge_it != edges.end();) {
       bool del = false;
       edge_visitor ev;
@@ -29,7 +33,6 @@ void decomposer::transform() {
         statement_visitor v;
         v._([&](ite *i) {
           del = true;
-
           auto branch = [&](std::vector<statement*> *branch, bool positive) {
             node *then_node = new node(cfg->next_node_id());
             cfg->add_node(then_node);
@@ -40,18 +43,19 @@ void decomposer::transform() {
             then_last_out_edges[edge_it->first] = new (class edge)();
           };
           branch(i->get_then_branch(), true);
-          branch(i->get_else_branch(), false);
+//          branch(i->get_else_branch(), false);
         });
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
-      if(del)
+      if(del) {
         edges.erase(edge_it++);
-      else
+      }else
         edge_it++;
 
     }
 
+    end:
     printf("id: %zu\n", a->get_id());
   }
 }
