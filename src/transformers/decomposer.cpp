@@ -19,13 +19,11 @@ using namespace gdsl::rreil;
 using namespace cfg;
 
 void decomposer::transform() {
-  int i = 0;
   for(auto a : *cfg) {
-    if(++i > 3)
-      break;
-    auto &edges = cfg->out_edges(a->get_id());
-    edges[0xf] = new edge();//Todo Remove dummy code
+//      printf("Next node...\n");
+    auto &edges = *cfg->out_edges(a->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end();) {
+//      printf("Next edge...\n");
       bool del = false;
       edge_visitor ev;
       ev._([&](stmt_edge *edge) {
@@ -37,25 +35,24 @@ void decomposer::transform() {
             node *then_node = new node(cfg->next_node_id());
             cfg->add_node(then_node);
             size_t last_then = cfg->add_nodes(branch, then_node->get_id());
-            edges[then_node->get_id()] = new cond_edge(i->get_cond(), positive);
 
-            auto &then_last_out_edges = cfg->out_edges(last_then);
+            edges[then_node->get_id()] = new cond_edge(i->get_cond(), positive);
+            auto &then_last_out_edges = *cfg->out_edges(last_then);
             then_last_out_edges[edge_it->first] = new (class edge)();
           };
           branch(i->get_then_branch(), true);
-//          branch(i->get_else_branch(), false);
+          branch(i->get_else_branch(), false);
         });
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
+
       if(del) {
+        delete edge_it->second;
         edges.erase(edge_it++);
       }else
         edge_it++;
-
     }
-
-    end:
-    printf("id: %zu\n", a->get_id());
+//    printf("id: %zu\n", a->get_id());
   }
 }

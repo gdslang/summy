@@ -28,7 +28,7 @@ cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
   if(q.empty()) throw string("No more nodes");
   size_t next = q.front();
   q.pop();
-  auto edges = _cfg->out_edges(next);
+  auto &edges = *_cfg->out_edges(next);
   for(auto edge : edges)
     if(seen.find(edge.first) == seen.end()) {
       seen.insert(edge.first);

@@ -25,7 +25,7 @@ class cfg {
   friend class bfs_iterator;
 private:
   std::vector<node*> nodes;
-  std::vector<std::map<size_t, edge*>> edges;
+  std::vector<std::map<size_t, edge*>*> edges;
 
 public:
   cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary);
@@ -33,6 +33,7 @@ public:
 
   void add_node(node *n);
   size_t add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node);
+  size_t add_nodes_(std::vector<gdsl::rreil::statement*>* statements, size_t from_node);
 
   size_t next_node_id();
   node *get_node(size_t id);
@@ -40,7 +41,7 @@ public:
   /*
    * Caution: edge map may get changed
    */
-  std::map<size_t, edge*> &out_edges(size_t id);
+  std::map<size_t, edge*> *out_edges(size_t id);
 
   bfs_iterator begin();
   bfs_iterator end();
