@@ -49,6 +49,8 @@ int main(void) {
   decomposer *d = new decomposer(&cfg);
   d->transform();
 
+  delete d;
+
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
   cfg.dot(dot_fs);
