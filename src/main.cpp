@@ -18,6 +18,8 @@
 
 #include <summy/transformers/decomposer.h>
 
+#include <cppgdsl/rreil/copy_visitor.h>
+
 using namespace gdsl::rreil;
 using namespace std;
 
@@ -41,6 +43,18 @@ int main(void) {
   for(statement *s : *rreil)
     printf("%s\n", s->to_string().c_str());
 
+  printf("RReil:\n");
+  for(statement *s : *rreil) {
+    copy_visitor v;
+    v._([&](int_t x) {
+      return new lin_imm(42);
+    });
+    s->accept(v);
+    s = v.get_statement();
+    printf("%s\n", s->to_string().c_str());
+    delete s;
+  }
+
   vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
   prog.push_back(make_tuple(932, rreil));
 
@@ -48,7 +62,6 @@ int main(void) {
 
   decomposer *d = new decomposer(&cfg);
   d->transform();
-
   delete d;
 
   ofstream dot_fs;
