@@ -22,7 +22,7 @@ class ip_propagator : public transformer {
 private:
   std::tuple<bool, int_t> evaluate(int_t ip, gdsl::rreil::expr *e);
   bool is_ip(gdsl::rreil::variable *v);
-  std::vector<size_t> *analyze_ip();
+  std::vector<int_t> *analyze_ip();
 public:
   ip_propagator(cfg::cfg *cfg) :
       transformer(cfg) {

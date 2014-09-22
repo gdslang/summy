@@ -28,7 +28,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  uint32_t buffer = 0x00d3e2d348;
+  uint32_t buffer = 0x0000da75;
   g.set_code((unsigned char*)&buffer, sizeof(buffer), 0);
 
   gdsl::instruction insn = g.decode();

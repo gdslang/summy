@@ -80,7 +80,9 @@ std::tuple<bool, int_t> ip_propagator::evaluate(int_t ip, gdsl::rreil::expr *e) 
     sexv._([&](sexpr_lin *sl) {
       result = eval_linear(sl->get_lin());
     });
+    sex->get_inner()->accept(sexv);
   });
+  e->accept(ev);
   return result;
 }
 
@@ -95,8 +97,8 @@ bool ip_propagator::is_ip(gdsl::rreil::variable *v) {
   return is_ip;
 }
 
-std::vector<size_t> *ip_propagator::analyze_ip() {
-  vector<size_t> *result = new vector<size_t>(cfg->node_count());
+std::vector<int_t> *ip_propagator::analyze_ip() {
+  vector<int_t> *result = new vector<int_t>(cfg->node_count());
   vector<bool> *calculated = new vector<bool>(cfg->node_count(), false);
   for(auto node : *cfg) {
     size_t id = node->get_id();
@@ -109,6 +111,8 @@ std::vector<size_t> *ip_propagator::analyze_ip() {
       (*result)[id] = sn->get_address();
     });
     node->accept(nv);
+    if(!(*calculated)[id])
+      throw string("Unknown IP value");
     int_t ip_current = (*result)[id];
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
@@ -134,13 +138,19 @@ std::vector<size_t> *ip_propagator::analyze_ip() {
         if((*result)[child_id] != ip_current)
           throw string("There should be no different IP values for one node :-(...");
       }
-      else
+      else {
         (*result)[child_id] = ip_current;
+        (*calculated)[child_id] = true;
+      }
     }
   }
+  delete calculated;
+  return result;
 }
 
 void ip_propagator::transform() {
+  auto ips = analyze_ip();
+
   for(auto node : *cfg) {
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
@@ -148,8 +158,11 @@ void ip_propagator::transform() {
       ev._([&](stmt_edge *edge) {
         copy_visitor cv;
         cv._([&](variable *v) -> linear* {
-          delete v;
-          return new lin_imm(42);
+          if(is_ip(v)) {
+            delete v;
+            return new lin_imm((*ips)[edge_it->first]);
+          } else
+            return new lin_var(v);
         });
         edge->get_stmt()->accept(cv);
         statement *stmt_mod = cv.get_statement();
@@ -158,9 +171,13 @@ void ip_propagator::transform() {
         delete stmt_mod;
       });
       ev._([&](cond_edge *edge) {
-
+        /*
+         * Todo
+         */
       });
       edge_it->second->accept(ev);
     }
   }
+
+  delete ips;
 }
