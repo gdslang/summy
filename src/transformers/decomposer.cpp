@@ -52,7 +52,7 @@ void decomposer::transform() {
       if(del) {
         delete edge_it->second;
         edges.erase(edge_it++);
-      }else
+      } else
         edge_it++;
     }
 //    printf("id: %zu\n", a->get_id());

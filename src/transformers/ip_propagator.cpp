@@ -46,9 +46,6 @@ std::vector<int_t> *ip_propagator::analyze_ip() {
   for(auto node : *cfg) {
     size_t id = node->get_id();
     node_visitor nv;
-//    nv._([&](class node *s) {
-//
-//    });
     nv._([&](start_node *sn) {
       (*calculated)[id] = true;
       (*result)[id] = sn->get_address();
