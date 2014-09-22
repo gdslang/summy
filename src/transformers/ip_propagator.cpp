@@ -10,9 +10,25 @@
 #include <summy/cfg/bfs_iterator.h>
 #include <cppgdsl/rreil/copy_visitor.h>
 #include <cppgdsl/rreil/rreil.h>
+#include <vector>
 
+using namespace std;
 using namespace cfg;
 using namespace gdsl::rreil;
+
+std::vector<size_t> *ip_propagator::analyze_ip() {
+  vector<size_t> *result = new vector<size_t>(cfg->node_count());
+  vector<bool> *calculated = new vector<bool>(cfg->node_count());
+  for(auto node : *cfg) {
+
+
+
+    auto &edges = *cfg->out_edges(node->get_id());
+    for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
+
+    }
+  }
+}
 
 void ip_propagator::transform() {
   for(auto node : *cfg) {

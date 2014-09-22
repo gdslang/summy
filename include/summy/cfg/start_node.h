@@ -19,7 +19,12 @@ public:
       node(id), address(address) {
   }
 
+  size_t get_address() {
+    return address;
+  }
+
   virtual void dot(std::ostream &stream);
+  virtual void accept(node_visitor &v);
 };
 
 }

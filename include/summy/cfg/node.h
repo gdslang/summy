@@ -12,6 +12,8 @@
 
 namespace cfg {
 
+class node_visitor;
+
 class node {
 private:
   size_t id;
@@ -27,6 +29,7 @@ public:
   }
 
   virtual void dot(std::ostream &stream);
+  virtual void accept(node_visitor &v);
 };
 
 }

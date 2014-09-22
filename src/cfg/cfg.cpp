@@ -57,21 +57,6 @@ size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, siz
   return to_node;
 }
 
-size_t cfg::cfg::add_nodes_(std::vector<gdsl::rreil::statement*>* statements, size_t from_node) {
-  size_t to_node = from_node;
-  for(auto stmt : *statements) {
-    to_node = nodes.size();
-    add_node(new node(to_node));
-//
-//    map<size_t, edge*> &from_edges = edges[from_node];
-//    from_edges[to_node] = new stmt_edge(stmt);
-//
-//    from_node = to_node;
-  }
-  return to_node;
-}
-
-
 void cfg::cfg::dot(std::ostream &stream) {
   stream << "digraph G {" << endl;
   for(auto node : nodes) {
@@ -92,6 +77,10 @@ void cfg::cfg::dot(std::ostream &stream) {
 }
 
 size_t cfg::cfg::next_node_id() {
+  return nodes.size();
+}
+
+size_t cfg::cfg::node_count() {
   return nodes.size();
 }
 
