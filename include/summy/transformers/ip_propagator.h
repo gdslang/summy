@@ -9,10 +9,19 @@
 #define IP_PROPAGATOR_H_
 
 #include "transformer.h"
+#include <cppgdsl/rreil/variable.h>
+#include <cppgdsl/rreil/expr/expr.h>
 #include <vector>
+#include <tuple>
+
+extern "C" {
+#include <gdsl_generic.h>
+}
 
 class ip_propagator : public transformer {
 private:
+  std::tuple<bool, int_t> evaluate(int_t ip, gdsl::rreil::expr *e);
+  bool is_ip(gdsl::rreil::variable *v);
   std::vector<size_t> *analyze_ip();
 public:
   ip_propagator(cfg::cfg *cfg) :
@@ -21,6 +30,5 @@ public:
 
   virtual void transform();
 };
-
 
 #endif /* IP_PROPAGATOR_H_ */
