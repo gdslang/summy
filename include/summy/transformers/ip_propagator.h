@@ -11,6 +11,7 @@
 #include "transformer.h"
 
 class ip_propagator : public transformer {
+public:
   ip_propagator(cfg::cfg *cfg) :
       transformer(cfg) {
   }

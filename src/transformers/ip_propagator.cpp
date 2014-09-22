@@ -17,19 +17,24 @@ using namespace gdsl::rreil;
 void ip_propagator::transform() {
   for(auto node : *cfg) {
     auto &edges = *cfg->out_edges(node->get_id());
-    for(auto edge_it = edges.begin(); edge_it != edges.end();) {
+    for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       edge_visitor ev;
       ev._([&](stmt_edge *edge) {
         copy_visitor cv;
-        cv._([&](lin_var lv) {
-
+        cv._([&](variable *v) -> linear* {
+          delete v;
+          return new lin_imm(42);
         });
+        edge->get_stmt()->accept(cv);
+        statement *stmt_mod = cv.get_statement();
+        delete edge_it->second;
+        edges[edge_it->first] = new stmt_edge(stmt_mod);
+        delete stmt_mod;
       });
       ev._([&](cond_edge *edge) {
 
       });
       edge_it->second->accept(ev);
-
     }
   }
 }

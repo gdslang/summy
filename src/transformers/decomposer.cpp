@@ -11,10 +11,12 @@
 #include <summy/cfg/bfs_iterator.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <cppgdsl/rreil/statement/statement_visitor.h>
+#include <cppgdsl/rreil/copy_visitor.h>
 #include <map>
 
 #include <stdio.h>
 
+using namespace std;
 using namespace gdsl::rreil;
 using namespace cfg;
 
@@ -31,7 +33,7 @@ void decomposer::transform() {
         statement_visitor v;
         v._([&](ite *i) {
           del = true;
-          auto branch = [&](std::vector<statement*> *branch, bool positive) {
+          auto branch = [&](vector<statement*> *branch, bool positive) {
             class node *then_node = new (class node)(cfg->next_node_id());
             cfg->add_node(then_node);
             size_t last_then = cfg->add_nodes(branch, then_node->get_id());

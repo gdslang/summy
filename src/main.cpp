@@ -17,6 +17,7 @@
 #include <fstream>
 
 #include <summy/transformers/decomposer.h>
+#include <summy/transformers/ip_propagator.h>
 
 #include <cppgdsl/rreil/copy_visitor.h>
 
@@ -39,21 +40,21 @@ int main(void) {
 
   g.reset_heap();
 
-  printf("RReil:\n");
+  printf("RReil (no transformations):\n");
   for(statement *s : *rreil)
     printf("%s\n", s->to_string().c_str());
 
-  printf("RReil:\n");
-  for(statement *s : *rreil) {
-    copy_visitor v;
-    v._([&](int_t x) {
-      return new lin_imm(42);
-    });
-    s->accept(v);
-    s = v.get_statement();
-    printf("%s\n", s->to_string().c_str());
-    delete s;
-  }
+//  printf("RReil:\n");
+//  for(statement *s : *rreil) {
+//    copy_visitor v;
+//    v._([&](int_t x) {
+//      return new lin_imm(42);
+//    });
+//    s->accept(v);
+//    s = v.get_statement();
+//    printf("%s\n", s->to_string().c_str());
+//    delete s;
+//  }
 
   vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
   prog.push_back(make_tuple(932, rreil));
@@ -63,6 +64,14 @@ int main(void) {
   decomposer *d = new decomposer(&cfg);
   d->transform();
   delete d;
+
+  ip_propagator *p = new ip_propagator(&cfg);
+  p->transform();
+  delete p;
+
+//  printf("RReil (after transformations):\n");
+//  for(statement *s : *rreil)
+//    printf("%s\n", s->to_string().c_str());
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);

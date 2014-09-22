@@ -33,10 +33,9 @@ class stmt_edge: public edge {
 private:
   gdsl::rreil::statement *stmt;
 public:
-  stmt_edge(gdsl::rreil::statement *stmt) :
-      stmt(stmt) {
-  }
+  stmt_edge(gdsl::rreil::statement *stmt);
   ~stmt_edge() {
+    delete stmt;
   }
 
   gdsl::rreil::statement *get_stmt() {
@@ -52,10 +51,9 @@ private:
   gdsl::rreil::sexpr *cond;
   bool positive;
 public:
-  cond_edge(gdsl::rreil::sexpr *cond, bool positive) :
-      cond(cond), positive(positive) {
-  }
+  cond_edge(gdsl::rreil::sexpr *cond, bool positive);
   ~cond_edge() {
+    delete cond;
   }
 
   gdsl::rreil::sexpr *get_cond() {
@@ -77,20 +75,17 @@ public:
   }
 
   virtual void visit(edge *se) {
-    if(edge_callback != NULL)
-      edge_callback(se);
+    if(edge_callback != NULL) edge_callback(se);
     _default();
   }
 
   virtual void visit(stmt_edge *se) {
-    if(stmt_edge_callback != NULL)
-      stmt_edge_callback(se);
+    if(stmt_edge_callback != NULL) stmt_edge_callback(se);
     _default();
   }
 
   virtual void visit(cond_edge *se) {
-    if(cond_edge_callback != NULL)
-      cond_edge_callback(se);
+    if(cond_edge_callback != NULL) cond_edge_callback(se);
     _default();
   }
 
