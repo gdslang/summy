@@ -100,7 +100,7 @@ void ip_propagator::transform() {
         cv._([&](variable *v) -> linear* {
           if(is_ip(v)) {
             delete v;
-            return new lin_imm((*ips)[edge_it->first]);
+            return new lin_imm((*ips)[node->get_id()]);
           } else
             return new lin_var(v);
         });
