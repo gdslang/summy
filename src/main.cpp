@@ -17,7 +17,9 @@
 #include <fstream>
 
 #include <summy/transformers/decomposer.h>
+#include <summy/transformers/goto_ip_adder.h>
 #include <summy/transformers/ip_propagator.h>
+#include <summy/transformers/trivial_connector.h>
 
 #include <cppgdsl/rreil/copy_visitor.h>
 
@@ -28,7 +30,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  uint32_t buffer = 0xda75c085;
+  uint32_t buffer = 0x0075c085;
   g.set_code((unsigned char*)&buffer, sizeof(buffer), 0);
 
   vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
@@ -46,18 +48,28 @@ int main(void) {
     for(statement *s : *rreil)
       printf("%s\n", s->to_string().c_str());
 
-    prog.push_back(make_tuple(i, rreil));
+    prog.push_back(make_tuple(i*2, rreil));
   }
 
   cfg::cfg cfg(prog);
 
-  decomposer *d = new decomposer(&cfg);
-  d->transform();
-  delete d;
+  for(auto t : prog) {
+    vector<gdsl::rreil::statement*>* rreil;
+    tie(ignore, rreil) = t;
+    for(auto stmt : *rreil)
+      delete stmt;
+    delete rreil;
+  }
 
-  ip_propagator *p = new ip_propagator(&cfg);
-  p->transform();
-  delete p;
+  vector<transformer*> transformers;
+  transformers.push_back(new decomposer(&cfg));
+  transformers.push_back(new goto_ip_adder(&cfg));
+  transformers.push_back(new ip_propagator(&cfg));
+  transformers.push_back(new trivial_connector(&cfg));
+  for(auto t : transformers) {
+    t->transform();
+    delete t;
+  }
 
 //  printf("RReil (after transformations):\n");
 //  for(statement *s : *rreil)
@@ -68,9 +80,7 @@ int main(void) {
   cfg.dot(dot_fs);
   dot_fs.close();
 
-//  for(auto stmt : *rreil)
-//    delete stmt;
-//  delete rreil;
+
 
   return 0;
 }

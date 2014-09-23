@@ -9,6 +9,7 @@
 
 #include <cppgdsl/rreil/variable.h>
 #include <cppgdsl/rreil/expr/expr.h>
+#include <cppgdsl/rreil/linear/linear.h>
 
 #include <functional>
 #include <tuple>
@@ -30,4 +31,5 @@ public:
   }
 
   std::tuple<bool, int_t> evaluate(gdsl::rreil::expr *expr);
+  std::tuple<bool, int_t> evaluate(gdsl::rreil::linear *lin);
 };
