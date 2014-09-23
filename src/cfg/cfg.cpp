@@ -17,6 +17,11 @@
 
 using namespace std;
 
+void cfg::cfg::add_node(node *n) {
+  nodes.push_back(n);
+  edges.push_back(new map<size_t, edge*>());
+}
+
 cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary) {
   for(auto elem : translated_binary) {
     size_t address;
@@ -36,11 +41,6 @@ cfg::cfg::~cfg() {
       delete edge_it.second;
     delete node_edges;
   }
-}
-
-void cfg::cfg::add_node(node *n) {
-  nodes.push_back(n);
-  edges.push_back(new map<size_t, edge*>());
 }
 
 size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node) {
@@ -86,6 +86,11 @@ size_t cfg::cfg::node_count() {
 
 cfg::node *cfg::cfg::get_node(size_t id) {
   return nodes[id];
+}
+
+size_t cfg::cfg::create_node(std::function<class node*(size_t)> constr) {
+  size_t id = next_node_id();
+  add_node(constr(id));
 }
 
 std::map<size_t, cfg::edge*> *cfg::cfg::out_edges(size_t id) {
