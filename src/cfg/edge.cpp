@@ -55,6 +55,7 @@ cfg::cond_edge::cond_edge(gdsl::rreil::sexpr *cond, bool positive) {
 void cfg::cond_edge::dot(std::ostream &stream) {
   if(positive) stream << "\"" << *cond << "\"";
   else stream << "\"!(" << *cond << ")\"";
+  stream << ", style=dashed, color=blue";
 }
 
 void cfg::cond_edge::accept(edge_visitor &v) {

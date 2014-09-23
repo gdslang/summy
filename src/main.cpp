@@ -30,7 +30,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  uint32_t buffer = 0x0075c085;
+  uint32_t buffer = 0xfc75c085;
   g.set_code((unsigned char*)&buffer, sizeof(buffer), 0);
 
   vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;

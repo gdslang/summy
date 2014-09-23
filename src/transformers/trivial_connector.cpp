@@ -17,6 +17,7 @@
 #include <vector>
 #include <queue>
 #include <tuple>
+#include <assert.h>
 
 using namespace std;
 using namespace cfg;
@@ -36,8 +37,8 @@ trivial_connector::start_node_map_t trivial_connector::start_node_map() {
 
 void trivial_connector::transform() {
   auto start_node_map = this->start_node_map();
-  queue<tuple<size_t, linear*>> branches;
-  queue<tuple<size_t, sexpr*, bool, linear*>> cond_branches;
+  queue<tuple<size_t, int_t>> branches;
+  queue<tuple<size_t, sexpr*, bool, address*>> cond_branches;
 
   for(auto node : *cfg) {
     auto &edges = *cfg->out_edges(node->get_id());
@@ -48,10 +49,14 @@ void trivial_connector::transform() {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](branch *i) {
-          replace = true;
-          copy_visitor cv;
-          i->get_target()->get_lin()->accept(cv);
-          branches.push(make_tuple(edge_it->first, cv.get_linear()));
+          rreil_evaluator rev;
+          bool evalable;
+          int_t value;
+          tie(evalable, value) = rev.evaluate(i->get_target()->get_lin());
+          if(evalable && start_node_map.find(value) != start_node_map.end()) {
+            replace = true;
+            branches.push(make_tuple(edge_it->first, value));
+          }
         });
         v._([&](cbranch *i) {
           replace = true;
@@ -59,8 +64,8 @@ void trivial_connector::transform() {
             copy_visitor cv;
             i->get_cond()->accept(cv);
             sexpr *cond = cv.get_sexpr();
-            branch->get_lin()->accept(cv);
-            cond_branches.push(make_tuple(edge_it->first, cond, then, cv.get_linear()));
+            branch->accept(cv);
+            cond_branches.push(make_tuple(edge_it->first, cond, then, cv.get_address()));
           };
           branch(true, i->get_target_true());
           branch(false, i->get_target_false());
@@ -75,47 +80,60 @@ void trivial_connector::transform() {
     }
   }
 
+  auto ip_assign = [&](int_t value) {
+    return new assign(64, new variable(new arch_id("IP"), 0),
+        new expr_sexpr(new sexpr_lin(new lin_imm(value))));
+  };
+
   while(!branches.empty()) {
     size_t node_id;
-    linear *lin;
-    tie(node_id, lin) = branches.front();
+    int_t addr;
+    tie(node_id, addr) = branches.front();
     branches.pop();
 
-    rreil_evaluator rev;
-    bool evalable;
-    int_t value;
-    tie(evalable, value) = rev.evaluate(lin);
+    auto start_node_it = start_node_map.find(addr);
+    assert(start_node_it != start_node_map.end());
 
-    if(evalable) {
-      auto it = start_node_map.find(value);
-      if(it != start_node_map.end()) {
-        size_t dest_node_id = it->second;
+    size_t dest_node_id = start_node_it->second;
 
-        statement *ip_assign = new assign(64, new variable(new arch_id("IP"), 0),
-            new expr_sexpr(new sexpr_lin(new lin_imm(value))));
-
-        auto &edges = *cfg->out_edges(node_id);
-        edges[dest_node_id] = new stmt_edge(ip_assign);
-
-        delete ip_assign;
-      }
-    }
-
-    delete lin;
+    auto _ip_assign = ip_assign(addr);
+    auto &edges = *cfg->out_edges(node_id);
+    edges[dest_node_id] = new stmt_edge(_ip_assign);
+    delete _ip_assign;
   }
 
   while(!cond_branches.empty()) {
     size_t node_id;
     bool positive;
     sexpr *cond;
-    linear *lin;
-    tie(node_id, cond, positive, lin) = cond_branches.front();
+    address *addr;
+    tie(node_id, cond, positive, addr) = cond_branches.front();
     cond_branches.pop();
 
     rreil_evaluator rev;
     bool evalable;
     int_t value;
-    tie(evalable, value) = rev.evaluate(lin);
+    tie(evalable, value) = rev.evaluate(addr->get_lin());
+
+    auto preserve_branch = [&]() {
+      class node *cond_end_node = new (class node)(cfg->next_node_id());
+      cfg->add_node(cond_end_node);
+
+      auto &edges_node = *cfg->out_edges(node_id);
+      edges_node[cond_end_node->get_id()] = new cond_edge(cond, positive);
+
+      copy_visitor cv;
+      addr->accept(cv);
+      statement *branch = new class branch(cv.get_address(), gdsl::rreil::BRANCH_HINT_JUMP);
+
+      class node *dest_node = new (class node)(cfg->next_node_id());
+      cfg->add_node(dest_node);
+
+      auto &edges_cond_end = *cfg->out_edges(cond_end_node->get_id());
+      edges_cond_end[dest_node->get_id()] = new stmt_edge(branch);
+
+      delete branch;
+    };
 
     if(evalable) {
       auto it = start_node_map.find(value);
@@ -128,17 +146,16 @@ void trivial_connector::transform() {
         auto &edges_node = *cfg->out_edges(node_id);
         edges_node[cond_end_node->get_id()] = new cond_edge(cond, positive);
 
-        statement *ip_assign = new assign(64, new variable(new arch_id("IP"), 0),
-            new expr_sexpr(new sexpr_lin(new lin_imm(value))));
-
+        auto _ip_assign = ip_assign(value);
         auto &edges_cond_end = *cfg->out_edges(cond_end_node->get_id());
-        edges_cond_end[dest_node_id] = new stmt_edge(ip_assign);
-
-        delete ip_assign;
-      }
-    }
+        edges_cond_end[dest_node_id] = new stmt_edge(_ip_assign);
+        delete _ip_assign;
+      } else
+        preserve_branch();
+    } else
+      preserve_branch();
 
     delete cond;
-    delete lin;
+    delete addr;
   }
 }
