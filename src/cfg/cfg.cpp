@@ -93,9 +93,9 @@ std::map<size_t, cfg::edge*> *cfg::cfg::out_edges(size_t id) {
 }
 
 cfg::bfs_iterator cfg::cfg::begin() {
-  return bfs_iterator(this, 0);
+  return bfs_iterator(this);
 }
 
 cfg::bfs_iterator cfg::cfg::end() {
-  return bfs_iterator(this);
+  return bfs_iterator(this, true);
 }

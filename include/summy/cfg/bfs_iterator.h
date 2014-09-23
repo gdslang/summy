@@ -21,12 +21,27 @@ class bfs_iterator: std::iterator<std::input_iterator_tag, node*> {
   friend class cfg;
 private:
   cfg *_cfg;
+  /**
+   * Set of already visited nodes
+   */
   std::set<size_t> seen;
-  std::queue<size_t> q;
+  /**
+   * Queue of nodes within current component
+   */
+  std::queue<size_t> inner_component;
+  /**
+   * Queue of start nodes that are possible component starting points
+   */
+  std::queue<size_t> components;
   bool end;
 
+  /**
+   * Move to next component if necessary
+   */
+  void check_next_component();
+
+  bfs_iterator(cfg *cfg, bool end);
   bfs_iterator(cfg *cfg);
-  bfs_iterator(cfg *cfg, size_t init_id);
 public:
   node *operator*();
   bfs_iterator &operator++();

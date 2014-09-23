@@ -18,7 +18,6 @@ using namespace gdsl::rreil;
 trivial_connector::start_node_map_t trivial_connector::start_node_map() {
   trivial_connector::start_node_map_t start_node_map;
   for(auto node : *cfg) {
-//    size_t id = node->get_id();
     node_visitor nv;
     nv._([&](start_node *sn) {
       start_node_map[sn->get_address()] = sn->get_id();
@@ -29,5 +28,5 @@ trivial_connector::start_node_map_t trivial_connector::start_node_map() {
 }
 
 void trivial_connector::transform() {
-
+  auto start_node_map = this->start_node_map();
 }
