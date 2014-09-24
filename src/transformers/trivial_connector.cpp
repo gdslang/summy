@@ -40,6 +40,9 @@ void trivial_connector::transform() {
   queue<tuple<size_t, int_t>> branches;
   queue<tuple<size_t, sexpr*, bool, address*>> cond_branches;
 
+  /*
+   * Collect branch sites to be replaced
+   */
   for(auto node : *cfg) {
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
@@ -85,6 +88,9 @@ void trivial_connector::transform() {
         new expr_sexpr(new sexpr_lin(new lin_imm(value))));
   };
 
+  /*
+   * Replace single-destination branches
+   */
   while(!branches.empty()) {
     size_t node_id;
     int_t addr;
@@ -102,6 +108,9 @@ void trivial_connector::transform() {
     delete _ip_assign;
   }
 
+  /*
+   * Replace conditional branches
+   */
   while(!cond_branches.empty()) {
     size_t node_id;
     bool positive;
