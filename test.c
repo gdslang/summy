@@ -1,10 +1,8 @@
 int main(void) {
   int a;
   int b;
-  if(a > 22) {
-    b = 17;
-  } else {
-    b = 29;
-  }
-  return b;
+  while(a > 22)
+    b += 17;
+	a += b;
+  return a;
 }

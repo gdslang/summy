@@ -24,13 +24,14 @@ public:
   struct entry_t {
     size_t offset;
     size_t address;
+    size_t size;
 
-    entry_t(size_t offset, size_t address) :
-        offset(offset), address(address) {
+    entry_t(size_t offset, size_t address, size_t size) :
+        offset(offset), address(address), size(size) {
     }
 
     entry_t() :
-        entry_t(0, 0) {
+        entry_t(0, 0, 0) {
     }
   };
 

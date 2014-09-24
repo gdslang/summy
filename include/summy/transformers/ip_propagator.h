@@ -21,7 +21,6 @@ extern "C" {
 class ip_propagator : public transformer {
 private:
   std::tuple<bool, int_t> evaluate(int_t ip_value, gdsl::rreil::expr *e);
-  bool is_ip(gdsl::rreil::variable *v);
   std::vector<int_t> *analyze_ip();
 public:
   ip_propagator(cfg::cfg *cfg) :

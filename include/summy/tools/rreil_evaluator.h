@@ -32,4 +32,7 @@ public:
 
   std::tuple<bool, int_t> evaluate(gdsl::rreil::expr *expr);
   std::tuple<bool, int_t> evaluate(gdsl::rreil::linear *lin);
+
+
+  static bool is_ip(gdsl::rreil::variable *v);
 };

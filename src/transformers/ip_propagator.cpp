@@ -24,20 +24,9 @@ using namespace gdsl::rreil;
 
 std::tuple<bool, int_t> ip_propagator::evaluate(int_t ip_value, gdsl::rreil::expr *e) {
   rreil_evaluator re([&](variable *v) -> tuple<bool, int_t> {
-    return make_tuple(is_ip(v), ip_value);
+    return make_tuple(rreil_evaluator::is_ip(v), ip_value);
   });
   return re.evaluate(e);
-}
-
-bool ip_propagator::is_ip(gdsl::rreil::variable *v) {
-  bool is_ip = false;
-  id_visitor iv;
-  iv._([&] (arch_id *ai) {
-    if(ai->get_name() == "IP")
-      is_ip = true;
-  });
-  v->get_id()->accept(iv);
-  return is_ip;
 }
 
 std::vector<int_t> *ip_propagator::analyze_ip() {
@@ -61,7 +50,7 @@ std::vector<int_t> *ip_propagator::analyze_ip() {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](assign *i) {
-          if(is_ip(i->get_lhs())) {
+          if(rreil_evaluator::is_ip(i->get_lhs())) {
             bool evalable;
             tie(evalable, ip_current) = evaluate(ip_current, i->get_rhs());
             if(!evalable)
@@ -98,7 +87,7 @@ void ip_propagator::transform() {
       ev._([&](stmt_edge *edge) {
         copy_visitor cv;
         cv._([&](variable *v) -> linear* {
-          if(is_ip(v)) {
+          if(rreil_evaluator::is_ip(v)) {
             delete v;
             return new lin_imm((*ips)[node->get_id()]);
           } else

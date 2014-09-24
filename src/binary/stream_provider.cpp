@@ -40,6 +40,7 @@ tuple<bool, binary_provider::entry_t> stream_provider::entry(string symbol) {
     entry_t entry;
     entry.address = 0;
     entry.offset = 0;
+    entry.size = 0;
     return make_tuple(true, entry);
   }
   return binary_provider::entry(symbol);

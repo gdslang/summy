@@ -29,6 +29,7 @@ tuple<bool, binary_provider::entry_t> direct_provider::entry(string symbol) {
 
   entry.address = 0;
   entry.offset = 0;
+  entry.size = 0;
 
   return make_tuple(true, entry);
 }

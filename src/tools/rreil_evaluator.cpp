@@ -78,3 +78,14 @@ std::tuple<bool, int_t> rreil_evaluator::evaluate(class expr *expr) {
   expr->accept(ev);
   return result;
 }
+
+bool rreil_evaluator::is_ip(gdsl::rreil::variable *v) {
+  bool is_ip = false;
+  id_visitor iv;
+  iv._([&] (arch_id *ai) {
+    if(ai->get_name() == "IP")
+      is_ip = true;
+  });
+  v->get_id()->accept(iv);
+  return is_ip;
+}

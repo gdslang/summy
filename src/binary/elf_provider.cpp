@@ -57,6 +57,7 @@ elf_provider::elf_provider(const char *file) :
 elf_provider::~elf_provider() {
   delete elf;
   delete fd;
+  delete elf_mem;
 }
 
 tuple<bool, binary_provider::entry_t> elf_provider::entry(string symbol_name) {
@@ -83,6 +84,7 @@ tuple<bool, binary_provider::entry_t> elf_provider::entry(string symbol_name) {
   GElf_Shdr shdr;
   if(gelf_getshdr(scn, &shdr) != &shdr) throw new string("gelf_getshdr() :-(");
 
+  entry.size = sym.st_size;
   entry.address = sym.st_value;
   entry.offset = shdr.sh_offset + (entry.address - shdr.sh_addr);
 
