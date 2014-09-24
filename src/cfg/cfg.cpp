@@ -27,8 +27,9 @@ cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statemen
     size_t address;
     vector<gdsl::rreil::statement*> *statements;
     tie(address, statements) = elem;
-    size_t from_node = nodes.size();
-    add_node(new start_node(from_node, address));
+    size_t from_node = create_node([&](size_t id) {
+      return new start_node(id, address);
+    });
     add_nodes(statements, from_node);
   }
 }
@@ -46,8 +47,9 @@ cfg::cfg::~cfg() {
 size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node) {
   size_t to_node = from_node;
   for(auto stmt : *statements) {
-    to_node = nodes.size();
-    add_node(new node(to_node));
+    to_node = create_node([&](size_t id) {
+      return new node(id);
+    });
 
     map<size_t, edge*> &from_edges = *edges[from_node];
     from_edges[to_node] = new stmt_edge(stmt);
