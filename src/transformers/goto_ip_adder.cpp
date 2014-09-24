@@ -46,14 +46,15 @@ void goto_ip_adder::transform() {
     class node *node = transform_queue.front();
     transform_queue.pop();
 
-    class node *new_node = new (class node)(cfg->next_node_id());
-    cfg->add_node(new_node);
+    size_t new_node_id = cfg->create_node([&](size_t id) {
+      return new (class node)(id);
+    });
 
     statement *goto_ip = new branch(new address(64, new lin_var(new variable(new arch_id("IP"), 0))),
         gdsl::rreil::BRANCH_HINT_JUMP);
 
     auto &edges = *cfg->out_edges(node->get_id());
-    edges[new_node->get_id()] = new stmt_edge(goto_ip);
+    edges[new_node_id] = new stmt_edge(goto_ip);
     delete goto_ip;
   }
 }

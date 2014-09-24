@@ -116,21 +116,23 @@ void trivial_connector::transform() {
     tie(evalable, value) = rev.evaluate(addr->get_lin());
 
     auto preserve_branch = [&]() {
-      class node *cond_end_node = new (class node)(cfg->next_node_id());
-      cfg->add_node(cond_end_node);
+      size_t cond_end_node_id = cfg->create_node([&](size_t id) {
+        return new (class node)(id);
+      });
 
       auto &edges_node = *cfg->out_edges(node_id);
-      edges_node[cond_end_node->get_id()] = new cond_edge(cond, positive);
+      edges_node[cond_end_node_id] = new cond_edge(cond, positive);
 
       copy_visitor cv;
       addr->accept(cv);
       statement *branch = new class branch(cv.get_address(), gdsl::rreil::BRANCH_HINT_JUMP);
 
-      class node *dest_node = new (class node)(cfg->next_node_id());
-      cfg->add_node(dest_node);
+      size_t dest_node_id = cfg->create_node([&](size_t id) {
+        return new (class node)(id);
+      });
 
-      auto &edges_cond_end = *cfg->out_edges(cond_end_node->get_id());
-      edges_cond_end[dest_node->get_id()] = new stmt_edge(branch);
+      auto &edges_cond_end = *cfg->out_edges(cond_end_node_id);
+      edges_cond_end[dest_node_id] = new stmt_edge(branch);
 
       delete branch;
     };
@@ -140,14 +142,15 @@ void trivial_connector::transform() {
       if(it != start_node_map.end()) {
         size_t dest_node_id = it->second;
 
-        class node *cond_end_node = new (class node)(cfg->next_node_id());
-        cfg->add_node(cond_end_node);
+        size_t cond_end_node_id = cfg->create_node([&](size_t id) {
+          return new (class node)(id);
+        });
 
         auto &edges_node = *cfg->out_edges(node_id);
-        edges_node[cond_end_node->get_id()] = new cond_edge(cond, positive);
+        edges_node[cond_end_node_id] = new cond_edge(cond, positive);
 
         auto _ip_assign = ip_assign(value);
-        auto &edges_cond_end = *cfg->out_edges(cond_end_node->get_id());
+        auto &edges_cond_end = *cfg->out_edges(cond_end_node_id);
         edges_cond_end[dest_node_id] = new stmt_edge(_ip_assign);
         delete _ip_assign;
       } else

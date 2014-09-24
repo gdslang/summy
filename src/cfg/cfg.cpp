@@ -91,6 +91,7 @@ cfg::node *cfg::cfg::get_node(size_t id) {
 size_t cfg::cfg::create_node(std::function<class node*(size_t)> constr) {
   size_t id = next_node_id();
   add_node(constr(id));
+  return id;
 }
 
 std::map<size_t, cfg::edge*> *cfg::cfg::out_edges(size_t id) {

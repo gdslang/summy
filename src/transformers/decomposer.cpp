@@ -34,11 +34,12 @@ void decomposer::transform() {
         v._([&](ite *i) {
           del = true;
           auto branch = [&](vector<statement*> *branch, bool positive) {
-            class node *then_node = new (class node)(cfg->next_node_id());
-            cfg->add_node(then_node);
-            size_t last_then = cfg->add_nodes(branch, then_node->get_id());
+            size_t then_node_id = cfg->create_node([&](size_t id) {
+              return new (class node)(id);
+            });
+            size_t last_then = cfg->add_nodes(branch, then_node_id);
 
-            edges[then_node->get_id()] = new cond_edge(i->get_cond(), positive);
+            edges[then_node_id] = new cond_edge(i->get_cond(), positive);
             auto &then_last_out_edges = *cfg->out_edges(last_then);
             then_last_out_edges[edge_it->first] = new (class edge)();
           };
