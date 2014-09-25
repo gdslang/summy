@@ -14,15 +14,15 @@
 namespace analysis {
 namespace reaching_defs {
 
-class lattice_elem : analysis::lattice_elem {
+class lattice_elem : public ::analysis::lattice_elem {
 private:
   std::set<gdsl::rreil::id*> ids;
 public:
   lattice_elem(std::set<gdsl::rreil::id*> ids) : ids(ids) {
   }
-  virtual analysis::lattice_elem *lub(analysis::lattice_elem *other);
+  virtual ::analysis::reaching_defs::lattice_elem *lub(::analysis::lattice_elem *other);
+  virtual ::analysis::reaching_defs::lattice_elem *add(std::set<gdsl::rreil::id*> ids);
 };
-
 
 }
 }
