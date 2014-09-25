@@ -17,6 +17,9 @@ private:
 //  cfg::cfg *cfg;
   analysis *analysis;
 public:
+  virtual ~fixpoint() {
+  }
+
   fixpoint(/*cfg::cfg *cfg, */class analysis *analysis) : /*cfg(cfg),*/ analysis(analysis) {
   }
 

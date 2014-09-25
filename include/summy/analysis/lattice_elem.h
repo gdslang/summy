@@ -11,7 +11,10 @@ namespace analysis {
 
 class lattice_elem {
 public:
-  virtual void lub(lattice_elem *other);
+  virtual ~lattice_elem() {
+  }
+
+  virtual lattice_elem *lub(lattice_elem *other) = 0;
 };
 
 }
