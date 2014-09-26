@@ -21,7 +21,7 @@ using namespace cfg;
 using namespace gdsl::rreil;
 
 analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {
-  vector<set<tuple<size_t, function<lattice_elem()>>>> incoming;
+  vector<vector<tuple<size_t, function<::analysis::reaching_defs::lattice_elem*()>>>> incoming;
 
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
@@ -47,13 +47,19 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
-      auto node_f = [&]() {
-        lattice_elem elem = state[edge_it->first];
-        nach unten, typ in incoming ändern
-      };
-//      incoming[edge_it->first].insert(make_tuple(node_id, transfer_f));
+      tuple<size_t, function<::analysis::reaching_defs::lattice_elem*()>> foo = make_tuple(node_id, transfer_f);
+      incoming[edge_it->first].push_back(foo);
     }
   }
+
+  for(size_t i = 0; i < incoming.size(); i++) {
+    auto node_f = [&]() {
+      lattice_elem *elem = state[edge_it->first];
+      nach unten, typ in incoming ändern
+    };
+  }
+
+
 }
 
 ::analysis::lattice_elem *analysis::reaching_defs::reaching_defs::eval(size_t node) {
