@@ -26,6 +26,8 @@ private:
 public:
   reaching_defs(cfg::cfg *cfg);
 
+  lattice_elem *bottom();
+
   ::analysis::lattice_elem *eval(size_t node);
   std::queue<size_t> initial();
 

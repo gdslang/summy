@@ -27,6 +27,8 @@ public:
   virtual ~analysis() {
   }
 
+  virtual lattice_elem *bottom() = 0;
+
   virtual lattice_elem *eval(size_t node) = 0;
   virtual std::queue<size_t> initial() = 0;
 

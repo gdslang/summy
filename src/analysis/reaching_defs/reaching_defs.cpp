@@ -15,14 +15,22 @@
 #include <set>
 #include <functional>
 #include <memory>
+#include <assert.h>
 
 using namespace std;
 using namespace cfg;
 using namespace gdsl::rreil;
+using namespace analysis::reaching_defs;
+
+
+lattice_elem *analysis::reaching_defs::reaching_defs::bottom() {
+    return new ::analysis::reaching_defs::lattice_elem(set<id*>{});
+}
 
 analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {
-  vector<vector<tuple<size_t, function<::analysis::reaching_defs::lattice_elem*()>>>> incoming;
+  state = state_t(cfg->node_count(), bottom());
 
+  auto incoming = vector<vector<function<::analysis::reaching_defs::lattice_elem*()>>>(cfg->node_count());
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
     auto &edges = *cfg->out_edges(node->get_id());
@@ -47,20 +55,27 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
-      tuple<size_t, function<::analysis::reaching_defs::lattice_elem*()>> foo = make_tuple(node_id, transfer_f);
-      incoming[edge_it->first].push_back(foo);
+      incoming[edge_it->first].push_back(transfer_f);
     }
   }
 
+  assert(incoming.size() == cfg->node_count());
+
   for(size_t i = 0; i < incoming.size(); i++) {
-    auto node_f = [&]() {
-      lattice_elem *elem = state[edge_it->first];
-      nach unten, typ in incoming ändern
+    vector<function<::analysis::reaching_defs::lattice_elem*()>> i_inc = incoming[i];
+    auto node_f = [=]() {
+      lattice_elem *elem = new lattice_elem(*this->state[i]);
+      for(auto transfer_f : i_inc) {
+        unique_ptr<lattice_elem> calc(transfer_f());
+        elem = calc->lub(elem);
+      }
+      return elem;
     };
+    constraints.push_back(node_f);
   }
-
-
 }
+
+
 
 ::analysis::lattice_elem *analysis::reaching_defs::reaching_defs::eval(size_t node) {
 }
