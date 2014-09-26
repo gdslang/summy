@@ -37,17 +37,21 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
         v._([&](assign *i) {
           copy_visitor cv;
           i->get_lhs()->get_id()->accept(cv);
-          id *_id = cv.get_id();
+          shared_ptr<id> id_ptr(cv.get_id());
           transfer_f = [=]() {
-            unique_ptr<id> id_ptr(_id);
             copy_visitor cv;
             id_ptr->accept(cv);
-            return state[node_id]->add(set<id*>({cv.get_id()}));
+            return state[node_id]->add(set<id*>{cv.get_id()});
           };
         });
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
+      auto node_f = [&]() {
+        lattice_elem elem = state[edge_it->first];
+        nach unten, typ in incoming ändern
+      };
+//      incoming[edge_it->first].insert(make_tuple(node_id, transfer_f));
     }
   }
 }
