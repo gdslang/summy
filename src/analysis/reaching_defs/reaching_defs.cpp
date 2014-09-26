@@ -16,6 +16,7 @@
 #include <functional>
 #include <memory>
 #include <assert.h>
+#include <tuple>
 
 using namespace std;
 using namespace cfg;
@@ -33,6 +34,7 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
     size_t node_id = node->get_id();
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
+      size_t dest_node = edge_it->first;
       function<::analysis::reaching_defs::lattice_elem*()> transfer_f = [=]() {
         return new lattice_elem(*state[node_id]);
       };
@@ -48,13 +50,13 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
           transfer_f = [=]() {
             copy_visitor cv;
             id_ptr->accept(cv);
-            return state[node_id]->add(set<id*>{cv.get_id()});
+            return state[node_id]->add(definitions_t{make_tuple(dest_node, cv.get_id())});
           };
         });
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
-      incoming[edge_it->first].push_back(transfer_f);
+      incoming[dest_node].push_back(transfer_f);
     }
   }
 
@@ -75,7 +77,7 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
 }
 
 lattice_elem *analysis::reaching_defs::reaching_defs::bottom() {
-    return new ::analysis::reaching_defs::lattice_elem(set<id*>{});
+    return new ::analysis::reaching_defs::lattice_elem(definitions_t{});
 }
 
 lattice_elem *analysis::reaching_defs::reaching_defs::eval(size_t node) {
