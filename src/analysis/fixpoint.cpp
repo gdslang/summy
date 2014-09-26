@@ -17,27 +17,36 @@ using namespace analysis;
 #include <summy/analysis/reaching_defs/lattice_elem.h>
 #include <iostream>
 void fixpoint::iterate() {
-  int i = 0;
-  queue<size_t> worklist = analysis->initial();
+  set<size_t> worklist = analysis->initial();
   while(!worklist.empty()) {
-    size_t node_id = worklist.front();
-    worklist.pop();
+//    size_t node_id = worklist.front();
+//    worklist.pop();
+    size_t node_id;
+    auto it = worklist.begin();
+    node_id = *it;
+    worklist.erase(it);
 
     lattice_elem *evaluated = analysis->eval(node_id);
 
-    cout << "eva: " << *(dynamic_cast<::analysis::reaching_defs::lattice_elem*>(evaluated)) << endl;
-
     lattice_elem *current = analysis->get(node_id);
+//    cout << "+++++---" << endl;
+//    cout << "evaluated: " << *(dynamic_cast<::analysis::reaching_defs::lattice_elem*>(evaluated)) << endl;
+//    cout << "current: " << *(dynamic_cast<::analysis::reaching_defs::lattice_elem*>(current)) << endl;
     if(*evaluated > *current) {
+
       lattice_elem *lubbed = current->lub(evaluated);
+//      cout << "lubbed: " << *(dynamic_cast<::analysis::reaching_defs::lattice_elem*>(lubbed)) << endl;
+
+//      cout << "Updating " << node_id << "..." << endl;
       analysis->update(node_id, lubbed);
 
       auto dependants = analysis->dependants(node_id);
-      for(auto dependant : dependants)
-        worklist.push(dependant);
+      for(auto dependant : dependants) {
+//        cout << "Inserting " << dependant << "..." << endl;
+        worklist.insert(dependant);
+      }
     }
 
-    if(i++ > 10)
-      break;
+    delete evaluated;
   }
 }

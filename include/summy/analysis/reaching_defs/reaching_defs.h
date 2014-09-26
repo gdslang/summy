@@ -24,13 +24,15 @@ public:
 private:
   state_t state;
   std::vector<std::function<lattice_elem*()>> constraints;
+  std::vector<std::set<size_t>> _dependants;
 public:
   reaching_defs(cfg::cfg *cfg);
+  ~reaching_defs();
 
   lattice_elem *bottom();
 
   lattice_elem *eval(size_t node);
-  std::queue<size_t> initial();
+  std::set<size_t> initial();
 
   lattice_elem *get(size_t node);
   void update(size_t node, ::analysis::lattice_elem *state);

@@ -37,17 +37,16 @@ cfg::bfs_iterator::bfs_iterator(cfg *cfg) :
     });
     node->accept(nv);
   }
+  check_next_component();
 }
 
 cfg::node *cfg::bfs_iterator::operator *() {
-  check_next_component();
-  if(inner_component.empty()) throw string("No more nodes");
+  if(end) throw string("No more nodes");
   return _cfg->nodes[inner_component.front()];
 }
 
 cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
-  check_next_component();
-  if(inner_component.empty()) throw string("No more nodes");
+  if(end) throw string("No more nodes");
   size_t next = inner_component.front();
   inner_component.pop();
   auto &edges = *_cfg->out_edges(next);
@@ -56,6 +55,7 @@ cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
       seen.insert(edge.first);
       inner_component.push(edge.first);
     }
+  check_next_component();
   end = inner_component.empty() && components.empty();
   return *this;
 }

@@ -30,7 +30,7 @@ public:
   virtual lattice_elem *bottom() = 0;
 
   virtual lattice_elem *eval(size_t node) = 0;
-  virtual std::queue<size_t> initial() = 0;
+  virtual std::set<size_t> initial() = 0;
 
   virtual lattice_elem *get(size_t node) = 0;
   virtual void update(size_t node, lattice_elem *state) = 0;

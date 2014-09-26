@@ -102,7 +102,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto prog = manual(g);
+  auto prog = elf(g);
 
   cfg::cfg cfg(prog);
 
