@@ -15,6 +15,7 @@ public:
   }
 
   virtual lattice_elem *lub(lattice_elem *other) = 0;
+  virtual bool operator>(lattice_elem &other) = 0;
 };
 
 }

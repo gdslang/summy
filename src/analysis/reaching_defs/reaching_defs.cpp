@@ -22,13 +22,11 @@ using namespace cfg;
 using namespace gdsl::rreil;
 using namespace analysis::reaching_defs;
 
-
-lattice_elem *analysis::reaching_defs::reaching_defs::bottom() {
-    return new ::analysis::reaching_defs::lattice_elem(set<id*>{});
-}
-
+#include <iostream>
 analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {
-  state = state_t(cfg->node_count(), bottom());
+  state = state_t(cfg->node_count());
+  for(size_t i = 0; i < state.size(); i++)
+    state[i] = bottom();
 
   auto incoming = vector<vector<function<::analysis::reaching_defs::lattice_elem*()>>>(cfg->node_count());
   for(auto node : *cfg) {
@@ -36,13 +34,14 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       function<::analysis::reaching_defs::lattice_elem*()> transfer_f = [=]() {
-        return state[node_id];
+        return new lattice_elem(*state[node_id]);
       };
       edge_visitor ev;
       ev._([&](stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](assign *i) {
+          cout << node_id << ": " << *i << endl;
           copy_visitor cv;
           i->get_lhs()->get_id()->accept(cv);
           shared_ptr<id> id_ptr(cv.get_id());
@@ -75,7 +74,44 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
   }
 }
 
+lattice_elem *analysis::reaching_defs::reaching_defs::bottom() {
+    return new ::analysis::reaching_defs::lattice_elem(set<id*>{});
+}
 
+lattice_elem *analysis::reaching_defs::reaching_defs::eval(size_t node) {
+  return constraints[node]();
+}
 
-::analysis::lattice_elem *analysis::reaching_defs::reaching_defs::eval(size_t node) {
+std::queue<size_t> analysis::reaching_defs::reaching_defs::initial() {
+  /*
+   * Todo fix
+   */
+  queue<size_t> foo;
+  foo.push(0);
+  return foo;
+}
+
+lattice_elem *analysis::reaching_defs::reaching_defs::get(size_t node) {
+  return state[node];
+}
+
+void analysis::reaching_defs::reaching_defs::update(size_t node, ::analysis::lattice_elem *state) {
+  delete this->state[node];
+  this->state[node] = dynamic_cast<lattice_elem*>(state);
+}
+
+std::set<size_t> analysis::reaching_defs::reaching_defs::dependants(size_t node_id) {
+  /*
+   * Todo: fix
+   */
+//  if(node_id < cfg->node_count() - 1)
+//    return set<size_t>{node_id + 1};
+  return set<size_t>{(node_id + 1) % cfg->node_count()};
+}
+
+std::ostream &analysis::reaching_defs::operator <<(std::ostream &out, reaching_defs &_this) {
+  for(size_t i = 0; i < _this.state.size(); i++) {
+    out << i << ": " << *_this.state[i] << endl;
+  }
+  return out;
 }

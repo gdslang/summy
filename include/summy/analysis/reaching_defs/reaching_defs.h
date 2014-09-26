@@ -12,6 +12,7 @@
 #include <vector>
 #include <functional>
 #include <set>
+#include <ostream>
 #include <cppgdsl/rreil/id/id.h>
 
 namespace analysis {
@@ -28,14 +29,18 @@ public:
 
   lattice_elem *bottom();
 
-  ::analysis::lattice_elem *eval(size_t node);
+  lattice_elem *eval(size_t node);
   std::queue<size_t> initial();
 
-  ::analysis::lattice_elem *get(size_t node);
-  void update(size_t node, lattice_elem *state);
+  lattice_elem *get(size_t node);
+  void update(size_t node, ::analysis::lattice_elem *state);
 
   std::set<size_t> dependants(size_t node_id);
+
+  friend std::ostream &operator<< (std::ostream &out, reaching_defs &_this);
 };
+
+std::ostream &operator<<(std::ostream &out, reaching_defs &_this);
 
 }  // namespace reaching_defs
 }  // namespace analysis

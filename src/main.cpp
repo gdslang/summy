@@ -27,13 +27,14 @@
 
 #include <cppgdsl/rreil/copy_visitor.h>
 
+#include <summy/analysis/reaching_defs/reaching_defs.h>
+#include <summy/analysis/reaching_defs/lattice_elem.h>
+#include <summy/analysis/fixpoint.h>
+
 using namespace gdsl::rreil;
 using namespace std;
 
-int main(void) {
-  gdsl::bare_frontend f("current");
-  gdsl::gdsl g(&f);
-
+vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
   elf_provider elfp("a.out");
 //  binary_provider::bin_range_t range = elfp.bin_range();
   binary_provider::data_t data = elfp.get_data();
@@ -69,6 +70,40 @@ int main(void) {
     prog.push_back(make_tuple(ip, rreil));
   }
 
+  return prog;
+}
+
+vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> manual(gdsl::gdsl &g) {
+  uint32_t buffer = 0x0000;
+  g.set_code((unsigned char*)&buffer, sizeof(buffer), 0);
+
+  vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
+  for(size_t i = 0; i < 1; i++) {
+    int_t ip = g.get_ip();
+
+    gdsl::instruction insn = g.decode();
+    printf("Instruction: %s\n", insn.to_string().c_str());
+    printf("---------------------------------\n");
+    auto rreil = insn.translate();
+
+    g.reset_heap();
+
+    printf("RReil (no transformations):\n");
+    for(statement *s : *rreil)
+      printf("%s\n", s->to_string().c_str());
+
+    prog.push_back(make_tuple(ip, rreil));
+  }
+
+  return prog;
+}
+
+int main(void) {
+  gdsl::bare_frontend f("current");
+  gdsl::gdsl g(&f);
+
+  auto prog = manual(g);
+
   cfg::cfg cfg(prog);
 
   for(auto t : prog) {
@@ -88,6 +123,13 @@ int main(void) {
     t->transform();
     delete t;
   }
+
+  analysis::reaching_defs::reaching_defs r(&cfg);
+
+  analysis::fixpoint fp(&r);
+  fp.iterate();
+
+  cout << r;
 
 //  printf("RReil (after transformations):\n");
 //  for(statement *s : *rreil)
