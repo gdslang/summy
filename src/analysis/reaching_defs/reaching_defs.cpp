@@ -27,16 +27,16 @@ using namespace analysis::reaching_defs;
 analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {
   state = state_t(cfg->node_count());
   for(size_t i = 0; i < state.size(); i++)
-    state[i] = bottom();
+    state[i] = dynamic_pointer_cast<lattice_elem>(bottom());
 
-  auto incoming = vector<vector<function<::analysis::reaching_defs::lattice_elem*()>>>(cfg->node_count());
+  auto incoming = vector<vector<function<shared_ptr<::analysis::reaching_defs::lattice_elem>()>>>(cfg->node_count());
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
     auto &edges = *cfg->out_edges(node_id);
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       size_t dest_node = edge_it->first;
-      function<::analysis::reaching_defs::lattice_elem*()> transfer_f = [=]() {
-        return new lattice_elem(*state[node_id]);
+      function<shared_ptr<lattice_elem>()> transfer_f = [=]() {
+        return state[node_id];
       };
       edge_visitor ev;
       ev._([&](stmt_edge *edge) {
@@ -50,7 +50,7 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
           transfer_f = [=]() {
 //            copy_visitor cv;
 //            id_ptr->accept(cv);
-            return state[node_id]->add(definitions_t{make_tuple(dest_node, shared_ptr<id>(id_ptr))});
+            return shared_ptr<lattice_elem>(state[node_id]->add(definitions_t {make_tuple(dest_node, shared_ptr<id>(id_ptr))}));
           };
         });
         stmt->accept(v);
@@ -63,14 +63,12 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
   assert(incoming.size() == cfg->node_count());
 
   for(size_t i = 0; i < incoming.size(); i++) {
-    vector<function<::analysis::reaching_defs::lattice_elem*()>> i_inc = incoming[i];
+    vector<function<shared_ptr<::analysis::reaching_defs::lattice_elem>()>> i_inc = incoming[i];
     auto constraint = [=]() {
-      lattice_elem *elem = new lattice_elem(*this->state[i]);
+      shared_ptr<lattice_elem> elem = this->state[i];
       for(auto transfer_f : i_inc) {
-        unique_ptr<lattice_elem> calc(transfer_f());
-        lattice_elem *lubbed = calc->lub(elem);
-        delete elem;
-        elem = lubbed;
+        auto calc = transfer_f();
+        elem = shared_ptr<lattice_elem>(calc->lub(elem.get()));
       }
       return elem;
     };
@@ -88,15 +86,15 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
 }
 
 analysis::reaching_defs::reaching_defs::~reaching_defs() {
-  for(auto elem : state)
-    delete elem;
+//  for(auto elem : state)
+//    delete elem;
 }
 
-lattice_elem *analysis::reaching_defs::reaching_defs::bottom() {
-    return new ::analysis::reaching_defs::lattice_elem(definitions_t{});
+shared_ptr<analysis::lattice_elem> analysis::reaching_defs::reaching_defs::bottom() {
+    return shared_ptr<lattice_elem>(new ::analysis::reaching_defs::lattice_elem(definitions_t{}));
 }
 
-lattice_elem *analysis::reaching_defs::reaching_defs::eval(size_t node) {
+shared_ptr<analysis::lattice_elem> analysis::reaching_defs::reaching_defs::eval(size_t node) {
   return constraints[node]();
 }
 
@@ -107,13 +105,12 @@ std::set<size_t> analysis::reaching_defs::reaching_defs::initial() {
   return nodes;
 }
 
-lattice_elem *analysis::reaching_defs::reaching_defs::get(size_t node) {
+shared_ptr<::analysis::lattice_elem> analysis::reaching_defs::reaching_defs::get(size_t node) {
   return state[node];
 }
 
-void analysis::reaching_defs::reaching_defs::update(size_t node, ::analysis::lattice_elem *state) {
-  delete this->state[node];
-  this->state[node] = dynamic_cast<lattice_elem*>(state);
+void analysis::reaching_defs::reaching_defs::update(size_t node, shared_ptr<::analysis::lattice_elem> state) {
+  this->state[node] = dynamic_pointer_cast<lattice_elem>(state);
 }
 
 std::set<size_t> analysis::reaching_defs::reaching_defs::dependants(size_t node_id) {

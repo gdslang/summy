@@ -10,6 +10,9 @@
 #include <set>
 #include <tuple>
 #include <summy/cfg/cfg.h>
+#include <memory>
+
+using std::shared_ptr;
 
 namespace analysis {
 
@@ -27,13 +30,13 @@ public:
   virtual ~analysis() {
   }
 
-  virtual lattice_elem *bottom() = 0;
+  virtual shared_ptr<lattice_elem> bottom() = 0;
 
-  virtual lattice_elem *eval(size_t node) = 0;
+  virtual shared_ptr<lattice_elem> eval(size_t node) = 0;
   virtual std::set<size_t> initial() = 0;
 
-  virtual lattice_elem *get(size_t node) = 0;
-  virtual void update(size_t node, lattice_elem *state) = 0;
+  virtual shared_ptr<lattice_elem> get(size_t node) = 0;
+  virtual void update(size_t node, shared_ptr<lattice_elem> state) = 0;
 
   virtual std::set<size_t> dependants(size_t node_id) = 0;
 };
