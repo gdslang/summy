@@ -23,12 +23,7 @@ using namespace cfg;
 using namespace gdsl::rreil;
 using namespace analysis::reaching_defs;
 
-//#include <iostream>
-analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {
-  state = state_t(cfg->node_count());
-  for(size_t i = 0; i < state.size(); i++)
-    state[i] = dynamic_pointer_cast<lattice_elem>(bottom());
-
+void reaching_defs::init_constraints() {
   auto incoming = vector<vector<function<shared_ptr<lattice_elem>()>>>(cfg->node_count());
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
@@ -42,16 +37,19 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
       ev._([&](stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
-        v._([&](assign *i) {
-//          cout << node_id << ": " << *i << endl;
+        auto id_assigned = [&](id *i) {
           copy_visitor cv;
-          i->get_lhs()->get_id()->accept(cv);
+          i->accept(cv);
           shared_ptr<id> id_ptr(cv.get_id());
           transfer_f = [=]() {
-//            copy_visitor cv;
-//            id_ptr->accept(cv);
             return shared_ptr<lattice_elem>(state[node_id]->add(definitions_t {make_tuple(dest_node, shared_ptr<id>(id_ptr))}));
           };
+        };
+        v._([&](assign *i) {
+          id_assigned(i->get_lhs()->get_id());
+        });
+        v._([&](load *l) {
+          id_assigned(l->get_lhs()->get_id());
         });
         stmt->accept(v);
       });
@@ -74,8 +72,9 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
     };
     constraints.push_back(constraint);
   }
+}
 
-
+void reaching_defs::init_dependants() {
   _dependants = std::vector<std::set<size_t>>(cfg->node_count());
   for(auto node : *cfg) {
     auto &edges = *cfg->out_edges(node->get_id());
@@ -85,9 +84,16 @@ analysis::reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis
   }
 }
 
+reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {
+  state = state_t(cfg->node_count());
+  for(size_t i = 0; i < state.size(); i++)
+    state[i] = dynamic_pointer_cast<lattice_elem>(bottom());
+
+  init_constraints();
+  init_dependants();
+}
+
 analysis::reaching_defs::reaching_defs::~reaching_defs() {
-//  for(auto elem : state)
-//    delete elem;
 }
 
 shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::bottom() {

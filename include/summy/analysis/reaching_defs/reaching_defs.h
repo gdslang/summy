@@ -28,6 +28,9 @@ private:
   state_t state;
   std::vector<std::function<shared_ptr<lattice_elem>()>> constraints;
   std::vector<std::set<size_t>> _dependants;
+
+  void init_constraints();
+  void init_dependants();
 public:
   reaching_defs(cfg::cfg *cfg);
   ~reaching_defs();
