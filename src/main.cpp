@@ -35,7 +35,14 @@ using namespace gdsl::rreil;
 using namespace std;
 
 vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
-  elf_provider elfp("a.out");
+  elf_provider elfp = [&]() {
+    try {
+     return elf_provider("a.out");
+    } catch(string s) {
+      cout << "Error initializing elf provider: " << s << endl;
+      exit(1);
+    }
+  }();
 //  binary_provider::bin_range_t range = elfp.bin_range();
   binary_provider::data_t data = elfp.get_data();
   binary_provider::entry_t e;
