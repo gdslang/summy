@@ -38,9 +38,9 @@ vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
   elf_provider elfp = [&]() {
     try {
      return elf_provider("a.out");
-    } catch(string s) {
+    } catch(string &s) {
       cout << "Error initializing elf provider: " << s << endl;
-      exit(1);
+      throw string("no elf() :/");
     }
   }();
 //  binary_provider::bin_range_t range = elfp.bin_range();
@@ -81,7 +81,7 @@ vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
 }
 
 vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> manual(gdsl::gdsl &g) {
-  uint32_t buffer = 0x0000;
+  uint32_t buffer = 0x00ab48f3;
   g.set_code((unsigned char*)&buffer, sizeof(buffer), 0);
 
   vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
@@ -109,7 +109,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto prog = elf(g);
+  auto prog = manual(g);
 
   cfg::cfg cfg(prog);
 

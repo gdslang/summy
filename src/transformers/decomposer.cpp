@@ -26,35 +26,54 @@ void decomposer::transform() {
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end();) {
 //      printf("Next edge...\n");
-      bool del = false;
+      size_t edge_dst_node = edge_it->first;
+      bool replace = false;
+      edge *replacement = NULL;
       edge_visitor ev;
       ev._([&](stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](ite *i) {
-          del = true;
+          replace = true;
           auto branch = [&](vector<statement*> *branch, bool positive) {
-            size_t then_node_id = cfg->create_node([&](size_t id) {
+            size_t branch_node_id = cfg->create_node([&](size_t id) {
               return new (class node)(id);
             });
-            size_t last_then = cfg->add_nodes(branch, then_node_id);
+            size_t last_branch = cfg->add_nodes(branch, branch_node_id);
 
-            edges[then_node_id] = new cond_edge(i->get_cond(), positive);
-            auto &then_last_out_edges = *cfg->out_edges(last_then);
-            then_last_out_edges[edge_it->first] = new (class edge)();
+            edges[branch_node_id] = new cond_edge(i->get_cond(), positive);
+            auto &branch_last_out_edges = *cfg->out_edges(last_branch);
+            branch_last_out_edges[edge_dst_node] = new (class edge)();
           };
           branch(i->get_then_branch(), true);
           branch(i->get_else_branch(), false);
+        });
+        v._([&](_while *w) {
+          size_t body_node_id = cfg->create_node([&](size_t id) {
+            return new (class node)(id);
+          });
+          size_t last_body = cfg->add_nodes(w->get_body(), body_node_id);
+
+          edges[body_node_id] = new cond_edge(w->get_cond(), true);
+
+          replace = true;
+          replacement = new cond_edge(w->get_cond(), false);
+
+          auto &body_last_out_edges = *cfg->out_edges(last_body);
+          body_last_out_edges[node->get_id()] = new (class edge)();
         });
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
 
-      if(del) {
-        delete edge_it->second;
-        edges.erase(edge_it++);
-      } else
-        edge_it++;
+      auto edge_it_old = edge_it++;
+      if(replace) {
+        delete edge_it_old->second;
+        if(replacement == NULL)
+          edges.erase(edge_it_old);
+        else
+          edge_it_old->second = replacement;
+      }
     }
 //    printf("id: %zu\n", a->get_id());
   }
