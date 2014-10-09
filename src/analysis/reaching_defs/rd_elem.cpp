@@ -102,8 +102,3 @@ bool analysis::reaching_defs::singleton_less::operator ()(singleton_t a, singlet
   if(id_cmp > 0) return false;
   return a_node < b_node;
 }
-
-bool analysis::reaching_defs::id_less::operator ()(std::shared_ptr<gdsl::rreil::id> a,
-    std::shared_ptr<gdsl::rreil::id> b) {
-  return a->to_string().compare(b->to_string()) < 0;
-}

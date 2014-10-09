@@ -9,6 +9,7 @@
 
 #include <cppgdsl/rreil/id/id.h>
 #include <summy/analysis/lattice_elem.h>
+#include <summy/analysis/util.h>
 #include <set>
 #include <tuple>
 #include <ostream>
@@ -21,10 +22,6 @@ typedef std::tuple<size_t, std::shared_ptr<gdsl::rreil::id>> singleton_t;
 
 struct singleton_less {
   bool operator()(singleton_t a, singleton_t b);
-};
-
-struct id_less {
-  bool operator()(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b);
 };
 
 typedef std::set<singleton_t, singleton_less> definitions_t;
