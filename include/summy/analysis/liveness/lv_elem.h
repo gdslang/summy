@@ -33,8 +33,8 @@ public:
   }
   virtual ~lv_elem();
   virtual lv_elem *lub(::analysis::lattice_elem *other);
-  virtual lv_elem *add(living_t ids);
-  virtual lv_elem *remove(living_t ids);;
+  virtual lv_elem *add(living_t living);
+  virtual lv_elem *remove(living_t living);;
 
   bool operator>(::analysis::lattice_elem &other);
 
