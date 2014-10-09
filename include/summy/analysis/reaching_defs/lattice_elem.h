@@ -23,7 +23,12 @@ struct singleton_less {
   bool operator()(singleton_t a, singleton_t b);
 };
 
+struct id_less {
+  bool operator()(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b);
+};
+
 typedef std::set<singleton_t, singleton_less> definitions_t;
+typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less> id_set_t;
 
 class lattice_elem : public ::analysis::lattice_elem {
 private:
@@ -34,6 +39,7 @@ public:
   virtual ~lattice_elem();
   virtual ::analysis::reaching_defs::lattice_elem *lub(::analysis::lattice_elem *other);
   virtual ::analysis::reaching_defs::lattice_elem *add(definitions_t ids);
+  virtual ::analysis::reaching_defs::lattice_elem *remove(id_set_t ids);
 
   bool operator>(::analysis::lattice_elem &other);
 

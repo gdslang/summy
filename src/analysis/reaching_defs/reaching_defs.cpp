@@ -42,7 +42,8 @@ void reaching_defs::init_constraints() {
           i->accept(cv);
           shared_ptr<id> id_ptr(cv.get_id());
           transfer_f = [=]() {
-            return shared_ptr<lattice_elem>(state[node_id]->add(definitions_t {make_tuple(dest_node, shared_ptr<id>(id_ptr))}));
+            auto defs_rm = shared_ptr<lattice_elem>(state[node_id]->remove(id_set_t { id_ptr }));
+            return shared_ptr<lattice_elem>(defs_rm->add(definitions_t {make_tuple(dest_node, id_ptr)}));
           };
         };
         v._([&](assign *i) {

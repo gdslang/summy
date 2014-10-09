@@ -82,6 +82,7 @@ vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
 
 vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> manual(gdsl::gdsl &g) {
   uint32_t buffer = 0x00ab48f3;
+//  uint32_t buffer = 0x00e2d348;
   g.set_code((unsigned char*)&buffer, sizeof(buffer), 0);
 
   vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
@@ -109,7 +110,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto prog = manual(g);
+  auto prog = elf(g);
 
   cfg::cfg cfg(prog);
 
