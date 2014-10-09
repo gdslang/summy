@@ -9,6 +9,7 @@
 
 #include <cppgdsl/rreil/id/id.h>
 #include <summy/analysis/lattice_elem.h>
+#include <summy/analysis/set_elem.h>
 #include <summy/analysis/liveness/lv_elem.h>
 #include <summy/analysis/util.h>
 #include <set>
@@ -23,20 +24,24 @@ typedef std::shared_ptr<gdsl::rreil::id> singleton_t;
 
 typedef id_less singleton_less;
 
-typedef std::set<singleton_t, singleton_less> living_t;
-
-class lv_elem : public ::analysis::lattice_elem {
-private:
-  living_t living;
+//class lv_elem;
+//typedef set_elem<singleton_t, singleton_less, lv_elem> lv_elem_base;
+class lv_elem : public set_elem<singleton_t, singleton_less, lv_elem> {
 public:
-  lv_elem(living_t living) : living(living) {
+  lv_elem(elements_t elements) : set_elem(elements) {
   }
-  virtual ~lv_elem();
-  virtual lv_elem *lub(::analysis::lattice_elem *other);
-  virtual lv_elem *add(living_t living);
-  virtual lv_elem *remove(living_t living);;
 
-  bool operator>(::analysis::lattice_elem &other);
+  virtual lv_elem *lub(::analysis::lattice_elem *other) {
+    return dynamic_cast<lv_elem*>(set_elem::lub(other)); //Stupid C++ :/
+  }
+
+  virtual lv_elem *add(elements_t elements) {
+    return dynamic_cast<lv_elem*>(set_elem::add(elements)); //Stupid C++ :/
+  }
+
+  virtual lv_elem *remove(elements_t elements) {
+    return dynamic_cast<lv_elem*>(set_elem::remove(elements)); //Stupid C++ :/
+  }
 
 //  friend std::ostream &operator<< (std::ostream &out, lattice_elem &_this);
 };
