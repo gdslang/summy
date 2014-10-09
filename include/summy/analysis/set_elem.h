@@ -13,13 +13,14 @@
 namespace analysis {
 
 template<typename SINGLETON_T, typename SINGLETON_LESS, typename SPEC_ELEM>
-class set_elem : public lattice_elem {
+class set_elem: public lattice_elem {
 public:
   typedef std::set<SINGLETON_T, SINGLETON_LESS> elements_t;
-private:
+protected:
   elements_t elements;
 public:
-  set_elem(elements_t elements) : elements(elements) {
+  set_elem(elements_t elements) :
+      elements(elements) {
   }
   virtual ~set_elem() {
   }
@@ -32,7 +33,7 @@ public:
   }
   virtual set_elem *add(elements_t elements) {
     elements_t union_elements;
-    std::set_union(elements.begin(), elements.end(), elements.begin(), elements.end(),
+    std::set_union(this->elements.begin(), this->elements.end(), elements.begin(), elements.end(),
         std::inserter(union_elements, union_elements.begin()));
     return new SPEC_ELEM(union_elements);
   }
