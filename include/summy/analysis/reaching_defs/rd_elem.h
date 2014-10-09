@@ -30,23 +30,23 @@ struct id_less {
 typedef std::set<singleton_t, singleton_less> definitions_t;
 typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less> id_set_t;
 
-class lattice_elem : public ::analysis::lattice_elem {
+class rd_elem : public ::analysis::lattice_elem {
 private:
   definitions_t defs;
 public:
-  lattice_elem(definitions_t defs) : defs(defs) {
+  rd_elem(definitions_t defs) : defs(defs) {
   }
-  virtual ~lattice_elem();
-  virtual ::analysis::reaching_defs::lattice_elem *lub(::analysis::lattice_elem *other);
-  virtual ::analysis::reaching_defs::lattice_elem *add(definitions_t ids);
-  virtual ::analysis::reaching_defs::lattice_elem *remove(id_set_t ids);
+  virtual ~rd_elem();
+  virtual ::analysis::reaching_defs::rd_elem *lub(::analysis::lattice_elem *other);
+  virtual ::analysis::reaching_defs::rd_elem *add(definitions_t ids);
+  virtual ::analysis::reaching_defs::rd_elem *remove(id_set_t ids);
 
   bool operator>(::analysis::lattice_elem &other);
 
-  friend std::ostream &operator<< (std::ostream &out, lattice_elem &_this);
+  friend std::ostream &operator<< (std::ostream &out, rd_elem &_this);
 };
 
-std::ostream &operator<<(std::ostream &out, lattice_elem &_this);
+std::ostream &operator<<(std::ostream &out, rd_elem &_this);
 
 }
 }

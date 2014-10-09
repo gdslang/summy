@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/reaching_defs/lattice_elem.h>
+#include <summy/analysis/reaching_defs/rd_elem.h>
 #include <set>
 #include <algorithm>
 #include <memory>
@@ -17,26 +17,26 @@ using namespace analysis;
 using namespace std;
 using namespace gdsl::rreil;
 
-analysis::reaching_defs::lattice_elem::~lattice_elem() {
+analysis::reaching_defs::rd_elem::~rd_elem() {
 }
 
-::analysis::reaching_defs::lattice_elem *reaching_defs::lattice_elem::lub(::analysis::lattice_elem *other) {
-  reaching_defs::lattice_elem *other_casted = dynamic_cast<reaching_defs::lattice_elem*>(other);
+::analysis::reaching_defs::rd_elem *reaching_defs::rd_elem::lub(::analysis::lattice_elem *other) {
+  reaching_defs::rd_elem *other_casted = dynamic_cast<reaching_defs::rd_elem*>(other);
   definitions_t union_defs;
   set_union(defs.begin(), defs.end(), other_casted->defs.begin(), other_casted->defs.end(),
       inserter(union_defs, union_defs.begin()));
-  return new lattice_elem(union_defs);
+  return new rd_elem(union_defs);
 }
 
-::analysis::reaching_defs::lattice_elem *analysis::reaching_defs::lattice_elem::add(definitions_t defs) {
+::analysis::reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::add(definitions_t defs) {
   definitions_t union_defs;
   set_union(this->defs.begin(), this->defs.end(), defs.begin(), defs.end(), inserter(union_defs, union_defs.begin()));
-  return new lattice_elem(union_defs);
+  return new rd_elem(union_defs);
 }
 
 #include <iostream>
 
-::analysis::reaching_defs::lattice_elem *analysis::reaching_defs::lattice_elem::remove(id_set_t subtrahend) {
+::analysis::reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::remove(id_set_t subtrahend) {
 //  cout << "{";
 //  for(auto x : this->defs) {
 //    size_t a_node;
@@ -67,10 +67,10 @@ analysis::reaching_defs::lattice_elem::~lattice_elem() {
 //  cout << "}" << endl;
 //  cout << "+++++++++++++++++++++" << endl;
 
-  return new lattice_elem(difference_defs);
+  return new rd_elem(difference_defs);
 }
 
-std::ostream &analysis::reaching_defs::operator <<(std::ostream &out, lattice_elem &_this) {
+std::ostream &analysis::reaching_defs::operator <<(std::ostream &out, rd_elem &_this) {
   out << "{";
   size_t i = 0;
   for(auto it = _this.defs.begin(); it != _this.defs.end(); it++, i++) {
@@ -84,8 +84,8 @@ std::ostream &analysis::reaching_defs::operator <<(std::ostream &out, lattice_el
 }
 
 
-bool analysis::reaching_defs::lattice_elem::operator >(::analysis::lattice_elem &other) {
-  lattice_elem &other_casted = dynamic_cast<lattice_elem&>(other);
+bool analysis::reaching_defs::rd_elem::operator >(::analysis::lattice_elem &other) {
+  rd_elem &other_casted = dynamic_cast<rd_elem&>(other);
   return !includes(other_casted.defs.begin(), other_casted.defs.end(), defs.begin(), defs.end());
 }
 

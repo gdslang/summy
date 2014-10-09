@@ -8,7 +8,7 @@
 #pragma once
 
 #include <summy/analysis/analysis.h>
-#include <summy/analysis/reaching_defs/lattice_elem.h>
+#include <summy/analysis/reaching_defs/rd_elem.h>
 #include <vector>
 #include <functional>
 #include <set>
@@ -23,10 +23,10 @@ namespace reaching_defs {
 
 class reaching_defs : public analysis {
 public:
-  typedef std::vector<shared_ptr<lattice_elem>> state_t;
+  typedef std::vector<shared_ptr<rd_elem>> state_t;
 private:
   state_t state;
-  std::vector<std::function<shared_ptr<lattice_elem>()>> constraints;
+  std::vector<std::function<shared_ptr<rd_elem>()>> constraints;
   std::vector<std::set<size_t>> _dependants;
 
   void init_constraints();

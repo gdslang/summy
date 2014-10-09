@@ -28,7 +28,7 @@
 #include <cppgdsl/rreil/copy_visitor.h>
 
 #include <summy/analysis/reaching_defs/reaching_defs.h>
-#include <summy/analysis/reaching_defs/lattice_elem.h>
+#include <summy/analysis/reaching_defs/rd_elem.h>
 #include <summy/analysis/fixpoint.h>
 
 using namespace gdsl::rreil;
