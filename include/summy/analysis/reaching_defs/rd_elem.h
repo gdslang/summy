@@ -25,7 +25,6 @@ struct singleton_less {
   bool operator()(singleton_t a, singleton_t b);
 };
 
-typedef std::set<singleton_t, singleton_less> definitions_t;
 typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less> id_set_t;
 
 class rd_elem : public set_elem<singleton_t, singleton_less, rd_elem> {

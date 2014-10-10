@@ -13,9 +13,11 @@
 #include <summy/cfg/edge.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <cppgdsl/rreil/statement/statement_visitor.h>
+#include <cppgdsl/rreil/copy_visitor.h>
 #include <functional>
 #include <memory>
 #include <vector>
+#include <set>
 
 using namespace std;
 using namespace cfg;
@@ -47,6 +49,17 @@ void analysis::liveness::liveness::init_constraints() {
 //          };
         };
         v._([&](assign *i) {
+          lv_elem::elements_t newly_live;
+          visitor id_acc;
+          id_acc._((function<void(variable*)>)([&](variable *var) {
+            copy_visitor cv;
+            var->get_id()->accept(cv);
+            newly_live.insert(shared_ptr<id>(cv.get_id()));
+          }));
+          i->accept(id_acc);
+          transfer_f = [=]() {
+            return shared_ptr<lv_elem>(state[dest_node]->add(newly_live));
+          };
         });
         v._([&](load *l) {
           id_assigned(l->get_lhs()->get_id());
@@ -65,39 +78,43 @@ void analysis::liveness::liveness::init_constraints() {
       constraints[node_id] = constraint;
     }
   }
-
-//  assert(incoming.size() == cfg->node_count());
-//
-//  for(size_t i = 0; i < incoming.size(); i++) {
-//    vector<function<shared_ptr<rd_elem>()>> i_inc = incoming[i];
-//    auto constraint = [=]() {
-//      shared_ptr<rd_elem> elem = this->state[i];
-//      for(auto transfer_f : i_inc) {
-//        auto calc = transfer_f();
-//        elem = shared_ptr<rd_elem>(calc->lub(elem.get()));
-//      }
-//      return elem;
-//    };
-//    constraints.push_back(constraint);
-//  }
 }
 
 void analysis::liveness::liveness::init_dependants() {
+  _dependants = vector<set<size_t>>(cfg->node_count());
+  for(auto node : *cfg) {
+    size_t node_id = node->get_id();
+    auto &edges = *cfg->out_edges(node_id);
+    for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++)
+      _dependants[edge_it->first].insert(node_id);
+  }
 }
 
 analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg) {
+  state = state_t(cfg->node_count());
+  for(size_t i = 0; i < state.size(); i++)
+    state[i] = dynamic_pointer_cast<lv_elem>(bottom());
+
+  init_constraints();
+  init_dependants();
 }
 
 analysis::liveness::liveness::~liveness() {
 }
 
 shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::bottom() {
+  return make_shared<lv_elem>(lv_elem::elements_t {});
 }
 
 shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::eval(size_t node) {
+  return constraints[node]();
 }
 
 std::set<size_t> analysis::liveness::liveness::initial() {
+  set<size_t> nodes;
+  for(size_t i = 0; i < cfg->node_count(); i++)
+    nodes.insert(i);
+  return nodes;
 }
 
 shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::get(size_t node) {

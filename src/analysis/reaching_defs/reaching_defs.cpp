@@ -43,7 +43,7 @@ void reaching_defs::init_constraints() {
           shared_ptr<id> id_ptr(cv.get_id());
           transfer_f = [=]() {
             auto defs_rm = shared_ptr<rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
-            return shared_ptr<rd_elem>(defs_rm->add(definitions_t {make_tuple(dest_node, id_ptr)}));
+            return shared_ptr<rd_elem>(defs_rm->add(rd_elem::elements_t {make_tuple(dest_node, id_ptr)}));
           };
         };
         v._([&](assign *i) {
@@ -98,7 +98,7 @@ analysis::reaching_defs::reaching_defs::~reaching_defs() {
 }
 
 shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::bottom() {
-    return shared_ptr<rd_elem>(new rd_elem(definitions_t{}));
+    return shared_ptr<rd_elem>(new rd_elem(rd_elem::elements_t {}));
 }
 
 shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::eval(size_t node) {

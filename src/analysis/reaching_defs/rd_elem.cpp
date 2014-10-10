@@ -32,7 +32,7 @@ using namespace gdsl::rreil;
 //    cout << x->to_string() << ", ";
 //  cout << "} = " << endl;
 
-  definitions_t difference_defs;
+  elements_t difference_defs;
   for(auto def : this->elements) {
     shared_ptr<id> a_id;
     tie(ignore, a_id) = def;
