@@ -79,3 +79,11 @@ bool analysis::reaching_defs::singleton_less::operator ()(singleton_t a, singlet
   if(id_cmp > 0) return false;
   return a_node < b_node;
 }
+
+reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::lattice_elem *other) {
+  /*
+   * 2 sets aus ids, string compare
+   * => set_difference
+   */
+  return dynamic_cast<rd_elem*>(set_elem::lub(other)); //Stupid C++ :/
+}

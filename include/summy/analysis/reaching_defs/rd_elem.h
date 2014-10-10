@@ -32,9 +32,7 @@ public:
   rd_elem(elements_t elements) : set_elem(elements) {
   }
 
-  virtual rd_elem *lub(::analysis::lattice_elem *other) {
-    return dynamic_cast<rd_elem*>(set_elem::lub(other)); //Stupid C++ :/
-  }
+  virtual rd_elem *lub(::analysis::lattice_elem *other);
 
   virtual rd_elem *add(elements_t elements) {
     return dynamic_cast<rd_elem*>(set_elem::add(elements)); //Stupid C++ :/
