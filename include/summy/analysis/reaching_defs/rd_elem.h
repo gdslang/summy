@@ -45,7 +45,7 @@ public:
     return dynamic_cast<rd_elem*>(set_elem::remove(elements)); //Stupid C++ :/
   }
 
-  virtual ::analysis::reaching_defs::rd_elem *remove(id_set_t ids);
+  virtual rd_elem *remove(id_set_t ids);
 
   friend std::ostream &operator<< (std::ostream &out, rd_elem &_this);
 };

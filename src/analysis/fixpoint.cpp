@@ -14,6 +14,8 @@
 using namespace std;
 using namespace analysis;
 
+#include <iostream>
+
 void fixpoint::iterate() {
   set<size_t> worklist = analysis->initial();
   while(!worklist.empty()) {

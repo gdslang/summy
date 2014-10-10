@@ -16,17 +16,15 @@
 #include <cppgdsl/rreil/id/id.h>
 #include <memory>
 
-using std::shared_ptr;
-
 namespace analysis {
 namespace reaching_defs {
 
 class reaching_defs : public analysis {
 public:
-  typedef std::vector<shared_ptr<rd_elem>> state_t;
+  typedef std::vector<std::shared_ptr<rd_elem>> state_t;
 private:
   state_t state;
-  std::vector<std::function<shared_ptr<rd_elem>()>> constraints;
+  std::vector<std::function<std::shared_ptr<rd_elem>()>> constraints;
   std::vector<std::set<size_t>> _dependants;
 
   void init_constraints();
@@ -35,13 +33,13 @@ public:
   reaching_defs(cfg::cfg *cfg);
   ~reaching_defs();
 
-  shared_ptr<::analysis::lattice_elem> bottom();
+  shared_ptr<lattice_elem> bottom();
 
-  shared_ptr<::analysis::lattice_elem> eval(size_t node);
+  shared_ptr<lattice_elem> eval(size_t node);
   std::set<size_t> initial();
 
-  shared_ptr<::analysis::lattice_elem> get(size_t node);
-  void update(size_t node, shared_ptr<::analysis::lattice_elem> state);
+  shared_ptr<lattice_elem> get(size_t node);
+  void update(size_t node, shared_ptr<lattice_elem> state);
 
   std::set<size_t> dependants(size_t node_id);
 
