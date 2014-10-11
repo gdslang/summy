@@ -27,22 +27,13 @@ void fixpoint::iterate() {
     worklist.erase(it);
 
     shared_ptr<lattice_elem> evaluated = analysis->eval(node_id);
-
     shared_ptr<lattice_elem> current = analysis->get(node_id);
-//    cout << "+++++---" << endl;
-//    cout << "evaluated: " << *(dynamic_cast<::analysis::reaching_defs::lattice_elem*>(evaluated)) << endl;
-//    cout << "current: " << *(dynamic_cast<::analysis::reaching_defs::lattice_elem*>(current)) << endl;
     if(*evaluated > *current) {
-
-      shared_ptr<lattice_elem> lubbed = shared_ptr<lattice_elem>(current->lub(evaluated.get()));
-//      cout << "lubbed: " << *(dynamic_cast<::analysis::reaching_defs::lattice_elem*>(lubbed)) << endl;
-
-//      cout << "Updating " << node_id << "..." << endl;
-      analysis->update(node_id, lubbed);
+//      shared_ptr<lattice_elem> lubbed = shared_ptr<lattice_elem>(current->lub(evaluated.get()));
+      analysis->update(node_id, evaluated);
 
       auto dependants = analysis->dependants(node_id);
       for(auto dependant : dependants) {
-//        cout << "Inserting " << dependant << "..." << endl;
         worklist.insert(dependant);
       }
     }

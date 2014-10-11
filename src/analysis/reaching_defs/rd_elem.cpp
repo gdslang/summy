@@ -81,9 +81,43 @@ bool analysis::reaching_defs::singleton_less::operator ()(singleton_t a, singlet
 }
 
 reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::lattice_elem *other) {
-  /*
-   * 2 sets aus ids, string compare
-   * => set_difference
-   */
-  return dynamic_cast<rd_elem*>(set_elem::lub(other)); //Stupid C++ :/
+  rd_elem *other_casted = dynamic_cast<rd_elem*>(other);
+
+  id_set_t ids_mine;
+  id_set_t ids_other;
+  auto extract_ids = [&](id_set_t &dest, rd_elem::elements_t &elements) {
+    for(auto def : elements) {
+      shared_ptr<id> id;
+      tie(ignore, id) = def;
+      dest.insert(id);
+    }
+  };
+  extract_ids(ids_mine, this->elements);
+  extract_ids(ids_other, other_casted->elements);
+
+//  cout << "Mine: ";
+//  for(auto id : ids_mine)
+//    cout << id->to_string() << ", ";
+//  cout << endl << endl;
+//
+//  cout << "Others: ";
+//  for(auto id : ids_other)
+//    cout << id->to_string() << ", ";
+//  cout << endl << endl;
+
+  id_set_t ids_sym_diff;
+  set_symmetric_difference(ids_mine.begin(), ids_mine.end(), ids_other.begin(), ids_other.end(),
+      inserter(ids_sym_diff, ids_sym_diff.begin()), id_less());
+
+//  cout << "Sym Diff: ";
+//  for(auto id : ids_sym_diff)
+//    cout << id->to_string() << ", ";
+//  cout << endl << endl;
+
+  rd_elem::elements_t explicit_undef;
+  for(auto id : ids_sym_diff)
+    explicit_undef.insert(singleton_t(0, id));
+
+  auto lubbed = unique_ptr<set_elem>(set_elem::lub(other));
+  return dynamic_cast<rd_elem*>(lubbed->add(explicit_undef));
 }

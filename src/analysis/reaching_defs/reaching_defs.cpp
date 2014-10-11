@@ -64,12 +64,19 @@ void reaching_defs::init_constraints() {
   for(size_t i = 0; i < incoming.size(); i++) {
     vector<function<shared_ptr<rd_elem>()>> i_inc = incoming[i];
     auto constraint = [=]() {
-      shared_ptr<rd_elem> elem = this->state[i];
-      for(auto transfer_f : i_inc) {
-        auto calc = transfer_f();
-        elem = shared_ptr<rd_elem>(calc->lub(elem.get()));
-      }
-      return elem;
+      if(i_inc.size() > 0) {
+        shared_ptr<rd_elem> elem = i_inc[0]();
+        for(size_t i = 1; i < i_inc.size(); i++) {
+          auto calc = i_inc[i]();
+          elem = shared_ptr<rd_elem>(calc->lub(elem.get()));
+        }
+        return elem;
+      } else
+        /*
+         * If the node has no incoming edges, we return its default
+         * state.
+         */
+        return this->state[i];
     };
     constraints.push_back(constraint);
   }
