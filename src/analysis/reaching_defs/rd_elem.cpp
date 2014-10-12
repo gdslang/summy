@@ -95,24 +95,24 @@ reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::lattic
   extract_ids(ids_mine, this->elements);
   extract_ids(ids_other, other_casted->elements);
 
-//  cout << "Mine: ";
-//  for(auto id : ids_mine)
-//    cout << id->to_string() << ", ";
-//  cout << endl << endl;
-//
-//  cout << "Others: ";
-//  for(auto id : ids_other)
-//    cout << id->to_string() << ", ";
-//  cout << endl << endl;
+  cout << "Mine: ";
+  for(auto id : ids_mine)
+    cout << id->to_string() << ", ";
+  cout << endl;
+
+  cout << "Others: ";
+  for(auto id : ids_other)
+    cout << id->to_string() << ", ";
+  cout << endl;
 
   id_set_t ids_sym_diff;
   set_symmetric_difference(ids_mine.begin(), ids_mine.end(), ids_other.begin(), ids_other.end(),
       inserter(ids_sym_diff, ids_sym_diff.begin()), id_less());
 
-//  cout << "Sym Diff: ";
-//  for(auto id : ids_sym_diff)
-//    cout << id->to_string() << ", ";
-//  cout << endl << endl;
+  cout << "Sym Diff: ";
+  for(auto id : ids_sym_diff)
+    cout << id->to_string() << ", ";
+  cout << endl << endl;
 
   rd_elem::elements_t explicit_undef;
   for(auto id : ids_sym_diff)

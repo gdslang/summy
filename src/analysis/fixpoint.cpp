@@ -28,7 +28,7 @@ void fixpoint::iterate() {
 
     shared_ptr<lattice_elem> evaluated = analysis->eval(node_id);
     shared_ptr<lattice_elem> current = analysis->get(node_id);
-    if(*evaluated > *current) {
+    if(!(*current >= *evaluated)) {
 //      shared_ptr<lattice_elem> lubbed = shared_ptr<lattice_elem>(current->lub(evaluated.get()));
       analysis->update(node_id, evaluated);
 

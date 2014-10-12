@@ -64,6 +64,7 @@ void reaching_defs::init_constraints() {
   for(size_t i = 0; i < incoming.size(); i++) {
     vector<function<shared_ptr<rd_elem>()>> i_inc = incoming[i];
     auto constraint = [=]() {
+      cout << "Ev. node " << i << endl;
       if(i_inc.size() > 0) {
         shared_ptr<rd_elem> elem = i_inc[0]();
         for(size_t i = 1; i < i_inc.size(); i++) {

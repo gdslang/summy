@@ -44,9 +44,11 @@ public:
     return new SPEC_ELEM(diff_elements);
   }
 
-  bool operator>(::analysis::lattice_elem &other) {
+  bool operator>=(::analysis::lattice_elem &other) {
     set_elem &other_casted = dynamic_cast<set_elem&>(other);
-    return !std::includes(other_casted.elements.begin(), other_casted.elements.end(), elements.begin(), elements.end(),
+//    return !std::includes(other_casted.elements.begin(), other_casted.elements.end(), elements.begin(), elements.end(),
+//        SINGLETON_LESS());
+    return std::includes(elements.begin(), elements.end(), other_casted.elements.begin(), other_casted.elements.end(),
         SINGLETON_LESS());
   }
 
