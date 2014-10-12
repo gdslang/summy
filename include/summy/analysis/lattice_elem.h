@@ -14,6 +14,11 @@ namespace analysis {
 
 class lattice_elem {
 public:
+  lattice_elem() {
+
+  }
+  lattice_elem(lattice_elem &e) {
+  }
   virtual ~lattice_elem() {
   }
 

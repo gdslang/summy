@@ -22,6 +22,9 @@ public:
   set_elem(elements_t elements) :
       elements(elements) {
   }
+  set_elem(set_elem &e) : lattice_elem(e) {
+    this->elements = e.elements;
+  }
   virtual ~set_elem() {
   }
   virtual set_elem *lub(::analysis::lattice_elem *other) {
@@ -44,7 +47,7 @@ public:
     return new SPEC_ELEM(diff_elements);
   }
 
-  bool operator>=(::analysis::lattice_elem &other) {
+  virtual bool operator>=(::analysis::lattice_elem &other) {
     set_elem &other_casted = dynamic_cast<set_elem&>(other);
 //    return !std::includes(other_casted.elements.begin(), other_casted.elements.end(), elements.begin(), elements.end(),
 //        SINGLETON_LESS());

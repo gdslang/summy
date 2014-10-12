@@ -1,0 +1,3 @@
+- set_elem -> sub_set_elem
+- bottom() -> initial_state() (bottom() nach lattice_elem?)
+- Mehrere constraints zusammenlubben sollte der Fixpoint Alg machen

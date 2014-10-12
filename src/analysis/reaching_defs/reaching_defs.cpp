@@ -106,7 +106,7 @@ analysis::reaching_defs::reaching_defs::~reaching_defs() {
 }
 
 shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::bottom() {
-    return shared_ptr<rd_elem>(new rd_elem(rd_elem::elements_t {}));
+    return shared_ptr<rd_elem>(new rd_elem());
 }
 
 shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::eval(size_t node) {

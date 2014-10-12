@@ -54,15 +54,18 @@ using namespace gdsl::rreil;
 }
 
 std::ostream &analysis::reaching_defs::operator <<(std::ostream &out, rd_elem &_this) {
-  out << "{";
-  size_t i = 0;
-  for(auto it = _this.elements.begin(); it != _this.elements.end(); it++, i++) {
-    size_t node;
-    shared_ptr<id> _id;
-    tie(node, _id) = *it;
-    out << "(" << node << ", " << *_id << ")" << (i < _this.elements.size() - 1 ? ", " : "");
+  if(_this.bottom) out << "BOT";
+  else {
+    out << "{";
+    size_t i = 0;
+    for(auto it = _this.elements.begin(); it != _this.elements.end(); it++, i++) {
+      size_t node;
+      shared_ptr<id> _id;
+      tie(node, _id) = *it;
+      out << "(" << node << ", " << *_id << ")" << (i < _this.elements.size() - 1 ? ", " : "");
+    }
+    out << "}";
   }
-  out << "}";
   return out;
 }
 
@@ -82,6 +85,10 @@ bool analysis::reaching_defs::singleton_less::operator ()(singleton_t a, singlet
 
 reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::lattice_elem *other) {
   rd_elem *other_casted = dynamic_cast<rd_elem*>(other);
+  if(bottom)
+    return new rd_elem(*other_casted);
+  else if(other_casted->bottom)
+    return new rd_elem(*this);
 
   id_set_t ids_mine;
   id_set_t ids_other;
@@ -120,4 +127,13 @@ reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::lattic
 
   auto lubbed = unique_ptr<set_elem>(set_elem::lub(other));
   return dynamic_cast<rd_elem*>(lubbed->add(explicit_undef));
+}
+
+bool analysis::reaching_defs::rd_elem::operator >=(::analysis::lattice_elem &other) {
+  rd_elem &other_casted = dynamic_cast<rd_elem&>(other);
+  if(bottom)
+    return other_casted.bottom;
+  if(other_casted.bottom)
+    return true;
+  return set_elem::operator >=(other);
 }
