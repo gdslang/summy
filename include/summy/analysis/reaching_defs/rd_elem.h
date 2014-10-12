@@ -34,6 +34,9 @@ public:
   rd_elem(elements_t elements) : set_elem(elements) {
     bottom = false;
   }
+  /**
+   * Bottom constructor
+   */
   rd_elem() : set_elem(elements_t { }) {
     bottom = true;
   }

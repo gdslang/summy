@@ -93,13 +93,33 @@ void reaching_defs::init_dependants() {
   }
 }
 
-reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {
-  state = state_t(cfg->node_count());
-  for(size_t i = 0; i < state.size(); i++)
-    state[i] = dynamic_pointer_cast<rd_elem>(bottom());
+void reaching_defs::init_fixpoint_initial() {
+  for(size_t i = 0; i < cfg->node_count(); i++)
+    fixpoint_initial.insert(i);
 
+  for(auto deps : _dependants)
+    for(auto dep : deps) {
+      fixpoint_initial.erase(dep);
+//      auto dep_it = fixpoint_initial.find(dep);
+//      if(dep_it != fixpoint_initial.end())
+//        fixpoint_initial.erase(dep)
+    }
+
+  for(auto blah : fixpoint_initial)
+    cout << "initial: " << blah << endl;
+}
+
+reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {
   init_constraints();
   init_dependants();
+  init_fixpoint_initial();
+
+  state = state_t(cfg->node_count());
+  for(size_t i = 0; i < state.size(); i++)
+    if(fixpoint_initial.find(i) != fixpoint_initial.end())
+      state[i] = dynamic_pointer_cast<rd_elem>(start_value());
+    else
+      state[i] = dynamic_pointer_cast<rd_elem>(bottom());
 }
 
 analysis::reaching_defs::reaching_defs::~reaching_defs() {
@@ -109,15 +129,20 @@ shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::bottom() {
     return shared_ptr<rd_elem>(new rd_elem());
 }
 
+shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::start_value() {
+    return shared_ptr<rd_elem>(new rd_elem(rd_elem::elements_t {}));
+}
+
 shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::eval(size_t node) {
   return constraints[node]();
 }
 
 std::set<size_t> analysis::reaching_defs::reaching_defs::initial() {
-  set<size_t> nodes;
-  for(size_t i = 0; i < cfg->node_count(); i++)
-    nodes.insert(i);
-  return nodes;
+//  set<size_t> nodes;
+//  for(size_t i = 0; i < cfg->node_count(); i++)
+//    nodes.insert(i);
+//  return nodes;
+  return fixpoint_initial;
 }
 
 shared_ptr<::analysis::lattice_elem> reaching_defs::reaching_defs::get(size_t node) {

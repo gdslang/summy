@@ -18,6 +18,7 @@ using namespace analysis;
 
 void fixpoint::iterate() {
   set<size_t> worklist = analysis->initial();
+  set<size_t> seen;
   while(!worklist.empty()) {
 //    size_t node_id = worklist.front();
 //    worklist.pop();
@@ -28,14 +29,21 @@ void fixpoint::iterate() {
 
     shared_ptr<lattice_elem> evaluated = analysis->eval(node_id);
     shared_ptr<lattice_elem> current = analysis->get(node_id);
-    if(!(*current >= *evaluated)) {
+
+    bool propagate = !(*current >= *evaluated);
+
+    if(propagate) {
 //      shared_ptr<lattice_elem> lubbed = shared_ptr<lattice_elem>(current->lub(evaluated.get()));
       analysis->update(node_id, evaluated);
-
-      auto dependants = analysis->dependants(node_id);
-      for(auto dependant : dependants) {
-        worklist.insert(dependant);
-      }
     }
+
+//    if(seen.find(node_id) == seen.end())
+    if(propagate || seen.find(node_id) == seen.end()) {
+      auto dependants = analysis->dependants(node_id);
+      for(auto dependant : dependants)
+        worklist.insert(dependant);
+    }
+
+    seen.insert(node_id);
   }
 }

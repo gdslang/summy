@@ -30,8 +30,6 @@ public:
   virtual ~analysis() {
   }
 
-  virtual shared_ptr<lattice_elem> bottom() = 0;
-
   virtual shared_ptr<lattice_elem> eval(size_t node) = 0;
   virtual std::set<size_t> initial() = 0;
 

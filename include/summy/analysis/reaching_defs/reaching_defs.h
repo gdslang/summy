@@ -26,20 +26,23 @@ private:
   state_t state;
   std::vector<std::function<std::shared_ptr<rd_elem>()>> constraints;
   std::vector<std::set<size_t>> _dependants;
+  std::set<size_t> fixpoint_initial;
 
   void init_constraints();
   void init_dependants();
+  void init_fixpoint_initial();
 public:
   reaching_defs(cfg::cfg *cfg);
   ~reaching_defs();
 
-  shared_ptr<lattice_elem> bottom();
+  std::shared_ptr<lattice_elem> bottom();
+  std::shared_ptr<lattice_elem> start_value();
 
-  shared_ptr<lattice_elem> eval(size_t node);
+  std::shared_ptr<lattice_elem> eval(size_t node);
   std::set<size_t> initial();
 
-  shared_ptr<lattice_elem> get(size_t node);
-  void update(size_t node, shared_ptr<lattice_elem> state);
+  std::shared_ptr<lattice_elem> get(size_t node);
+  void update(size_t node, std::shared_ptr<lattice_elem> state);
 
   std::set<size_t> dependants(size_t node_id);
 
