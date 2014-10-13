@@ -51,6 +51,10 @@ public:
     return set_elem(diff_elements);
   }
 
+  virtual bool contains(SINGLETON_T s) {
+    return elements.find(s) != elements.end();
+  }
+
   virtual bool operator>=(set_elem &other) {
 //    return !std::includes(other_casted.elements.begin(), other_casted.elements.end(), elements.begin(), elements.end(),
 //        SINGLETON_LESS());

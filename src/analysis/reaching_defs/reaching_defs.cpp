@@ -79,9 +79,6 @@ void reaching_defs::init_fixpoint_initial() {
     for(auto dep : deps) {
       fixpoint_initial.erase(dep);
     }
-
-  for(auto blah : fixpoint_initial)
-    cout << "initial: " << blah << endl;
 }
 
 reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {

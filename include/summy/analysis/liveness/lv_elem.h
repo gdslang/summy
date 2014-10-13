@@ -43,6 +43,7 @@ public:
   virtual lv_elem *add(elements_t elements);
   virtual lv_elem *remove(elements_t elements);
 
+  bool contains(singleton_t s);
   virtual bool operator>=(::analysis::lattice_elem &other);
 
   friend std::ostream &operator<< (std::ostream &out, lv_elem &_this);

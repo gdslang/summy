@@ -54,10 +54,13 @@ void analysis::liveness::liveness::init_constraints() {
         singleton_t lhs(cv.get_id());
 
         transfer_f = [=]() {
-          cout << *lhs << endl;
-          shared_ptr<lv_elem> dead_removed(state[dest_node]->remove({ lhs }));
+//          cout << *lhs << endl;
+          if(state[dest_node]->contains(lhs)) {
+            shared_ptr<lv_elem> dead_removed(state[dest_node]->remove({ lhs }));
 //            cout << "after dead_removed: " << *dead_removed << endl;
-          return shared_ptr<lv_elem>(dead_removed->add(newly_live));
+            return shared_ptr<lv_elem>(dead_removed->add(newly_live));
+          } else
+            return state[dest_node];
         };
       };
       auto access = [&](function<void(visitor&)> accept_live) {
@@ -115,6 +118,17 @@ void analysis::liveness::liveness::init_dependants() {
   }
 }
 
+void liveness::init_fixpoint_initial() {
+  for(size_t i = 0; i < cfg->node_count(); i++)
+    fixpoint_initial.insert(i);
+
+  for(auto deps : _dependants)
+    for(auto dep : deps) {
+      fixpoint_initial.erase(dep);
+    }
+}
+
+
 analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg) {
   state = state_t(cfg->node_count());
   for(size_t i = 0; i < state.size(); i++)
@@ -122,6 +136,7 @@ analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg) {
 
   init_constraints();
   init_dependants();
+  init_fixpoint_initial();
 }
 
 analysis::liveness::liveness::~liveness() {
@@ -132,11 +147,7 @@ shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::bottom() {
 }
 
 std::set<size_t> analysis::liveness::liveness::initial() {
-  set<size_t> nodes;
-//  for(size_t i = 0; i < cfg->node_count(); i++)
-//    nodes.insert(i);
-  nodes.insert(49);
-  return nodes;
+  return fixpoint_initial;
 }
 
 shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::get(size_t node) {

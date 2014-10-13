@@ -36,6 +36,10 @@ bool analysis::liveness::lv_elem::operator >=(::analysis::lattice_elem &other) {
   return eset >= other_casted.eset;
 }
 
+bool analysis::liveness::lv_elem::contains(singleton_t s) {
+  return eset.contains(s);
+}
+
 std::ostream &analysis::liveness::operator <<(std::ostream &out, lv_elem &_this) {
   out << "{";
   size_t i = 0;

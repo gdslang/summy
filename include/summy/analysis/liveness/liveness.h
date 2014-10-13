@@ -22,9 +22,11 @@ public:
 private:
   state_t state;
   std::vector<std::set<size_t>> _dependants;
+  std::set<size_t> fixpoint_initial;
 
   void init_constraints();
   void init_dependants();
+  void init_fixpoint_initial();
 public:
   liveness(cfg::cfg *cfg);
   ~liveness();
