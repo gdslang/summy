@@ -25,7 +25,6 @@ using namespace analysis::liveness;
 using namespace gdsl::rreil;
 
 void analysis::liveness::liveness::init_constraints() {
-  constraints = vector<constraint_t>(cfg->node_count());
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
     vector<constraint_t> node_constraints;
@@ -67,15 +66,7 @@ void analysis::liveness::liveness::init_constraints() {
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
-      auto constraint = [=]() {
-        shared_ptr<lv_elem> elem = this->state[node_id];
-        for(auto transfer_f : node_constraints) {
-          auto calc = transfer_f();
-          elem = shared_ptr<lv_elem>(calc->lub(elem.get()));
-        }
-        return elem;
-      };
-      constraints[node_id] = constraint;
+      constraints[node_id].push_back(transfer_f);
     }
   }
 }
@@ -104,10 +95,6 @@ analysis::liveness::liveness::~liveness() {
 
 shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::bottom() {
   return make_shared<lv_elem>(lv_elem::elements_t {});
-}
-
-shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::eval(size_t node) {
-  return constraints[node]();
 }
 
 std::set<size_t> analysis::liveness::liveness::initial() {

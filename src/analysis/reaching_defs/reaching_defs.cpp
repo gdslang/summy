@@ -24,7 +24,6 @@ using namespace gdsl::rreil;
 using namespace analysis::reaching_defs;
 
 void reaching_defs::init_constraints() {
-  auto incoming = vector<vector<function<shared_ptr<rd_elem>()>>>(cfg->node_count());
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
     auto &edges = *cfg->out_edges(node_id);
@@ -55,32 +54,11 @@ void reaching_defs::init_constraints() {
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
-      incoming[dest_node].push_back(transfer_f);
+      constraints[dest_node].push_back(transfer_f);
     }
   }
 
-  assert(incoming.size() == cfg->node_count());
-
-  for(size_t i = 0; i < incoming.size(); i++) {
-    vector<function<shared_ptr<rd_elem>()>> i_inc = incoming[i];
-    auto constraint = [=]() {
-//      cout << "Ev. node " << i << endl;
-      if(i_inc.size() > 0) {
-        shared_ptr<rd_elem> elem = i_inc[0]();
-        for(size_t i = 1; i < i_inc.size(); i++) {
-          auto calc = i_inc[i]();
-          elem = shared_ptr<rd_elem>(calc->lub(elem.get()));
-        }
-        return elem;
-      } else
-        /*
-         * If the node has no incoming edges, we return its default
-         * state.
-         */
-        return this->state[i];
-    };
-    constraints.push_back(constraint);
-  }
+  assert(constraints.size() == cfg->node_count());
 }
 
 void reaching_defs::init_dependants() {
@@ -131,10 +109,6 @@ shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::bottom() {
 
 shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::start_value() {
     return shared_ptr<rd_elem>(new rd_elem(rd_elem::elements_t {}));
-}
-
-shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::eval(size_t node) {
-  return constraints[node]();
 }
 
 std::set<size_t> analysis::reaching_defs::reaching_defs::initial() {

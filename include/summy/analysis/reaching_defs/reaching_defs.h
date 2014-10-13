@@ -24,7 +24,6 @@ public:
   typedef std::vector<std::shared_ptr<rd_elem>> state_t;
 private:
   state_t state;
-  std::vector<std::function<std::shared_ptr<rd_elem>()>> constraints;
   std::vector<std::set<size_t>> _dependants;
   std::set<size_t> fixpoint_initial;
 
@@ -38,7 +37,6 @@ public:
   std::shared_ptr<lattice_elem> bottom();
   std::shared_ptr<lattice_elem> start_value();
 
-  std::shared_ptr<lattice_elem> eval(size_t node);
   std::set<size_t> initial();
 
   std::shared_ptr<lattice_elem> get(size_t node);

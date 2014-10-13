@@ -21,7 +21,6 @@ public:
   typedef std::function<std::shared_ptr<lv_elem>()> constraint_t;
 private:
   state_t state;
-  std::vector<constraint_t> constraints;
   std::vector<std::set<size_t>> _dependants;
 
   void init_constraints();
@@ -32,7 +31,6 @@ public:
 
   shared_ptr<lattice_elem> bottom();
 
-  shared_ptr<lattice_elem> eval(size_t node);
   std::set<size_t> initial();
 
   shared_ptr<lattice_elem> get(size_t node);

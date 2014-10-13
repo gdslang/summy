@@ -5,7 +5,6 @@
  *      Author: Julian Kranz
  */
 
-
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/analysis.h>
 #include <summy/analysis/lattice_elem.h>
@@ -27,13 +26,25 @@ void fixpoint::iterate() {
     node_id = *it;
     worklist.erase(it);
 
-    shared_ptr<lattice_elem> evaluated = analysis->eval(node_id);
-    shared_ptr<lattice_elem> current = analysis->get(node_id);
-
-    bool propagate = !(*current >= *evaluated);
+    bool propagate;
+    shared_ptr<lattice_elem> evaluated;
+    auto constraints = analysis->constraints_at(node_id);
+    if(constraints.size() > 0) {
+      evaluated = constraints[0]();
+      for(size_t i = 1; i < constraints.size(); i++) {
+        auto calc = constraints[i]();
+        evaluated = shared_ptr<lattice_elem>(calc->lub(evaluated.get()));
+      }
+      shared_ptr<lattice_elem> current = analysis->get(node_id);
+      propagate = !(*current >= *evaluated);
+    } else
+    /*
+     * If the node has no incoming analysis dependency edges, we keep its default
+     * state.
+     */
+    propagate = false;
 
     if(propagate) {
-//      shared_ptr<lattice_elem> lubbed = shared_ptr<lattice_elem>(current->lub(evaluated.get()));
       analysis->update(node_id, evaluated);
     }
 
