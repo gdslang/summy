@@ -18,6 +18,7 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <iostream>
 
 using namespace std;
 using namespace cfg;
@@ -38,30 +39,57 @@ void analysis::liveness::liveness::init_constraints() {
       ev._([&](stmt_edge *edge) { //Todo: cond_edge
         statement *stmt = edge->get_stmt();
         statement_visitor v;
-        auto id_assigned = [&](id *i) {
-//          copy_visitor cv;
-//          i->accept(cv);
-//          shared_ptr<id> id_ptr(cv.get_id());
-//          transfer_f = [=]() {
-//            auto defs_rm = shared_ptr<rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
-//            return shared_ptr<rd_elem>(defs_rm->add(definitions_t {make_tuple(dest_node, id_ptr)}));
-//          };
-        };
-        v._([&](assign *i) {
+        auto get_newly_live = [&](function<void(visitor&)> accept_live) {
+          copy_visitor cv;
           lv_elem::elements_t newly_live;
           visitor id_acc;
           id_acc._((function<void(variable*)>)([&](variable *var) {
-            copy_visitor cv;
             var->get_id()->accept(cv);
-            newly_live.insert(shared_ptr<id>(cv.get_id()));
+            newly_live.insert(singleton_t(cv.get_id()));
           }));
-          i->get_rhs()->accept(id_acc);
+          accept_live(id_acc);
+          return newly_live;
+        };
+        auto assignment = [&](function<void(visitor&)> accept_live, function<void(visitor&)> accept_dead) {
+          auto newly_live = get_newly_live(accept_live);
+
+          copy_visitor cv;
+          accept_dead(cv);
+          singleton_t lhs(cv.get_id());
+
+          transfer_f = [=]() {
+            cout << *lhs << endl;
+            shared_ptr<lv_elem> dead_removed(state[dest_node]->remove({ lhs }));
+            cout << "after dead_removed: " << *dead_removed << endl;
+            return shared_ptr<lv_elem>(dead_removed->add(newly_live));
+          };
+        };
+        auto access = [&](function<void(visitor&)> accept_live) {
+          auto newly_live = get_newly_live(accept_live);
           transfer_f = [=]() {
             return shared_ptr<lv_elem>(state[dest_node]->add(newly_live));
           };
+        };
+        v._([&](assign *i) {
+          assignment([&](visitor &v) {
+            i->get_rhs()->accept(v);
+          },
+          [&](visitor &v) {
+            i->get_lhs()->get_id()->accept(v);
+          });
         });
         v._([&](load *l) {
-          id_assigned(l->get_lhs()->get_id());
+          assignment([&](visitor &v) {
+            l->get_address()->accept(v);
+          },
+          [&](visitor &v) {
+            l->get_lhs()->get_id()->accept(v);
+          });
+        });
+        v._default([&](statement *s) {
+          access([&](visitor &v){
+            s->accept(v);
+          });
         });
         stmt->accept(v);
       });
