@@ -78,9 +78,6 @@ void reaching_defs::init_fixpoint_initial() {
   for(auto deps : _dependants)
     for(auto dep : deps) {
       fixpoint_initial.erase(dep);
-//      auto dep_it = fixpoint_initial.find(dep);
-//      if(dep_it != fixpoint_initial.end())
-//        fixpoint_initial.erase(dep)
     }
 
   for(auto blah : fixpoint_initial)
@@ -112,10 +109,6 @@ shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::start_value() {
 }
 
 std::set<size_t> analysis::reaching_defs::reaching_defs::initial() {
-//  set<size_t> nodes;
-//  for(size_t i = 0; i < cfg->node_count(); i++)
-//    nodes.insert(i);
-//  return nodes;
   return fixpoint_initial;
 }
 

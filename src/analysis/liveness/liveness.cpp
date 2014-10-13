@@ -32,7 +32,7 @@ void analysis::liveness::liveness::init_constraints() {
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       size_t dest_node = edge_it->first;
       constraint_t transfer_f = [=]() {
-        return state[node_id];
+        return state[dest_node];
       };
       edge_visitor ev;
       ev._([&](stmt_edge *edge) { //Todo: cond_edge
@@ -55,7 +55,7 @@ void analysis::liveness::liveness::init_constraints() {
             var->get_id()->accept(cv);
             newly_live.insert(shared_ptr<id>(cv.get_id()));
           }));
-          i->accept(id_acc);
+          i->get_rhs()->accept(id_acc);
           transfer_f = [=]() {
             return shared_ptr<lv_elem>(state[dest_node]->add(newly_live));
           };
@@ -99,19 +99,27 @@ shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::bottom() {
 
 std::set<size_t> analysis::liveness::liveness::initial() {
   set<size_t> nodes;
-  for(size_t i = 0; i < cfg->node_count(); i++)
-    nodes.insert(i);
+//  for(size_t i = 0; i < cfg->node_count(); i++)
+//    nodes.insert(i);
+  nodes.insert(49);
   return nodes;
 }
 
 shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::get(size_t node) {
+  return state[node];
 }
 
 void analysis::liveness::liveness::update(size_t node, shared_ptr<lattice_elem> state) {
+  this->state[node] = dynamic_pointer_cast<lv_elem>(state);
 }
 
 std::set<size_t> analysis::liveness::liveness::dependants(size_t node_id) {
+  return _dependants[node_id];
 }
 
-std::ostream& analysis::liveness::operator <<(std::ostream& out, liveness& _this) {
+std::ostream& analysis::liveness::operator <<(std::ostream &out, liveness &_this) {
+  for(size_t i = 0; i < _this.state.size(); i++) {
+    out << i << ": " << *_this.state[i] << endl;
+  }
+  return out;
 }

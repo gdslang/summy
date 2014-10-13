@@ -30,6 +30,7 @@
 #include <summy/analysis/reaching_defs/reaching_defs.h>
 #include <summy/analysis/reaching_defs/rd_elem.h>
 #include <summy/analysis/fixpoint.h>
+#include <summy/analysis/liveness/liveness.h>
 
 using namespace gdsl::rreil;
 using namespace std;
@@ -110,7 +111,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto prog = elf(g);
+  auto prog = manual(g);
 
   cfg::cfg cfg(prog);
 
@@ -132,12 +133,15 @@ int main(void) {
     delete t;
   }
 
-  analysis::reaching_defs::reaching_defs r(&cfg);
+//  analysis::reaching_defs::reaching_defs r(&cfg);
+//  analysis::fixpoint fpr(&r);
+//  fpr.iterate();
+//  cout << r;
 
-  analysis::fixpoint fp(&r);
-  fp.iterate();
-
-  cout << r;
+  analysis::liveness::liveness l(&cfg);
+  analysis::fixpoint fpl(&l);
+  fpl.iterate();
+  cout << l;
 
 //  printf("RReil (after transformations):\n");
 //  for(statement *s : *rreil)
