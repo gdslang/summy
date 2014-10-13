@@ -13,6 +13,7 @@
 #include <summy/analysis/subset_man.h>
 #include <summy/analysis/util.h>
 #include <set>
+#include <map>
 //#include <tuple>
 //#include <ostream>
 #include <memory>
@@ -21,22 +22,22 @@ namespace analysis {
 namespace liveness {
 
 typedef std::shared_ptr<gdsl::rreil::id> singleton_t;
-
 typedef id_less singleton_less;
 
 //class lv_elem;
 //typedef set_elem<singleton_t, singleton_less, lv_elem> lv_elem_base;
-class lv_elem : public lattice_elem {
+class lv_elem: public lattice_elem {
 public:
-  typedef set_elem<singleton_t, singleton_less> lv_subset_man;
-  typedef lv_subset_man::elements_t elements_t;
+//  typedef set_elem<singleton_t, singleton_less> lv_subset_man;
+  typedef std::map<singleton_t, unsigned long long int, singleton_less> elements_t;
 private:
-  lv_subset_man eset;
+  elements_t elements;
 
-  lv_elem(lv_subset_man eset) : eset(eset) {
-  }
+//  lv_elem(lv_subset_man eset) : eset(eset) {
+//  }
 public:
-  lv_elem(elements_t elements) : eset(elements) {
+  lv_elem(elements_t elements) :
+      elements(elements) {
   }
 
   virtual lv_elem *lub(::analysis::lattice_elem *other);
@@ -46,7 +47,7 @@ public:
   bool contains(singleton_t s);
   virtual bool operator>=(::analysis::lattice_elem &other);
 
-  friend std::ostream &operator<< (std::ostream &out, lv_elem &_this);
+  friend std::ostream &operator<<(std::ostream &out, lv_elem &_this);
 };
 
 std::ostream &operator<<(std::ostream &out, lv_elem &_this);

@@ -17,8 +17,23 @@ using namespace analysis::liveness;
 
 lv_elem *analysis::liveness::lv_elem::lub(::analysis::lattice_elem *other) {
   lv_elem *other_casted = dynamic_cast<lv_elem*>(other);
-  auto lubbed = eset.lub(other_casted->eset);
-  return new lv_elem(lubbed);
+
+  /*
+   * Todo: Use set_symmetric_difference / set_intersection (?)
+   */
+
+  elements_t result;
+  for(auto &mapping : elements) {
+    auto other_mapping = other_casted->elements.find(mapping.first);
+    if(other_mapping == other_casted->elements.end()) result.insert(mapping);
+    else result[mapping.first] = mapping.second | other_mapping->second;
+  }
+  for(auto &mapping_other : other_casted->elements) {
+    auto mapping = other_casted->elements.find(mapping_other.first);
+    if(mapping == other_casted->elements.end()) result.insert(mapping_other);
+  }
+
+  return new lv_elem(result);
 }
 
 lv_elem *analysis::liveness::lv_elem::add(elements_t elements) {
