@@ -26,7 +26,7 @@ void fixpoint::iterate() {
     node_id = *it;
     worklist.erase(it);
 
-    cout << "next: " << node_id << endl;
+//    cout << "next: " << node_id << endl;
 
     bool propagate;
     shared_ptr<lattice_elem> evaluated;

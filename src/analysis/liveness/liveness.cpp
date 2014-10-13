@@ -35,41 +35,41 @@ void analysis::liveness::liveness::init_constraints() {
       constraint_t transfer_f = [=]() {
         return state[dest_node];
       };
+      auto get_newly_live = [&](function<void(visitor&)> accept_live) {
+        copy_visitor cv;
+        lv_elem::elements_t newly_live;
+        visitor id_acc;
+        id_acc._((function<void(variable*)>)([&](variable *var) {
+          var->get_id()->accept(cv);
+          newly_live.insert(singleton_t(cv.get_id()));
+        }));
+        accept_live(id_acc);
+        return newly_live;
+      };
+      auto assignment = [&](function<void(visitor&)> accept_live, function<void(visitor&)> accept_dead) {
+        auto newly_live = get_newly_live(accept_live);
+
+        copy_visitor cv;
+        accept_dead(cv);
+        singleton_t lhs(cv.get_id());
+
+        transfer_f = [=]() {
+          cout << *lhs << endl;
+          shared_ptr<lv_elem> dead_removed(state[dest_node]->remove({ lhs }));
+//            cout << "after dead_removed: " << *dead_removed << endl;
+          return shared_ptr<lv_elem>(dead_removed->add(newly_live));
+        };
+      };
+      auto access = [&](function<void(visitor&)> accept_live) {
+        auto newly_live = get_newly_live(accept_live);
+        transfer_f = [=]() {
+          return shared_ptr<lv_elem>(state[dest_node]->add(newly_live));
+        };
+      };
       edge_visitor ev;
-      ev._([&](stmt_edge *edge) { //Todo: cond_edge
+      ev._([&](stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
-        auto get_newly_live = [&](function<void(visitor&)> accept_live) {
-          copy_visitor cv;
-          lv_elem::elements_t newly_live;
-          visitor id_acc;
-          id_acc._((function<void(variable*)>)([&](variable *var) {
-            var->get_id()->accept(cv);
-            newly_live.insert(singleton_t(cv.get_id()));
-          }));
-          accept_live(id_acc);
-          return newly_live;
-        };
-        auto assignment = [&](function<void(visitor&)> accept_live, function<void(visitor&)> accept_dead) {
-          auto newly_live = get_newly_live(accept_live);
-
-          copy_visitor cv;
-          accept_dead(cv);
-          singleton_t lhs(cv.get_id());
-
-          transfer_f = [=]() {
-            cout << *lhs << endl;
-            shared_ptr<lv_elem> dead_removed(state[dest_node]->remove({ lhs }));
-            cout << "after dead_removed: " << *dead_removed << endl;
-            return shared_ptr<lv_elem>(dead_removed->add(newly_live));
-          };
-        };
-        auto access = [&](function<void(visitor&)> accept_live) {
-          auto newly_live = get_newly_live(accept_live);
-          transfer_f = [=]() {
-            return shared_ptr<lv_elem>(state[dest_node]->add(newly_live));
-          };
-        };
         v._([&](assign *i) {
           assignment([&](visitor &v) {
             i->get_rhs()->accept(v);
@@ -92,6 +92,12 @@ void analysis::liveness::liveness::init_constraints() {
           });
         });
         stmt->accept(v);
+      });
+      ev._([&](cond_edge *edge) {
+        sexpr *cond = edge->get_cond();
+        access([&](visitor &v) {
+          cond->accept(v);
+        });
       });
       edge_it->second->accept(ev);
       constraints[node_id].push_back(transfer_f);
