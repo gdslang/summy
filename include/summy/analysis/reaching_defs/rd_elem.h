@@ -29,19 +29,20 @@ typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less> id_set_t;
 
 class rd_elem : public set_elem<singleton_t, singleton_less, rd_elem> {
 private:
-  bool bottom = true;
+  bool contains_undef;
 public:
-  rd_elem(elements_t elements) : set_elem(elements) {
-    bottom = false;
+  rd_elem(elements_t elements) : contains_undef(false), set_elem(elements) {
+  }
+  rd_elem(bool contains_undef, elements_t elements) :
+      contains_undef(contains_undef), set_elem(elements) {
   }
   /**
    * Bottom constructor
    */
-  rd_elem() : set_elem(elements_t { }) {
-    bottom = true;
+  rd_elem() : contains_undef(true), set_elem(elements_t { }) {
   }
   rd_elem(rd_elem &e) : set_elem(e) {
-    this->bottom = e.bottom;
+    this->contains_undef = e.contains_undef;
   }
 
   virtual rd_elem *lub(::analysis::lattice_elem *other);
