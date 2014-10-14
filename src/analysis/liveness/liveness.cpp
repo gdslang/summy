@@ -37,11 +37,11 @@ void analysis::liveness::liveness::init_constraints() {
       };
       auto get_newly_live = [&](function<void(visitor&)> accept_live) {
         copy_visitor cv;
-        lv_elem::elements_t newly_live;
+        vector<singleton_t> newly_live;
         visitor id_acc;
         id_acc._((function<void(variable*)>)([&](variable *var) {
           var->get_id()->accept(cv);
-          newly_live.insert(singleton_t(cv.get_id()));
+          newly_live.push_back(singleton_t(shared_ptr<gdsl::rreil::id>(cv.get_id()), 0xff));
         }));
         accept_live(id_acc);
         return newly_live;
@@ -51,11 +51,11 @@ void analysis::liveness::liveness::init_constraints() {
 
         copy_visitor cv;
         accept_dead(cv);
-        singleton_t lhs(cv.get_id());
+        singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), 0xff);
 
         transfer_f = [=]() {
 //          cout << *lhs << endl;
-          if(state[dest_node]->contains(lhs)) {
+          if(state[dest_node]->contains_bit(lhs)) {
             shared_ptr<lv_elem> dead_removed(state[dest_node]->remove({ lhs }));
 //            cout << "after dead_removed: " << *dead_removed << endl;
             return shared_ptr<lv_elem>(dead_removed->add(newly_live));
@@ -156,6 +156,7 @@ shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::get(size_t node
 
 void analysis::liveness::liveness::update(size_t node, shared_ptr<lattice_elem> state) {
   this->state[node] = dynamic_pointer_cast<lv_elem>(state);
+  cout << "state " << node << " " << *this->state[node] << endl;
 }
 
 std::set<size_t> analysis::liveness::liveness::dependants(size_t node_id) {

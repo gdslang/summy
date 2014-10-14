@@ -16,7 +16,7 @@
 //using namespace gdsl::rreil;
 
 bool analysis::id_less::operator ()(std::shared_ptr<gdsl::rreil::id> a,
-    std::shared_ptr<gdsl::rreil::id> b) {
+    std::shared_ptr<gdsl::rreil::id> b) const {
 //  cout << a->to_string() << " < " << b->to_string() << ": " << (a->to_string().compare(b->to_string()) < 0) << endl;
 //  string a_str;
 //  string b_str;

@@ -12,7 +12,7 @@
 namespace analysis {
 
 struct id_less {
-  bool operator()(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b);
+  bool operator()(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b) const;
 };
 
 }
