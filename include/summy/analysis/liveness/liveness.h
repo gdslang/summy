@@ -21,29 +21,20 @@ public:
   typedef std::function<std::shared_ptr<lv_elem>()> constraint_t;
 private:
   state_t state;
-  std::vector<std::set<size_t>> _dependants;
-  std::set<size_t> fixpoint_initial;
 
-  void init_constraints();
-  void init_dependants();
-  void init_fixpoint_initial();
+  virtual void init_constraints();
+  virtual void init_dependants();
 public:
   liveness(cfg::cfg *cfg);
   ~liveness();
 
   shared_ptr<lattice_elem> bottom();
 
-  std::set<size_t> initial();
-
   shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, shared_ptr<lattice_elem> state);
 
-  std::set<size_t> dependants(size_t node_id);
-
-  friend std::ostream &operator<< (std::ostream &out, liveness &_this);
+  void put(std::ostream &out);
 };
-
-std::ostream &operator<<(std::ostream &out, liveness &_this);
 
 }  // namespace reaching_defs
 }  // namespace analysis

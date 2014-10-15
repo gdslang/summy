@@ -71,20 +71,8 @@ void reaching_defs::init_dependants() {
   }
 }
 
-void reaching_defs::init_fixpoint_initial() {
-  for(size_t i = 0; i < cfg->node_count(); i++)
-    fixpoint_initial.insert(i);
-
-  for(auto deps : _dependants)
-    for(auto dep : deps) {
-      fixpoint_initial.erase(dep);
-    }
-}
-
 reaching_defs::reaching_defs::reaching_defs(class cfg *cfg) : analysis::analysis(cfg) {
-  init_constraints();
-  init_dependants();
-  init_fixpoint_initial();
+  init();
 
   state = state_t(cfg->node_count());
   for(size_t i = 0; i < state.size(); i++)
@@ -105,10 +93,6 @@ shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::start_value() {
     return shared_ptr<rd_elem>(new rd_elem(rd_elem::elements_t {}));
 }
 
-std::set<size_t> analysis::reaching_defs::reaching_defs::initial() {
-  return fixpoint_initial;
-}
-
 shared_ptr<::analysis::lattice_elem> reaching_defs::reaching_defs::get(size_t node) {
   return state[node];
 }
@@ -117,13 +101,7 @@ void reaching_defs::update(size_t node, shared_ptr<::analysis::lattice_elem> sta
   this->state[node] = dynamic_pointer_cast<rd_elem>(state);
 }
 
-std::set<size_t> reaching_defs::dependants(size_t node_id) {
-  return _dependants[node_id];
-}
-
-std::ostream &analysis::reaching_defs::operator <<(std::ostream &out, reaching_defs &_this) {
-  for(size_t i = 0; i < _this.state.size(); i++) {
-    out << i << ": " << *_this.state[i] << endl;
-  }
-  return out;
+void analysis::reaching_defs::reaching_defs::put(std::ostream &out) {
+  for(size_t i = 0; i < state.size(); i++)
+    out << i << ": " << *state[i] << endl;
 }

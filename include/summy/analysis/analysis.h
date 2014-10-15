@@ -11,6 +11,7 @@
 #include <tuple>
 #include <summy/cfg/cfg.h>
 #include <memory>
+#include <iostream>
 
 using std::shared_ptr;
 
@@ -24,24 +25,36 @@ public:
 protected:
   cfg::cfg *cfg;
   std::vector<std::vector<constraint_t>> constraints;
-  /*
-   * Hält cfg, vector von Zuständen
-   */
+  std::vector<std::set<size_t>> _dependants;
+  std::set<size_t> fixpoint_initial;
+
+  virtual void init_constraints() = 0;
+  virtual void init_dependants() = 0;
+  virtual void init_fixpoint_initial();
+  void init();
 public:
-  analysis(cfg::cfg *cfg) : cfg(cfg), constraints(cfg->node_count()) {
-  }
+  analysis(cfg::cfg *cfg);
   virtual ~analysis() {
   }
 
   virtual std::vector<constraint_t> constraints_at(size_t node) {
     return constraints[node];
   }
-  virtual std::set<size_t> initial() = 0;
+  virtual std::set<size_t> initial() {
+    return fixpoint_initial;
+  }
 
   virtual shared_ptr<lattice_elem> get(size_t node) = 0;
   virtual void update(size_t node, shared_ptr<lattice_elem> state) = 0;
 
-  virtual std::set<size_t> dependants(size_t node_id) = 0;
+  virtual std::set<size_t> dependants(size_t node_id) {
+    return _dependants[node_id];
+  }
+
+  virtual void put(std::ostream &out) = 0;
+  friend std::ostream &operator<< (std::ostream &out, analysis &_this);
 };
+
+std::ostream &operator<<(std::ostream &out, analysis &_this);
 
 }

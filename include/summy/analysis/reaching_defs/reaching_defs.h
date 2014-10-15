@@ -27,9 +27,8 @@ private:
   std::vector<std::set<size_t>> _dependants;
   std::set<size_t> fixpoint_initial;
 
-  void init_constraints();
-  void init_dependants();
-  void init_fixpoint_initial();
+  virtual void init_constraints();
+  virtual void init_dependants();
 public:
   reaching_defs(cfg::cfg *cfg);
   ~reaching_defs();
@@ -37,17 +36,11 @@ public:
   std::shared_ptr<lattice_elem> bottom();
   std::shared_ptr<lattice_elem> start_value();
 
-  std::set<size_t> initial();
-
   std::shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, std::shared_ptr<lattice_elem> state);
 
-  std::set<size_t> dependants(size_t node_id);
-
-  friend std::ostream &operator<< (std::ostream &out, reaching_defs &_this);
+  void put(std::ostream &out);
 };
-
-std::ostream &operator<<(std::ostream &out, reaching_defs &_this);
 
 }  // namespace reaching_defs
 }  // namespace analysis
