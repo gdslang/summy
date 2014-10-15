@@ -19,6 +19,14 @@ namespace analysis {
 
 class lattice_elem;
 
+template<typename STATE_T>
+struct analysis_result {
+  STATE_T result;
+
+  analysis_result(STATE_T result) : result(result) {
+  }
+};
+
 class analysis {
 public:
   typedef std::function<std::shared_ptr<lattice_elem>()> constraint_t;

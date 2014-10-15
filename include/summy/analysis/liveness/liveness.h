@@ -15,10 +15,16 @@
 namespace analysis {
 namespace liveness {
 
+typedef std::vector<std::shared_ptr<lv_elem>> state_t;
+typedef std::function<std::shared_ptr<lv_elem>()> constraint_t;
+typedef ::analysis::analysis_result<state_t> liveness_result_t;
+
+//struct liveness_result : public ::analysis::analysis_result<state_t> {
+//  liveness_result(state_t s) : analysis_result(s) {
+//  }
+//};
+
 class liveness : public analysis {
-public:
-  typedef std::vector<std::shared_ptr<lv_elem>> state_t;
-  typedef std::function<std::shared_ptr<lv_elem>()> constraint_t;
 private:
   state_t state;
 
@@ -32,6 +38,7 @@ public:
 
   shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, shared_ptr<lattice_elem> state);
+  liveness_result_t result();
 
   void put(std::ostream &out);
 };

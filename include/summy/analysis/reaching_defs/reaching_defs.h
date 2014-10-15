@@ -19,9 +19,10 @@
 namespace analysis {
 namespace reaching_defs {
 
+typedef std::vector<std::shared_ptr<rd_elem>> state_t;
+typedef ::analysis::analysis_result<state_t> reaching_defs_result_t;
+
 class reaching_defs : public analysis {
-public:
-  typedef std::vector<std::shared_ptr<rd_elem>> state_t;
 private:
   state_t state;
   std::vector<std::set<size_t>> _dependants;
@@ -38,6 +39,7 @@ public:
 
   std::shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, std::shared_ptr<lattice_elem> state);
+  reaching_defs_result_t result();
 
   void put(std::ostream &out);
 };

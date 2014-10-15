@@ -180,6 +180,10 @@ void analysis::liveness::liveness::update(size_t node, shared_ptr<lattice_elem> 
   this->state[node] = dynamic_pointer_cast<lv_elem>(state);
 }
 
+liveness_result_t analysis::liveness::liveness::result() {
+  return state;
+}
+
 void analysis::liveness::liveness::put(std::ostream &out) {
   for(size_t i = 0; i < state.size(); i++)
     out << i << ": " << *state[i] << endl;

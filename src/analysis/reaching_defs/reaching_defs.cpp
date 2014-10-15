@@ -101,6 +101,10 @@ void reaching_defs::update(size_t node, shared_ptr<::analysis::lattice_elem> sta
   this->state[node] = dynamic_pointer_cast<rd_elem>(state);
 }
 
+reaching_defs_result_t analysis::reaching_defs::reaching_defs::result() {
+  return state;
+}
+
 void analysis::reaching_defs::reaching_defs::put(std::ostream &out) {
   for(size_t i = 0; i < state.size(); i++)
     out << i << ": " << *state[i] << endl;
