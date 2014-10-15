@@ -12,12 +12,12 @@
 #include <summy/cfg/edge.h>
 #include <summy/cfg/node.h>
 #include <summy/cfg/start_node.h>
-#include <summy/tools/rreil_evaluator.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <vector>
 #include <queue>
 #include <tuple>
 #include <assert.h>
+#include <summy/tools/rreil_util.h>
 
 using namespace std;
 using namespace cfg;

@@ -7,6 +7,7 @@
  */
 
 #include <summy/analysis/liveness/liveness.h>
+#include <summy/tools/rreil_util.h>
 #include <summy/analysis/lattice_elem.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/bfs_iterator.h>
@@ -85,24 +86,24 @@ void analysis::liveness::liveness::init_constraints() {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](assign *i) {
-          assignment(i->get_size(), [&](visitor &v) {
+          assignment(rreil_prop::size_of_assign(i), [&](visitor &v) {
             i->get_rhs()->accept(v);
           },
           i->get_lhs());
         });
         v._([&](load *l) {
-          assignment(l->get_size(), [&](visitor &v) {
-            l->get_address()->accept(v);
-          },
-          l->get_lhs());
+//          assignment(l->get_size(), [&](visitor &v) {
+//            l->get_address()->accept(v);
+//          },
+//          l->get_lhs());
         });
         v._([&](store *s) {
-          access(s->get_address()->get_size(), [&](visitor &v) {
-            s->get_address()->accept(v);
-          });
-          access(s->get_size(), [&](visitor &v) {
-            s->get_rhs()->accept(v);
-          });
+//          access(s->get_address()->get_size(), [&](visitor &v) {
+//            s->get_address()->accept(v);
+//          });
+//          access(s->get_size(), [&](visitor &v) {
+//            s->get_rhs()->accept(v);
+//          });
         });
         v._([&](cbranch *c) {
           access(1, [&](visitor &v) {

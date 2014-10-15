@@ -10,6 +10,7 @@
 #include <cppgdsl/rreil/variable.h>
 #include <cppgdsl/rreil/expr/expr.h>
 #include <cppgdsl/rreil/linear/linear.h>
+#include <cppgdsl/rreil/statement/assign.h>
 
 #include <functional>
 #include <tuple>
@@ -25,7 +26,6 @@ private:
   variable_callback_t variable_callback;
 public:
   rreil_evaluator() : variable_callback(NULL) {
-
   }
   rreil_evaluator(variable_callback_t variable_callback) : variable_callback(variable_callback) {
   }
@@ -34,5 +34,9 @@ public:
   std::tuple<bool, int_t> evaluate(gdsl::rreil::linear *lin);
 
 
+};
+
+struct rreil_prop {
   static bool is_ip(gdsl::rreil::variable *v);
+  static int_t size_of_assign(gdsl::rreil::assign *a);
 };

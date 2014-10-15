@@ -5,8 +5,12 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/tools/rreil_evaluator.h>
+#include <summy/tools/rreil_util.h>
+
 #include <cppgdsl/rreil/rreil.h>
+#include <cppgdsl/rreil/statement/statement_visitor.h>
+#include <cppgdsl/rreil/expr/expr_visitor.h>
+#include <cppgdsl/rreil/sexpr/sexpr_visitor.h>
 
 #include <functional>
 #include <tuple>
@@ -79,7 +83,7 @@ std::tuple<bool, int_t> rreil_evaluator::evaluate(class expr *expr) {
   return result;
 }
 
-bool rreil_evaluator::is_ip(gdsl::rreil::variable *v) {
+bool rreil_prop::is_ip(gdsl::rreil::variable *v) {
   bool is_ip = false;
   id_visitor iv;
   iv._([&] (arch_id *ai) {
@@ -88,4 +92,24 @@ bool rreil_evaluator::is_ip(gdsl::rreil::variable *v) {
   });
   v->get_id()->accept(iv);
   return is_ip;
+}
+
+int_t rreil_prop::size_of_assign(gdsl::rreil::assign *a) {
+  int_t size = 0;
+  expr_visitor ev;
+  ev._([&](expr_sexpr *s){
+    sexpr_visitor sv;
+    sv._([&](sexpr_cmp *cp){
+      size = 1;
+    });
+    sv._default([&](sexpr *s) {
+      size = a->get_size();
+    });
+    s->get_inner()->accept(sv);
+  });
+  ev._default([&](expr *_) {
+    size = a->get_size();
+  });
+  a->get_rhs()->accept(ev);
+  return size;
 }
