@@ -37,6 +37,12 @@ static long long unsigned int range(unsigned long long offset, unsigned long lon
   return r;
 }
 
+bool analysis::liveness::liveness_result::contains(size_t node_id, singleton_key_t sk, unsigned long long offset,
+    unsigned long long size) {
+  return result[node_id]->contains_bit(singleton_t(sk, range(offset, size)));
+}
+
+
 void analysis::liveness::liveness::init_constraints() {
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
@@ -180,7 +186,7 @@ void analysis::liveness::liveness::update(size_t node, shared_ptr<lattice_elem> 
   this->state[node] = dynamic_pointer_cast<lv_elem>(state);
 }
 
-liveness_result_t analysis::liveness::liveness::result() {
+liveness_result analysis::liveness::liveness::result() {
   return state;
 }
 

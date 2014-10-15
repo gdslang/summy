@@ -1,2 +1,3 @@
 - generische print()-Funktion für alle Analysen; auch für subset_man; auch für subset_man
 - deps / initials nach oben
+- idea: accumulate newly_live during liveness :-) and include them into result

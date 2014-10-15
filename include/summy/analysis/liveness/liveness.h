@@ -7,7 +7,6 @@
 
 #pragma once
 #include <summy/analysis/analysis.h>
-#include <summy/analysis/lattice_elem.h>
 #include <summy/analysis/liveness/lv_elem.h>
 #include <memory>
 #include <vector>
@@ -17,12 +16,13 @@ namespace liveness {
 
 typedef std::vector<std::shared_ptr<lv_elem>> state_t;
 typedef std::function<std::shared_ptr<lv_elem>()> constraint_t;
-typedef ::analysis::analysis_result<state_t> liveness_result_t;
 
-//struct liveness_result : public ::analysis::analysis_result<state_t> {
-//  liveness_result(state_t s) : analysis_result(s) {
-//  }
-//};
+struct liveness_result : public ::analysis::analysis_result<state_t> {
+  liveness_result(state_t s) : analysis_result(s) {
+  }
+
+  bool contains(size_t node_id, singleton_key_t sk, unsigned long long offset, unsigned long long size);
+};
 
 class liveness : public analysis {
 private:
@@ -38,7 +38,7 @@ public:
 
   shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, shared_ptr<lattice_elem> state);
-  liveness_result_t result();
+  liveness_result result();
 
   void put(std::ostream &out);
 };

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <summy/analysis/analysis.h>
+#include <summy/analysis/liveness/liveness.h>
 #include <summy/analysis/reaching_defs/rd_elem.h>
 #include <vector>
 #include <functional>
@@ -22,16 +23,17 @@ namespace reaching_defs {
 typedef std::vector<std::shared_ptr<rd_elem>> state_t;
 typedef ::analysis::analysis_result<state_t> reaching_defs_result_t;
 
-class reaching_defs : public analysis {
+class reaching_defs: public analysis {
 private:
   state_t state;
   std::vector<std::set<size_t>> _dependants;
   std::set<size_t> fixpoint_initial;
+  ::analysis::liveness::liveness_result lv_result;
 
   virtual void init_constraints();
   virtual void init_dependants();
 public:
-  reaching_defs(cfg::cfg *cfg);
+  reaching_defs(cfg::cfg *cfg, ::analysis::liveness::liveness_result lv_result);
   ~reaching_defs();
 
   std::shared_ptr<lattice_elem> bottom();
