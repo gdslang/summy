@@ -20,7 +20,7 @@ void ::analysis::analysis::init_fixpoint_initial() {
 }
 
 ::analysis::analysis::analysis(cfg::cfg* cfg) :
-    cfg(cfg), constraints(cfg->node_count()) {
+    cfg(cfg), constraints(cfg->node_count()), _dependants(cfg->node_count()) {
 }
 
 void ::analysis::analysis::init() {

@@ -23,19 +23,11 @@ namespace liveness {
 typedef std::tuple<std::shared_ptr<gdsl::rreil::id>, unsigned long long int> singleton_t;
 typedef std::tuple_element<0,singleton_t>::type singleton_key_t;
 typedef std::tuple_element<1,singleton_t>::type singleton_value_t;
-//typedef id_less singleton_less;
+typedef std::map<singleton_key_t, singleton_value_t, id_less> elements_t;
 
-//class lv_elem;
-//typedef set_elem<singleton_t, singleton_less, lv_elem> lv_elem_base;
 class lv_elem: public lattice_elem {
-public:
-//  typedef set_elem<singleton_t, singleton_less> lv_subset_man;
-  typedef std::map<singleton_key_t, singleton_value_t, id_less> elements_t;
 private:
   const elements_t elements;
-
-//  lv_elem(lv_subset_man eset) : eset(eset) {
-//  }
 public:
   lv_elem(elements_t elements) :
       elements(elements) {

@@ -45,9 +45,17 @@ void reaching_defs::init_constraints() {
           shared_ptr<id> id_ptr(cv.get_id());
 //          if(lv_result.result[node_id]->contains_bit(::analysis::liveness::singleton_t(id_ptr, 0xffffffffffffffff)))
          transfer_f = [=]() {
-            auto defs_rm = shared_ptr<rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
-            auto defs_added = shared_ptr<rd_elem>(defs_rm->add(rd_elem::elements_t {make_tuple(dest_node, id_ptr)}));
-            return defs_added;
+            auto acc = shared_ptr<rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
+            acc = shared_ptr<rd_elem>(acc->add(rd_elem::elements_t {make_tuple(dest_node, id_ptr)}));
+            id_set_t rm_by_lv;
+            for(auto newly_live : lv_result.pn_newly_live[node_id])
+              if(!lv_result.contains(dest_node, newly_live)) {
+                shared_ptr<id> newly_live_id;
+                tie(newly_live_id, ignore) = newly_live;
+                cout << *newly_live_id << endl;
+                rm_by_lv.insert(newly_live_id);
+              }
+            return shared_ptr<rd_elem>(acc->remove(rm_by_lv));
           };
         };
         v._([&](assign *a) {

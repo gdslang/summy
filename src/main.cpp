@@ -38,7 +38,7 @@ using namespace std;
 vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
   elf_provider elfp = [&]() {
     try {
-     return elf_provider("a.out");
+      return elf_provider("a.out");
     } catch(string &s) {
       cout << "Error initializing elf provider: " << s << endl;
       throw string("no elf() :/");
@@ -52,7 +52,6 @@ vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
 //  uint32_t buffer = 0xfc75c085;
   g.set_code(data.data + e.offset, e.size, e.address);
 
-
   vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
   while(g.get_ip() < e.address + e.size) {
     int_t ip = g.get_ip();
@@ -63,7 +62,6 @@ vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
      */
 //    gdsl::block b = g.decode_translate_block(gdsl::preservation::CONTEXT, LONG_MAX);
 //    auto rreil = b.get_statements();
-
     gdsl::instruction insn = g.decode();
     printf("Instruction: %s\n", insn.to_string().c_str());
     printf("---------------------------------\n");
@@ -133,15 +131,15 @@ int main(void) {
     delete t;
   }
 
-//  analysis::reaching_defs::reaching_defs r(&cfg);
-//  analysis::fixpoint fpr(&r);
-//  fpr.iterate();
-//  cout << r;
-
   analysis::liveness::liveness l(&cfg);
   analysis::fixpoint fpl(&l);
   fpl.iterate();
   cout << l;
+
+  analysis::reaching_defs::reaching_defs r(&cfg, l.result());
+  analysis::fixpoint fpr(&r);
+  fpr.iterate();
+  cout << r;
 
 //  printf("RReil (after transformations):\n");
 //  for(statement *s : *rreil)
