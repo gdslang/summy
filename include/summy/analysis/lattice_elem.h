@@ -7,6 +7,7 @@
 
 #pragma once
 #include <memory>
+#include <iostream>
 
 using std::shared_ptr;
 
@@ -24,6 +25,14 @@ public:
 
   virtual lattice_elem *lub(lattice_elem *other) = 0;
   virtual bool operator>=(lattice_elem &other) = 0;
+
+  virtual void put(std::ostream &out) = 0;
+  friend std::ostream &operator<< (std::ostream &out, lattice_elem &_this);
 };
+
+inline std::ostream &operator<<(std::ostream &out, lattice_elem &_this) {
+  _this.put(out);
+  return out;
+}
 
 }

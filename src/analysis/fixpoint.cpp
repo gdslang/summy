@@ -9,11 +9,10 @@
 #include <summy/analysis/analysis.h>
 #include <summy/analysis/lattice_elem.h>
 #include <queue>
+#include <iostream>
 
 using namespace std;
 using namespace analysis;
-
-#include <iostream>
 
 void fixpoint::iterate() {
   set<size_t> worklist = analysis->initial();
@@ -39,12 +38,15 @@ void fixpoint::iterate() {
       }
       shared_ptr<lattice_elem> current = analysis->get(node_id);
       propagate = !(*current >= *evaluated);
+      cout << *current << " >= " << *evaluated << ": " << (*current >= *evaluated) << endl;
     } else
     /*
      * If the node has no incoming analysis dependency edges, we keep its default
      * state.
      */
     propagate = false;
+
+    cout << "propagate: " << propagate << endl;
 
     if(propagate) {
       analysis->update(node_id, evaluated);
@@ -53,6 +55,7 @@ void fixpoint::iterate() {
 //    if(seen.find(node_id) == seen.end())
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
+      cout << "deps size: " << dependants.size() << endl;
       for(auto dependant : dependants)
         worklist.insert(dependant);
     }

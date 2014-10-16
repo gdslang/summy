@@ -97,12 +97,11 @@ bool analysis::liveness::lv_elem::contains_bit(singleton_t s) {
   return mapping->second & bits;
 }
 
-std::ostream &analysis::liveness::operator <<(std::ostream &out, lv_elem &_this) {
+void analysis::liveness::lv_elem::put(std::ostream &out) {
   out << "{";
   size_t i = 0;
-  for(auto it = _this.elements.begin(); it != _this.elements.end(); it++, i++) {
-    out << "(" << *it->first << ", " << it->second << ")" << (i < _this.elements.size() - 1 ? ", " : "");
+  for(auto it = elements.begin(); it != elements.end(); it++, i++) {
+    out << "(" << *it->first << ", " << it->second << ")" << (i < elements.size() - 1 ? ", " : "");
   }
   out << "}";
-  return out;
 }

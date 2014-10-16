@@ -131,17 +131,16 @@ bool analysis::reaching_defs::rd_elem::operator >=(::analysis::lattice_elem &oth
   return eset >= other_casted.eset;
 }
 
-std::ostream &analysis::reaching_defs::operator <<(std::ostream &out, rd_elem &_this) {
+void analysis::reaching_defs::rd_elem::put(std::ostream& out) {
   out << "{";
   size_t i = 0;
-  for(auto it = _this.eset.get_elements().begin(); it != _this.eset.get_elements().end(); it++, i++) {
+  for(auto it = eset.get_elements().begin(); it != eset.get_elements().end(); it++, i++) {
     size_t node;
     shared_ptr<id> _id;
     tie(node, _id) = *it;
-    out << "(" << node << ", " << *_id << ")" << (i < _this.eset.get_elements().size() - 1 ? ", " : "");
+    out << "(" << node << ", " << *_id << ")" << (i < eset.get_elements().size() - 1 ? ", " : "");
   }
   out << "}";
-  if(_this.contains_undef)
+  if(contains_undef)
     out << "+";
-  return out;
 }

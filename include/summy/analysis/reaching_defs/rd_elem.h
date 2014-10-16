@@ -69,10 +69,8 @@ public:
 
   virtual bool operator>=(::analysis::lattice_elem &other);
 
-  friend std::ostream &operator<< (std::ostream &out, rd_elem &_this);
+  virtual void put(std::ostream &out);
 };
-
-std::ostream &operator<<(std::ostream &out, rd_elem &_this);
 
 }
 }

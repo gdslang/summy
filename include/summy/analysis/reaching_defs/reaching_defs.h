@@ -26,8 +26,6 @@ typedef ::analysis::analysis_result<state_t> reaching_defs_result_t;
 class reaching_defs: public analysis {
 private:
   state_t state;
-  std::vector<std::set<size_t>> _dependants;
-  std::set<size_t> fixpoint_initial;
   ::analysis::liveness::liveness_result lv_result;
 
   virtual void init_constraints();

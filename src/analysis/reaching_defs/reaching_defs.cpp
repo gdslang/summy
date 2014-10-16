@@ -32,8 +32,22 @@ void reaching_defs::init_constraints() {
     auto &edges = *cfg->out_edges(node_id);
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       size_t dest_node = edge_it->first;
+      auto cleanup_live = [=](shared_ptr<rd_elem> acc) {
+        id_set_t rm_by_lv;
+        cout << node_id << "->" << dest_node << ": ";
+        for(auto newly_live : lv_result.pn_newly_live[node_id])
+          if(!lv_result.contains(dest_node, newly_live)) {
+            shared_ptr<id> newly_live_id;
+            tie(newly_live_id, ignore) = newly_live;
+            cout << *newly_live_id << " ";
+            rm_by_lv.insert(newly_live_id);
+          }
+        cout << endl;
+        return shared_ptr<rd_elem>(acc->remove(rm_by_lv));
+      };
       function<shared_ptr<rd_elem>()> transfer_f = [=]() {
-        return state[node_id];
+//        cout << "default handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
+        return cleanup_live(state[node_id]);
       };
       edge_visitor ev;
       ev._([&](stmt_edge *edge) {
@@ -43,19 +57,12 @@ void reaching_defs::init_constraints() {
           copy_visitor cv;
           v->get_id()->accept(cv);
           shared_ptr<id> id_ptr(cv.get_id());
-//          if(lv_result.result[node_id]->contains_bit(::analysis::liveness::singleton_t(id_ptr, 0xffffffffffffffff)))
          transfer_f = [=]() {
+           cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
             auto acc = shared_ptr<rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
-            acc = shared_ptr<rd_elem>(acc->add(rd_elem::elements_t {make_tuple(dest_node, id_ptr)}));
-            id_set_t rm_by_lv;
-            for(auto newly_live : lv_result.pn_newly_live[node_id])
-              if(!lv_result.contains(dest_node, newly_live)) {
-                shared_ptr<id> newly_live_id;
-                tie(newly_live_id, ignore) = newly_live;
-                cout << *newly_live_id << endl;
-                rm_by_lv.insert(newly_live_id);
-              }
-            return shared_ptr<rd_elem>(acc->remove(rm_by_lv));
+            if(lv_result.contains(dest_node, id_ptr, v->get_offset(), size))
+              acc = shared_ptr<rd_elem>(acc->add(rd_elem::elements_t {make_tuple(dest_node, id_ptr)}));
+            return cleanup_live(acc);
           };
         };
         v._([&](assign *a) {
@@ -75,7 +82,6 @@ void reaching_defs::init_constraints() {
 }
 
 void reaching_defs::init_dependants() {
-  _dependants = std::vector<std::set<size_t>>(cfg->node_count());
   for(auto node : *cfg) {
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
