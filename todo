@@ -1,4 +1,3 @@
 - generische print()-Funktion für alle Analysen; auch für subset_man; auch für subset_man
 - deps / initials nach oben
-- idea: accumulate newly_live during liveness :-) and include them into result
-- liveness fixen: nicht die akkumulierten newly_live Werte verwenden, wegen Knoten mit mehreren Kindern
+- Warum funktioniert A.32 =:32 0 nicht bei liveness?

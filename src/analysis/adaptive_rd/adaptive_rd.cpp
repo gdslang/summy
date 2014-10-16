@@ -33,17 +33,9 @@ void adaptive_rd::init_constraints() {
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       size_t dest_node = edge_it->first;
       auto cleanup_live = [=](shared_ptr<adaptive_rd_elem> acc) {
-        id_set_t rm_by_lv;
-        cout << node_id << "->" << dest_node << ": ";
-        for(auto newly_live : lv_result.pn_newly_live[node_id])
-          if(!lv_result.contains(dest_node, newly_live)) {
-            shared_ptr<id> newly_live_id;
-            tie(newly_live_id, ignore) = newly_live;
-            cout << *newly_live_id << " ";
-            rm_by_lv.insert(newly_live_id);
-          }
-        cout << endl;
-        return shared_ptr<adaptive_rd_elem>(acc->remove(rm_by_lv));
+        return shared_ptr<adaptive_rd_elem>(acc->remove([&](shared_ptr<id> id, singleton_value_t v) {
+          return !lv_result.contains(dest_node, id, 0, 64);
+        }));
       };
       function<shared_ptr<adaptive_rd_elem>()> transfer_f = [=]() {
 //        cout << "default handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;

@@ -55,6 +55,7 @@ public:
   virtual adaptive_rd_elem *lub(::analysis::lattice_elem *other, size_t current_node);
   virtual adaptive_rd_elem *add(std::vector<singleton_t> elements);
   virtual adaptive_rd_elem *remove(id_set_t elements);
+  virtual adaptive_rd_elem *remove(std::function<bool(singleton_key_t, singleton_value_t)> pred);
 
   virtual bool operator>=(::analysis::lattice_elem &other);
 

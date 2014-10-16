@@ -33,16 +33,15 @@ using namespace gdsl::rreil;
 //  return a_node < b_node;
 //}
 
-adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::lub(::analysis::lattice_elem *other, size_t current_node) {
+adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::lub(::analysis::lattice_elem *other,
+    size_t current_node) {
   adaptive_rd_elem *other_casted = dynamic_cast<adaptive_rd_elem*>(other);
 
   elements_t lubbed = elements;
   for(auto &mapping_other : other_casted->elements) {
     auto mapping_mine = lubbed.find(mapping_other.first);
-    if(mapping_mine == lubbed.end())
-      lubbed[mapping_other.first] = mapping_other.second;
-    else if(mapping_mine->second != mapping_other.second)
-      lubbed[mapping_other.first] = current_node;
+    if(mapping_mine == lubbed.end()) lubbed[mapping_other.first] = mapping_other.second;
+    else if(mapping_mine->second != mapping_other.second) lubbed[mapping_other.first] = current_node;
   }
 
   return new adaptive_rd_elem(contains_undef || other_casted->contains_undef, lubbed);
@@ -54,8 +53,7 @@ adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::add(std:
     singleton_key_t k;
     singleton_value_t v;
     tie(k, v) = e;
-    if(added.find(k) != added.end())
-      throw string("Element does already exist :/");
+    if(added.find(k) != added.end()) throw string("Element does already exist :/");
     added[k] = v;
   }
   return new adaptive_rd_elem(contains_undef, added);
@@ -64,6 +62,15 @@ adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::remove(i
   elements_t removed = this->elements;
   for(auto id : elements)
     removed.erase(id);
+  return new adaptive_rd_elem(contains_undef, removed);
+}
+
+adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::remove(
+    std::function<bool(singleton_key_t, singleton_value_t)> pred) {
+  elements_t removed;
+  for(auto &e : this->elements)
+    if(!pred(e.first, e.second))
+      removed.insert(e);
   return new adaptive_rd_elem(contains_undef, removed);
 }
 
@@ -81,6 +88,5 @@ void analysis::adaptive_rd::adaptive_rd_elem::put(std::ostream &out) {
     out << "(" << *it->first << ", " << it->second << ")" << (i < elements.size() - 1 ? ", " : "");
   }
   out << "}";
-  if(contains_undef)
-    out << "+";
+  if(contains_undef) out << "+";
 }

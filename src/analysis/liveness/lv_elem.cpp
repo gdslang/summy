@@ -31,11 +31,11 @@ lv_elem *analysis::liveness::lv_elem::lub(::analysis::lattice_elem *other, size_
     else result[mapping.first] = mapping.second | other_mapping->second;
   }
   for(auto &mapping_other : other_casted->elements) {
-    auto mapping = other_casted->elements.find(mapping_other.first);
-    if(mapping == other_casted->elements.end()) result.insert(mapping_other);
+    auto mapping = elements.find(mapping_other.first);
+    if(mapping == elements.end()) result.insert(mapping_other);
   }
 
-//  cout << "lubbed" << *(new lv_elem(result)) << endl;
+  cout << current_node << ": " << *this << " lub " << *other << " -> " << *(new lv_elem(result)) << endl;
 
   return new lv_elem(result);
 }
