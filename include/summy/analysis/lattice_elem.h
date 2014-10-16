@@ -23,7 +23,7 @@ public:
   virtual ~lattice_elem() {
   }
 
-  virtual lattice_elem *lub(lattice_elem *other) = 0;
+  virtual lattice_elem *lub(lattice_elem *other, size_t current_node) = 0;
   virtual bool operator>=(lattice_elem &other) = 0;
 
   virtual void put(std::ostream &out) = 0;

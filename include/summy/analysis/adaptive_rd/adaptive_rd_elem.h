@@ -12,6 +12,7 @@
 #include <summy/analysis/subset_man.h>
 #include <summy/analysis/util.h>
 #include <set>
+#include <map>
 #include <tuple>
 #include <ostream>
 #include <memory>
@@ -19,46 +20,41 @@
 namespace analysis {
 namespace adaptive_rd {
 
-typedef std::tuple<size_t, std::shared_ptr<gdsl::rreil::id>> singleton_t;
+typedef std::tuple<std::shared_ptr<gdsl::rreil::id>, size_t> singleton_t;
+typedef std::tuple_element<0,singleton_t>::type singleton_key_t;
+typedef std::tuple_element<1,singleton_t>::type singleton_value_t;
+typedef std::map<singleton_key_t, singleton_value_t, id_less> elements_t;
 
-struct singleton_less {
-  bool operator()(singleton_t a, singleton_t b);
-};
+//struct singleton_less {
+//  bool operator()(singleton_t a, singleton_t b);
+//};
 
 typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less> id_set_t;
 
 class adaptive_rd_elem : public lattice_elem {
-public:
-  typedef set_elem<singleton_t, singleton_less> rd_subset_man;
-  typedef rd_subset_man::elements_t elements_t;
 private:
   bool contains_undef;
-  rd_subset_man eset;
+  const elements_t elements;
 
-  adaptive_rd_elem(bool contains_undef, rd_subset_man eset) :
-      contains_undef(contains_undef), eset(eset) {
-  }
 public:
-  adaptive_rd_elem(elements_t elements) : contains_undef(true), eset(elements) {
+  adaptive_rd_elem(elements_t elements) : contains_undef(true), elements(elements) {
   }
   adaptive_rd_elem(bool contains_undef, elements_t elements) :
-      contains_undef(contains_undef), eset(elements) {
+      contains_undef(contains_undef), elements(elements) {
   }
 
   /**
    * Bottom constructor
    */
-  adaptive_rd_elem() : contains_undef(false), eset(elements_t { }) {
+  adaptive_rd_elem() : contains_undef(false) {
   }
-  adaptive_rd_elem(adaptive_rd_elem &e) : lattice_elem(e), eset(e.eset) {
+  adaptive_rd_elem(adaptive_rd_elem &e) : lattice_elem(e), elements(e.elements) {
     this->contains_undef = e.contains_undef;
   }
 
-  virtual adaptive_rd_elem *lub(::analysis::lattice_elem *other);
-  virtual adaptive_rd_elem *add(elements_t elements);
-  virtual adaptive_rd_elem *remove(elements_t elements);
-
-  virtual adaptive_rd_elem *remove(id_set_t ids);
+  virtual adaptive_rd_elem *lub(::analysis::lattice_elem *other, size_t current_node);
+  virtual adaptive_rd_elem *add(std::vector<singleton_t> elements);
+  virtual adaptive_rd_elem *remove(id_set_t elements);
 
   virtual bool operator>=(::analysis::lattice_elem &other);
 

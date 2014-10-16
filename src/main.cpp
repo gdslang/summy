@@ -28,6 +28,7 @@
 #include <cppgdsl/rreil/copy_visitor.h>
 
 #include <summy/analysis/reaching_defs/reaching_defs.h>
+#include <summy/analysis/adaptive_rd/adaptive_rd.h>
 #include <summy/analysis/reaching_defs/rd_elem.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/liveness/liveness.h>
@@ -136,7 +137,12 @@ int main(void) {
   fpl.iterate();
   cout << l;
 
-  analysis::reaching_defs::reaching_defs r(&cfg, l.result());
+//  analysis::reaching_defs::reaching_defs r(&cfg, l.result());
+//  analysis::fixpoint fpr(&r);
+//  fpr.iterate();
+//  cout << r;
+
+  analysis::adaptive_rd::adaptive_rd r(&cfg, l.result());
   analysis::fixpoint fpr(&r);
   fpr.iterate();
   cout << r;

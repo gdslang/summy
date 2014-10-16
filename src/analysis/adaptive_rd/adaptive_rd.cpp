@@ -61,7 +61,7 @@ void adaptive_rd::init_constraints() {
            cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
             auto acc = shared_ptr<adaptive_rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
             if(lv_result.contains(dest_node, id_ptr, v->get_offset(), size))
-              acc = shared_ptr<adaptive_rd_elem>(acc->add(adaptive_rd_elem::elements_t {make_tuple(dest_node, id_ptr)}));
+              acc = shared_ptr<adaptive_rd_elem>(acc->add({singleton_t(id_ptr, dest_node)}));
             return cleanup_live(acc);
           };
         };
@@ -104,11 +104,11 @@ analysis::adaptive_rd::adaptive_rd::~adaptive_rd() {
 }
 
 shared_ptr<analysis::lattice_elem> adaptive_rd::adaptive_rd::bottom() {
-    return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem());
+    return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(false, elements_t()));
 }
 
 shared_ptr<analysis::lattice_elem> adaptive_rd::adaptive_rd::start_value() {
-    return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(adaptive_rd_elem::elements_t {}));
+    return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(true, elements_t()));
 }
 
 shared_ptr<::analysis::lattice_elem> adaptive_rd::adaptive_rd::get(size_t node) {

@@ -33,7 +33,7 @@ public:
       elements(elements) {
   }
 
-  virtual lv_elem *lub(::analysis::lattice_elem *other);
+  virtual lv_elem *lub(::analysis::lattice_elem *other, size_t current_node);
   virtual lv_elem *add(std::vector<singleton_t> elements);
   virtual lv_elem *remove(std::vector<singleton_t> elements);
 

@@ -34,7 +34,7 @@ void fixpoint::iterate() {
       evaluated = constraints[0]();
       for(size_t i = 1; i < constraints.size(); i++) {
         auto calc = constraints[i]();
-        evaluated = shared_ptr<lattice_elem>(calc->lub(evaluated.get()));
+        evaluated = shared_ptr<lattice_elem>(calc->lub(evaluated.get(), node_id));
       }
       shared_ptr<lattice_elem> current = analysis->get(node_id);
       propagate = !(*current >= *evaluated);

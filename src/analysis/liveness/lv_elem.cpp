@@ -17,7 +17,7 @@ using gdsl::rreil::id;
 using namespace std;
 using namespace analysis::liveness;
 
-lv_elem *analysis::liveness::lv_elem::lub(::analysis::lattice_elem *other) {
+lv_elem *analysis::liveness::lv_elem::lub(::analysis::lattice_elem *other, size_t current_node) {
   lv_elem *other_casted = dynamic_cast<lv_elem*>(other);
 
   /*
