@@ -71,14 +71,14 @@ void analysis::liveness::liveness::init_constraints() {
       };
       auto assignment = [&](int_t size, variable *assignee, vector<singleton_t> newly_live) {
         copy_visitor cv;
-        assignee->accept(cv);
+        assignee->get_id()->accept(cv);
         singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(assignee->get_offset(), size));
 
         size_t foo = assignee->get_offset();
 
         transfer_f = [=]() {
 //          cout << *lhs << endl;
-          cout << "dest: " << dest_node << " offset: " << foo << " size: " << size << endl;
+          cout << "dest: " << dest_node << " offset: " << foo << " size: " << size << " id: " << *(std::get<0>(lhs)) << endl;
           if(state[dest_node]->contains_bit(lhs)) {
           cout << "dest: " << dest_node << " offset: " << foo << " size: " << size << endl;
             shared_ptr<lv_elem> dead_removed(state[dest_node]->remove({ lhs }));
