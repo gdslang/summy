@@ -8,6 +8,7 @@
 #include <summy/cfg/address_node.h>
 #include <summy/transformers/ip_propagator.h>
 #include <summy/cfg/edge.h>
+#include <summy/cfg/edge_visitor.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/node.h>
 #include <summy/cfg/node_visitor.h>

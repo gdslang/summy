@@ -6,6 +6,8 @@
  */
 
 #include <summy/cfg/edge.h>
+#include <summy/cfg/edge_visitor.h>
+
 #include <cppgdsl/rreil/copy_visitor.h>
 
 using namespace gdsl::rreil;
