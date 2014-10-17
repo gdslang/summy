@@ -18,14 +18,10 @@ void fixpoint::iterate() {
   set<size_t> worklist = analysis->initial();
   set<size_t> seen;
   while(!worklist.empty()) {
-//    size_t node_id = worklist.front();
-//    worklist.pop();
     size_t node_id;
     auto it = worklist.begin();
     node_id = *it;
     worklist.erase(it);
-
-//    cout << "next: " << node_id << endl;
 
     bool propagate;
     shared_ptr<lattice_elem> evaluated;
@@ -38,7 +34,6 @@ void fixpoint::iterate() {
       }
       shared_ptr<lattice_elem> current = analysis->get(node_id);
       propagate = !(*current >= *evaluated);
-      cout << *current << " >= " << *evaluated << ": " << (*current >= *evaluated) << endl;
     } else
     /*
      * If the node has no incoming analysis dependency edges, we keep its default
@@ -46,13 +41,10 @@ void fixpoint::iterate() {
      */
     propagate = false;
 
-    cout << "propagate: " << propagate << endl;
-
     if(propagate) {
       analysis->update(node_id, evaluated);
     }
 
-//    if(seen.find(node_id) == seen.end())
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
       cout << "deps size: " << dependants.size() << endl;

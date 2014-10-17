@@ -50,7 +50,7 @@ void adaptive_rd::init_constraints() {
           v->get_id()->accept(cv);
           shared_ptr<id> id_ptr(cv.get_id());
          transfer_f = [=]() {
-           cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
+//           cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
             auto acc = shared_ptr<adaptive_rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
             if(lv_result.contains(dest_node, id_ptr, v->get_offset(), size))
               acc = shared_ptr<adaptive_rd_elem>(acc->add({singleton_t(id_ptr, dest_node)}));
