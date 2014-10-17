@@ -33,20 +33,22 @@ void reaching_defs::init_constraints() {
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       size_t dest_node = edge_it->first;
       auto cleanup_live = [=](shared_ptr<rd_elem> acc) {
-        id_set_t rm_by_lv;
-        cout << node_id << "->" << dest_node << ": ";
-        for(auto newly_live : lv_result.pn_newly_live[node_id])
-          if(!lv_result.contains(dest_node, newly_live)) {
-            shared_ptr<id> newly_live_id;
-            tie(newly_live_id, ignore) = newly_live;
-            cout << *newly_live_id << " ";
-            rm_by_lv.insert(newly_live_id);
-          }
-        cout << endl;
-        return shared_ptr<rd_elem>(acc->remove(rm_by_lv));
+//        id_set_t rm_by_lv;
+//        cout << node_id << "->" << dest_node << ": ";
+//        for(auto newly_live : lv_result.pn_newly_live[node_id])
+//          if(!lv_result.contains(dest_node, newly_live)) {
+//            shared_ptr<id> newly_live_id;
+//            tie(newly_live_id, ignore) = newly_live;
+//            cout << *newly_live_id << " ";
+//            rm_by_lv.insert(newly_live_id);
+//          }
+//        cout << endl;
+//        return shared_ptr<rd_elem>(acc->remove(rm_by_lv));
+        return shared_ptr<rd_elem>(acc->remove([&](size_t def, shared_ptr<id> id) {
+          return !lv_result.contains(dest_node, id, 0, 64);
+        }));
       };
       function<shared_ptr<rd_elem>()> transfer_f = [=]() {
-//        cout << "default handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
         return cleanup_live(state[node_id]);
       };
       edge_visitor ev;
@@ -58,7 +60,6 @@ void reaching_defs::init_constraints() {
           v->get_id()->accept(cv);
           shared_ptr<id> id_ptr(cv.get_id());
          transfer_f = [=]() {
-           cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
             auto acc = shared_ptr<rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
             if(lv_result.contains(dest_node, id_ptr, v->get_offset(), size))
               acc = shared_ptr<rd_elem>(acc->add(rd_elem::elements_t {make_tuple(dest_node, id_ptr)}));

@@ -124,6 +124,19 @@ reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::remove(elements_t elem
   return new rd_elem(contains_undef, removed);
 }
 
+reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::remove(
+    std::function<bool(size_t, std::shared_ptr<gdsl::rreil::id>)> pred) {
+  elements_t removed;
+  for(auto e : eset.get_elements()) {
+    size_t def;
+    shared_ptr<id> id;
+    tie(def, id) = e;
+    if(!pred(def, id))
+      removed.insert(e);
+  }
+  return new rd_elem(contains_undef, removed);
+}
+
 bool analysis::reaching_defs::rd_elem::operator >=(::analysis::lattice_elem &other) {
   rd_elem &other_casted = dynamic_cast<rd_elem&>(other);
   if(contains_undef && !other_casted.contains_undef) return true;
@@ -141,6 +154,5 @@ void analysis::reaching_defs::rd_elem::put(std::ostream& out) {
     out << "(" << node << ", " << *_id << ")" << (i < eset.get_elements().size() - 1 ? ", " : "");
   }
   out << "}";
-  if(contains_undef)
-    out << "+";
+  if(contains_undef) out << "+";
 }

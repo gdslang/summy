@@ -56,14 +56,8 @@ public:
 
   virtual rd_elem *lub(::analysis::lattice_elem *other, size_t current_node);
   virtual rd_elem *add(elements_t elements);
-//  {
-//    return dynamic_cast<rd_elem*>(set_elem::add(elements)); //Stupid C++ :/
-//  }
-
   virtual rd_elem *remove(elements_t elements);
-//  {
-//    return dynamic_cast<rd_elem*>(set_elem::remove(elements)); //Stupid C++ :/
-//  }
+  virtual rd_elem *remove(std::function<bool(size_t, std::shared_ptr<gdsl::rreil::id>)> pred);
 
   virtual rd_elem *remove(id_set_t ids);
 

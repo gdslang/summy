@@ -87,7 +87,7 @@ void analysis::adaptive_rd::adaptive_rd_elem::put(std::ostream &out) {
   out << "{";
   size_t i = 0;
   for(auto it = elements.begin(); it != elements.end(); it++, i++) {
-    out << "(" << *it->first << ", " << it->second << ")" << (i < elements.size() - 1 ? ", " : "");
+    out << *it->first << " -> " << it->second << (i < elements.size() - 1 ? ", " : "");
   }
   out << "}";
   if(contains_undef) out << "+";

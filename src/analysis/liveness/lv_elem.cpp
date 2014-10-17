@@ -35,8 +35,6 @@ lv_elem *analysis::liveness::lv_elem::lub(::analysis::lattice_elem *other, size_
     if(mapping == elements.end()) result.insert(mapping_other);
   }
 
-  cout << current_node << ": " << *this << " lub " << *other << " -> " << *(new lv_elem(result)) << endl;
-
   return new lv_elem(result);
 }
 
@@ -47,14 +45,10 @@ lv_elem *analysis::liveness::lv_elem::add(std::vector<singleton_t> elements) {
     singleton_value_t value;
     tie(key, value) = mapping;
 
-//    cout << "kv/add " << *key << ", " << value << endl;
-
     auto current_mapping = current.find(key);
     if(current_mapping == current.end()) current[key] = value;
     else current[key] = current_mapping->second | value;
   }
-
-//  cout << *(new lv_elem(current)) << endl;
 
   return new lv_elem(current);
 }

@@ -34,7 +34,7 @@ static long long unsigned int range(unsigned long long offset, unsigned long lon
   long long unsigned r = (
       size + offset == 64 ? ((unsigned long long)(-1)) : (((unsigned long long)1 << (size + offset)) - 1))
       & ~(((unsigned long long)1 << offset) - 1);
-  cout << "range for " << offset << "/" << size << ": " <<  r << endl;
+//  cout << "range for " << offset << "/" << size << ": " <<  r << endl;
   return r;
 }
 
@@ -74,15 +74,9 @@ void analysis::liveness::liveness::init_constraints() {
         assignee->get_id()->accept(cv);
         singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(assignee->get_offset(), size));
 
-        size_t foo = assignee->get_offset();
-
         transfer_f = [=]() {
-//          cout << *lhs << endl;
-          cout << "dest: " << dest_node << " offset: " << foo << " size: " << size << " id: " << *(std::get<0>(lhs)) << endl;
           if(state[dest_node]->contains_bit(lhs)) {
-          cout << "dest: " << dest_node << " offset: " << foo << " size: " << size << endl;
             shared_ptr<lv_elem> dead_removed(state[dest_node]->remove({ lhs }));
-//            cout << "after dead_removed: " << *dead_removed << endl;
             return shared_ptr<lv_elem>(dead_removed->add(newly_live));
           } else
             return state[dest_node];
@@ -214,10 +208,8 @@ void analysis::liveness::liveness::put(std::ostream &out) {
       singleton_key_t k;
       singleton_value_t v;
       tie(k, v) = (pn_newly_live[i])[j];
-      out << "(" << *k << ", " << v << ")";
+      out << "(" << *k << ", " << std::hex << v << ")";
     }
     out << "}" << endl;
   }
 }
-
-

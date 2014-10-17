@@ -47,7 +47,6 @@ void fixpoint::iterate() {
 
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
-      cout << "deps size: " << dependants.size() << endl;
       for(auto dependant : dependants)
         worklist.insert(dependant);
     }
