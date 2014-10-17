@@ -21,7 +21,14 @@ namespace analysis {
 namespace adaptive_rd {
 
 typedef std::vector<std::shared_ptr<adaptive_rd_elem>> state_t;
-typedef ::analysis::analysis_result<state_t> adaptive_rd_result_t;
+
+struct adaptive_rd_result : public ::analysis::analysis_result<state_t> {
+  typedef std::vector<std::map<size_t, shared_ptr<adaptive_rd_elem>>> in_states_t;
+  in_states_t in_states;
+
+  adaptive_rd_result(state_t s, in_states_t in_states) : analysis_result(s), in_states(in_states) {
+  }
+};
 
 class adaptive_rd: public analysis {
 private:
@@ -39,7 +46,7 @@ public:
 
   std::shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, std::shared_ptr<lattice_elem> state);
-  adaptive_rd_result_t result();
+  adaptive_rd_result result();
 
   void put(std::ostream &out);
 };

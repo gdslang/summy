@@ -67,7 +67,7 @@ void adaptive_rd::init_constraints() {
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
-      constraints[dest_node].push_back(transfer_f);
+      (constraints[dest_node])[node_id] = transfer_f;
     }
   }
 
@@ -112,8 +112,12 @@ void adaptive_rd::update(size_t node, shared_ptr<::analysis::lattice_elem> state
   this->state[node] = dynamic_pointer_cast<adaptive_rd_elem>(state);
 }
 
-adaptive_rd_result_t analysis::adaptive_rd::adaptive_rd::result() {
-  return state;
+adaptive_rd_result analysis::adaptive_rd::adaptive_rd::result() {
+  auto in_states = adaptive_rd_result::in_states_t(cfg->node_count());
+  for(size_t i = 0; i < cfg->node_count(); i++)
+    for(auto &edge_c : constraints[i])
+      (in_states[i])[edge_c.first] = dynamic_pointer_cast<adaptive_rd_elem>(edge_c.second());
+  return adaptive_rd_result(state, in_states);
 }
 
 void analysis::adaptive_rd::adaptive_rd::put(std::ostream &out) {

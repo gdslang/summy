@@ -76,7 +76,7 @@ void reaching_defs::init_constraints() {
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
-      constraints[dest_node].push_back(transfer_f);
+      (constraints[dest_node])[node_id] = transfer_f;
     }
   }
 

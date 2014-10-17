@@ -8,6 +8,7 @@
 #pragma once
 #include <queue>
 #include <set>
+#include <map>
 #include <tuple>
 #include <summy/cfg/cfg.h>
 #include <memory>
@@ -32,7 +33,7 @@ public:
   typedef std::function<std::shared_ptr<lattice_elem>()> constraint_t;
 protected:
   cfg::cfg *cfg;
-  std::vector<std::vector<constraint_t>> constraints;
+  std::vector<std::map<size_t, constraint_t>> constraints;
   std::vector<std::set<size_t>> _dependants;
   std::set<size_t> fixpoint_initial;
 
@@ -45,7 +46,7 @@ public:
   virtual ~analysis() {
   }
 
-  virtual std::vector<constraint_t> constraints_at(size_t node) {
+  virtual std::map<size_t, constraint_t> &constraints_at(size_t node) {
     return constraints[node];
   }
   virtual std::set<size_t> initial() {

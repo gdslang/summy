@@ -147,6 +147,15 @@ int main(void) {
   fpr.iterate();
   cout << r;
 
+  auto rd_result = r.result();
+  for(size_t i = 0; i < rd_result.in_states.size(); i++) {
+    auto &node_in = rd_result.in_states[i];
+    cout << "rd_result (in_states) for node " << i << ": ";
+    for(auto &state : node_in)
+      cout << "-> " << state.first << " " << *state.second << " ";
+    cout << endl;
+  }
+
 //  printf("RReil (after transformations):\n");
 //  for(statement *s : *rreil)
 //    printf("%s\n", s->to_string().c_str());

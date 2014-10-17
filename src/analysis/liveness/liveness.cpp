@@ -22,6 +22,7 @@
 #include <set>
 #include <tuple>
 #include <iostream>
+#include <sstream>
 #include <assert.h>
 
 using namespace std;
@@ -159,7 +160,7 @@ void analysis::liveness::liveness::init_constraints() {
         access(newly_live);
       });
       edge_it->second->accept(ev);
-      constraints[node_id].push_back(transfer_f);
+      (constraints[node_id])[dest_node] = transfer_f;
     }
   }
 }
@@ -209,7 +210,7 @@ void analysis::liveness::liveness::put(std::ostream &out) {
       singleton_key_t k;
       singleton_value_t v;
       tie(k, v) = (pn_newly_live[i])[j];
-      out << "(" << *k << ", " << std::hex << v << ")";
+      out << "(" << *k << ", " << hex << v << dec << ")";
     }
     out << "}" << endl;
   }
