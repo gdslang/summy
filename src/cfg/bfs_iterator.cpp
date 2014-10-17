@@ -5,10 +5,10 @@
  *      Author: Julian Kranz
  */
 
+#include <summy/cfg/address_node.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/node_visitor.h>
-#include <summy/cfg/start_node.h>
 #include <string>
 
 using std::string;
@@ -32,7 +32,7 @@ cfg::bfs_iterator::bfs_iterator(cfg *cfg) :
     _cfg(cfg), end(false) {
   for(auto node : cfg->nodes) {
     node_visitor nv;
-    nv._([&](start_node *sn) {
+    nv._([&](address_node *sn) {
       components.push(sn->get_id());
     });
     node->accept(nv);

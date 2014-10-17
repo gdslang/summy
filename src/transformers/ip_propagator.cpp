@@ -5,11 +5,11 @@
  *      Author: jucs
  */
 
+#include <summy/cfg/address_node.h>
 #include <summy/transformers/ip_propagator.h>
 #include <summy/cfg/edge.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/node.h>
-#include <summy/cfg/start_node.h>
 #include <summy/cfg/node_visitor.h>
 #include <summy/tools/rreil_util.h>
 
@@ -36,7 +36,7 @@ std::vector<int_t> *ip_propagator::analyze_ip() {
   for(auto node : *cfg) {
     size_t id = node->get_id();
     node_visitor nv;
-    nv._([&](start_node *sn) {
+    nv._([&](address_node *sn) {
       (*calculated)[id] = true;
       (*result)[id] = sn->get_address();
     });

@@ -12,12 +12,12 @@
 namespace cfg {
 
 class node;
-class start_node;
+class address_node;
 
 class node_visitor {
 private:
   std::function<void(node*)> node_callback = NULL;
-  std::function<void(start_node*)> start_node_callback = NULL;
+  std::function<void(address_node*)> start_node_callback = NULL;
 
 public:
   virtual ~node_visitor() {
@@ -28,7 +28,7 @@ public:
     _default();
   }
 
-  virtual void visit(start_node *se) {
+  virtual void visit(address_node *se) {
     if(start_node_callback != NULL) start_node_callback(se);
     _default();
   }
@@ -40,7 +40,7 @@ public:
     this->node_callback = node_callback;
   }
 
-  void _(std::function<void(start_node*)> start_node_callback) {
+  void _(std::function<void(address_node*)> start_node_callback) {
     this->start_node_callback = start_node_callback;
   }
 };

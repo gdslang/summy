@@ -11,12 +11,12 @@
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/edge.h>
 #include <summy/cfg/node.h>
-#include <summy/cfg/start_node.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <vector>
 #include <queue>
 #include <tuple>
 #include <assert.h>
+#include <summy/cfg/address_node.h>
 #include <summy/tools/rreil_util.h>
 
 using namespace std;
@@ -27,7 +27,7 @@ trivial_connector::address_node_map_t trivial_connector::start_node_map() {
   trivial_connector::address_node_map_t start_node_map;
   for(auto node : *cfg) {
     node_visitor nv;
-    nv._([&](start_node *sn) {
+    nv._([&](address_node *sn) {
       start_node_map[sn->get_address()] = sn->get_id();
     });
     node->accept(nv);

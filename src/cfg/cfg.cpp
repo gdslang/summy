@@ -8,10 +8,10 @@
 #include <summy/cfg/cfg.h>
 #include <iostream>
 #include <stdlib.h>
+#include <summy/cfg/address_node.h>
 
 #include <summy/cfg/edge.h>
 #include <summy/cfg/node.h>
-#include <summy/cfg/start_node.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <map>
 
@@ -28,7 +28,7 @@ cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statemen
     vector<gdsl::rreil::statement*> *statements;
     tie(address, statements) = elem;
     size_t from_node = create_node([&](size_t id) {
-      return new start_node(id, address);
+      return new address_node(id, address);
     });
     add_nodes(statements, from_node);
   }
