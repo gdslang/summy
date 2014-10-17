@@ -10,6 +10,7 @@ int main(int argc, char **argv) {
     if(a == 3)
       goto x;
   } else
-    f += 7 - a;
+//    f += 7 - a;
+		a++;
   return f();
 }

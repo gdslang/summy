@@ -107,6 +107,9 @@ int_t rreil_prop::size_of_assign(gdsl::rreil::assign *a) {
     });
     s->get_inner()->accept(sv);
   });
+  ev._([&](expr_ext *ex) {
+    size = ex->get_fromsize();
+  });
   ev._default([&](expr *_) {
     size = a->get_size();
   });
