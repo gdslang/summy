@@ -10,7 +10,7 @@ LIBFLAGS=$(LIBDS) $(LIBS)
 LDFLAGS=
 INCDS=-Iinclude -I$(GDSL)/include
 CFLAGS=-c -O0 -MMD -ggdb3 -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
-CPPFLAGS=-c -O0 -fno-omit-frame-pointer -fno-optimize-sibling-calls -MMD -ggdb3 -std=c++11 -Wall -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
+CPPFLAGS=-c -O0 -fno-omit-frame-pointer -fno-optimize-sibling-calls -MMD -ggdb3 -std=c++14 -Wall -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
 
 EXECUTABLE=summy
 
