@@ -8,7 +8,7 @@
 #pragma once
 
 #include <gelf.h>
-#include <include/summy/sliced_memory.h>
+#include <summy/sliced_memory.h>
 #include <libelf.h>
 #include <summy/binary/file_provider.h>
 #include <unistd.h>
