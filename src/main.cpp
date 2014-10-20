@@ -33,6 +33,7 @@
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/transformers/ssa/phi_inserter.h>
+#include <summy/transformers/ssa/renamer.h>
 
 using namespace gdsl::rreil;
 using namespace std;
@@ -159,8 +160,12 @@ int main(void) {
 
   phi_inserter *pi = new phi_inserter(&cfg, rd_result);
   pi->transform();
-
   delete pi;
+
+  renamer *ren =  new renamer(&cfg, rd_result);
+  ren->transform();
+  delete ren;
+
   delete rd_result;
 
 //  printf("RReil (after transformations):\n");

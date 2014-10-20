@@ -19,9 +19,6 @@ cfg::phi_assign::phi_assign(gdsl::rreil::variable *lhs, gdsl::rreil::variable *r
   this->lhs = cv.get_variable();
   rhs->accept(cv);
   this->rhs = cv.get_variable();
-
-//  cout << "this: " << this->lhs << " /-> id: " << this->lhs->get_id() << endl;
-//  cout << "other: " << lhs << " /-> id: " << lhs->get_id() << endl;
 }
 
 cfg::phi_assign::phi_assign(const phi_assign &a) : phi_assign(a.lhs, a.rhs, a.size) {

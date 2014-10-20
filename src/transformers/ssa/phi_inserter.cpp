@@ -69,8 +69,6 @@ void phi_inserter::transform() {
   }
 
   for(auto &task : tasks) {
-//    cout << "phi from " << task.from << " to " << task.to << endl;
-
     auto &from_out_edges = *cfg->out_edges(task.from);
 
     size_t interm_node_id = cfg->create_node([&](size_t id) {
