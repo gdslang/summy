@@ -32,6 +32,7 @@
 #include <summy/analysis/reaching_defs/rd_elem.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/liveness/liveness.h>
+#include <summy/transformers/ssa/phi_inserter.h>
 
 using namespace gdsl::rreil;
 using namespace std;
@@ -155,6 +156,11 @@ int main(void) {
       cout << "-> " << state.first << " " << *state.second << " ";
     cout << endl;
   }
+
+  phi_inserter *pi = new phi_inserter(&cfg, rd_result);
+  pi->transform();
+
+  delete pi;
   delete rd_result;
 
 //  printf("RReil (after transformations):\n");

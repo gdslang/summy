@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include <gelf.h>
-#include <summy/sliced_memory.h>
-#include <libelf.h>
+#include <summy/binary/elf_provider.h>
 #include <summy/binary/file_provider.h>
+#include <summy/sliced_memory.h>
+#include <gelf.h>
+#include <libelf.h>
 #include <unistd.h>
 #include <string>
 #include <tuple>

@@ -37,6 +37,10 @@ private:
   const elements_t elements;
 
 public:
+  const elements_t &get_elements() {
+    return elements;
+  }
+
   adaptive_rd_elem(elements_t elements) : contains_undef(true), elements(elements) {
   }
   adaptive_rd_elem(bool contains_undef, elements_t elements) :

@@ -17,14 +17,26 @@ namespace cfg {
 
 class edge_visitor;
 
-struct phi_assign {
+class phi_assign {
+private:
   gdsl::rreil::variable *lhs;
   gdsl::rreil::variable *rhs;
   int_t size;
 
-  phi_assign(gdsl::rreil::variable *lhs, gdsl::rreil::variable *rhs, int_t size) :
-      lhs(lhs), rhs(rhs), size(size) {
+public:
+  gdsl::rreil::variable *get_lhs() {
+    return lhs;
   }
+  gdsl::rreil::variable *get_rhs() {
+    return rhs;
+  }
+  int_t get_size() {
+    return size;
+  }
+
+  phi_assign(gdsl::rreil::variable *lhs, gdsl::rreil::variable *rhs, int_t size);
+  phi_assign(phi_assign const &a);
+  ~phi_assign();
 };
 
 typedef std::vector<phi_assign> assignments_t;
