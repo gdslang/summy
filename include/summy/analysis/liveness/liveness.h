@@ -45,7 +45,7 @@ public:
 
   shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, shared_ptr<lattice_elem> state);
-  liveness_result result();
+  liveness_result *result();
 
   void put(std::ostream &out);
 };

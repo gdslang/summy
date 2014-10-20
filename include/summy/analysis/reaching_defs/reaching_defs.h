@@ -26,12 +26,12 @@ typedef ::analysis::analysis_result<state_t> reaching_defs_result_t;
 class reaching_defs: public analysis {
 private:
   state_t state;
-  ::analysis::liveness::liveness_result lv_result;
+  ::analysis::liveness::liveness_result *lv_result;
 
   virtual void init_constraints();
   virtual void init_dependants();
 public:
-  reaching_defs(cfg::cfg *cfg, ::analysis::liveness::liveness_result lv_result);
+  reaching_defs(cfg::cfg *cfg, ::analysis::liveness::liveness_result *lv_result);
   ~reaching_defs();
 
   std::shared_ptr<lattice_elem> bottom();
@@ -39,7 +39,7 @@ public:
 
   std::shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, std::shared_ptr<lattice_elem> state);
-  reaching_defs_result_t result();
+  reaching_defs_result_t *result();
 
   void put(std::ostream &out);
 };

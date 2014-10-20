@@ -148,13 +148,14 @@ int main(void) {
   cout << r;
 
   auto rd_result = r.result();
-  for(size_t i = 0; i < rd_result.in_states.size(); i++) {
-    auto &node_in = rd_result.in_states[i];
+  for(size_t i = 0; i < rd_result->in_states.size(); i++) {
+    auto &node_in = rd_result->in_states[i];
     cout << "rd_result (in_states) for node " << i << ": ";
     for(auto &state : node_in)
       cout << "-> " << state.first << " " << *state.second << " ";
     cout << endl;
   }
+  delete rd_result;
 
 //  printf("RReil (after transformations):\n");
 //  for(statement *s : *rreil)

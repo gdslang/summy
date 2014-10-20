@@ -33,12 +33,12 @@ struct adaptive_rd_result : public ::analysis::analysis_result<state_t> {
 class adaptive_rd: public analysis {
 private:
   state_t state;
-  ::analysis::liveness::liveness_result lv_result;
+  ::analysis::liveness::liveness_result *lv_result;
 
   virtual void init_constraints();
   virtual void init_dependants();
 public:
-  adaptive_rd(cfg::cfg *cfg, ::analysis::liveness::liveness_result lv_result);
+  adaptive_rd(cfg::cfg *cfg, ::analysis::liveness::liveness_result *lv_result);
   ~adaptive_rd();
 
   std::shared_ptr<lattice_elem> bottom();
@@ -46,7 +46,7 @@ public:
 
   std::shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, std::shared_ptr<lattice_elem> state);
-  adaptive_rd_result result();
+  adaptive_rd_result *result();
 
   void put(std::ostream &out);
 };
