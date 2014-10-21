@@ -14,6 +14,7 @@
 #include <cppgdsl/rreil/copy_visitor.h>
 #include <vector>
 #include <iostream>
+#include <assert.h>
 
 using namespace std;
 using namespace cfg;
@@ -80,5 +81,11 @@ void phi_inserter::transform() {
     from_out_edges.erase(task.to);
 
     interm_out_edges[task.to] = task.pe;
+
+    /*
+     * Todo: the following is awkwardly hacky and totally wrong
+     */
+    assert(interm_node_id == rd_result->result.size());
+    rd_result->result.push_back(rd_result->in_states[task.to][task.from]);
   }
 }

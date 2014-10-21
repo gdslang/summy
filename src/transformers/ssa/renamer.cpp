@@ -31,48 +31,53 @@ void renamer::transform() {
       size_t edge_dst_node = edge_it->first;
       edge_visitor ev;
 
-      /*
-       * Quick hack for now
-       */
-      size_t nodes_known_to_rd = rd_result->result.size();
-      if(node_id >= nodes_known_to_rd || edge_dst_node >= nodes_known_to_rd)
-        continue;
+      sr::copy_visitor cv;
+      auto rebuild = [&](auto &rd_elements, auto ast_node) {
+        bool update = false;
+        cv._([&](id *_id, int_t offset) -> variable* {
+          shared_ptr<id> id_wrapped(_id, [](auto x) {});
+          auto const &rd_mapping = rd_elements.find(id_wrapped);
+          if(rd_mapping != rd_elements.end()) {
+            _id = new sr::ssa_id(_id, rd_mapping->second);
+            update = true;
+          }
+          return new variable(_id, offset);
+        });
+        ast_node->accept(cv);
+        return update;
+      };
+
+      auto assignment = [&](variable *var, auto rhs, auto get_rhs, auto ctor_node) {
+        auto &rd_dst_elements = rd_result->result[edge_dst_node]->get_elements();
+        auto update = rebuild(rd_dst_elements, var);
+        variable *lhs = cv.get_variable();
+
+        if(update) {
+          auto &rd_src_elements = rd_result->result[node_id]->get_elements();
+          rebuild(rd_src_elements, rhs);
+          auto rhs = get_rhs();
+
+          auto r = ctor_node(lhs, rhs);
+          updates.push_back(make_tuple(edge_dst_node, new stmt_edge(&r)));
+        } else
+          delete lhs;
+      };
 
       ev._([&](stmt_edge *edge) {
         statement_visitor v;
         v._([&](assign *a) {
-          bool update = false;
-          sr::copy_visitor cv;
-
-          auto &rd_dst_elements = rd_result->result[edge_dst_node]->get_elements();
-          cv._([&](id *_id, int_t offset) -> variable* {
-            shared_ptr<id> id_wrapped(_id, [](auto x) {});
-            auto const &rd_mapping = rd_dst_elements.find(id_wrapped);
-            if(rd_mapping != rd_dst_elements.end()) {
-              _id = new sr::ssa_id(_id, rd_mapping->second);
-              update = true;
-            }
-            return new variable(_id, offset);
+          assignment(a->get_lhs(), a->get_rhs(), [&]() {
+            return cv.get_expr();
+          }, [&](auto lhs, auto rhs) {
+            return assign(a->get_size(), lhs, rhs);
           });
-          a->get_lhs()->accept(cv); //use var directly?!
-          variable *lhs = cv.get_variable();
-
-          if(update) {
-            auto &rd_src_elements = rd_result->result[node_id]->get_elements();
-            cv._([&](id *_id, int_t offset) -> variable* {
-              shared_ptr<id> id_wrapped(_id, [](auto x) {});
-              auto const &rd_mapping = rd_src_elements.find(id_wrapped);
-              if(rd_mapping != rd_src_elements.end())
-                _id = new sr::ssa_id(_id, rd_mapping->second);
-              return new variable(_id, offset);
-            });
-            a->get_rhs()->accept(cv);
-            expr *rhs = cv.get_expr();
-
-            assign b(a->get_size(), lhs, rhs);
-            updates.push_back(make_tuple(edge_dst_node, new stmt_edge(&b)));
-          } else
-            delete lhs;
+        });
+        v._([&](load *l) {
+          assignment(l->get_lhs(), l->get_address(), [&]() {
+            return cv.get_address();
+          }, [&](auto lhs, auto rhs) {
+            return load(l->get_size(), lhs, rhs);
+          });
         });
 
         edge->get_stmt()->accept(v);
