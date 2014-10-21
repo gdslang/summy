@@ -41,6 +41,11 @@ public:
     _default();
   }
 
+  virtual void visit(phi_edge *se) {
+    if(phi_edge_callback != NULL) phi_edge_callback(se);
+    _default();
+  }
+
   virtual void _default() {
   }
 

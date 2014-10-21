@@ -60,6 +60,10 @@ public:
     return cond;
   }
 
+  bool is_positive() {
+    return positive;
+  }
+
   void dot(std::ostream &stream);
   virtual void accept(edge_visitor &v);
 };

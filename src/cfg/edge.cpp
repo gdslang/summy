@@ -48,7 +48,7 @@ void cfg::stmt_edge::accept(edge_visitor &v) {
 cfg::cond_edge::cond_edge(gdsl::rreil::sexpr *cond, bool positive) {
   this->positive = positive;
 
-  copy_visitor cv;
+  summy::rreil::copy_visitor cv;
   cond->accept(cv);
   this->cond = cv.get_sexpr();
 }

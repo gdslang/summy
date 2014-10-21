@@ -6,15 +6,14 @@
  */
 #include <summy/cfg/phi_edge.h>
 #include <summy/cfg/edge_visitor.h>
+#include <summy/rreil/copy_visitor.h>
 #include <iostream>
-
-#include <cppgdsl/rreil/copy_visitor.h>
 
 using namespace gdsl::rreil;
 using namespace std;
 
 cfg::phi_assign::phi_assign(gdsl::rreil::variable *lhs, gdsl::rreil::variable *rhs, int_t size) : size(size) {
-  copy_visitor cv;
+  summy::rreil::copy_visitor cv;
   lhs->accept(cv);
   this->lhs = cv.get_variable();
   rhs->accept(cv);

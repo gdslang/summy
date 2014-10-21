@@ -24,13 +24,13 @@ private:
   int_t size;
 
 public:
-  gdsl::rreil::variable *get_lhs() {
+  gdsl::rreil::variable *get_lhs() const {
     return lhs;
   }
-  gdsl::rreil::variable *get_rhs() {
+  gdsl::rreil::variable *get_rhs() const {
     return rhs;
   }
-  int_t get_size() {
+  int_t get_size() const {
     return size;
   }
 
@@ -47,6 +47,10 @@ private:
 public:
   phi_edge(assignments_t assignments);
   ~phi_edge();
+
+  assignments_t const &get_assignments() {
+    return assignments;
+  }
 
   void dot(std::ostream &stream);
   virtual void accept(edge_visitor &v);
