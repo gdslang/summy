@@ -15,7 +15,7 @@ namespace rreil {
 
 class ssa_id;
 
-class id_visitor : public gdsl::rreil::id_visitor {
+class id_visitor : public virtual gdsl::rreil::id_visitor {
 private:
   std::function<void(ssa_id*)> ssa_id_callback = NULL;
 public:

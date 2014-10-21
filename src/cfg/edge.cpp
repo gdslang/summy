@@ -7,8 +7,7 @@
 
 #include <summy/cfg/edge.h>
 #include <summy/cfg/edge_visitor.h>
-
-#include <cppgdsl/rreil/copy_visitor.h>
+#include <summy/rreil/copy_visitor.h>
 
 using namespace gdsl::rreil;
 
@@ -29,7 +28,7 @@ void cfg::edge::accept(edge_visitor &v) {
  */
 
 cfg::stmt_edge::stmt_edge(gdsl::rreil::statement *stmt) {
-  copy_visitor cv;
+  summy::rreil::copy_visitor cv;
   stmt->accept(cv);
   this->stmt = cv.get_statement();
 }
