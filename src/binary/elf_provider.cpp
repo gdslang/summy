@@ -11,7 +11,7 @@
 #include <gelf.h>
 #include <err.h>
 #include <fcntl.h>
-#include <include/summy/sliced_memory.h>
+#include <summy/sliced_memory.h>
 #include <stdint.h>
 #include <string.h>
 #include <summy/binary/file_provider.h>
