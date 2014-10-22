@@ -19,7 +19,7 @@ using namespace std;
 
 void cfg::cfg::add_node(node *n) {
   nodes.push_back(n);
-  edges.push_back(new map<size_t, edge*>());
+  edges.push_back(new edges_t());
 }
 
 cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary) {
@@ -51,7 +51,7 @@ size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, siz
       return new node(id);
     });
 
-    map<size_t, edge*> &from_edges = *edges[from_node];
+    edges_t &from_edges = *edges[from_node];
     from_edges[to_node] = new stmt_edge(stmt);
 
     from_node = to_node;
@@ -100,18 +100,25 @@ size_t cfg::cfg::create_node(std::function<class node*(size_t)> constr) {
   return id;
 }
 
-std::map<size_t, cfg::edge*> const *cfg::cfg::out_edges(size_t id) {
+edges_t const* cfg::cfg::out_edges(size_t id) {
   return edges[id];
 }
 
-void cfg::cfg::update_edge(size_t from, size_t to, edge *edge) {
-  auto &it = edges[from]->find(to);
+void cfg::cfg::update_destroy_edge(size_t from, size_t to, edge *edge) {
+  auto it = edges[from]->find(to);
   if(it != edges[from]->end())
     delete it->second;
   it->second = edge;
 }
 
+void cfg::cfg::update_edge(size_t from, size_t to, const edge *edge) {
+  edges[from]->operator [](to) = edge;
+}
+
 void cfg::cfg::erase_edge(size_t from, size_t to) {
+}
+
+void cfg::cfg::erase_destroy_edge(size_t from, size_t to) {
   delete edges[from]->operator [](to);
   edges[from]->erase(to);
 }

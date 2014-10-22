@@ -57,7 +57,7 @@ void adaptive_rd::init_constraints() {
         };
       };
       edge_visitor ev;
-      ev._([&](stmt_edge *edge) {
+      ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](assign *a) {
@@ -68,7 +68,7 @@ void adaptive_rd::init_constraints() {
         });
         stmt->accept(v);
       });
-      ev._([&](phi_edge *edge) {
+      ev._([&](const phi_edge *edge) {
         for(auto const &ass : edge->get_assignments()) {
           id_assigned(ass.get_size(), ass.get_lhs());
         }

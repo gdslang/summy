@@ -57,7 +57,7 @@ void renamer::transform() {
         return node_ctor(lhs_new, rhs_new);
       };
 
-      ev._([&](stmt_edge *edge) {
+      ev._([&](const stmt_edge *edge) {
         statement_visitor v;
         v._([&](assign *a) {
           auto s = assignment(a->get_lhs(), a->get_rhs(), [&]() {
@@ -83,13 +83,13 @@ void renamer::transform() {
         });
         edge->get_stmt()->accept(v);
       });
-      ev._([&](cond_edge *ce) {
+      ev._([&](const cond_edge *ce) {
         rebuild(rd_src_elements, ce->get_cond());
         auto sexpr_new = cv.get_sexpr();
         updates.push_back(make_tuple(edge_dst_node, new cond_edge(sexpr_new, ce->is_positive())));
         delete sexpr_new;
       });
-      ev._([&](phi_edge *edge) {
+      ev._([&](const phi_edge *edge) {
         assignments_t assignments_new;
         for(auto &ass : edge->get_assignments()) {
           auto ass_new = assignment(ass.get_lhs(), ass.get_rhs(), [&]() {
@@ -110,8 +110,7 @@ void renamer::transform() {
       size_t dst_node;
       edge *edge;
       tie(dst_node, edge) = update;
-      delete edges[dst_node];
-      edges[dst_node] = edge;
+      cfg->update_destroy_edge(node_id, dst_node, edge);
     }
   }
 }

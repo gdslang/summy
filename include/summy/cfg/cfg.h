@@ -32,11 +32,13 @@ struct update {
   size_t to;
 };
 
+typedef std::map<size_t, edge const*> edges_t;
+
 class cfg {
   friend class bfs_iterator;
 private:
   std::vector<node*> nodes;
-  std::vector<std::map<size_t, edge*>*> edges;
+  std::vector<edges_t*> edges;
   std::vector<update> updates;
 
   void add_node(node *n);
@@ -55,9 +57,11 @@ public:
   /*
    * Caution: edge map may get changed
    */
-  std::map<size_t, edge*> const* out_edges(size_t id);
-  void update_edge(size_t from, size_t to, edge *edge);
+  edges_t const* out_edges(size_t id);
+  void update_edge(size_t from, size_t to, const edge *edge);
+  void update_destroy_edge(size_t from, size_t to, const edge *edge);
   void erase_edge(size_t from, size_t to);
+  void erase_destroy_edge(size_t from, size_t to);
 
   bfs_iterator begin();
   bfs_iterator end();

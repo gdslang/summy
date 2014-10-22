@@ -70,17 +70,15 @@ void phi_inserter::transform() {
   }
 
   for(auto &task : tasks) {
-    auto &from_out_edges = *cfg->out_edges(task.from);
-
     size_t interm_node_id = cfg->create_node([&](size_t id) {
       return new (class node)(id);
     });
-    auto &interm_out_edges = *cfg->out_edges(interm_node_id);
 
-    from_out_edges[interm_node_id] = from_out_edges[task.to];
-    from_out_edges.erase(task.to);
+    auto &from_out_edges = *cfg->out_edges(task.from);
+    cfg->update_edge(task.from, interm_node_id, from_out_edges[task.to]);
+    cfg->erase_edge(task.from, task.to);
 
-    interm_out_edges[task.to] = task.pe;
+    cfg->update_edge(interm_node_id, task.to, task.pe);
 
     /*
      * Todo: the following is awkwardly hacky and totally wrong

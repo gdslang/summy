@@ -93,7 +93,7 @@ void analysis::liveness::liveness::init_constraints() {
         };
       };
       edge_visitor ev;
-      ev._([&](stmt_edge *edge) {
+      ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](assign *i) {
@@ -154,14 +154,14 @@ void analysis::liveness::liveness::init_constraints() {
         });
         stmt->accept(v);
       });
-      ev._([&](cond_edge *edge) {
+      ev._([&](const cond_edge *edge) {
         sexpr *cond = edge->get_cond();
         auto newly_live = acc_newly_live(1, [&](visitor &v) {
           cond->accept(v);
         });
         access(newly_live);
       });
-      ev._([&](phi_edge *edge) {
+      ev._([&](const phi_edge *edge) {
         for(auto const &ass : edge->get_assignments()) {
           auto accept_live = [&](visitor &v) {
             ass.get_rhs()->accept(v);

@@ -15,11 +15,11 @@ using namespace gdsl::rreil;
  * edge
  */
 
-void cfg::edge::dot(std::ostream &stream) {
+void cfg::edge::dot(std::ostream &stream) const {
   stream << "\"\"";
 }
 
-void cfg::edge::accept(edge_visitor &v) {
+void cfg::edge::accept(edge_visitor &v) const {
   v.visit(this);
 }
 

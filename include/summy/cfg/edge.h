@@ -25,8 +25,8 @@ public:
   virtual ~edge() {
   }
 
-  virtual void dot(std::ostream &stream);
-  virtual void accept(edge_visitor &v);
+  virtual void dot(std::ostream &stream) const;
+  virtual void accept(edge_visitor &v) const;
 };
 
 class stmt_edge: public edge {
@@ -38,7 +38,7 @@ public:
     delete stmt;
   }
 
-  gdsl::rreil::statement *get_stmt() {
+  gdsl::rreil::statement *get_stmt() const {
     return stmt;
   }
 
@@ -56,11 +56,11 @@ public:
     delete cond;
   }
 
-  gdsl::rreil::sexpr *get_cond() {
+  gdsl::rreil::sexpr *get_cond() const {
     return cond;
   }
 
-  bool is_positive() {
+  bool is_positive() const {
     return positive;
   }
 

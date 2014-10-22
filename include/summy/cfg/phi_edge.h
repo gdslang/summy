@@ -48,7 +48,7 @@ public:
   phi_edge(assignments_t assignments);
   ~phi_edge();
 
-  assignments_t const &get_assignments() {
+  assignments_t const &get_assignments() const {
     return assignments;
   }
 

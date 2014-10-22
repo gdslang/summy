@@ -53,7 +53,7 @@ void reaching_defs::init_constraints() {
         return cleanup_live(state[node_id]);
       };
       edge_visitor ev;
-      ev._([&](stmt_edge *edge) {
+      ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         auto id_assigned = [&](int_t size, variable *v) {

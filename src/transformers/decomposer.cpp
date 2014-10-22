@@ -67,13 +67,15 @@ void decomposer::transform() {
       });
       edge_it->second->accept(ev);
 
+      /*
+       * Todo: The following code needs reworking
+       */
       auto edge_it_old = edge_it++;
       if(replace) {
-        delete edge_it_old->second;
         if(replacement == NULL)
-          edges.erase(edge_it_old);
+          cfg->erase_destroy_edge(node->get_id(), edge_it_old->first);
         else
-          edge_it_old->second = replacement;
+          cfg->update_destroy_edge(node->get_id(), edge_it_old->first, replacement);
       }
     }
 //    printf("id: %zu\n", a->get_id());
