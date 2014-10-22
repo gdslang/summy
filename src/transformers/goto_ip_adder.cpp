@@ -54,8 +54,7 @@ void goto_ip_adder::transform() {
     statement *goto_ip = new branch(new address(64, new lin_var(new variable(new arch_id("IP"), 0))),
         gdsl::rreil::BRANCH_HINT_JUMP);
 
-    auto &edges = *cfg->out_edges(node->get_id());
-    edges[new_node_id] = new stmt_edge(goto_ip);
+    cfg->update_edge(node->get_id(), new_node_id, new stmt_edge(goto_ip));
     delete goto_ip;
   }
 }

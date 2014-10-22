@@ -59,6 +59,10 @@ size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, siz
   return to_node;
 }
 
+void cfg::cfg::clear_updates() {
+  updates.clear();
+}
+
 void cfg::cfg::dot(std::ostream &stream) {
   stream << "digraph G {" << endl;
   for(auto node : nodes) {
@@ -96,8 +100,20 @@ size_t cfg::cfg::create_node(std::function<class node*(size_t)> constr) {
   return id;
 }
 
-std::map<size_t, cfg::edge*> *cfg::cfg::out_edges(size_t id) {
+std::map<size_t, cfg::edge*> const *cfg::cfg::out_edges(size_t id) {
   return edges[id];
+}
+
+void cfg::cfg::update_edge(size_t from, size_t to, edge *edge) {
+  auto &it = edges[from]->find(to);
+  if(it != edges[from]->end())
+    delete it->second;
+  it->second = edge;
+}
+
+void cfg::cfg::erase_edge(size_t from, size_t to) {
+  delete edges[from]->operator [](to);
+  edges[from]->erase(to);
 }
 
 cfg::bfs_iterator cfg::cfg::begin() {

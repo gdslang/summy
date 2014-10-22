@@ -22,11 +22,22 @@ class node;
 class edge;
 class bfs_iterator;
 
+enum update_kind {
+  INSERT, DELETE
+};
+
+struct update {
+  update_kind kind;
+  size_t from;
+  size_t to;
+};
+
 class cfg {
   friend class bfs_iterator;
 private:
   std::vector<node*> nodes;
   std::vector<std::map<size_t, edge*>*> edges;
+  std::vector<update> updates;
 
   void add_node(node *n);
 public:
@@ -44,10 +55,17 @@ public:
   /*
    * Caution: edge map may get changed
    */
-  std::map<size_t, edge*> *out_edges(size_t id);
+  std::map<size_t, edge*> const* out_edges(size_t id);
+  void update_edge(size_t from, size_t to, edge *edge);
+  void erase_edge(size_t from, size_t to);
 
   bfs_iterator begin();
   bfs_iterator end();
+
+  std::vector<update> const &get_updates() {
+    return updates;
+  }
+  void clear_updates();
 
   void dot(std::ostream &stream);
 };
