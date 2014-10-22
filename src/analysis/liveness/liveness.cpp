@@ -12,10 +12,12 @@
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/edge.h>
+#include <summy/cfg/phi_edge.h>
 #include <summy/cfg/edge_visitor.h>
+#include <summy/rreil/copy_visitor.h>
+#include <summy/rreil/visitor.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <cppgdsl/rreil/statement/statement_visitor.h>
-#include <cppgdsl/rreil/copy_visitor.h>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -29,6 +31,7 @@ using namespace std;
 using namespace cfg;
 using namespace analysis::liveness;
 using namespace gdsl::rreil;
+namespace sr = summy::rreil;
 
 static long long unsigned int range(unsigned long long offset, unsigned long long size) {
   if(size + offset > 64 || offset > 64)
@@ -60,9 +63,9 @@ void analysis::liveness::liveness::init_constraints() {
         return state[dest_node];
       };
       auto acc_newly_live = [&](int_t size, function<void(visitor&)> accept_live) {
-        copy_visitor cv;
+        sr::copy_visitor cv;
         vector<singleton_t> newly_live;
-        visitor id_acc;
+        sr::visitor id_acc;
         id_acc._((function<void(variable*)>)([&](variable *var) {
           var->get_id()->accept(cv);
           newly_live.push_back(singleton_t(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(var->get_offset(), size)));
@@ -72,7 +75,7 @@ void analysis::liveness::liveness::init_constraints() {
         return newly_live;
       };
       auto assignment = [&](int_t size, variable *assignee, vector<singleton_t> newly_live) {
-        copy_visitor cv;
+        sr::copy_visitor cv;
         assignee->get_id()->accept(cv);
         singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(assignee->get_offset(), size));
 
@@ -97,9 +100,8 @@ void analysis::liveness::liveness::init_constraints() {
           auto accept_live = [&](visitor &v) {
             i->get_rhs()->accept(v);
           };
-          int_t size = rreil_prop::size_of_assign(i);
-          auto newly_live = acc_newly_live(size, accept_live);
-          assignment(size, i->get_lhs(), newly_live);
+          auto newly_live = acc_newly_live(rreil_prop::size_of_rhs(i), accept_live);
+          assignment(rreil_prop::size_of_assign(i), i->get_lhs(), newly_live);
         });
         v._([&](load *l) {
           auto accept_live = [&](visitor &v) {
@@ -158,6 +160,15 @@ void analysis::liveness::liveness::init_constraints() {
           cond->accept(v);
         });
         access(newly_live);
+      });
+      ev._([&](phi_edge *edge) {
+        for(auto const &ass : edge->get_assignments()) {
+          auto accept_live = [&](visitor &v) {
+            ass.get_rhs()->accept(v);
+          };
+          auto newly_live = acc_newly_live(ass.get_size(), accept_live);
+          assignment(ass.get_size(), ass.get_lhs(), newly_live);
+        }
       });
       edge_it->second->accept(ev);
       (constraints[node_id])[dest_node] = transfer_f;

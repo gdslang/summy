@@ -11,12 +11,15 @@
 #include <cppgdsl/rreil/statement/statement_visitor.h>
 #include <cppgdsl/rreil/expr/expr_visitor.h>
 #include <cppgdsl/rreil/sexpr/sexpr_visitor.h>
+#include <summy/rreil/visitor.h>
 
 #include <functional>
 #include <tuple>
 
 using namespace std;
+using namespace std::placeholders;
 using namespace gdsl::rreil;
+namespace sr = summy::rreil;
 
 std::tuple<bool, int_t> rreil_evaluator::evaluate(linear *lin) {
   tuple<bool, size_t> result = make_tuple(false, 0);
@@ -94,25 +97,27 @@ bool rreil_prop::is_ip(gdsl::rreil::variable *v) {
   return is_ip;
 }
 
-int_t rreil_prop::size_of_assign(gdsl::rreil::assign *a) {
-  int_t size = 0;
+static int_t size_of_lhs_rhs(gdsl::rreil::assign *a, bool rhs) {
+  int_t size = a->get_size();
   expr_visitor ev;
   ev._([&](expr_sexpr *s){
     sexpr_visitor sv;
     sv._([&](sexpr_cmp *cp){
-      size = 1;
-    });
-    sv._default([&](sexpr *s) {
-      size = a->get_size();
+      if(!rhs) size = 1;
     });
     s->get_inner()->accept(sv);
   });
-  ev._([&](expr_ext *ex) {
-    size = ex->get_fromsize();
-  });
-  ev._default([&](expr *_) {
-    size = a->get_size();
+  ev._([&](expr_ext *e) {
+    if(rhs) size = e->get_fromsize();
   });
   a->get_rhs()->accept(ev);
   return size;
+};
+
+int_t rreil_prop::size_of_assign(gdsl::rreil::assign *a) {
+  return size_of_lhs_rhs(a, false);
+}
+
+int_t rreil_prop::size_of_rhs(gdsl::rreil::assign *a) {
+  return size_of_lhs_rhs(a, true);
 }
