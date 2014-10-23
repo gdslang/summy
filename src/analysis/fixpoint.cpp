@@ -15,7 +15,7 @@ using namespace std;
 using namespace analysis;
 
 void fixpoint::iterate() {
-  set<size_t> worklist = analysis->initial();
+  set<size_t> worklist = analysis->pending();
   set<size_t> seen;
   while(!worklist.empty()) {
     size_t node_id;

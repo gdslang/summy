@@ -28,8 +28,10 @@ private:
   state_t state;
   ::analysis::liveness::liveness_result lv_result;
 
-  virtual void init_constraints();
-  virtual void init_dependants();
+  virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
+  virtual void remove_constraint(size_t from, size_t to);
+  virtual void add_dependency(size_t from, size_t to);
+  virtual void remove_dependency(size_t from, size_t to);
 public:
   reaching_defs(cfg::cfg *cfg, ::analysis::liveness::liveness_result lv_result);
   ~reaching_defs();

@@ -8,6 +8,7 @@
 #pragma once
 #include <summy/analysis/analysis.h>
 #include <summy/analysis/liveness/lv_elem.h>
+#include <summy/cfg/edge.h>
 #include <memory>
 #include <vector>
 #include <set>
@@ -35,8 +36,10 @@ private:
   state_t state;
   newly_live_vector_t pn_newly_live;
 
-  virtual void init_constraints();
-  virtual void init_dependants();
+  virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
+  virtual void remove_constraint(size_t from, size_t to);
+  virtual void add_dependency(size_t from, size_t to);
+  virtual void remove_dependency(size_t from, size_t to);
 public:
   liveness(cfg::cfg *cfg);
   ~liveness();

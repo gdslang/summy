@@ -6,11 +6,12 @@
  */
 
 #pragma once
+#include <summy/cfg/cfg.h>
 #include <queue>
 #include <set>
 #include <map>
+#include <vector>
 #include <tuple>
-#include <summy/cfg/cfg.h>
 #include <memory>
 #include <iostream>
 
@@ -33,12 +34,14 @@ public:
   typedef std::function<std::shared_ptr<lattice_elem>()> constraint_t;
 protected:
   cfg::cfg *cfg;
-  std::vector<std::map<size_t, constraint_t>> constraints;
-  std::vector<std::set<size_t>> _dependants;
-  std::set<size_t> fixpoint_initial;
+  std::map<size_t, std::map<size_t, constraint_t>> constraints;
+  std::map<size_t, std::set<size_t>> _dependants;
+  std::set<size_t> fixpoint_pending;
 
-  virtual void init_constraints() = 0;
-  virtual void init_dependants() = 0;
+  virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e) = 0;
+  virtual void remove_constraint(size_t from, size_t to) = 0;
+  virtual void add_dependency(size_t from, size_t to) = 0;
+  virtual void remove_dependency(size_t from, size_t to) = 0;
   virtual void init_fixpoint_initial();
   void init();
 public:
@@ -46,11 +49,13 @@ public:
   virtual ~analysis() {
   }
 
+  void update(std::vector<::cfg::update> &updates);
+
   virtual std::map<size_t, constraint_t> &constraints_at(size_t node) {
     return constraints[node];
   }
-  virtual std::set<size_t> initial() {
-    return fixpoint_initial;
+  virtual std::set<size_t> pending() {
+    return fixpoint_pending;
   }
 
   virtual shared_ptr<lattice_elem> get(size_t node) = 0;

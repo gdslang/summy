@@ -10,6 +10,8 @@
 #include <summy/analysis/analysis.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd_elem.h>
+#include <summy/cfg/edge.h>
+#include <summy/cfg/cfg.h>
 #include <vector>
 #include <functional>
 #include <set>
@@ -36,8 +38,10 @@ private:
   in_states_t in_states;
   ::analysis::liveness::liveness_result lv_result;
 
-  virtual void init_constraints();
-  virtual void init_dependants();
+  virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
+  virtual void remove_constraint(size_t from, size_t to);
+  virtual void add_dependency(size_t from, size_t to);
+  virtual void remove_dependency(size_t from, size_t to);
 public:
   adaptive_rd(cfg::cfg *cfg, ::analysis::liveness::liveness_result lv_result);
   ~adaptive_rd();

@@ -52,137 +52,132 @@ bool analysis::liveness::liveness_result::contains(size_t node_id, singleton_t s
   return result[node_id]->contains_bit(s);
 }
 
-void analysis::liveness::liveness::init_constraints() {
-  for(auto node : *cfg) {
-    size_t node_id = node->get_id();
-    vector<constraint_t> node_constraints;
-    auto &edges = *cfg->out_edges(node_id);
-    for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
-      size_t dest_node = edge_it->first;
-      constraint_t transfer_f = [=]() {
-        return state[dest_node];
-      };
-      auto acc_newly_live = [&](int_t size, function<void(visitor&)> accept_live) {
-        sr::copy_visitor cv;
-        vector<singleton_t> newly_live;
-        sr::visitor id_acc;
-        id_acc._((function<void(variable*)>)([&](variable *var) {
-          var->get_id()->accept(cv);
-          newly_live.push_back(singleton_t(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(var->get_offset(), size)));
-        }));
-        accept_live(id_acc);
-        pn_newly_live[node_id].insert(pn_newly_live[node_id].end(), newly_live.begin(), newly_live.end());
-        return newly_live;
-      };
-      auto assignment = [&](int_t size, variable *assignee, vector<singleton_t> newly_live) {
-        sr::copy_visitor cv;
-        assignee->get_id()->accept(cv);
-        singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(assignee->get_offset(), size));
+void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const ::cfg::edge* e) {
+  constraint_t transfer_f = [=]() {
+    return state[to];
+  };
+  auto acc_newly_live = [&](int_t size, function<void(visitor&)> accept_live) {
+    sr::copy_visitor cv;
+    vector<singleton_t> newly_live;
+    sr::visitor id_acc;
+    id_acc._((function<void(variable*)>)([&](variable *var) {
+      var->get_id()->accept(cv);
+      newly_live.push_back(singleton_t(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(var->get_offset(), size)));
+    }));
+    accept_live(id_acc);
+    pn_newly_live[from].insert(pn_newly_live[from].end(), newly_live.begin(), newly_live.end());
+    return newly_live;
+  };
+  auto assignment = [&](int_t size, variable *assignee, vector<singleton_t> newly_live) {
+    sr::copy_visitor cv;
+    assignee->get_id()->accept(cv);
+    singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(assignee->get_offset(), size));
 
-        transfer_f = [=]() {
-          if(state[dest_node]->contains_bit(lhs)) {
-            shared_ptr<lv_elem> dead_removed(state[dest_node]->remove({ lhs }));
-            return shared_ptr<lv_elem>(dead_removed->add(newly_live));
-          } else
-            return state[dest_node];
-        };
+    transfer_f = [=]() {
+      if(state[to]->contains_bit(lhs)) {
+        shared_ptr<lv_elem> dead_removed(state[to]->remove({ lhs }));
+        return shared_ptr<lv_elem>(dead_removed->add(newly_live));
+      } else
+        return state[to];
+    };
+  };
+  auto access = [&](vector<singleton_t> newly_live) {
+    transfer_f = [=]() {
+      return shared_ptr<lv_elem>(state[to]->add(newly_live));
+    };
+  };
+  edge_visitor ev;
+  ev._([&](const stmt_edge *edge) {
+    statement *stmt = edge->get_stmt();
+    statement_visitor v;
+    v._([&](assign *i) {
+      auto accept_live = [&](visitor &v) {
+        i->get_rhs()->accept(v);
       };
-      auto access = [&](vector<singleton_t> newly_live) {
-        transfer_f = [=]() {
-          return shared_ptr<lv_elem>(state[dest_node]->add(newly_live));
-        };
+      auto newly_live = acc_newly_live(rreil_prop::size_of_rhs(i), accept_live);
+      assignment(rreil_prop::size_of_assign(i), i->get_lhs(), newly_live);
+    });
+    v._([&](load *l) {
+      auto accept_live = [&](visitor &v) {
+        l->get_address()->get_lin()->accept(v);
       };
-      edge_visitor ev;
-      ev._([&](const stmt_edge *edge) {
-        statement *stmt = edge->get_stmt();
-        statement_visitor v;
-        v._([&](assign *i) {
-          auto accept_live = [&](visitor &v) {
-            i->get_rhs()->accept(v);
-          };
-          auto newly_live = acc_newly_live(rreil_prop::size_of_rhs(i), accept_live);
-          assignment(rreil_prop::size_of_assign(i), i->get_lhs(), newly_live);
-        });
-        v._([&](load *l) {
-          auto accept_live = [&](visitor &v) {
-            l->get_address()->get_lin()->accept(v);
-          };
-          auto newly_live = acc_newly_live(l->get_address()->get_size(), accept_live);
-          assignment(l->get_size(), l->get_lhs(), newly_live);
-        });
-        v._([&](store *s) {
-          function<void(visitor&)> accept_live = [&](visitor &v) {
-            s->get_address()->get_lin()->accept(v);
-          };
-          acc_newly_live(s->get_address()->get_size(), accept_live);
-          accept_live = [&](visitor &v) {
-            s->get_rhs()->accept(v);
-          };
-          acc_newly_live(s->get_size(), accept_live);
-        });
-        v._([&](cbranch *c) {
-          auto newly_live = acc_newly_live(1, [&](visitor &v) {
-            c->get_cond()->accept(v);
-          });
-          access(newly_live);
-          newly_live = acc_newly_live(c->get_target_true()->get_size(), [&](visitor &v) {
-            c->get_target_true()->accept(v);
-          });
-          access(newly_live);
-          newly_live = acc_newly_live(c->get_target_false()->get_size(), [&](visitor &v) {
-            c->get_target_false()->accept(v);
-          });
-          access(newly_live);
-        });
-        v._([&](branch *b) {
-          auto newly_live = acc_newly_live(b->get_target()->get_size(), [&](visitor &v) {
-            b->get_target()->accept(v);
-          });
-          access(newly_live);
-        });
-        v._([&](floating *_) {
-          throw string("Not implemented");
-        });
-        v._([&](prim *_) {
-          throw string("Not implemented");
-        });
-        v._([&](_throw *_) {
-          throw string("Not implemented");
-        });
-        v._default([&](statement *_) {
-          throw string("Should not happen :/");
-        });
-        stmt->accept(v);
+      auto newly_live = acc_newly_live(l->get_address()->get_size(), accept_live);
+      assignment(l->get_size(), l->get_lhs(), newly_live);
+    });
+    v._([&](store *s) {
+      function<void(visitor&)> accept_live = [&](visitor &v) {
+        s->get_address()->get_lin()->accept(v);
+      };
+      acc_newly_live(s->get_address()->get_size(), accept_live);
+      accept_live = [&](visitor &v) {
+        s->get_rhs()->accept(v);
+      };
+      acc_newly_live(s->get_size(), accept_live);
+    });
+    v._([&](cbranch *c) {
+      auto newly_live = acc_newly_live(1, [&](visitor &v) {
+        c->get_cond()->accept(v);
       });
-      ev._([&](const cond_edge *edge) {
-        sexpr *cond = edge->get_cond();
-        auto newly_live = acc_newly_live(1, [&](visitor &v) {
-          cond->accept(v);
-        });
-        access(newly_live);
+      access(newly_live);
+      newly_live = acc_newly_live(c->get_target_true()->get_size(), [&](visitor &v) {
+        c->get_target_true()->accept(v);
       });
-      ev._([&](const phi_edge *edge) {
-        for(auto const &ass : edge->get_assignments()) {
-          auto accept_live = [&](visitor &v) {
-            ass.get_rhs()->accept(v);
-          };
-          auto newly_live = acc_newly_live(ass.get_size(), accept_live);
-          assignment(ass.get_size(), ass.get_lhs(), newly_live);
-        }
+      access(newly_live);
+      newly_live = acc_newly_live(c->get_target_false()->get_size(), [&](visitor &v) {
+        c->get_target_false()->accept(v);
       });
-      edge_it->second->accept(ev);
-      (constraints[node_id])[dest_node] = transfer_f;
+      access(newly_live);
+    });
+    v._([&](branch *b) {
+      auto newly_live = acc_newly_live(b->get_target()->get_size(), [&](visitor &v) {
+        b->get_target()->accept(v);
+      });
+      access(newly_live);
+    });
+    v._([&](floating *_) {
+      throw string("Not implemented");
+    });
+    v._([&](prim *_) {
+      throw string("Not implemented");
+    });
+    v._([&](_throw *_) {
+      throw string("Not implemented");
+    });
+    v._default([&](statement *_) {
+      throw string("Should not happen :/");
+    });
+    stmt->accept(v);
+  });
+  ev._([&](const cond_edge *edge) {
+    sexpr *cond = edge->get_cond();
+    auto newly_live = acc_newly_live(1, [&](visitor &v) {
+      cond->accept(v);
+    });
+    access(newly_live);
+  });
+  ev._([&](const phi_edge *edge) {
+    for(auto const &ass : edge->get_assignments()) {
+      auto accept_live = [&](visitor &v) {
+        ass.get_rhs()->accept(v);
+      };
+      auto newly_live = acc_newly_live(ass.get_size(), accept_live);
+      assignment(ass.get_size(), ass.get_lhs(), newly_live);
     }
-  }
+  });
+  e->accept(ev);
+  (constraints[from])[to] = transfer_f;
 }
 
-void analysis::liveness::liveness::init_dependants() {
-  for(auto node : *cfg) {
-    size_t node_id = node->get_id();
-    auto &edges = *cfg->out_edges(node_id);
-    for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++)
-      _dependants[edge_it->first].insert(node_id);
-  }
+void analysis::liveness::liveness::remove_constraint(size_t from, size_t to) {
+  (constraints[from]).erase(to);
+}
+
+void analysis::liveness::liveness::add_dependency(size_t from, size_t to) {
+  _dependants[to].insert(from);
+}
+
+void analysis::liveness::liveness::remove_dependency(size_t from, size_t to) {
+  _dependants[to].erase(from);
 }
 
 analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg), pn_newly_live(cfg->node_count()) {
