@@ -51,8 +51,7 @@ size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, siz
       return new node(id);
     });
 
-    edges_t &from_edges = *edges[from_node];
-    from_edges[to_node] = new stmt_edge(stmt);
+    update_edge(from_node, to_node, new stmt_edge(stmt));
 
     from_node = to_node;
   }
@@ -116,6 +115,7 @@ void cfg::cfg::update_edge(size_t from, size_t to, const edge *edge) {
 }
 
 void cfg::cfg::erase_edge(size_t from, size_t to) {
+  edges[from]->erase(to);
 }
 
 void cfg::cfg::erase_destroy_edge(size_t from, size_t to) {

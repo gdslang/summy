@@ -52,8 +52,8 @@ public:
     return assignments;
   }
 
-  void dot(std::ostream &stream);
-  virtual void accept(edge_visitor &v);
+  void dot(std::ostream &stream) const;
+  virtual void accept(edge_visitor &v) const;
 };
 
 }

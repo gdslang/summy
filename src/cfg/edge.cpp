@@ -15,6 +15,7 @@ using namespace gdsl::rreil;
  * edge
  */
 
+
 void cfg::edge::dot(std::ostream &stream) const {
   stream << "\"\"";
 }
@@ -33,11 +34,13 @@ cfg::stmt_edge::stmt_edge(gdsl::rreil::statement *stmt) {
   this->stmt = cv.get_statement();
 }
 
-void cfg::stmt_edge::dot(std::ostream &stream) {
+
+
+void cfg::stmt_edge::dot(std::ostream &stream) const {
   stream << "\"" << *stmt << "\"";
 }
 
-void cfg::stmt_edge::accept(edge_visitor &v) {
+void cfg::stmt_edge::accept(edge_visitor &v) const {
   v.visit(this);
 }
 
@@ -53,12 +56,12 @@ cfg::cond_edge::cond_edge(gdsl::rreil::sexpr *cond, bool positive) {
   this->cond = cv.get_sexpr();
 }
 
-void cfg::cond_edge::dot(std::ostream &stream) {
+void cfg::cond_edge::dot(std::ostream &stream) const {
   if(positive) stream << "\"" << *cond << "\"";
   else stream << "\"!(" << *cond << ")\"";
   stream << ", style=dashed, color=blue";
 }
 
-void cfg::cond_edge::accept(edge_visitor &v) {
+void cfg::cond_edge::accept(edge_visitor &v) const {
   v.visit(this);
 }

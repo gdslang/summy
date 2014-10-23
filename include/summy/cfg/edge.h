@@ -42,8 +42,8 @@ public:
     return stmt;
   }
 
-  void dot(std::ostream &stream);
-  virtual void accept(edge_visitor &v);
+  void dot(std::ostream &stream) const;
+  virtual void accept(edge_visitor &v) const;
 };
 
 class cond_edge: public edge {
@@ -64,8 +64,8 @@ public:
     return positive;
   }
 
-  void dot(std::ostream &stream);
-  virtual void accept(edge_visitor &v);
+  void dot(std::ostream &stream) const;
+  virtual void accept(edge_visitor &v) const;
 };
 
 }

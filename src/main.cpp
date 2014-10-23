@@ -125,18 +125,18 @@ int main(void) {
   }
 
   vector<transformer*> transformers;
-//  transformers.push_back(new decomposer(&cfg));
-//  transformers.push_back(new goto_ip_adder(&cfg));
-//  transformers.push_back(new ip_propagator(&cfg));
-//  transformers.push_back(new trivial_connector(&cfg));
+  transformers.push_back(new decomposer(&cfg));
+  transformers.push_back(new goto_ip_adder(&cfg));
+  transformers.push_back(new ip_propagator(&cfg));
+  transformers.push_back(new trivial_connector(&cfg));
   for(auto t : transformers) {
     t->transform();
     delete t;
   }
 
-//  analysis::liveness::liveness l(&cfg);
-//  analysis::fixpoint fpl(&l);
-//  fpl.iterate();
+  analysis::liveness::liveness l(&cfg);
+  analysis::fixpoint fpl(&l);
+  fpl.iterate();
 //  cout << l;
 
 //  analysis::reaching_defs::reaching_defs r(&cfg, l.result());
@@ -144,12 +144,12 @@ int main(void) {
 //  fpr.iterate();
 //  cout << r;
 
-//  analysis::adaptive_rd::adaptive_rd r(&cfg, l.result());
-//  analysis::fixpoint fpr(&r);
-//  fpr.iterate();
+  analysis::adaptive_rd::adaptive_rd r(&cfg, l.result());
+  analysis::fixpoint fpr(&r);
+  fpr.iterate();
 //  cout << r;
 
-//  auto rd_result = r.result();
+  auto rd_result = r.result();
 //  for(size_t i = 0; i < rd_result->in_states.size(); i++) {
 //    auto &node_in = rd_result->in_states[i];
 //    cout << "rd_result (in_states) for node " << i << ": ";
@@ -158,25 +158,25 @@ int main(void) {
 //    cout << endl;
 //  }
 
-//  phi_inserter *pi = new phi_inserter(&cfg, rd_result);
-//  pi->transform();
-//  delete pi;
-//
-//  renamer *ren =  new renamer(&cfg, rd_result);
-//  ren->transform();
-//  delete ren;
-//
-//  delete rd_result;
+  phi_inserter *pi = new phi_inserter(&cfg, rd_result);
+  pi->transform();
+  delete pi;
 
-//  analysis::liveness::liveness l2(&cfg);
-//  analysis::fixpoint fpl2(&l2);
-//  fpl2.iterate();
-//  cout << l2;
-//
-//  analysis::adaptive_rd::adaptive_rd r2(&cfg, l2.result());
-//  analysis::fixpoint fpr2(&r2);
-//  fpr2.iterate();
-//  cout << r2;
+  renamer *ren =  new renamer(&cfg, rd_result);
+  ren->transform();
+  delete ren;
+
+  delete rd_result;
+
+  analysis::liveness::liveness l2(&cfg);
+  analysis::fixpoint fpl2(&l2);
+  fpl2.iterate();
+  cout << l2;
+
+  analysis::adaptive_rd::adaptive_rd r2(&cfg, l2.result());
+  analysis::fixpoint fpr2(&r2);
+  fpr2.iterate();
+  cout << r2;
 
 //  printf("RReil (after transformations):\n");
 //  for(statement *s : *rreil)

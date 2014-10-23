@@ -34,7 +34,7 @@ cfg::phi_edge::phi_edge(assignments_t assignments) : assignments(assignments) {
 cfg::phi_edge::~phi_edge() {
 }
 
-void cfg::phi_edge::dot(std::ostream &stream) {
+void cfg::phi_edge::dot(std::ostream &stream) const {
   stream << "\"";
   for(auto ass : assignments)
     stream << *ass.get_lhs() << " =:" << ass.get_size() << " " << *ass.get_rhs() << endl;
@@ -42,6 +42,6 @@ void cfg::phi_edge::dot(std::ostream &stream) {
   stream << ", style=bold, color=green";
 }
 
-void cfg::phi_edge::accept(edge_visitor &v) {
+void cfg::phi_edge::accept(edge_visitor &v) const {
   v.visit(this);
 }
