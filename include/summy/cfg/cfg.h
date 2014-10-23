@@ -10,6 +10,7 @@
 #include <iosfwd>
 #include <vector>
 #include <map>
+#include <set>
 #include <tuple>
 #include <stdint.h>
 #include <functional>
@@ -21,9 +22,10 @@ namespace cfg {
 class node;
 class edge;
 class bfs_iterator;
+class observer;
 
 enum update_kind {
-  INSERT, DELETE
+  INSERT, ERASE
 };
 
 struct update {
@@ -40,6 +42,7 @@ private:
   std::vector<node*> nodes;
   std::vector<edges_t*> edges;
   std::vector<update> updates;
+  std::set<observer*> observers;
 
   void add_node(node *n);
 public:
@@ -66,10 +69,13 @@ public:
   bfs_iterator begin();
   bfs_iterator end();
 
+  void register_observer(observer *o);
+  void unregister_observer(observer *o);
   std::vector<update> const &get_updates() {
     return updates;
   }
   void clear_updates();
+  void commit_updates();
 
   void dot(std::ostream &stream);
 };

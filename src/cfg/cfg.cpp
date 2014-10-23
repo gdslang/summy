@@ -13,6 +13,7 @@
 #include <summy/cfg/edge.h>
 #include <summy/cfg/node.h>
 #include <summy/cfg/bfs_iterator.h>
+#include <summy/cfg/observer.h>
 #include <map>
 
 using namespace std;
@@ -58,8 +59,47 @@ size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, siz
   return to_node;
 }
 
+void cfg::cfg::update_destroy_edge(size_t from, size_t to, const edge *edge) {
+  auto it = edges[from]->find(to);
+  if(it != edges[from]->end())
+    delete it->second;
+  it->second = edge;
+  updates.push_back(update { update_kind::INSERT, from, to });
+}
+
+void cfg::cfg::update_edge(size_t from, size_t to, const edge *edge) {
+  edges[from]->operator [](to) = edge;
+  updates.push_back(update { update_kind::INSERT, from, to });
+}
+
+void cfg::cfg::erase_edge(size_t from, size_t to) {
+  edges[from]->erase(to);
+  updates.push_back(update { update_kind::ERASE, from, to });
+}
+
+void cfg::cfg::erase_destroy_edge(size_t from, size_t to) {
+  delete edges[from]->operator [](to);
+  edges[from]->erase(to);
+  updates.push_back(update { update_kind::ERASE, from, to });
+}
+
+void cfg::cfg::register_observer(observer *o) {
+  observers.insert(o);
+}
+
+void cfg::cfg::unregister_observer(observer *o) {
+  auto o_it = observers.find(o);
+  if(o_it != observers.end())
+    observers.erase(o_it);
+}
+
 void cfg::cfg::clear_updates() {
   updates.clear();
+}
+
+void cfg::cfg::commit_updates() {
+  for(auto &o : observers)
+    o->notify(updates);
 }
 
 void cfg::cfg::dot(std::ostream &stream) {
@@ -101,26 +141,6 @@ size_t cfg::cfg::create_node(std::function<class node*(size_t)> constr) {
 
 cfg::edges_t const* cfg::cfg::out_edges(size_t id) {
   return edges[id];
-}
-
-void cfg::cfg::update_destroy_edge(size_t from, size_t to, const edge *edge) {
-  auto it = edges[from]->find(to);
-  if(it != edges[from]->end())
-    delete it->second;
-  it->second = edge;
-}
-
-void cfg::cfg::update_edge(size_t from, size_t to, const edge *edge) {
-  edges[from]->operator [](to) = edge;
-}
-
-void cfg::cfg::erase_edge(size_t from, size_t to) {
-  edges[from]->erase(to);
-}
-
-void cfg::cfg::erase_destroy_edge(size_t from, size_t to) {
-  delete edges[from]->operator [](to);
-  edges[from]->erase(to);
 }
 
 cfg::bfs_iterator cfg::cfg::begin() {
