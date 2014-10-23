@@ -31,7 +31,7 @@ void decomposer::transform() {
       bool replace = false;
       edge *replacement = NULL;
       edge_visitor ev;
-      ev._([&](stmt_edge *edge) {
+      ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](ite *i) {
@@ -42,9 +42,8 @@ void decomposer::transform() {
             });
             size_t last_branch = cfg->add_nodes(branch, branch_node_id);
 
-            edges[branch_node_id] = new cond_edge(i->get_cond(), positive);
-            auto &branch_last_out_edges = *cfg->out_edges(last_branch);
-            branch_last_out_edges[edge_dst_node] = new (class edge)();
+            cfg->update_edge(node->get_id(), branch_node_id, new cond_edge(i->get_cond(), positive));
+            cfg->update_edge(last_branch, edge_dst_node, new (class edge)());
           };
           branch(i->get_then_branch(), true);
           branch(i->get_else_branch(), false);
@@ -55,13 +54,12 @@ void decomposer::transform() {
           });
           size_t last_body = cfg->add_nodes(w->get_body(), body_node_id);
 
-          edges[body_node_id] = new cond_edge(w->get_cond(), true);
+          cfg->update_edge(node->get_id(), body_node_id, new cond_edge(w->get_cond(), true));
 
           replace = true;
           replacement = new cond_edge(w->get_cond(), false);
 
-          auto &body_last_out_edges = *cfg->out_edges(last_body);
-          body_last_out_edges[node->get_id()] = new (class edge)();
+          cfg->update_edge(last_body, node->get_id(), new (class edge)());
         });
         stmt->accept(v);
       });

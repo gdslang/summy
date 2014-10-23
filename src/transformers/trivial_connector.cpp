@@ -83,7 +83,7 @@ void trivial_connector::transform() {
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       bool replace = false;
       edge_visitor ev;
-      ev._([&](stmt_edge *edge) {
+      ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](branch *i) {
@@ -111,10 +111,8 @@ void trivial_connector::transform() {
         stmt->accept(v);
       });
       edge_it->second->accept(ev);
-      if(replace) {
-        delete edge_it->second;
-        edges[edge_it->first] = new edge();
-      }
+      if(replace)
+        cfg->update_destroy_edge(node->get_id(), edge_it->first, new edge());
     }
   }
 
@@ -138,8 +136,7 @@ void trivial_connector::transform() {
     size_t dest_node_id = start_node_it->second;
 
     auto _ip_assign = ip_assign(addr);
-    auto &edges = *cfg->out_edges(node_id);
-    edges[dest_node_id] = new stmt_edge(_ip_assign);
+    cfg->update_edge(node_id, dest_node_id, new stmt_edge(_ip_assign));
     delete _ip_assign;
   }
 
@@ -164,8 +161,7 @@ void trivial_connector::transform() {
         return new (class node)(id);
       });
 
-      auto &edges_node = *cfg->out_edges(node_id);
-      edges_node[cond_end_node_id] = new cond_edge(cond, positive);
+      cfg->update_edge(node_id, cond_end_node_id, new cond_edge(cond, positive));
 
       copy_visitor cv;
       addr->accept(cv);
@@ -175,8 +171,7 @@ void trivial_connector::transform() {
         return new (class node)(id);
       });
 
-      auto &edges_cond_end = *cfg->out_edges(cond_end_node_id);
-      edges_cond_end[dest_node_id] = new stmt_edge(branch);
+      cfg->update_edge(cond_end_node_id, dest_node_id, new stmt_edge(branch));
 
       delete branch;
     };
@@ -190,12 +185,10 @@ void trivial_connector::transform() {
           return new (class node)(id);
         });
 
-        auto &edges_node = *cfg->out_edges(node_id);
-        edges_node[cond_end_node_id] = new cond_edge(cond, positive);
+        cfg->update_edge(node_id, cond_end_node_id, new cond_edge(cond, positive));
 
         auto _ip_assign = ip_assign(value);
-        auto &edges_cond_end = *cfg->out_edges(cond_end_node_id);
-        edges_cond_end[dest_node_id] = new stmt_edge(_ip_assign);
+        cfg->update_edge(cond_end_node_id, dest_node_id, new stmt_edge(_ip_assign));
         delete _ip_assign;
       } else
         preserve_branch();

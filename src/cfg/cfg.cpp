@@ -100,11 +100,11 @@ size_t cfg::cfg::create_node(std::function<class node*(size_t)> constr) {
   return id;
 }
 
-edges_t const* cfg::cfg::out_edges(size_t id) {
+cfg::edges_t const* cfg::cfg::out_edges(size_t id) {
   return edges[id];
 }
 
-void cfg::cfg::update_destroy_edge(size_t from, size_t to, edge *edge) {
+void cfg::cfg::update_destroy_edge(size_t from, size_t to, const edge *edge) {
   auto it = edges[from]->find(to);
   if(it != edges[from]->end())
     delete it->second;

@@ -27,7 +27,7 @@ void goto_ip_adder::transform() {
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       edge_visitor ev;
-      ev._([&](stmt_edge *edge) {
+      ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](branch *i) {

@@ -74,8 +74,8 @@ void phi_inserter::transform() {
       return new (class node)(id);
     });
 
-    auto &from_out_edges = *cfg->out_edges(task.from);
-    cfg->update_edge(task.from, interm_node_id, from_out_edges[task.to]);
+    auto const &from_out_edges = *cfg->out_edges(task.from);
+    cfg->update_edge(task.from, interm_node_id, from_out_edges.at(task.to));
     cfg->erase_edge(task.from, task.to);
 
     cfg->update_edge(interm_node_id, task.to, task.pe);

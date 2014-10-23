@@ -48,7 +48,7 @@ std::vector<int_t> *ip_propagator::analyze_ip() {
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       edge_visitor ev;
-      ev._([&](stmt_edge *edge) {
+      ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](assign *i) {
@@ -86,7 +86,7 @@ void ip_propagator::transform() {
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       edge_visitor ev;
-      ev._([&](stmt_edge *edge) {
+      ev._([&](const stmt_edge *edge) {
         copy_visitor cv;
         cv._([&](variable *v) -> linear* {
           if(rreil_prop::is_ip(v)) {
@@ -97,11 +97,10 @@ void ip_propagator::transform() {
         });
         edge->get_stmt()->accept(cv);
         statement *stmt_mod = cv.get_statement();
-        delete edge_it->second;
-        edges[edge_it->first] = new stmt_edge(stmt_mod);
+        cfg->update_destroy_edge(node->get_id(), edge_it->first, new stmt_edge(stmt_mod));
         delete stmt_mod;
       });
-      ev._([&](cond_edge *edge) {
+      ev._([&](const cond_edge *edge) {
         /*
          * Todo
          */
