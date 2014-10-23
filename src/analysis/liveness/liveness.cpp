@@ -172,12 +172,14 @@ void analysis::liveness::liveness::remove_constraint(size_t from, size_t to) {
   (constraints[from]).erase(to);
 }
 
-void analysis::liveness::liveness::add_dependency(size_t from, size_t to) {
+size_t analysis::liveness::liveness::add_dependency(size_t from, size_t to) {
   _dependants[to].insert(from);
+  return from;
 }
 
-void analysis::liveness::liveness::remove_dependency(size_t from, size_t to) {
+size_t analysis::liveness::liveness::remove_dependency(size_t from, size_t to) {
   _dependants[to].erase(from);
+  return from;
 }
 
 analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg), pn_newly_live(cfg->node_count()) {

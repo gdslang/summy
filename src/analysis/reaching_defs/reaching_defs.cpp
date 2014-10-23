@@ -78,12 +78,14 @@ void analysis::reaching_defs::reaching_defs::remove_constraint(size_t from, size
   constraints[to].erase(from);
 }
 
-void analysis::reaching_defs::reaching_defs::add_dependency(size_t from, size_t to) {
+size_t analysis::reaching_defs::reaching_defs::add_dependency(size_t from, size_t to) {
   _dependants[from].insert(to);
+  return to;
 }
 
-void analysis::reaching_defs::reaching_defs::remove_dependency(size_t from, size_t to) {
+size_t analysis::reaching_defs::reaching_defs::remove_dependency(size_t from, size_t to) {
   _dependants[from].erase(to);
+  return to;
 }
 
 reaching_defs::reaching_defs::reaching_defs(class cfg *cfg, liveness_result lv_result) :

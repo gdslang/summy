@@ -40,9 +40,17 @@ protected:
 
   virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e) = 0;
   virtual void remove_constraint(size_t from, size_t to) = 0;
-  virtual void add_dependency(size_t from, size_t to) = 0;
-  virtual void remove_dependency(size_t from, size_t to) = 0;
-  virtual void init_fixpoint_initial();
+  /**
+   * Add dependency for an edge from node "from" to node "to" and return the sink
+   * node of the dependency
+   */
+  virtual size_t add_dependency(size_t from, size_t to) = 0;
+  /**
+   * Remove dependency for an edge from node "from" to node "to" and return the sink
+   * node of the removed dependency
+   */
+  virtual size_t remove_dependency(size_t from, size_t to) = 0;
+  virtual void init_fixpoint_pending();
   void init();
 public:
   analysis(cfg::cfg *cfg);

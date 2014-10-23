@@ -82,12 +82,14 @@ void analysis::adaptive_rd::adaptive_rd::remove_constraint(size_t from, size_t t
   (constraints[to]).erase(from);
 }
 
-void analysis::adaptive_rd::adaptive_rd::add_dependency(size_t from, size_t to) {
+size_t analysis::adaptive_rd::adaptive_rd::add_dependency(size_t from, size_t to) {
   _dependants[from].insert(to);
+  return to;
 }
 
-void analysis::adaptive_rd::adaptive_rd::remove_dependency(size_t from, size_t to) {
+size_t analysis::adaptive_rd::adaptive_rd::remove_dependency(size_t from, size_t to) {
   _dependants[from].erase(to);
+  return to;
 }
 
 adaptive_rd::adaptive_rd::adaptive_rd(class cfg *cfg, liveness_result lv_result) :
