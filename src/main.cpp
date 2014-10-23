@@ -166,8 +166,6 @@ int main(void) {
   ren->transform();
   delete ren;
 
-  delete rd_result;
-
   analysis::liveness::liveness l2(&cfg);
   analysis::fixpoint fpl2(&l2);
   fpl2.iterate();

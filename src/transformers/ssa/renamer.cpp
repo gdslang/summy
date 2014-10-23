@@ -45,8 +45,8 @@ void renamer::transform() {
         ast_node->accept(cv);
       };
 
-      auto &rd_dst_elements = rd_result->result[edge_dst_node]->get_elements();
-      auto &rd_src_elements = rd_result->result[node_id]->get_elements();
+      auto &rd_dst_elements = rd_result.result[edge_dst_node]->get_elements();
+      auto &rd_src_elements = rd_result.result[node_id]->get_elements();
       auto assignment = [&](variable *lhs, auto rhs, auto get_rhs_from_cv, auto node_ctor) {
         rebuild(rd_dst_elements, lhs);
         variable *lhs_new = cv.get_variable();

@@ -36,9 +36,9 @@ void phi_inserter::transform() {
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       size_t edge_dst_node = edge_it->first;
 
-      shared_ptr<adaptive_rd_elem> dst_incoming = (rd_result->in_states[edge_dst_node])[node_id];
+      shared_ptr<adaptive_rd_elem> dst_incoming = (rd_result.in_states[edge_dst_node])[node_id];
       elements_t const &dst_incoming_elements = dst_incoming->get_elements();
-      shared_ptr<adaptive_rd_elem> dst_state = rd_result->result[edge_dst_node];
+      shared_ptr<adaptive_rd_elem> dst_state = rd_result.result[edge_dst_node];
 
       assignments_t phi_assignments;
       for(auto &mapping : dst_state->get_elements()) {
@@ -83,7 +83,7 @@ void phi_inserter::transform() {
     /*
      * Todo: the following is awkwardly hacky and totally wrong
      */
-    assert(interm_node_id == rd_result->result.size());
-    rd_result->result.push_back(rd_result->in_states[task.to][task.from]);
+    assert(interm_node_id == rd_result.result.size());
+    rd_result.result.push_back(rd_result.in_states[task.to][task.from]);
   }
 }

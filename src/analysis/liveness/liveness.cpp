@@ -208,8 +208,8 @@ void analysis::liveness::liveness::update(size_t node, shared_ptr<lattice_elem> 
   this->state[node] = dynamic_pointer_cast<lv_elem>(state);
 }
 
-liveness_result *analysis::liveness::liveness::result() {
-  return new liveness_result(state, pn_newly_live);
+liveness_result analysis::liveness::liveness::result() {
+  return liveness_result(state, pn_newly_live);
 }
 
 void analysis::liveness::liveness::put(std::ostream &out) {

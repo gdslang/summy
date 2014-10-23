@@ -21,24 +21,25 @@ namespace analysis {
 namespace adaptive_rd {
 
 typedef std::vector<std::shared_ptr<adaptive_rd_elem>> state_t;
+typedef std::vector<std::map<size_t, shared_ptr<adaptive_rd_elem>>> in_states_t;
 
 struct adaptive_rd_result : public ::analysis::analysis_result<state_t> {
-  typedef std::vector<std::map<size_t, shared_ptr<adaptive_rd_elem>>> in_states_t;
-  in_states_t in_states;
+  in_states_t &in_states;
 
-  adaptive_rd_result(state_t s, in_states_t in_states) : analysis_result(s), in_states(in_states) {
+  adaptive_rd_result(state_t &s, in_states_t &in_states) : analysis_result(s), in_states(in_states) {
   }
 };
 
 class adaptive_rd: public analysis {
 private:
   state_t state;
-  ::analysis::liveness::liveness_result *lv_result;
+  in_states_t in_states;
+  ::analysis::liveness::liveness_result lv_result;
 
   virtual void init_constraints();
   virtual void init_dependants();
 public:
-  adaptive_rd(cfg::cfg *cfg, ::analysis::liveness::liveness_result *lv_result);
+  adaptive_rd(cfg::cfg *cfg, ::analysis::liveness::liveness_result lv_result);
   ~adaptive_rd();
 
   std::shared_ptr<lattice_elem> bottom();
@@ -46,7 +47,7 @@ public:
 
   std::shared_ptr<lattice_elem> get(size_t node);
   void update(size_t node, std::shared_ptr<lattice_elem> state);
-  adaptive_rd_result *result();
+  adaptive_rd_result result();
 
   void put(std::ostream &out);
 };

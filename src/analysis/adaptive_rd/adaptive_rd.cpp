@@ -37,7 +37,7 @@ void adaptive_rd::init_constraints() {
       size_t dest_node = edge_it->first;
       auto cleanup_live = [=](shared_ptr<adaptive_rd_elem> acc) {
         return shared_ptr<adaptive_rd_elem>(acc->remove([&](shared_ptr<id> id, singleton_value_t v) {
-          return !lv_result->contains(dest_node, id, 0, 64);
+          return !lv_result.contains(dest_node, id, 0, 64);
         }));
       };
       function<shared_ptr<adaptive_rd_elem>()> transfer_f = [=]() {
@@ -51,7 +51,7 @@ void adaptive_rd::init_constraints() {
        transfer_f = [=]() {
 //           cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
           auto acc = shared_ptr<adaptive_rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
-          if(lv_result->contains(dest_node, id_ptr, v->get_offset(), size))
+          if(lv_result.contains(dest_node, id_ptr, v->get_offset(), size))
             acc = shared_ptr<adaptive_rd_elem>(acc->add({singleton_t(id_ptr, dest_node)}));
           return cleanup_live(acc);
         };
@@ -74,7 +74,13 @@ void adaptive_rd::init_constraints() {
         }
       });
       edge_it->second->accept(ev);
-      (constraints[dest_node])[node_id] = transfer_f;
+
+      auto transfer_f_with_se = [=]() {
+        auto in_state = transfer_f();
+        this->in_states[dest_node][node_id] = in_state;
+        return in_state;
+      };
+      (constraints[dest_node])[node_id] = transfer_f_with_se;
     }
   }
 
@@ -90,8 +96,8 @@ void adaptive_rd::init_dependants() {
   }
 }
 
-adaptive_rd::adaptive_rd::adaptive_rd(class cfg *cfg, liveness_result *lv_result) :
-    analysis::analysis(cfg), lv_result(lv_result) {
+adaptive_rd::adaptive_rd::adaptive_rd(class cfg *cfg, liveness_result lv_result) :
+    analysis::analysis(cfg), in_states(cfg->node_count()), lv_result(lv_result) {
   init();
 
   state = state_t(cfg->node_count());
@@ -101,7 +107,6 @@ adaptive_rd::adaptive_rd::adaptive_rd(class cfg *cfg, liveness_result *lv_result
 }
 
 analysis::adaptive_rd::adaptive_rd::~adaptive_rd() {
-  delete lv_result;
 }
 
 shared_ptr<analysis::lattice_elem> adaptive_rd::adaptive_rd::bottom() {
@@ -120,12 +125,8 @@ void adaptive_rd::update(size_t node, shared_ptr<::analysis::lattice_elem> state
   this->state[node] = dynamic_pointer_cast<adaptive_rd_elem>(state);
 }
 
-adaptive_rd_result *analysis::adaptive_rd::adaptive_rd::result() {
-  auto in_states = adaptive_rd_result::in_states_t(cfg->node_count());
-  for(size_t i = 0; i < cfg->node_count(); i++)
-    for(auto &edge_c : constraints[i])
-      (in_states[i])[edge_c.first] = dynamic_pointer_cast<adaptive_rd_elem>(edge_c.second());
-  return new adaptive_rd_result(state, in_states);
+adaptive_rd_result analysis::adaptive_rd::adaptive_rd::result() {
+  return adaptive_rd_result(state, in_states);
 }
 
 void analysis::adaptive_rd::adaptive_rd::put(std::ostream &out) {

@@ -46,7 +46,7 @@ void reaching_defs::init_constraints() {
 //        cout << endl;
 //        return shared_ptr<rd_elem>(acc->remove(rm_by_lv));
         return shared_ptr<rd_elem>(acc->remove([&](size_t def, shared_ptr<id> id) {
-          return !lv_result->contains(dest_node, id, 0, 64);
+          return !lv_result.contains(dest_node, id, 0, 64);
         }));
       };
       function<shared_ptr<rd_elem>()> transfer_f = [=]() {
@@ -62,7 +62,7 @@ void reaching_defs::init_constraints() {
           shared_ptr<id> id_ptr(cv.get_id());
          transfer_f = [=]() {
             auto acc = shared_ptr<rd_elem>(state[node_id]->remove(id_set_t { id_ptr }));
-            if(lv_result->contains(dest_node, id_ptr, v->get_offset(), size))
+            if(lv_result.contains(dest_node, id_ptr, v->get_offset(), size))
               acc = shared_ptr<rd_elem>(acc->add(rd_elem::elements_t {make_tuple(dest_node, id_ptr)}));
             return cleanup_live(acc);
           };
@@ -92,7 +92,7 @@ void reaching_defs::init_dependants() {
   }
 }
 
-reaching_defs::reaching_defs::reaching_defs(class cfg *cfg, liveness_result *lv_result) :
+reaching_defs::reaching_defs::reaching_defs(class cfg *cfg, liveness_result lv_result) :
     analysis::analysis(cfg), lv_result(lv_result) {
   init();
 
@@ -103,7 +103,6 @@ reaching_defs::reaching_defs::reaching_defs(class cfg *cfg, liveness_result *lv_
 }
 
 analysis::reaching_defs::reaching_defs::~reaching_defs() {
-  delete lv_result;
 }
 
 shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::bottom() {
@@ -122,8 +121,8 @@ void reaching_defs::update(size_t node, shared_ptr<::analysis::lattice_elem> sta
   this->state[node] = dynamic_pointer_cast<rd_elem>(state);
 }
 
-reaching_defs_result_t *analysis::reaching_defs::reaching_defs::result() {
-  return new reaching_defs_result_t(state);
+reaching_defs_result_t analysis::reaching_defs::reaching_defs::result() {
+  return reaching_defs_result_t(state);
 }
 
 void analysis::reaching_defs::reaching_defs::put(std::ostream &out) {
