@@ -30,8 +30,7 @@ private:
 
   virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   virtual void remove_constraint(size_t from, size_t to);
-  virtual size_t add_dependency(size_t from, size_t to);
-  virtual size_t remove_dependency(size_t from, size_t to);
+  virtual dependency gen_dependency(size_t from, size_t to);
   virtual void init_state();
 public:
   reaching_defs(cfg::cfg *cfg, ::analysis::liveness::liveness_result lv_result);

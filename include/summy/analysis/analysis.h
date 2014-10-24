@@ -29,6 +29,11 @@ struct analysis_result {
   }
 };
 
+struct dependency {
+  size_t source;
+  size_t sink;
+};
+
 class analysis {
 public:
   typedef std::function<std::shared_ptr<lattice_elem>()> constraint_t;
@@ -41,16 +46,10 @@ protected:
 
   virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e) = 0;
   virtual void remove_constraint(size_t from, size_t to) = 0;
-  /**
-   * Add dependency for an edge from node "from" to node "to" and return the sink
-   * node of the dependency
+  /*
+   * Generate a dependency for an edge from node "from" to node "to"
    */
-  virtual size_t add_dependency(size_t from, size_t to) = 0;
-  /**
-   * Remove dependency for an edge from node "from" to node "to" and return the sink
-   * node of the removed dependency
-   */
-  virtual size_t remove_dependency(size_t from, size_t to) = 0;
+  virtual dependency gen_dependency(size_t from, size_t to) = 0;
   virtual void init_state() = 0;
 
   virtual void init_fixpoint_pending();

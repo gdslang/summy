@@ -25,6 +25,8 @@ typedef std::tuple_element<0,singleton_t>::type singleton_key_t;
 typedef std::tuple_element<1,singleton_t>::type singleton_value_t;
 typedef std::map<singleton_key_t, singleton_value_t, id_less> elements_t;
 
+bool singleton_equals(const singleton_t &a, const singleton_t &b);
+
 //struct singleton_less {
 //  bool operator()(singleton_t a, singleton_t b);
 //};

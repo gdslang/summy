@@ -168,12 +168,12 @@ int main(void) {
 
   cout << "Propagating updates to liveness..." << endl;
 
-  l.analysis::analysis::update(cfg.get_updates());
+  fpl.update(cfg.get_updates());
   fpl.iterate();
 
-//  r.analysis::analysis::update(cfg.get_updates());
-//  fpr.iterate();
-//
+  fpr.update(cfg.get_updates());
+  fpr.iterate();
+
 //  renamer *ren =  new renamer(&cfg, rd_result);
 //  ren->transform();
 //  delete ren;

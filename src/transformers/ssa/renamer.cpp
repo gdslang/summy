@@ -24,6 +24,12 @@ namespace sr = summy::rreil;
 using namespace gdsl::rreil;
 
 void renamer::transform() {
+  /*
+   * The following throw statement
+   * allows GDB to load summy (o.O)
+   */
+//  throw("flah");
+
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
     auto &edges = *cfg->out_edges(node->get_id());

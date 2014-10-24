@@ -36,7 +36,8 @@ void ::analysis::analysis::init() {
     auto &edges = *cfg->out_edges(node_id);
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       add_constraint(node_id, edge_it->first, edge_it->second);
-      add_dependency(node_id, edge_it->first);
+      auto dep = gen_dependency(node_id, edge_it->first);
+      _dependants[dep.source].insert(dep.sink);
     }
   }
 
@@ -47,24 +48,23 @@ void ::analysis::analysis::init() {
 void ::analysis::analysis::update(vector<struct update> const &updates) {
   fixpoint_pending.clear();
 
-  auto print_set = [](auto &s) {
-    cout << "{";
-    bool first = true;
-    for(auto &es : s) {
-      if(!first)
-        cout << ", ";
-      cout << es;
-      first = false;
-    }
-    cout << "}" << endl;
-  };
+//  auto print_set = [](auto &s) {
+//    cout << "{";
+//    bool first = true;
+//    for(auto &es : s) {
+//      if(!first)
+//        cout << ", ";
+//      cout << es;
+//      first = false;
+//    }
+//    cout << "}" << endl;
+//  };
 
-  set<size_t> fp_pend_new;
   for(auto &update : updates) {
     switch(update.kind) {
       case INSERT: {
-        fp_pend_new.insert(update.from);
-        fp_pend_new.insert(update.to);
+        fixpoint_pending.insert(update.from);
+        fixpoint_pending.insert(update.to);
         break;
       }
       case ERASE: {
@@ -73,24 +73,24 @@ void ::analysis::analysis::update(vector<struct update> const &updates) {
     }
   }
 
-//  print_set(fp_pend_new);
+  dependants_t local_deps;
 
-//  set<size_t> fp_pend_rm;
   for(auto &update : updates) {
+    auto dep = gen_dependency(update.from, update.to);
     switch(update.kind) {
       case INSERT: {
-        cout << "INSERT " << update.from << " -> " << update.to << endl;
+//        cout << "INSERT " << update.from << " -> " << update.to << endl;
         if(cfg->contains_edge(update.from, update.to))
           add_constraint(update.from, update.to, cfg->out_edges(update.from)->at(update.to));
-        add_dependency(update.from, update.to);
-//        fp_pend_rm.insert(add_dependency(update.from, update.to));
+        local_deps[dep.source].insert(dep.sink);
+        _dependants[dep.source].insert(dep.sink);
         break;
       }
       case ERASE: {
-        cout << "ERASE " << update.from << " -> " << update.to << endl;
+//        cout << "ERASE " << update.from << " -> " << update.to << endl;
         remove_constraint(update.from, update.to);
-        remove_dependency(update.from, update.to);
-//        fp_pend_rm.erase(remove_dependency(update.from, update.to));
+        local_deps[dep.source].erase(dep.sink);
+        _dependants[dep.source].erase(dep.sink);
         break;
       }
     }
@@ -101,12 +101,12 @@ void ::analysis::analysis::update(vector<struct update> const &updates) {
 //  set_difference(fp_pend_new.begin(), fp_pend_new.end(), fp_pend_rm.begin(), fp_pend_rm.end(),
 //      inserter(fixpoint_pending, fixpoint_pending.begin()));
 
-  fixpoint_pending = fp_pend_new;
-  for(auto fp_pend : fp_pend_new)
-    for(auto &dep : _dependants[fp_pend])
+  for(auto &deps : local_deps)
+    for(auto dep : deps.second) {
       fixpoint_pending.erase(dep);
+    }
 
-  print_set(fixpoint_pending);
+//  print_set(fixpoint_pending);
 
   init_state();
 }

@@ -8,6 +8,7 @@
 #pragma once
 #include <summy/cfg/cfg.h>
 #include <set>
+#include <vector>
 
 namespace analysis {
 
@@ -15,17 +16,17 @@ class analysis;
 
 class fixpoint {
 private:
-//  cfg::cfg *cfg;
   analysis *analysis;
   std::set<size_t> seen;
 public:
   virtual ~fixpoint() {
   }
 
-  fixpoint(/*cfg::cfg *cfg, */class analysis *analysis) : /*cfg(cfg),*/ analysis(analysis) {
+  fixpoint(class analysis *analysis) : analysis(analysis) {
   }
 
   void iterate();
+  void update(std::vector<::cfg::update> const &updates);
 };
 
 }

@@ -172,19 +172,15 @@ void analysis::liveness::liveness::remove_constraint(size_t from, size_t to) {
   (constraints[from]).erase(to);
 }
 
-size_t analysis::liveness::liveness::add_dependency(size_t from, size_t to) {
-  _dependants[to].insert(from);
-  return from;
-}
-
-size_t analysis::liveness::liveness::remove_dependency(size_t from, size_t to) {
-  _dependants[to].erase(from);
-  return from;
+analysis::dependency analysis::liveness::liveness::gen_dependency(size_t from, size_t to) {
+  return dependency { to, from };
 }
 
 void analysis::liveness::liveness::init_state() {
-  while(state.size() < cfg->node_count())
-    state.push_back(dynamic_pointer_cast<lv_elem>(bottom()));
+  size_t old_size = state.size();
+  state.resize(cfg->node_count());
+  for(size_t i = old_size; i < cfg->node_count(); i++)
+    state[i] = dynamic_pointer_cast<lv_elem>(bottom());
 }
 
 analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg) {

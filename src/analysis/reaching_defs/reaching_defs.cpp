@@ -78,21 +78,17 @@ void analysis::reaching_defs::reaching_defs::remove_constraint(size_t from, size
   constraints[to].erase(from);
 }
 
-size_t analysis::reaching_defs::reaching_defs::add_dependency(size_t from, size_t to) {
-  _dependants[from].insert(to);
-  return to;
-}
-
-size_t analysis::reaching_defs::reaching_defs::remove_dependency(size_t from, size_t to) {
-  _dependants[from].erase(to);
-  return to;
+analysis::dependency analysis::reaching_defs::reaching_defs::gen_dependency(size_t from, size_t to) {
+  return dependency { from, to };
 }
 
 void analysis::reaching_defs::reaching_defs::init_state() {
-  for(size_t i = state.size(); i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state.push_back(
-        dynamic_pointer_cast<rd_elem>(start_value()));
-    else state.push_back(dynamic_pointer_cast<rd_elem>(bottom()));
+  size_t old_size = state.size();
+  state.resize(cfg->node_count());
+  for(size_t i = old_size; i < cfg->node_count(); i++) {
+    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<rd_elem>(
+        start_value());
+    else state[i] = dynamic_pointer_cast<rd_elem>(bottom());
   }
 }
 
