@@ -32,10 +32,11 @@ struct analysis_result {
 class analysis {
 public:
   typedef std::function<std::shared_ptr<lattice_elem>()> constraint_t;
+  typedef std::map<size_t, std::set<size_t>> dependants_t;
 protected:
   cfg::cfg *cfg;
   std::map<size_t, std::map<size_t, constraint_t>> constraints;
-  std::map<size_t, std::set<size_t>> _dependants;
+  dependants_t _dependants;
   std::set<size_t> fixpoint_pending;
 
   virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e) = 0;
@@ -50,6 +51,8 @@ protected:
    * node of the removed dependency
    */
   virtual size_t remove_dependency(size_t from, size_t to) = 0;
+  virtual void init_state() = 0;
+
   virtual void init_fixpoint_pending();
   void init();
 public:
@@ -57,7 +60,7 @@ public:
   virtual ~analysis() {
   }
 
-  void update(std::vector<::cfg::update> &updates);
+  void update(std::vector<::cfg::update> const &updates);
 
   virtual std::map<size_t, constraint_t> &constraints_at(size_t node) {
     return constraints[node];

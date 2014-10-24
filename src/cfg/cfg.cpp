@@ -129,6 +129,14 @@ size_t cfg::cfg::node_count() {
   return nodes.size();
 }
 
+bool cfg::cfg::contains(size_t node) {
+  return node < nodes.size();
+}
+
+bool cfg::cfg::contains_edge(size_t from, size_t to) {
+  return from < nodes.size() && edges[from]->find(to) != edges[from]->end();
+}
+
 cfg::node *cfg::cfg::get_node(size_t id) {
   return nodes[id];
 }

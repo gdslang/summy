@@ -7,6 +7,7 @@
 
 #pragma once
 #include <summy/cfg/cfg.h>
+#include <set>
 
 namespace analysis {
 
@@ -16,6 +17,7 @@ class fixpoint {
 private:
 //  cfg::cfg *cfg;
   analysis *analysis;
+  std::set<size_t> seen;
 public:
   virtual ~fixpoint() {
   }

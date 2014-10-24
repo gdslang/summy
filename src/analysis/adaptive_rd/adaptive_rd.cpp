@@ -32,22 +32,22 @@ namespace sr = summy::rreil;
 void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
   auto cleanup_live = [=](shared_ptr<adaptive_rd_elem> acc) {
     return shared_ptr<adaptive_rd_elem>(acc->remove([&](shared_ptr<id> id, singleton_value_t v) {
-      return !lv_result.contains(to, id, 0, 64);
-    }));
+              return !lv_result.contains(to, id, 0, 64);
+            }));
   };
   function<shared_ptr<adaptive_rd_elem>()> transfer_f = [=]() {
 //        cout << "default handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
-    return cleanup_live(state[from]);
-  };
+      return cleanup_live(state[from]);
+    };
   auto id_assigned = [&](int_t size, variable *v) {
     sr::copy_visitor cv;
     v->get_id()->accept(cv);
     shared_ptr<id> id_ptr(cv.get_id());
-   transfer_f = [=]() {
+    transfer_f = [=]() {
 //           cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
-      auto acc = shared_ptr<adaptive_rd_elem>(state[from]->remove(id_set_t { id_ptr }));
+      auto acc = shared_ptr<adaptive_rd_elem>(state[from]->remove(id_set_t {id_ptr}));
       if(lv_result.contains(to, id_ptr, v->get_offset(), size))
-        acc = shared_ptr<adaptive_rd_elem>(acc->add({singleton_t(id_ptr, to)}));
+      acc = shared_ptr<adaptive_rd_elem>(acc->add( {singleton_t(id_ptr, to)}));
       return cleanup_live(acc);
     };
   };
@@ -56,11 +56,11 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
     statement *stmt = edge->get_stmt();
     statement_visitor v;
     v._([&](assign *a) {
-      id_assigned(rreil_prop::size_of_assign(a), a->get_lhs());
-    });
+          id_assigned(rreil_prop::size_of_assign(a), a->get_lhs());
+        });
     v._([&](load *l) {
-      id_assigned(l->get_size(), l->get_lhs());
-    });
+          id_assigned(l->get_size(), l->get_lhs());
+        });
     stmt->accept(v);
   });
   ev._([&](const phi_edge *edge) {
@@ -92,14 +92,17 @@ size_t analysis::adaptive_rd::adaptive_rd::remove_dependency(size_t from, size_t
   return to;
 }
 
+void analysis::adaptive_rd::adaptive_rd::init_state() {
+  for(size_t i = state.size(); i < cfg->node_count(); i++) {
+    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state.push_back(
+        dynamic_pointer_cast<adaptive_rd_elem>(start_value()));
+    else state.push_back(dynamic_pointer_cast<adaptive_rd_elem>(bottom()));
+  }
+}
+
 adaptive_rd::adaptive_rd::adaptive_rd(class cfg *cfg, liveness_result lv_result) :
     analysis::analysis(cfg), in_states(cfg->node_count()), lv_result(lv_result) {
   init();
-
-  state = state_t(cfg->node_count());
-  for(size_t i = 0; i < state.size(); i++)
-    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<adaptive_rd_elem>(start_value());
-    else state[i] = dynamic_pointer_cast<adaptive_rd_elem>(bottom());
 }
 
 analysis::adaptive_rd::adaptive_rd::~adaptive_rd() {

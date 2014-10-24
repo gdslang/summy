@@ -83,7 +83,7 @@ void phi_inserter::transform() {
     /*
      * Todo: the following is awkwardly hacky and totally wrong
      */
-    assert(interm_node_id == rd_result.result.size());
-    rd_result.result.push_back(rd_result.in_states[task.to][task.from]);
+//    assert(interm_node_id == rd_result.result.size());
+//    rd_result.result.push_back(rd_result.in_states[task.to][task.from]);
   }
 }

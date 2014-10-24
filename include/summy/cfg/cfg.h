@@ -53,6 +53,8 @@ public:
 
   size_t next_node_id();
   size_t node_count();
+  bool contains(size_t node);
+  bool contains_edge(size_t from, size_t to);
   node *get_node(size_t id);
 
   size_t create_node(std::function<class node*(size_t)> constr);

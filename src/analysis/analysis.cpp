@@ -8,6 +8,7 @@
 #include <summy/analysis/analysis.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/bfs_iterator.h>
+#include <algorithm>
 #include <vector>
 #include <set>
 
@@ -40,16 +41,30 @@ void ::analysis::analysis::init() {
   }
 
   init_fixpoint_pending();
+  init_state();
 }
 
-void ::analysis::analysis::update(vector<struct update> &updates) {
+void ::analysis::analysis::update(vector<struct update> const &updates) {
   fixpoint_pending.clear();
 
+  auto print_set = [](auto &s) {
+    cout << "{";
+    bool first = true;
+    for(auto &es : s) {
+      if(!first)
+        cout << ", ";
+      cout << es;
+      first = false;
+    }
+    cout << "}" << endl;
+  };
+
+  set<size_t> fp_pend_new;
   for(auto &update : updates) {
     switch(update.kind) {
       case INSERT: {
-        fixpoint_pending.insert(update.from);
-        fixpoint_pending.insert(update.to);
+        fp_pend_new.insert(update.from);
+        fp_pend_new.insert(update.to);
         break;
       }
       case ERASE: {
@@ -58,23 +73,42 @@ void ::analysis::analysis::update(vector<struct update> &updates) {
     }
   }
 
-  set<size_t> fp_pend_rm;
+//  print_set(fp_pend_new);
+
+//  set<size_t> fp_pend_rm;
   for(auto &update : updates) {
     switch(update.kind) {
       case INSERT: {
-        add_constraint(update.from, update.to, cfg->out_edges(update.from)->at(update.to));
-        fp_pend_rm.insert(add_dependency(update.from, update.to));
+        cout << "INSERT " << update.from << " -> " << update.to << endl;
+        if(cfg->contains_edge(update.from, update.to))
+          add_constraint(update.from, update.to, cfg->out_edges(update.from)->at(update.to));
+        add_dependency(update.from, update.to);
+//        fp_pend_rm.insert(add_dependency(update.from, update.to));
         break;
       }
       case ERASE: {
+        cout << "ERASE " << update.from << " -> " << update.to << endl;
         remove_constraint(update.from, update.to);
-        fp_pend_rm.erase(remove_dependency(update.from, update.to));
+        remove_dependency(update.from, update.to);
+//        fp_pend_rm.erase(remove_dependency(update.from, update.to));
         break;
       }
     }
   }
 
-  fixpoint_pending.erase(fp_pend_rm.begin(), fp_pend_rm.end());
+//  print_set(fp_pend_rm);
+//
+//  set_difference(fp_pend_new.begin(), fp_pend_new.end(), fp_pend_rm.begin(), fp_pend_rm.end(),
+//      inserter(fixpoint_pending, fixpoint_pending.begin()));
+
+  fixpoint_pending = fp_pend_new;
+  for(auto fp_pend : fp_pend_new)
+    for(auto &dep : _dependants[fp_pend])
+      fixpoint_pending.erase(dep);
+
+  print_set(fixpoint_pending);
+
+  init_state();
 }
 
 std::ostream &::analysis::operator <<(std::ostream &out, analysis &_this) {

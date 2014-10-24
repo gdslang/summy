@@ -182,12 +182,13 @@ size_t analysis::liveness::liveness::remove_dependency(size_t from, size_t to) {
   return from;
 }
 
-analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg), pn_newly_live(cfg->node_count()) {
-  init();
+void analysis::liveness::liveness::init_state() {
+  while(state.size() < cfg->node_count())
+    state.push_back(dynamic_pointer_cast<lv_elem>(bottom()));
+}
 
-  state = state_t(cfg->node_count());
-  for(size_t i = 0; i < state.size(); i++)
-    state[i] = dynamic_pointer_cast<lv_elem>(bottom());
+analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg) {
+  init();
 }
 
 analysis::liveness::liveness::~liveness() {

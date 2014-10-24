@@ -16,12 +16,23 @@ using namespace analysis;
 
 void fixpoint::iterate() {
   set<size_t> worklist = analysis->pending();
-  set<size_t> seen;
+
+  /*
+   * The initial worklist contains newly added start nodes for the iteration,
+   * we should not consider them as seen...
+   *
+   * Problem: This is not enough, what about new edges between existing nodes?
+   */
+  for(auto item : worklist)
+    seen.erase(item);
+
   while(!worklist.empty()) {
     size_t node_id;
     auto it = worklist.begin();
     node_id = *it;
     worklist.erase(it);
+
+    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<lattice_elem> evaluated;
@@ -34,6 +45,10 @@ void fixpoint::iterate() {
         evaluated = shared_ptr<lattice_elem>(calc->lub(evaluated.get(), node_id));
       }
       shared_ptr<lattice_elem> current = analysis->get(node_id);
+
+      cout << "Current: " << *current << endl;
+      cout << "Evaluated: " << *evaluated << endl;
+
       propagate = !(*current >= *evaluated);
     } else
     /*

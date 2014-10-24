@@ -18,12 +18,12 @@ namespace liveness {
 
 typedef std::vector<std::shared_ptr<lv_elem>> state_t;
 typedef std::function<std::shared_ptr<lv_elem>()> constraint_t;
-typedef std::vector<std::vector<singleton_t>> newly_live_vector_t;
+typedef std::map<size_t, std::vector<singleton_t>> newly_live_t;
 
 struct liveness_result : public ::analysis::analysis_result<state_t> {
-  newly_live_vector_t &pn_newly_live;
+  newly_live_t &pn_newly_live;
 
-  liveness_result(state_t &s, newly_live_vector_t &pn_newly_live) :
+  liveness_result(state_t &s, newly_live_t &pn_newly_live) :
       analysis_result(s), pn_newly_live(pn_newly_live) {
   }
 
@@ -34,12 +34,13 @@ struct liveness_result : public ::analysis::analysis_result<state_t> {
 class liveness : public analysis {
 private:
   state_t state;
-  newly_live_vector_t pn_newly_live;
+  newly_live_t pn_newly_live;
 
   virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   virtual void remove_constraint(size_t from, size_t to);
   virtual size_t add_dependency(size_t from, size_t to);
   virtual size_t remove_dependency(size_t from, size_t to);
+  virtual void init_state();
 public:
   liveness(cfg::cfg *cfg);
   ~liveness();

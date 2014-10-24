@@ -55,7 +55,7 @@ void analysis::reaching_defs::reaching_defs::add_constraint(size_t from, size_t 
       copy_visitor cv;
       v->get_id()->accept(cv);
       shared_ptr<id> id_ptr(cv.get_id());
-     transfer_f = [=]() {
+      transfer_f = [=]() {
         auto acc = shared_ptr<rd_elem>(state[from]->remove(id_set_t { id_ptr }));
         if(lv_result.contains(to, id_ptr, v->get_offset(), size))
           acc = shared_ptr<rd_elem>(acc->add(rd_elem::elements_t {make_tuple(to, id_ptr)}));
@@ -88,14 +88,17 @@ size_t analysis::reaching_defs::reaching_defs::remove_dependency(size_t from, si
   return to;
 }
 
+void analysis::reaching_defs::reaching_defs::init_state() {
+  for(size_t i = state.size(); i < cfg->node_count(); i++) {
+    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state.push_back(
+        dynamic_pointer_cast<rd_elem>(start_value()));
+    else state.push_back(dynamic_pointer_cast<rd_elem>(bottom()));
+  }
+}
+
 reaching_defs::reaching_defs::reaching_defs(class cfg *cfg, liveness_result lv_result) :
     analysis::analysis(cfg), lv_result(lv_result) {
   init();
-
-  state = state_t(cfg->node_count());
-  for(size_t i = 0; i < state.size(); i++)
-    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<rd_elem>(start_value());
-    else state[i] = dynamic_pointer_cast<rd_elem>(bottom());
 }
 
 analysis::reaching_defs::reaching_defs::~reaching_defs() {

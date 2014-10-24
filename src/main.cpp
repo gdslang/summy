@@ -18,6 +18,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <summy/analysis/analysis.h>
+
 #include <summy/transformers/decomposer.h>
 #include <summy/transformers/goto_ip_adder.h>
 #include <summy/transformers/ip_propagator.h>
@@ -158,23 +160,33 @@ int main(void) {
 //    cout << endl;
 //  }
 
+  cfg.clear_updates();
+
   phi_inserter *pi = new phi_inserter(&cfg, rd_result);
   pi->transform();
   delete pi;
 
-  renamer *ren =  new renamer(&cfg, rd_result);
-  ren->transform();
-  delete ren;
+  cout << "Propagating updates to liveness..." << endl;
 
-  analysis::liveness::liveness l2(&cfg);
-  analysis::fixpoint fpl2(&l2);
-  fpl2.iterate();
-  cout << l2;
+  l.analysis::analysis::update(cfg.get_updates());
+  fpl.iterate();
 
-  analysis::adaptive_rd::adaptive_rd r2(&cfg, l2.result());
-  analysis::fixpoint fpr2(&r2);
-  fpr2.iterate();
-  cout << r2;
+//  r.analysis::analysis::update(cfg.get_updates());
+//  fpr.iterate();
+//
+//  renamer *ren =  new renamer(&cfg, rd_result);
+//  ren->transform();
+//  delete ren;
+
+//  analysis::liveness::liveness l2(&cfg);
+//  analysis::fixpoint fpl2(&l2);
+//  fpl2.iterate();
+//  cout << l2;
+//
+//  analysis::adaptive_rd::adaptive_rd r2(&cfg, l2.result());
+//  analysis::fixpoint fpr2(&r2);
+//  fpr2.iterate();
+//  cout << r2;
 
 //  printf("RReil (after transformations):\n");
 //  for(statement *s : *rreil)
