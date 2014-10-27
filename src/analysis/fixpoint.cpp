@@ -15,6 +15,7 @@ using namespace std;
 using namespace analysis;
 
 void fixpoint::iterate() {
+  updated.clear();
   set<size_t> worklist = analysis->pending();
 
   while(!worklist.empty()) {
@@ -23,7 +24,7 @@ void fixpoint::iterate() {
     node_id = *it;
     worklist.erase(it);
 
-//    cout << "Next node: " << node_id << endl;
+    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<lattice_elem> evaluated;
@@ -52,6 +53,7 @@ void fixpoint::iterate() {
 
     if(propagate) {
       analysis->update(node_id, evaluated);
+      updated.insert(node_id);
     }
 
     if(propagate || seen.find(node_id) == seen.end()) {

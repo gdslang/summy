@@ -10,30 +10,15 @@
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/transformers/ssa/phi_inserter.h>
 #include <summy/transformers/ssa/renamer.h>
+#include <iostream>
 
+using namespace std;
 using namespace analysis;
 using namespace liveness;
 using namespace adaptive_rd;
 
-void ssa::transform_analyzed() {
-  {
-    cfg::update_pop up = cfg.push_updates();
-
-    phi_inserter *pi = new phi_inserter(&cfg, r.result());
-    pi->transform();
-    delete pi;
-
-    fpl.notify(cfg.get_updates());
-    fpr.notify(cfg.get_updates());
-
-    renamer *ren = new renamer(&cfg, r.result());
-    ren->transform();
-    delete ren;
-  }
-}
-
 ssa::ssa(cfg::cfg &cfg) :
-    big_step(cfg), l(&cfg), fpl(&l), r(&cfg, l.result()), fpr(&r) {
+    big_step(cfg), l(&cfg), fpl(&l), r(&cfg, l.result()), fpr(&r), pi(&cfg, r.result()), ren(&cfg, r.result()) {
 }
 
 void ssa::transduce() {
@@ -43,13 +28,35 @@ void ssa::transduce() {
   fpr.iterate();
 //  cout << r;
 
-  transform_analyzed();
+  {
+    cfg::update_pop up = cfg.push_updates();
+
+    pi.transform();
+
+    cout << endl << "<->" << endl << endl;
+    fpl.notify(cfg.get_updates());
+    cout << endl << "<->" << endl << endl;
+
+    fpr.notify(cfg.get_updates());
+
+    ren.transform();
+  }
+
   cfg.register_observer(this);
 }
 
 void ssa::notify(const std::vector<cfg::update> &updates) {
   fpl.notify(updates);
   fpr.notify(updates);
+  {
+    cfg::update_pop up = cfg.push_updates();
 
-  transform_analyzed();
+    auto adjacencies = cfg.adjacencies(fpr.get_updated());
+    pi.update(adjacencies);
+
+//    fpl.notify(cfg.get_updates());
+//    fpr.notify(cfg.get_updates());
+//
+//    ren.notify(updates);
+  }
 }

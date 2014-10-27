@@ -11,6 +11,8 @@
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
 #include <summy/analysis/fixpoint.h>
+#include <summy/transformers/ssa/phi_inserter.h>
+#include <summy/transformers/ssa/renamer.h>
 #include <vector>
 
 /*
@@ -25,7 +27,9 @@ private:
   analysis::adaptive_rd::adaptive_rd r;
   analysis::fixpoint fpr;
 
-  void transform_analyzed();
+  phi_inserter pi;
+  renamer ren;
+
 public:
   ssa(cfg::cfg &cfg);
 

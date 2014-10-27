@@ -140,6 +140,8 @@ int main(void) {
   ssa ssa(cfg);
   ssa.transduce();
 
+  cfg.commit_updates();
+
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
   cfg.dot(dot_fs);

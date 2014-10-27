@@ -21,10 +21,6 @@ ssa_id::~ssa_id() {
 }
 
 void ssa_id::accept(gdsl::rreil::id_visitor &v) {
-  try {
   auto &summy_v = dynamic_cast<summy::rreil::id_visitor&>(v);
   summy_v.visit(this);
-  } catch(std::bad_cast &foo) {
-    *((int*)0) = 99;
-  }
 }

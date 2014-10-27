@@ -10,8 +10,8 @@
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd_elem.h>
+#include <summy/rreil/copy_visitor.h>
 #include <cppgdsl/rreil/rreil.h>
-#include <cppgdsl/rreil/copy_visitor.h>
 #include <vector>
 #include <iostream>
 #include <assert.h>
@@ -19,6 +19,7 @@
 using namespace std;
 using namespace cfg;
 using namespace analysis::adaptive_rd;
+namespace sr = summy::rreil;
 using namespace gdsl::rreil;
 
 void phi_inserter::task_from_edge(vector<phi_task> &tasks, size_t from, size_t to) {
@@ -30,7 +31,7 @@ void phi_inserter::task_from_edge(vector<phi_task> &tasks, size_t from, size_t t
   for(auto &mapping : dst_state->get_elements()) {
     auto mapping_inc = dst_incoming_elements.find(mapping.first);
     auto add_phi = [&]() {
-      copy_visitor cv;
+      sr::copy_visitor cv;
       mapping.first->accept(cv);
       variable v(cv.get_id(), 0);
       phi_assignments.push_back(phi_assign(&v, &v, 64));
@@ -81,9 +82,13 @@ void phi_inserter::transform() {
   transform(tasks);
 }
 
-void phi_inserter::notify(const vector<update> &updates) {
+void phi_inserter::update(std::set<std::tuple<size_t, size_t>> &updates) {
   vector<phi_task> tasks;
-  for(auto &update : updates)
-    task_from_edge(tasks, update.from, update.to);
+  for(auto &update : updates) {
+    size_t from;
+    size_t to;
+    tie(from, to) = update;
+    task_from_edge(tasks, from, to);
+  }
   transform(tasks);
 }

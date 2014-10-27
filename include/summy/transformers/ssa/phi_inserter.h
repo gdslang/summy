@@ -13,7 +13,7 @@
 #include <summy/cfg/phi_edge.h>
 #include <vector>
 
-class phi_inserter: public transformer, public cfg::observer {
+class phi_inserter: public transformer {
 private:
   struct phi_task {
     cfg::phi_edge *pe;
@@ -31,5 +31,5 @@ public:
   }
 
   virtual void transform();
-  void notify(std::vector<cfg::update> const &updates);
+  void update(std::set<std::tuple<size_t, size_t>> &updates);
 };

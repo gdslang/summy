@@ -28,6 +28,7 @@ cfg::update_pop::~update_pop() {
 void cfg::cfg::add_node(node *n) {
   nodes.push_back(n);
   edges.push_back(new edges_t());
+  in_edges.resize(in_edges.size() + 1);
 }
 
 cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary) {
@@ -74,22 +75,26 @@ void cfg::cfg::update_destroy_edge(size_t from, size_t to, const edge *edge) {
     delete it->second;
   it->second = edge;
   updates_stack.top().push_back(update { update_kind::INSERT, from, to });
+  in_edges[to].insert(from);
 }
 
 void cfg::cfg::update_edge(size_t from, size_t to, const edge *edge) {
   edges[from]->operator [](to) = edge;
   updates_stack.top().push_back(update { update_kind::INSERT, from, to });
+  in_edges[to].insert(from);
 }
 
 void cfg::cfg::erase_edge(size_t from, size_t to) {
   edges[from]->erase(to);
   updates_stack.top().push_back(update { update_kind::ERASE, from, to });
+  in_edges[to].erase(from);
 }
 
 void cfg::cfg::erase_destroy_edge(size_t from, size_t to) {
   delete edges[from]->operator [](to);
   edges[from]->erase(to);
   updates_stack.top().push_back(update { update_kind::ERASE, from, to });
+  in_edges[to].erase(from);
 }
 
 void cfg::cfg::register_observer(observer *o) {
@@ -116,6 +121,10 @@ void cfg::cfg::commit_updates() {
       o->notify(updates);
     updates.clear();
   }
+}
+
+void cfg::cfg::clear_updates() {
+  updates_stack.top().clear();
 }
 
 void cfg::cfg::pop_updates() {
@@ -187,6 +196,14 @@ cfg::bfs_iterator cfg::cfg::end() {
   return bfs_iterator(this, true);
 }
 
-
-
-
+std::set<std::tuple<size_t, size_t>> cfg::cfg::adjacencies(std::set<size_t> nodes) {
+  std::set<std::tuple<size_t, size_t>> result;
+  for(auto node : nodes) {
+    auto const &out_edges = this->out_edges(node);
+    for(auto &mapping : *out_edges)
+      result.insert(tuple<size_t, size_t>(node, mapping.first));
+    for(auto &incoming : in_edges[node])
+      result.insert(tuple<size_t, size_t>(incoming, node));
+  }
+  return result;
+}

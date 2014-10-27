@@ -19,6 +19,7 @@ class fixpoint : cfg::observer {
 private:
   analysis *analysis;
   std::set<size_t> seen;
+  std::set<size_t> updated;
 public:
   virtual ~fixpoint() {
   }
@@ -28,6 +29,10 @@ public:
 
   void iterate();
   void notify(std::vector<cfg::update> const &updates);
+
+  std::set<size_t> const &get_updated() {
+    return updated;
+  }
 };
 
 }

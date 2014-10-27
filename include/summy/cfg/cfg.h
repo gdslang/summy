@@ -52,6 +52,8 @@ class cfg {
 private:
   std::vector<node*> nodes;
   std::vector<edges_t*> edges;
+  std::vector<std::set<size_t>> in_edges;
+
   std::stack<std::vector<update>> updates_stack;
   std::vector<observer*> observers;
 
@@ -89,7 +91,10 @@ public:
     return updates_stack.top();
   }
   void commit_updates();
+  void clear_updates();
   update_pop push_updates();
+
+  std::set<std::tuple<size_t, size_t>> adjacencies(std::set<size_t> nodes);
 
   void dot(std::ostream &stream);
 };
