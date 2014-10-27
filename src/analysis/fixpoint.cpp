@@ -64,11 +64,13 @@ void fixpoint::iterate() {
   }
 }
 
-void fixpoint::update(const vector<::cfg::update> &updates) {
+void fixpoint::notify(const vector<::cfg::update> &updates) {
   analysis->update(updates);
 
   for(auto &update : updates) {
     seen.erase(update.from);
     seen.erase(update.to);
   }
+
+  iterate();
 }

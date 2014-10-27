@@ -34,6 +34,7 @@
 #include <summy/analysis/reaching_defs/rd_elem.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/liveness/liveness.h>
+#include <summy/big_step/ssa.h>
 #include <summy/transformers/ssa/phi_inserter.h>
 #include <summy/transformers/ssa/renamer.h>
 
@@ -136,61 +137,8 @@ int main(void) {
     delete t;
   }
 
-  analysis::liveness::liveness l(&cfg);
-  analysis::fixpoint fpl(&l);
-  fpl.iterate();
-//  cout << l;
-
-//  analysis::reaching_defs::reaching_defs r(&cfg, l.result());
-//  analysis::fixpoint fpr(&r);
-//  fpr.iterate();
-//  cout << r;
-
-  analysis::adaptive_rd::adaptive_rd r(&cfg, l.result());
-  analysis::fixpoint fpr(&r);
-  fpr.iterate();
-//  cout << r;
-
-  auto rd_result = r.result();
-//  for(size_t i = 0; i < rd_result->in_states.size(); i++) {
-//    auto &node_in = rd_result->in_states[i];
-//    cout << "rd_result (in_states) for node " << i << ": ";
-//    for(auto &state : node_in)
-//      cout << "-> " << state.first << " " << *state.second << " ";
-//    cout << endl;
-//  }
-
-  cfg.clear_updates();
-
-  phi_inserter *pi = new phi_inserter(&cfg, rd_result);
-  pi->transform();
-  delete pi;
-
-  cout << "Propagating updates to liveness..." << endl;
-
-  fpl.update(cfg.get_updates());
-  fpl.iterate();
-
-  fpr.update(cfg.get_updates());
-  fpr.iterate();
-
-//  renamer *ren =  new renamer(&cfg, rd_result);
-//  ren->transform();
-//  delete ren;
-
-//  analysis::liveness::liveness l2(&cfg);
-//  analysis::fixpoint fpl2(&l2);
-//  fpl2.iterate();
-//  cout << l2;
-//
-//  analysis::adaptive_rd::adaptive_rd r2(&cfg, l2.result());
-//  analysis::fixpoint fpr2(&r2);
-//  fpr2.iterate();
-//  cout << r2;
-
-//  printf("RReil (after transformations):\n");
-//  for(statement *s : *rreil)
-//    printf("%s\n", s->to_string().c_str());
+  ssa ssa(cfg);
+  ssa.transduce();
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);

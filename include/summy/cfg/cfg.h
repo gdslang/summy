@@ -11,6 +11,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <stack>
 #include <tuple>
 #include <stdint.h>
 #include <functional>
@@ -23,6 +24,7 @@ class node;
 class edge;
 class bfs_iterator;
 class observer;
+class cfg;
 
 enum update_kind {
   INSERT, ERASE
@@ -34,17 +36,27 @@ struct update {
   size_t to;
 };
 
+struct update_pop {
+private:
+  class cfg &cfg;
+public:
+  update_pop(class cfg &cfg);
+  ~update_pop();
+};
+
 typedef std::map<size_t, edge const*> edges_t;
 
 class cfg {
   friend class bfs_iterator;
+  friend struct update_pop;
 private:
   std::vector<node*> nodes;
   std::vector<edges_t*> edges;
-  std::vector<update> updates;
-  std::set<observer*> observers;
+  std::stack<std::vector<update>> updates_stack;
+  std::vector<observer*> observers;
 
   void add_node(node *n);
+  void pop_updates();
 public:
   cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary);
   ~cfg();
@@ -74,10 +86,10 @@ public:
   void register_observer(observer *o);
   void unregister_observer(observer *o);
   std::vector<update> const &get_updates() {
-    return updates;
+    return updates_stack.top();
   }
-  void clear_updates();
   void commit_updates();
+  update_pop push_updates();
 
   void dot(std::ostream &stream);
 };

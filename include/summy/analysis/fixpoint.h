@@ -7,6 +7,7 @@
 
 #pragma once
 #include <summy/cfg/cfg.h>
+#include <summy/cfg/observer.h>
 #include <set>
 #include <vector>
 
@@ -14,7 +15,7 @@ namespace analysis {
 
 class analysis;
 
-class fixpoint {
+class fixpoint : cfg::observer {
 private:
   analysis *analysis;
   std::set<size_t> seen;
@@ -26,7 +27,7 @@ public:
   }
 
   void iterate();
-  void update(std::vector<::cfg::update> const &updates);
+  void notify(std::vector<cfg::update> const &updates);
 };
 
 }

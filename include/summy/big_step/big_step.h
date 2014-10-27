@@ -9,10 +9,10 @@
 #include <summy/cfg/observer.h>
 
 class big_step : public cfg::observer {
-private:
-  cfg::cfg *cfg;
+protected:
+  cfg::cfg &cfg;
 public:
-  big_step(cfg::cfg *cfg);
+  big_step(cfg::cfg &cfg);
   virtual ~big_step() {
   }
 

@@ -14,10 +14,8 @@ struct update;
 class cfg;
 
 class observer {
-private:
-  class cfg *cfg;
 public:
-  observer(class cfg *cfg);
+  observer();
   virtual ~observer();
 
   virtual void notify(std::vector<update> const &updates) = 0;

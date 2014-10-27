@@ -6,5 +6,5 @@
  */
 #include <summy/big_step/big_step.h>
 
-big_step::big_step(cfg::cfg *cfg) : cfg(cfg) {
+big_step::big_step(cfg::cfg &cfg) : cfg(cfg) {
 }
