@@ -9,10 +9,17 @@
 
 #include <summy/transformers/transformer.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
+#include <summy/cfg/edge.h>
 
 class renamer: public transformer {
 public:
 private:
+  struct update_task {
+    cfg::edge *e;
+    size_t from;
+    size_t to;
+  };
+
   analysis::adaptive_rd::adaptive_rd_result rd_result;
 public:
   renamer(cfg::cfg *cfg, analysis::adaptive_rd::adaptive_rd_result rd_result) :

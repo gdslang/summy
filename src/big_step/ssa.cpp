@@ -47,8 +47,6 @@ void ssa::transduce() {
   cfg.register_observer(this);
 }
 
-
-
 void ssa::notify(const std::vector<cfg::update> &updates) {
   fpl.notify(updates);
   fpr.notify(updates);

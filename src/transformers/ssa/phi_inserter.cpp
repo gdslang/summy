@@ -21,54 +21,40 @@ using namespace cfg;
 using namespace analysis::adaptive_rd;
 using namespace gdsl::rreil;
 
-void phi_inserter::transform() {
-  struct phi_task {
-    phi_edge *pe;
-    size_t from;
-    size_t to;
-  };
+void phi_inserter::task_from_edge(vector<phi_task> &tasks, size_t from, size_t to) {
+  shared_ptr<adaptive_rd_elem> dst_incoming = (rd_result.in_states[to])[from];
+  elements_t const &dst_incoming_elements = dst_incoming->get_elements();
+  shared_ptr<adaptive_rd_elem> dst_state = rd_result.result[to];
 
-  vector<phi_task> tasks;
-
-  for(auto node : *cfg) {
-    size_t node_id = node->get_id();
-    auto &edges = *cfg->out_edges(node->get_id());
-    for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
-      size_t edge_dst_node = edge_it->first;
-
-      shared_ptr<adaptive_rd_elem> dst_incoming = (rd_result.in_states[edge_dst_node])[node_id];
-      elements_t const &dst_incoming_elements = dst_incoming->get_elements();
-      shared_ptr<adaptive_rd_elem> dst_state = rd_result.result[edge_dst_node];
-
-      assignments_t phi_assignments;
-      for(auto &mapping : dst_state->get_elements()) {
-        auto mapping_inc = dst_incoming_elements.find(mapping.first);
-        auto add_phi = [&]() {
-          copy_visitor cv;
-          mapping.first->accept(cv);
-          variable v(cv.get_id(), 0);
-          phi_assignments.push_back(phi_assign(&v, &v, 64));
-        };
-        if(mapping_inc == dst_incoming_elements.end()) {
-          /*
-           * Incoming undefined value
-           */
-          add_phi();
-        } else {
-          if(mapping.second != mapping_inc->second) {
-            /*
-             * Different defs incoming => phi edge required
-             */
-            add_phi();
-          }
-        }
+  assignments_t phi_assignments;
+  for(auto &mapping : dst_state->get_elements()) {
+    auto mapping_inc = dst_incoming_elements.find(mapping.first);
+    auto add_phi = [&]() {
+      copy_visitor cv;
+      mapping.first->accept(cv);
+      variable v(cv.get_id(), 0);
+      phi_assignments.push_back(phi_assign(&v, &v, 64));
+    };
+    if(mapping_inc == dst_incoming_elements.end()) {
+      /*
+       * Incoming undefined value
+       */
+      add_phi();
+    } else {
+      if(mapping.second != mapping_inc->second) {
+        /*
+         * Different defs incoming => phi edge required
+         */
+        add_phi();
       }
-
-      if(phi_assignments.size() > 0)
-        tasks.push_back({ new phi_edge(phi_assignments), node_id, edge_dst_node });
     }
   }
 
+  if(phi_assignments.size() > 0)
+    tasks.push_back({ new phi_edge(phi_assignments), from, to });
+}
+
+void phi_inserter::transform(std::vector<phi_task> &tasks) {
   for(auto &task : tasks) {
     size_t interm_node_id = cfg->create_node([&](size_t id) {
       return new (class node)(id);
@@ -79,11 +65,25 @@ void phi_inserter::transform() {
     cfg->erase_edge(task.from, task.to);
 
     cfg->update_edge(interm_node_id, task.to, task.pe);
-
-    /*
-     * Todo: the following is awkwardly hacky and totally wrong
-     */
-//    assert(interm_node_id == rd_result.result.size());
-//    rd_result.result.push_back(rd_result.in_states[task.to][task.from]);
   }
+}
+
+void phi_inserter::transform() {
+  vector<phi_task> tasks;
+  for(auto node : *cfg) {
+    size_t from = node->get_id();
+    auto &edges = *cfg->out_edges(node->get_id());
+    for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
+      size_t to = edge_it->first;
+      task_from_edge(tasks, from, to);
+    }
+  }
+  transform(tasks);
+}
+
+void phi_inserter::notify(const vector<update> &updates) {
+  vector<phi_task> tasks;
+  for(auto &update : updates)
+    task_from_edge(tasks, update.from, update.to);
+  transform(tasks);
 }
