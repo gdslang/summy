@@ -53,6 +53,8 @@ bool analysis::liveness::liveness_result::contains(size_t node_id, singleton_t s
 }
 
 void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const ::cfg::edge* e) {
+  cout << "Adding constraint for edge from " << from << " to " << to << endl;
+
   constraint_t transfer_f = [=]() {
     return state[to];
   };
@@ -166,6 +168,8 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
   });
   e->accept(ev);
   (constraints[from])[to] = transfer_f;
+
+  cout << ".-^ " << constraints_at(from).size() << endl;
 }
 
 void analysis::liveness::liveness::remove_constraint(size_t from, size_t to) {
@@ -184,6 +188,7 @@ void analysis::liveness::liveness::init_state() {
 }
 
 analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg) {
+  cout << "liveness init" << endl;
   init();
 }
 

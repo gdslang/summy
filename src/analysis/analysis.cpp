@@ -23,6 +23,8 @@ void ::analysis::analysis::init_fixpoint_pending() {
   for(auto &deps : _dependants)
     for(auto dep : deps.second) {
       fixpoint_pending.erase(dep);
+      if(dep == 179)
+        cout << ":-(" << endl;
     }
 }
 
@@ -33,6 +35,8 @@ void ::analysis::analysis::init_fixpoint_pending() {
 void ::analysis::analysis::init() {
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
+    if(node_id == 179)
+      cout << "foooooo" << endl;
     auto &edges = *cfg->out_edges(node_id);
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       add_constraint(node_id, edge_it->first, edge_it->second);
@@ -79,7 +83,7 @@ void ::analysis::analysis::update(vector<struct update> const &updates) {
     auto dep = gen_dependency(update.from, update.to);
     switch(update.kind) {
       case INSERT: {
-//        cout << "INSERT " << update.from << " -> " << update.to << endl;
+        cout << "INSERT " << update.from << " -> " << update.to << endl;
         if(cfg->contains_edge(update.from, update.to))
           add_constraint(update.from, update.to, cfg->out_edges(update.from)->at(update.to));
         local_deps[dep.source].insert(dep.sink);
@@ -87,7 +91,7 @@ void ::analysis::analysis::update(vector<struct update> const &updates) {
         break;
       }
       case ERASE: {
-//        cout << "ERASE " << update.from << " -> " << update.to << endl;
+        cout << "ERASE " << update.from << " -> " << update.to << endl;
         remove_constraint(update.from, update.to);
         local_deps[dep.source].erase(dep.sink);
         _dependants[dep.source].erase(dep.sink);

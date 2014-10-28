@@ -23,7 +23,7 @@ ssa::ssa(cfg::cfg &cfg) :
 
 void ssa::transduce() {
   fpl.iterate();
-//  cout << l;
+  cout << l;
 
   fpr.iterate();
 //  cout << r;
@@ -46,8 +46,9 @@ void ssa::transduce() {
 }
 
 void ssa::notify(const std::vector<cfg::update> &updates) {
-//  cout << endl << endl << "------------" << endl;
+  cout << "liveness" << endl;
   fpl.notify(updates);
+  cout << "rd" << endl;
   fpr.notify(updates);
   {
     cfg::update_pop up = cfg.push_updates();
@@ -56,6 +57,10 @@ void ssa::notify(const std::vector<cfg::update> &updates) {
     pi.update(adjacencies);
 
     fpl.notify(cfg.get_updates());
+
+    /*
+     * Todo: Updates der liveness beachten: überall struct update verwenden.
+     */
     fpr.notify(cfg.get_updates());
 
     auto adjacencies_new = cfg.adjacencies(fpr.get_updated());

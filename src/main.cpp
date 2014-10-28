@@ -35,8 +35,12 @@
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/big_step/ssa.h>
+#include <summy/cfg/address_node.h>
 #include <summy/transformers/ssa/phi_inserter.h>
 #include <summy/transformers/ssa/renamer.h>
+
+using cfg::address_node;
+using cfg::edge;
 
 using namespace gdsl::rreil;
 using namespace std;
@@ -137,8 +141,21 @@ int main(void) {
     delete t;
   }
 
+  auto foo = cfg.out_edges(178)->at(179);
+  cfg.erase_edge(178, 179);
+  auto ani = cfg.create_node([&](size_t id) {
+    return new address_node(id, 7777);
+  });
+  cfg.update_edge(ani, 179, new edge());
+
   ssa ssa(cfg);
   ssa.transduce();
+  cfg.clear_updates();
+
+  cout << endl << "grrrrrrr " << endl << endl;
+
+  cfg.update_edge(178, ani, foo);
+  cfg.commit_updates();
 
 //  ofstream dot_fsb;
 //  dot_fsb.open("output_before.dot", ios::out);
