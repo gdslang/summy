@@ -96,9 +96,9 @@ reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::lattic
 //      inserter(ids_sym_diff, ids_sym_diff.begin()), id_less());
 
   if(contains_undef) set_difference(ids_other.begin(), ids_other.end(), ids_mine.begin(), ids_mine.end(),
-      inserter(ids_sym_diff, ids_sym_diff.begin()), id_less());
+      inserter(ids_sym_diff, ids_sym_diff.begin()), id_less_no_version());
   if(other_casted->contains_undef) set_difference(ids_mine.begin(), ids_mine.end(), ids_other.begin(), ids_other.end(),
-      inserter(ids_sym_diff, ids_sym_diff.begin()), id_less());
+      inserter(ids_sym_diff, ids_sym_diff.begin()), id_less_no_version());
 
 //  cout << "Sym Diff: ";
 //  for(auto id : ids_sym_diff)

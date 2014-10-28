@@ -33,9 +33,9 @@ void ssa::transduce() {
 
     pi.transform();
 
-    cout << endl << "<->" << endl << endl;
+//    cout << endl << "<->" << endl << endl;
     fpl.notify(cfg.get_updates());
-    cout << endl << "<->" << endl << endl;
+//    cout << endl << "<->" << endl << endl;
 
     fpr.notify(cfg.get_updates());
 
@@ -46,20 +46,20 @@ void ssa::transduce() {
 }
 
 void ssa::notify(const std::vector<cfg::update> &updates) {
+//  cout << endl << endl << "------------" << endl;
   fpl.notify(updates);
-  cout << endl << endl << "------------" << endl;
   fpr.notify(updates);
   {
     cfg::update_pop up = cfg.push_updates();
 
-    cout << r;
-
     auto adjacencies = cfg.adjacencies(fpr.get_updated());
     pi.update(adjacencies);
 
-//    fpl.notify(cfg.get_updates());
-//    fpr.notify(cfg.get_updates());
-//
-//    ren.notify(updates);
+    fpl.notify(cfg.get_updates());
+    fpr.notify(cfg.get_updates());
+
+    auto adjacencies_new = cfg.adjacencies(fpr.get_updated());
+    ren.update(adjacencies);
+    ren.update(adjacencies_new);
   }
 }

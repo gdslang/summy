@@ -23,15 +23,15 @@ namespace adaptive_rd {
 typedef std::tuple<std::shared_ptr<gdsl::rreil::id>, size_t> singleton_t;
 typedef std::tuple_element<0,singleton_t>::type singleton_key_t;
 typedef std::tuple_element<1,singleton_t>::type singleton_value_t;
-typedef std::map<singleton_key_t, singleton_value_t, id_less> elements_t;
+typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> elements_t;
 
+/**
+ * Test two singleton_t instances for equality. The version of IDs (see ssa_id)
+ * is ignored.
+ */
 bool singleton_equals(const singleton_t &a, const singleton_t &b);
 
-//struct singleton_less {
-//  bool operator()(singleton_t a, singleton_t b);
-//};
-
-typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less> id_set_t;
+typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less_no_version> id_set_t;
 
 class adaptive_rd_elem : public lattice_elem {
 private:

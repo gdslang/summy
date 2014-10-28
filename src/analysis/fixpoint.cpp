@@ -24,7 +24,7 @@ void fixpoint::iterate() {
     node_id = *it;
     worklist.erase(it);
 
-    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<lattice_elem> evaluated;
@@ -38,8 +38,8 @@ void fixpoint::iterate() {
       }
       shared_ptr<lattice_elem> current = analysis->get(node_id);
 
-      cout << "Current: " << *current << endl;
-      cout << "Evaluated: " << *evaluated << endl;
+//      cout << "Current: " << *current << endl;
+//      cout << "Evaluated: " << *evaluated << endl;
 
       propagate = !(*current >= *evaluated);
     } else

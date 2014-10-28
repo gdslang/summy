@@ -6,6 +6,7 @@
  */
 
 #include <summy/analysis/adaptive_rd/adaptive_rd_elem.h>
+#include <summy/analysis/util.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <set>
 #include <algorithm>
@@ -25,7 +26,7 @@ bool analysis::adaptive_rd::singleton_equals(const singleton_t& a, const singlet
   singleton_key_t b_k;
   singleton_value_t b_v;
   tie(b_k, b_v) = b;
-  return a_k->to_string() == b_k->to_string() && a_v == b_v;
+  return print_id_no_version(a_k) == print_id_no_version(b_k) && a_v == b_v;
 }
 
 adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::lub(::analysis::lattice_elem *other,

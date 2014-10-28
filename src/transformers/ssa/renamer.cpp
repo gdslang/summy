@@ -13,6 +13,7 @@
 #include <summy/rreil/id/ssa_id.h>
 #include <summy/rreil/copy_visitor.h>
 #include <summy/rreil/visitor.h>
+#include <summy/rreil/id/id_visitor.h>
 
 #include <cppgdsl/rreil/rreil.h>
 #include <cppgdsl/rreil/statement/statement_visitor.h>
@@ -41,8 +42,21 @@ void renamer::task_from_edge(std::vector<update_task>& tasks, size_t from, size_
       shared_ptr<id> id_wrapped(_id, [](auto x) {});
       auto const &rd_mapping = rd_elements.find(id_wrapped);
       if(rd_mapping != rd_elements.end()) {
-        _id = new sr::ssa_id(_id, rd_mapping->second);
-        update = true;
+        sr::id_visitor iv;
+        iv._([&](sr::ssa_id *si) {
+          if(si->get_version() != rd_mapping->second) {
+            sr::copy_visitor cv;
+            si->get_id()->accept(cv);
+            delete _id;
+            _id = new sr::ssa_id(cv.get_id(), rd_mapping->second);
+            update = true;
+          }
+        });
+        iv._default([&](id *_) {
+            _id = new sr::ssa_id(_id, rd_mapping->second);
+            update = true;
+        });
+        _id->accept(iv);
       }
       return new variable(_id, offset);
     });
@@ -112,7 +126,7 @@ void renamer::task_from_edge(std::vector<update_task>& tasks, size_t from, size_
 }
 
 void renamer::transform(std::vector<update_task> &tasks) {
-  cout << "tasks: " << tasks.size() << endl;
+//  cout << "tasks: " << tasks.size() << endl;
   for(auto &update : tasks) {
     cfg->update_destroy_edge(update.from, update.to, update.e);
   }
@@ -137,10 +151,13 @@ void renamer::transform() {
   transform(tasks);
 }
 
-void renamer::notify(const vector<update> &updates) {
+void renamer::update(std::set<std::tuple<size_t, size_t>> &updates) {
   vector<update_task> tasks;
-  for(auto &update : updates)
-    if(update.kind == INSERT && cfg->contains_edge(update.from, update.to))
-      task_from_edge(tasks, update.from, update.to, cfg->out_edges(update.from)->at(update.to));
+  for(auto &update : updates) {
+    size_t from;
+    size_t to;
+    tie(from, to) = update;
+    task_from_edge(tasks, from, to, cfg->out_edges(from)->at(to));
+  }
   transform(tasks);
 }

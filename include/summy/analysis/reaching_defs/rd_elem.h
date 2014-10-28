@@ -25,7 +25,7 @@ struct singleton_less {
   bool operator()(singleton_t a, singleton_t b);
 };
 
-typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less> id_set_t;
+typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less_no_version> id_set_t;
 
 class rd_elem : public lattice_elem {
 public:

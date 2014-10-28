@@ -22,11 +22,7 @@ public:
   virtual ~id_visitor() {
   }
 
-  virtual void visit(ssa_id *a) {
-    if(ssa_id_callback != NULL)
-      ssa_id_callback(a);
-    _default();
-  }
+  virtual void visit(ssa_id *a);
 
   void _(std::function<void(ssa_id*)> c) {
     this->ssa_id_callback = c;

@@ -13,7 +13,7 @@
 #include <summy/cfg/observer.h>
 #include <vector>
 
-class renamer: public transformer, public cfg::observer {
+class renamer: public transformer {
 public:
 private:
   struct update_task {
@@ -31,5 +31,5 @@ public:
   }
 
   virtual void transform();
-  void notify(std::vector<cfg::update> const &updates);
+  void update(std::set<std::tuple<size_t, size_t>> &updates);
 };
