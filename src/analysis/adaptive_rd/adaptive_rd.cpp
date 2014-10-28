@@ -80,6 +80,7 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
 
 void analysis::adaptive_rd::adaptive_rd::remove_constraint(size_t from, size_t to) {
   (constraints[to]).erase(from);
+  (in_states[to]).erase(from);
 }
 
 analysis::dependency analysis::adaptive_rd::adaptive_rd::gen_dependency(size_t from, size_t to) {
@@ -126,6 +127,18 @@ adaptive_rd_result analysis::adaptive_rd::adaptive_rd::result() {
 }
 
 void analysis::adaptive_rd::adaptive_rd::put(std::ostream &out) {
-  for(size_t i = 0; i < state.size(); i++)
-    out << i << ": " << *state[i] << endl;
+  for(size_t i = 0; i < state.size(); i++) {
+    out << i << ": " << *state[i];
+    auto &node_in = in_states[i];
+    cout << "; ";
+    bool first = true;
+    for(auto &state : node_in) {
+      if(!first)
+        cout << ", ";
+      cout << state.first << " -> " << *state.second;
+      first = false;
+    }
+    cout << endl;
+  }
+
 }

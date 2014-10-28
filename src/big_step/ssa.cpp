@@ -47,9 +47,12 @@ void ssa::transduce() {
 
 void ssa::notify(const std::vector<cfg::update> &updates) {
   fpl.notify(updates);
+  cout << endl << endl << "------------" << endl;
   fpr.notify(updates);
   {
     cfg::update_pop up = cfg.push_updates();
+
+    cout << r;
 
     auto adjacencies = cfg.adjacencies(fpr.get_updated());
     pi.update(adjacencies);

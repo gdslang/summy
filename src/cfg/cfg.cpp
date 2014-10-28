@@ -113,14 +113,14 @@ void cfg::cfg::unregister_observer(observer *o) {
 //}
 
 void cfg::cfg::commit_updates() {
-  while(true) {
+//  while(true) {
     vector<update> updates = updates_stack.top();
     updates_stack.top().clear();
-    if(updates.size() == 0) break;
+//    if(updates.size() == 0) break;
+    if(updates.size() == 0) return;
     for(auto &o : observers)
       o->notify(updates);
-    updates.clear();
-  }
+//  }
 }
 
 void cfg::cfg::clear_updates() {

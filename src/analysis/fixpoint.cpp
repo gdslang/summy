@@ -38,8 +38,8 @@ void fixpoint::iterate() {
       }
       shared_ptr<lattice_elem> current = analysis->get(node_id);
 
-//      cout << "Current: " << *current << endl;
-//      cout << "Evaluated: " << *evaluated << endl;
+      cout << "Current: " << *current << endl;
+      cout << "Evaluated: " << *evaluated << endl;
 
       propagate = !(*current >= *evaluated);
     } else
