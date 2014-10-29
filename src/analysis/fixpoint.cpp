@@ -24,12 +24,11 @@ void fixpoint::iterate() {
     node_id = *it;
     worklist.erase(it);
 
-    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<lattice_elem> evaluated;
     auto &constraints = analysis->constraints_at(node_id);
-    cout << constraints.size() << endl;
     if(constraints.size() > 0) {
       auto constraint_it = constraints.begin();
       evaluated = constraint_it->second();
@@ -39,8 +38,8 @@ void fixpoint::iterate() {
       }
       shared_ptr<lattice_elem> current = analysis->get(node_id);
 
-      cout << "Current: " << *current << endl;
-      cout << "Evaluated: " << *evaluated << endl;
+//      cout << "Current: " << *current << endl;
+//      cout << "Evaluated: " << *evaluated << endl;
 
       propagate = !(*current >= *evaluated);
     } else

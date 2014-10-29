@@ -9,8 +9,8 @@ LIBS=-lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lcvc4 -lgmp -lgtest -lpthread -l
 LIBFLAGS=$(LIBDS) $(LIBS)
 LDFLAGS=
 INCDS=-Iinclude -I$(GDSL)/include
-CFLAGS=-c -O0 -ggdb3 -MMD -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
-CPPFLAGS=-c -O0 -ggdb3 -MMD -std=c++14 -Wall -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
+CFLAGS=-c -O2 -ggdb3 -MMD -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
+CPPFLAGS=-c -O2 -ggdb3 -MMD -std=c++14 -Wall -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
 
 EXECUTABLE=summy
 

@@ -23,7 +23,7 @@ ssa::ssa(cfg::cfg &cfg) :
 
 void ssa::transduce() {
   fpl.iterate();
-  cout << l;
+//  cout << l;
 
   fpr.iterate();
 //  cout << r;
@@ -33,38 +33,57 @@ void ssa::transduce() {
 
     pi.transform();
 
+    /**
+     * Propagate liveness / rd to nodes inserted by the phi
+     * inserter.
+     */
 //    cout << endl << "<->" << endl << endl;
     fpl.notify(cfg.get_updates());
 //    cout << endl << "<->" << endl << endl;
-
     fpr.notify(cfg.get_updates());
 
-    ren.transform();
+    {
+      cfg::update_pop up = cfg.push_updates();
+
+      ren.transform();
+
+      fpl.notify(cfg.get_updates());
+      fpr.notify(cfg.get_updates());
+    }
   }
 
   cfg.register_observer(this);
 }
 
 void ssa::notify(const std::vector<cfg::update> &updates) {
-  cout << "liveness" << endl;
   fpl.notify(updates);
-  cout << "rd" << endl;
-  fpr.notify(updates);
+  auto fpl_updates_first = cfg.adjacencies(fpl.get_updated());
+  auto updates_combined = combine_updates(updates, fpl_updates_first);
+  fpr.notify(updates_combined);
+  auto fpr_updates_first = cfg.adjacencies(fpr.get_updated());
   {
     cfg::update_pop up = cfg.push_updates();
 
-    auto adjacencies = cfg.adjacencies(fpr.get_updated());
-    pi.update(adjacencies);
+    pi.update(fpr_updates_first);
 
-    fpl.notify(cfg.get_updates());
-
-    /*
-     * Todo: Updates der liveness beachten: überall struct update verwenden.
+    /**
+     * Propagate liveness / rd to nodes inserted by the phi
+     * inserter.
      */
-    fpr.notify(cfg.get_updates());
+    fpl.notify(cfg.get_updates());
+    auto fpl_updates_second = cfg.adjacencies(fpl.get_updated());
+    auto updates_combined = combine_updates(cfg.get_updates(), fpl_updates_second);
+    fpr.notify(updates_combined);
+    auto fpr_updates_second = cfg.adjacencies(fpr.get_updated());
 
-    auto adjacencies_new = cfg.adjacencies(fpr.get_updated());
-    ren.update(adjacencies);
-    ren.update(adjacencies_new);
+    {
+      cfg::update_pop up = cfg.push_updates();
+
+      ren.update(fpr_updates_first);
+      ren.update(fpr_updates_second);
+
+      fpl.notify(cfg.get_updates());
+      fpr.notify(cfg.get_updates());
+    }
   }
 }

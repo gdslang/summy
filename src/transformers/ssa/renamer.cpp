@@ -157,7 +157,7 @@ void renamer::update(std::set<std::tuple<size_t, size_t>> &updates) {
     size_t from;
     size_t to;
     tie(from, to) = update;
-    task_from_edge(tasks, from, to, cfg->out_edges(from)->at(to));
+    if(cfg->contains_edge(from, to)) task_from_edge(tasks, from, to, cfg->out_edges(from)->at(to));
   }
   transform(tasks);
 }

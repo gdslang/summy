@@ -52,6 +52,7 @@ protected:
   virtual dependency gen_dependency(size_t from, size_t to) = 0;
   virtual void init_state() = 0;
 
+  std::set<size_t> roots(std::set<size_t> const &all, const dependants_t &dep_dants);
   virtual void init_fixpoint_pending();
   void init();
 public:

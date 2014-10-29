@@ -32,11 +32,11 @@ namespace sr = summy::rreil;
 void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
   auto cleanup_live = [=](shared_ptr<adaptive_rd_elem> acc) {
     return shared_ptr<adaptive_rd_elem>(acc->remove([&](shared_ptr<id> id, singleton_value_t v) {
-              return !lv_result.contains(to, id, 0, 64);
-            }));
+      return !lv_result.contains(to, id, 0, 64);
+    }));
   };
   function<shared_ptr<adaptive_rd_elem>()> transfer_f = [=]() {
-//        cout << "default handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
+//    cout << "default handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
       return cleanup_live(state[from]);
     };
   auto id_assigned = [&](int_t size, variable *v) {
@@ -44,7 +44,7 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
     v->get_id()->accept(cv);
     shared_ptr<id> id_ptr(cv.get_id());
     transfer_f = [=]() {
-//           cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
+//    cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
       auto acc = shared_ptr<adaptive_rd_elem>(state[from]->remove(id_set_t {id_ptr}));
       if(lv_result.contains(to, id_ptr, v->get_offset(), size))
       acc = shared_ptr<adaptive_rd_elem>(acc->add( {singleton_t(id_ptr, to)}));

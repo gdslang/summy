@@ -27,7 +27,7 @@ class observer;
 class cfg;
 
 enum update_kind {
-  INSERT, ERASE
+  INSERT, ERASE, UPDATE
 };
 
 struct update {
@@ -35,6 +35,9 @@ struct update {
   size_t from;
   size_t to;
 };
+
+typedef std::vector<update> updates_t;
+typedef std::set<std::tuple<size_t, size_t>> edge_set_t;
 
 struct update_pop {
 private:
@@ -63,7 +66,7 @@ public:
   cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary);
   ~cfg();
 
-  size_t add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node);
+  size_t add_nodes(std::vector<gdsl::rreil::statement*> *statements, size_t from_node);
 
   size_t next_node_id();
   size_t node_count();
@@ -73,9 +76,6 @@ public:
 
   size_t create_node(std::function<class node*(size_t)> constr);
 
-  /*
-   * Caution: edge map may get changed
-   */
   edges_t const* out_edges(size_t id);
   void update_edge(size_t from, size_t to, const edge *edge);
   void update_destroy_edge(size_t from, size_t to, const edge *edge);
@@ -94,7 +94,7 @@ public:
   void clear_updates();
   update_pop push_updates();
 
-  std::set<std::tuple<size_t, size_t>> adjacencies(std::set<size_t> nodes);
+  edge_set_t adjacencies(std::set<size_t> nodes);
 
   void dot(std::ostream &stream);
 };

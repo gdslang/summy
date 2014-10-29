@@ -71,16 +71,26 @@ size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, siz
 
 void cfg::cfg::update_destroy_edge(size_t from, size_t to, const edge *edge) {
   auto it = edges[from]->find(to);
-  if(it != edges[from]->end())
+  if(it != edges[from]->end()) {
+    updates_stack.top().push_back(update { update_kind::UPDATE, from, to });
     delete it->second;
-  it->second = edge;
-  updates_stack.top().push_back(update { update_kind::INSERT, from, to });
+    it->second = edge;
+  } else {
+    updates_stack.top().push_back(update { update_kind::INSERT, from, to });
+    edges[from]->operator [](to) = edge;
+  }
   in_edges[to].insert(from);
 }
 
 void cfg::cfg::update_edge(size_t from, size_t to, const edge *edge) {
-  edges[from]->operator [](to) = edge;
-  updates_stack.top().push_back(update { update_kind::INSERT, from, to });
+  auto it = edges[from]->find(to);
+  if(it != edges[from]->end()) {
+    updates_stack.top().push_back(update { update_kind::UPDATE, from, to });
+    it->second = edge;
+  } else {
+    updates_stack.top().push_back(update { update_kind::INSERT, from, to });
+    edges[from]->operator [](to) = edge;
+  }
   in_edges[to].insert(from);
 }
 
@@ -195,7 +205,7 @@ cfg::bfs_iterator cfg::cfg::end() {
   return bfs_iterator(this, true);
 }
 
-std::set<std::tuple<size_t, size_t>> cfg::cfg::adjacencies(std::set<size_t> nodes) {
+cfg::edge_set_t cfg::cfg::adjacencies(std::set<size_t> nodes) {
   std::set<std::tuple<size_t, size_t>> result;
   for(auto node : nodes) {
     auto const &out_edges = this->out_edges(node);

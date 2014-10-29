@@ -152,8 +152,6 @@ int main(void) {
   ssa.transduce();
   cfg.clear_updates();
 
-  cout << endl << "grrrrrrr " << endl << endl;
-
   cfg.update_edge(178, ani, foo);
   cfg.commit_updates();
 
