@@ -13,6 +13,7 @@
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/node/node.h>
 #include <summy/cfg/bfs_iterator.h>
+#include <summy/cfg/node/node_copy_visitor.h>
 #include <summy/cfg/observer.h>
 #include <map>
 
@@ -198,6 +199,18 @@ cfg::edges_t const* cfg::cfg::out_edges(size_t id) {
 }
 
 void cfg::cfg::merge(class cfg &other, size_t src_node, size_t dst_node) {
+  size_t offset = node_count();
+
+  nodes.resize(offset + other.nodes.size() - 1);
+  for(size_t i = 0; other.nodes.size(); i++) {
+    node_copy_visitor ncv;
+    ncv._node_id([&](size_t current_id) {
+      return current_id + offset;
+    });
+    other.nodes[i]->accept(ncv);
+    node *n = ncv.get_node();
+    nodes[n->get_id()] = n;
+  }
 }
 
 cfg::bfs_iterator cfg::cfg::begin() {
