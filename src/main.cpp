@@ -141,19 +141,19 @@ int main(void) {
     delete t;
   }
 
-  auto foo = cfg.out_edges(178)->at(179);
-  cfg.erase_edge(178, 179);
-  auto ani = cfg.create_node([&](size_t id) {
-    return new address_node(id, 7777);
-  });
-  cfg.update_edge(ani, 179, new edge());
-
-  ssa ssa(cfg);
-  ssa.transduce();
-  cfg.clear_updates();
-
-  cfg.update_edge(178, ani, foo);
-  cfg.commit_updates();
+//  auto foo = cfg.out_edges(178)->at(179);
+//  cfg.erase_edge(178, 179);
+//  auto ani = cfg.create_node([&](size_t id) {
+//    return new address_node(id, 7777);
+//  });
+//  cfg.update_edge(ani, 179, new edge());
+//
+//  ssa ssa(cfg);
+//  ssa.transduce();
+//  cfg.clear_updates();
+//
+//  cfg.update_edge(178, ani, foo);
+//  cfg.commit_updates();
 
 //  ofstream dot_fsb;
 //  dot_fsb.open("output_before.dot", ios::out);

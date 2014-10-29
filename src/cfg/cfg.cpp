@@ -197,6 +197,9 @@ cfg::edges_t const* cfg::cfg::out_edges(size_t id) {
   return edges[id];
 }
 
+void cfg::cfg::merge(class cfg &other, size_t src_node, size_t dst_node) {
+}
+
 cfg::bfs_iterator cfg::cfg::begin() {
   return bfs_iterator(this);
 }

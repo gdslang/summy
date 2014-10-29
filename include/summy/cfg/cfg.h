@@ -82,6 +82,8 @@ public:
   void erase_edge(size_t from, size_t to);
   void erase_destroy_edge(size_t from, size_t to);
 
+  void merge(class cfg &other, size_t src_node, size_t dst_node);
+
   bfs_iterator begin();
   bfs_iterator end();
 

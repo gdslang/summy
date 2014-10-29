@@ -18,7 +18,6 @@ class node_visitor {
 private:
   std::function<void(node*)> node_callback = NULL;
   std::function<void(address_node*)> start_node_callback = NULL;
-
 public:
   virtual ~node_visitor() {
   }
