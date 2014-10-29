@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <summy/cfg/edge_visitor.h>
+#include <summy/cfg/edge/edge_visitor.h>
 #include <summy/cfg/phi_edge.h>
 
 #include <cppgdsl/rreil/statement/statement.h>

@@ -5,8 +5,8 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/cfg/node_copy_visitor.h>
-#include <summy/cfg/node.h>
+#include <summy/cfg/node/node_copy_visitor.h>
+#include <summy/cfg/node/node.h>
 #include <summy/cfg/address_node.h>
 
 size_t cfg::node_copy_visitor::node_id(node *n) {

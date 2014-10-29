@@ -11,7 +11,7 @@
 #include <vector>
 #include <queue>
 #include <set>
-#include <summy/cfg/node.h>
+#include <summy/cfg/node/node.h>
 
 namespace cfg {
 

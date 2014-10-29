@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "node.h"
+#include "node/node.h"
 
 namespace cfg {
 

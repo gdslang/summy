@@ -7,8 +7,8 @@
 
 #include <summy/transformers/ssa/renamer.h>
 #include <summy/cfg/bfs_iterator.h>
-#include <summy/cfg/edge.h>
-#include <summy/cfg/edge_visitor.h>
+#include <summy/cfg/edge/edge.h>
+#include <summy/cfg/edge/edge_visitor.h>
 #include <summy/cfg/phi_edge.h>
 #include <summy/rreil/id/ssa_id.h>
 #include <summy/rreil/copy_visitor.h>

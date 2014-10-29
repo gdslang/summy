@@ -6,9 +6,9 @@
  */
 
 #include <cppgdsl/rreil/rreil.h>
-#include <summy/cfg/edge.h>
-#include <summy/cfg/edge_visitor.h>
-#include <summy/cfg/node.h>
+#include <summy/cfg/edge/edge.h>
+#include <summy/cfg/edge/edge_visitor.h>
+#include <summy/cfg/node/node.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/transformers/goto_ip_adder.h>
 #include <vector>

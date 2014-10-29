@@ -9,7 +9,7 @@
 
 #include <summy/transformers/transformer.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
-#include <summy/cfg/edge.h>
+#include <summy/cfg/edge/edge.h>
 #include <summy/cfg/observer.h>
 #include <vector>
 

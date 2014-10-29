@@ -6,7 +6,7 @@
  */
 
 #include <summy/cfg/address_node.h>
-#include <summy/cfg/node_visitor.h>
+#include <summy/cfg/node/node_visitor.h>
 
 void cfg::address_node::dot(std::ostream &stream) {
   stream << get_id() << " [label=\"" << get_id() << "~" << address << "\", shape=box];";

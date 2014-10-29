@@ -8,7 +8,7 @@
 #include <summy/cfg/address_node.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/cfg.h>
-#include <summy/cfg/node_visitor.h>
+#include <summy/cfg/node/node_visitor.h>
 #include <string>
 
 using std::string;

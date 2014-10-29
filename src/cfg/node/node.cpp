@@ -5,8 +5,8 @@
  *      Author: jucs
  */
 
-#include <summy/cfg/node.h>
-#include <summy/cfg/node_visitor.h>
+#include <summy/cfg/node/node.h>
+#include <summy/cfg/node/node_visitor.h>
 
 void cfg::node::dot(std::ostream &stream) {
   stream << id << ";";

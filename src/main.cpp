@@ -12,8 +12,8 @@
 #include <tuple>
 
 #include <summy/cfg/cfg.h>
-#include <summy/cfg/node.h>
-#include <summy/cfg/edge.h>
+#include <summy/cfg/node/node.h>
+#include <summy/cfg/edge/edge.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <iostream>
 #include <fstream>

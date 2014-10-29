@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include <summy/cfg/edge.h>
+#include <summy/cfg/edge/edge.h>
 #include <cppgdsl/rreil/variable.h>
 extern "C" {
 #include <gdsl_generic.h>

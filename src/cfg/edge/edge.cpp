@@ -5,8 +5,8 @@
  *      Author: jucs
  */
 
-#include <summy/cfg/edge.h>
-#include <summy/cfg/edge_visitor.h>
+#include <summy/cfg/edge/edge.h>
+#include <summy/cfg/edge/edge_visitor.h>
 #include <summy/rreil/copy_visitor.h>
 
 using namespace gdsl::rreil;

@@ -10,7 +10,7 @@
 #include <summy/analysis/analysis.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd_elem.h>
-#include <summy/cfg/edge.h>
+#include <summy/cfg/edge/edge.h>
 #include <summy/cfg/cfg.h>
 #include <vector>
 #include <functional>

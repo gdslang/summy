@@ -9,8 +9,8 @@
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/cfg.h>
-#include <summy/cfg/edge.h>
-#include <summy/cfg/edge_visitor.h>
+#include <summy/cfg/edge/edge.h>
+#include <summy/cfg/edge/edge_visitor.h>
 #include <summy/tools/rreil_util.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <cppgdsl/rreil/copy_visitor.h>

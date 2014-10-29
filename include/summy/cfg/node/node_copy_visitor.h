@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include <summy/cfg/node_visitor.h>
+#include <summy/cfg/node/node_visitor.h>
 #include <functional>
 
 namespace cfg {
