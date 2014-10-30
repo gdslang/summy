@@ -146,9 +146,8 @@ int main(void) {
   gdsl::gdsl g(&f);
 
   cfg::cfg *cfg = gen_cfg(g, 0);
-  cfg::cfg *cfg2 = gen_cfg(g, 3);
-
-  cfg->merge(*cfg2, 49, 0);
+//  cfg::cfg *cfg2 = gen_cfg(g, 3);
+//  cfg->merge(*cfg2, 49, 0);
 
 //  auto foo = cfg.out_edges(178)->at(179);
 //  cfg.erase_edge(178, 179);
@@ -177,7 +176,7 @@ int main(void) {
   dot_fs.close();
 
   delete cfg;
-  delete cfg2;
+//  delete cfg2;
 
   return 0;
 }

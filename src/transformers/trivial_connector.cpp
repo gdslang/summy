@@ -24,7 +24,7 @@ using namespace std;
 using namespace cfg;
 using namespace gdsl::rreil;
 
-trivial_connector::address_node_map_t trivial_connector::start_node_map() {
+trivial_connector::address_node_map_t trivial_connector::address_node_map() {
   trivial_connector::address_node_map_t start_node_map;
   for(auto node : *cfg) {
     node_visitor nv;
@@ -71,7 +71,7 @@ trivial_connector::address_node_map_t trivial_connector::start_node_map() {
 //}
 
 void trivial_connector::transform() {
-  auto start_node_map = this->start_node_map();
+  auto address_node_map = this->address_node_map();
   queue<tuple<size_t, int_t>> branches;
   queue<tuple<size_t, sexpr*, bool, address*>> cond_branches;
 
@@ -91,7 +91,7 @@ void trivial_connector::transform() {
           bool evalable;
           int_t value;
           tie(evalable, value) = rev.evaluate(i->get_target()->get_lin());
-          if(evalable && start_node_map.find(value) != start_node_map.end()) {
+          if(evalable) {
             replace = true;
             branches.push(make_tuple(edge_it->first, value));
           }
@@ -121,6 +121,16 @@ void trivial_connector::transform() {
         new expr_sexpr(new sexpr_lin(new lin_imm(value))));
   };
 
+  auto dst_node = [&](int_t addr) {
+    auto start_node_it = address_node_map.find(addr);
+    if(start_node_it == address_node_map.end()) {
+      return cfg->create_node([&](size_t id) {
+        return new address_node(id, addr);
+      });
+    } else
+      return start_node_it->second;
+  };
+
   /*
    * Replace single-destination branches
    */
@@ -130,10 +140,7 @@ void trivial_connector::transform() {
     tie(node_id, addr) = branches.front();
     branches.pop();
 
-    auto start_node_it = start_node_map.find(addr);
-    assert(start_node_it != start_node_map.end());
-
-    size_t dest_node_id = start_node_it->second;
+    size_t dest_node_id = dst_node(addr);
 
     auto _ip_assign = ip_assign(addr);
     cfg->update_edge(node_id, dest_node_id, new stmt_edge(_ip_assign));
@@ -153,8 +160,8 @@ void trivial_connector::transform() {
 
     rreil_evaluator rev;
     bool evalable;
-    int_t value;
-    tie(evalable, value) = rev.evaluate(addr->get_lin());
+    int_t addr_value;
+    tie(evalable, addr_value) = rev.evaluate(addr->get_lin());
 
     auto preserve_branch = [&]() {
       size_t cond_end_node_id = cfg->create_node([&](size_t id) {
@@ -177,21 +184,17 @@ void trivial_connector::transform() {
     };
 
     if(evalable) {
-      auto it = start_node_map.find(value);
-      if(it != start_node_map.end()) {
-        size_t dest_node_id = it->second;
+      size_t dest_node_id = dst_node(addr_value);
 
-        size_t cond_end_node_id = cfg->create_node([&](size_t id) {
-          return new (class node)(id);
-        });
+      size_t cond_end_node_id = cfg->create_node([&](size_t id) {
+        return new (class node)(id);
+      });
 
-        cfg->update_edge(node_id, cond_end_node_id, new cond_edge(cond, positive));
+      cfg->update_edge(node_id, cond_end_node_id, new cond_edge(cond, positive));
 
-        auto _ip_assign = ip_assign(value);
-        cfg->update_edge(cond_end_node_id, dest_node_id, new stmt_edge(_ip_assign));
-        delete _ip_assign;
-      } else
-        preserve_branch();
+      auto _ip_assign = ip_assign(addr_value);
+      cfg->update_edge(cond_end_node_id, dest_node_id, new stmt_edge(_ip_assign));
+      delete _ip_assign;
     } else
       preserve_branch();
 
