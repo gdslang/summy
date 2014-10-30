@@ -42,10 +42,10 @@ public:
     return _edge;
   }
 
-  virtual void visit(edge *e);
-  virtual void visit(stmt_edge *e);
-  virtual void visit(cond_edge *e);
-  virtual void visit(phi_edge *e);
+  virtual void visit(const edge *e);
+  virtual void visit(const stmt_edge *e);
+  virtual void visit(const cond_edge *e);
+  virtual void visit(const phi_edge *e);
   virtual void _default();
 
   void _(edge_ctor_t c) {

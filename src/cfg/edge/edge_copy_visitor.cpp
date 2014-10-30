@@ -10,7 +10,7 @@
 #include <summy/cfg/phi_edge.h>
 //#include <summy/rreil/copy_visitor.h>
 
-void cfg::edge_copy_visitor::visit(edge *e) {
+void cfg::edge_copy_visitor::visit(const edge *e) {
   if(edge_ctor != NULL) _edge = edge_ctor();
   else {
     _edge = new edge();
@@ -18,7 +18,7 @@ void cfg::edge_copy_visitor::visit(edge *e) {
   }
 }
 
-void cfg::edge_copy_visitor::visit(stmt_edge *e) {
+void cfg::edge_copy_visitor::visit(const stmt_edge *e) {
   if(stmt_edge_ctor != NULL) _edge = stmt_edge_ctor(e->get_stmt());
   else {
     _edge = new stmt_edge(e->get_stmt());
@@ -26,7 +26,7 @@ void cfg::edge_copy_visitor::visit(stmt_edge *e) {
   }
 }
 
-void cfg::edge_copy_visitor::visit(cond_edge *e) {
+void cfg::edge_copy_visitor::visit(const cond_edge *e) {
   if(cond_edge_ctor != NULL) _edge = cond_edge_ctor(e->get_cond(), e->is_positive());
   else {
     _edge = new cond_edge(e->get_cond(), e->is_positive());
@@ -34,7 +34,7 @@ void cfg::edge_copy_visitor::visit(cond_edge *e) {
   }
 }
 
-void cfg::edge_copy_visitor::visit(phi_edge *e) {
+void cfg::edge_copy_visitor::visit(const phi_edge *e) {
   if(cond_edge_ctor != NULL) _edge = phi_edge_ctor(e->get_assignments());
   else {
     _edge = new phi_edge(e->get_assignments());

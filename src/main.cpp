@@ -89,10 +89,10 @@ vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
   return prog;
 }
 
-vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> manual(gdsl::gdsl &g) {
+vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> manual(gdsl::gdsl &g, uint64_t ip) {
 //  uint32_t buffer = 0x00ab48f3;
   uint32_t buffer = 0x00e2d348;
-  g.set_code((unsigned char*)&buffer, sizeof(buffer), 0);
+  g.set_code((unsigned char*)&buffer, sizeof(buffer), ip);
 
   vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
   for(size_t i = 0; i < 1; i++) {
@@ -115,13 +115,10 @@ vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> manual(gdsl::gdsl &g) 
   return prog;
 }
 
-int main(void) {
-  gdsl::bare_frontend f("current");
-  gdsl::gdsl g(&f);
+cfg::cfg *gen_cfg(gdsl::gdsl &g, uint64_t ip) {
+  auto prog = manual(g, ip);
 
-  auto prog = elf(g);
-
-  cfg::cfg cfg(prog);
+  cfg::cfg *cfg = new cfg::cfg(prog);
 
   for(auto t : prog) {
     vector<gdsl::rreil::statement*>* rreil;
@@ -132,14 +129,26 @@ int main(void) {
   }
 
   vector<transformer*> transformers;
-  transformers.push_back(new decomposer(&cfg));
-  transformers.push_back(new goto_ip_adder(&cfg));
-  transformers.push_back(new ip_propagator(&cfg));
-  transformers.push_back(new trivial_connector(&cfg));
+  transformers.push_back(new decomposer(cfg));
+  transformers.push_back(new goto_ip_adder(cfg));
+  transformers.push_back(new ip_propagator(cfg));
+  transformers.push_back(new trivial_connector(cfg));
   for(auto t : transformers) {
     t->transform();
     delete t;
   }
+
+  return cfg;
+}
+
+int main(void) {
+  gdsl::bare_frontend f("current");
+  gdsl::gdsl g(&f);
+
+  cfg::cfg *cfg = gen_cfg(g, 0);
+  cfg::cfg *cfg2 = gen_cfg(g, 3);
+
+  cfg->merge(*cfg2, 49, 0);
 
 //  auto foo = cfg.out_edges(178)->at(179);
 //  cfg.erase_edge(178, 179);
@@ -164,8 +173,11 @@ int main(void) {
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
-  cfg.dot(dot_fs);
+  cfg->dot(dot_fs);
   dot_fs.close();
+
+  delete cfg;
+  delete cfg2;
 
   return 0;
 }

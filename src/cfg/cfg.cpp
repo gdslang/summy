@@ -13,6 +13,7 @@
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/node/node.h>
 #include <summy/cfg/bfs_iterator.h>
+#include <summy/cfg/edge/edge_copy_visitor.h>
 #include <summy/cfg/node/node_copy_visitor.h>
 #include <summy/cfg/observer.h>
 #include <map>
@@ -198,19 +199,60 @@ cfg::edges_t const* cfg::cfg::out_edges(size_t id) {
   return edges[id];
 }
 
-void cfg::cfg::merge(class cfg &other, size_t src_node, size_t dst_node) {
+void cfg::cfg::merge(class cfg &other, size_t merge_node, size_t other_merge_node) {
+  if(merge_node > nodes.size() || other_merge_node > other.nodes.size())
+    throw string("Invalid merge node(s)");
+
   size_t offset = node_count();
 
+  auto mapped_id = [&](size_t id) {
+    if(id < other_merge_node)
+      return offset + id;
+    else if(id == other_merge_node)
+      return merge_node;
+    else
+      return offset + id - 1;
+  };
+
+  delete nodes[merge_node];
+
+  /*
+   * Copy nodes
+   */
   nodes.resize(offset + other.nodes.size() - 1);
-  for(size_t i = 0; other.nodes.size(); i++) {
+  for(size_t i = 0; i < other.nodes.size(); i++) {
     node_copy_visitor ncv;
     ncv._node_id([&](size_t current_id) {
-      return current_id + offset;
+      return mapped_id(current_id);
     });
     other.nodes[i]->accept(ncv);
     node *n = ncv.get_node();
     nodes[n->get_id()] = n;
   }
+
+  /*
+   * Copy edges
+   */
+  edges.resize(offset + other.edges.size() - 1);
+  for(size_t i = offset; i < edges.size(); i++)
+    edges[i] = new edges_t();
+  for(size_t i = 0; i < other.edges.size(); i++) {
+    auto &dst_edges = *edges[mapped_id(i)];
+    for(auto &edge_mapping : *other.edges.at(i)) {
+      edge_copy_visitor ecv;
+      edge_mapping.second->accept(ecv);
+      edge *e = ecv.get_edge();
+      dst_edges[mapped_id(edge_mapping.first)] = e;
+    }
+  }
+
+  /*
+   * Copy in_edges
+   */
+  in_edges.resize(offset + other.in_edges.size() - 1);
+  for(size_t i = 0; i < other.in_edges.size(); i++)
+    for(auto in_edge : other.in_edges[i])
+      in_edges[mapped_id(i)].insert(mapped_id(in_edge));
 }
 
 cfg::bfs_iterator cfg::cfg::begin() {

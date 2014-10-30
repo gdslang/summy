@@ -26,27 +26,27 @@ public:
   virtual ~edge_visitor() {
   }
 
-  virtual void visit(const edge *se) const {
+  virtual void visit(const edge *se) {
     if(edge_callback != NULL) edge_callback(se);
     _default();
   }
 
-  virtual void visit(const stmt_edge *se) const {
+  virtual void visit(const stmt_edge *se) {
     if(stmt_edge_callback != NULL) stmt_edge_callback(se);
     _default();
   }
 
-  virtual void visit(const cond_edge *se) const {
+  virtual void visit(const cond_edge *se) {
     if(cond_edge_callback != NULL) cond_edge_callback(se);
     _default();
   }
 
-  virtual void visit(const phi_edge *se) const {
+  virtual void visit(const phi_edge *se) {
     if(phi_edge_callback != NULL) phi_edge_callback(se);
     _default();
   }
 
-  virtual void _default() const {
+  virtual void _default() {
   }
 
   void _(std::function<void(const edge*)> edge_callback) {
