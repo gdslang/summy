@@ -17,7 +17,7 @@
 #include <queue>
 #include <tuple>
 #include <assert.h>
-#include <summy/cfg/address_node.h>
+#include <summy/cfg/node/address_node.h>
 #include <summy/tools/rreil_util.h>
 
 using namespace std;
@@ -91,7 +91,7 @@ void trivial_connector::transform() {
     auto start_node_it = address_node_map.find(addr);
     if(start_node_it == address_node_map.end()) {
       return cfg->create_node([&](size_t id) {
-        return new address_node(id, addr);
+        return new address_node(id, addr, false);
       });
     } else
       return start_node_it->second;

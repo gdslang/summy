@@ -4,8 +4,8 @@
  *  Created on: Oct 17, 2014
  *      Author: Julian Kranz
  */
-#include <summy/cfg/phi_edge.h>
 #include <summy/cfg/edge/edge_visitor.h>
+#include <summy/cfg/edge/phi_edge.h>
 #include <summy/rreil/copy_visitor.h>
 #include <iostream>
 

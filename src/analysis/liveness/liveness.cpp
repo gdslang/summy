@@ -12,7 +12,6 @@
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/edge/edge.h>
-#include <summy/cfg/phi_edge.h>
 #include <summy/cfg/edge/edge_visitor.h>
 #include <summy/rreil/copy_visitor.h>
 #include <summy/rreil/visitor.h>
@@ -26,6 +25,7 @@
 #include <iostream>
 #include <sstream>
 #include <assert.h>
+#include <summy/cfg/edge/phi_edge.h>
 
 using namespace std;
 using namespace cfg;

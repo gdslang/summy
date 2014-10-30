@@ -5,9 +5,9 @@
  *      Author: Julian Kranz
  */
 
+#include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node_copy_visitor.h>
 #include <summy/cfg/node/node.h>
-#include <summy/cfg/address_node.h>
 
 size_t cfg::node_copy_visitor::node_id(node *n) {
   if(node_id_ctor != NULL)
@@ -21,6 +21,6 @@ void cfg::node_copy_visitor::visit(node *n) {
 }
 
 void cfg::node_copy_visitor::visit(address_node *n) {
-  if(address_node_ctor != NULL) _node = address_node_ctor(node_id(n), n->get_address());
-  else _node = new address_node(node_id(n), n->get_address());
+  if(address_node_ctor != NULL) _node = address_node_ctor(node_id(n), n->get_address(), n->get_decoded());
+  else _node = new address_node(node_id(n), n->get_address(), n->get_decoded());
 }

@@ -7,7 +7,7 @@
 
 #include <summy/cfg/edge/edge_copy_visitor.h>
 #include <summy/cfg/edge/edge.h>
-#include <summy/cfg/phi_edge.h>
+#include <summy/cfg/edge/phi_edge.h>
 //#include <summy/rreil/copy_visitor.h>
 
 void cfg::edge_copy_visitor::visit(const edge *e) {

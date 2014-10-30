@@ -5,9 +5,9 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/cfg/address_node.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/cfg.h>
+#include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <string>
 
@@ -22,6 +22,7 @@ void cfg::bfs_iterator::check_next_component() {
       break;
     }
   }
+  end = inner_component.empty() && components.empty();
 }
 
 cfg::bfs_iterator::bfs_iterator(cfg *cfg, bool end) :
@@ -56,7 +57,6 @@ cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
       inner_component.push(edge.first);
     }
   check_next_component();
-  end = inner_component.empty() && components.empty();
   return *this;
 }
 

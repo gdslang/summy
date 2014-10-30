@@ -8,8 +8,7 @@
 #pragma once
 
 #include <summy/cfg/edge/edge_visitor.h>
-#include <summy/cfg/phi_edge.h>
-
+#include <summy/cfg/edge/phi_edge.h>
 #include <cppgdsl/rreil/statement/statement.h>
 #include <cppgdsl/rreil/sexpr/sexpr.h>
 #include <functional>

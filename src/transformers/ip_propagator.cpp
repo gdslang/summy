@@ -5,11 +5,11 @@
  *      Author: jucs
  */
 
-#include <summy/cfg/address_node.h>
 #include <summy/transformers/ip_propagator.h>
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/edge/edge_visitor.h>
 #include <summy/cfg/bfs_iterator.h>
+#include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <summy/tools/rreil_util.h>

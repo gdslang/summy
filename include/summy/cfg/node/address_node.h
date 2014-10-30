@@ -7,20 +7,25 @@
 
 #pragma once
 
-#include "node/node.h"
+#include "node.h"
 
 namespace cfg {
 
 class address_node: public node {
 private:
   size_t address;
+  bool decoded;
 public:
-  address_node(size_t id, size_t address) :
-      node(id), address(address) {
+  address_node(size_t id, size_t address, bool decoded) :
+      node(id), address(address), decoded(decoded) {
   }
 
   size_t get_address() {
     return address;
+  }
+
+  bool get_decoded() {
+    return decoded;
   }
 
   virtual void dot(std::ostream &stream);

@@ -8,12 +8,11 @@
 #include <summy/cfg/cfg.h>
 #include <iostream>
 #include <stdlib.h>
-#include <summy/cfg/address_node.h>
-
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/node/node.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/edge/edge_copy_visitor.h>
+#include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node_copy_visitor.h>
 #include <summy/cfg/observer.h>
 #include <map>
@@ -33,18 +32,8 @@ void cfg::cfg::add_node(node *n) {
   in_edges.resize(in_edges.size() + 1);
 }
 
-cfg::cfg::cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary) {
+cfg::cfg::cfg() {
   updates_stack.push(std::vector<update>());
-
-  for(auto elem : translated_binary) {
-    size_t address;
-    vector<gdsl::rreil::statement*> *statements;
-    tie(address, statements) = elem;
-    size_t from_node = create_node([&](size_t id) {
-      return new address_node(id, address);
-    });
-    add_nodes(statements, from_node);
-  }
 }
 
 cfg::cfg::~cfg() {
@@ -54,6 +43,18 @@ cfg::cfg::~cfg() {
     for(auto edge_it : *node_edges)
       delete edge_it.second;
     delete node_edges;
+  }
+}
+
+void cfg::cfg::add_program(translated_program_t &translated_binary) {
+  for(auto elem : translated_binary) {
+    size_t address;
+    vector<gdsl::rreil::statement*> *statements;
+    tie(address, statements) = elem;
+    size_t from_node = create_node([&](size_t id) {
+      return new address_node(id, address, true);
+    });
+    add_nodes(statements, from_node);
   }
 }
 

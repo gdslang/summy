@@ -34,8 +34,9 @@
 #include <summy/analysis/reaching_defs/rd_elem.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/liveness/liveness.h>
+#include <summy/big_step/dectran.h>
 #include <summy/big_step/ssa.h>
-#include <summy/cfg/address_node.h>
+#include <summy/cfg/node/address_node.h>
 #include <summy/transformers/ssa/phi_inserter.h>
 #include <summy/transformers/ssa/renamer.h>
 
@@ -45,7 +46,7 @@ using cfg::edge;
 using namespace gdsl::rreil;
 using namespace std;
 
-vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
+cfg::translated_program_t elf(gdsl::gdsl &g) {
   elf_provider elfp = [&]() {
     try {
       return elf_provider("a.out");
@@ -89,12 +90,12 @@ vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> elf(gdsl::gdsl &g) {
   return prog;
 }
 
-vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> manual(gdsl::gdsl &g, uint64_t ip) {
+cfg::translated_program_t manual(gdsl::gdsl &g, uint64_t ip) {
 //  uint32_t buffer = 0x00ab48f3;
   uint32_t buffer = 0x00e2d348;
   g.set_code((unsigned char*)&buffer, sizeof(buffer), ip);
 
-  vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> prog;
+  cfg::translated_program_t prog;
   for(size_t i = 0; i < 1; i++) {
     int_t ip = g.get_ip();
 
@@ -118,7 +119,8 @@ vector<tuple<uint64_t, vector<gdsl::rreil::statement*>*>> manual(gdsl::gdsl &g, 
 cfg::cfg *gen_cfg(gdsl::gdsl &g, uint64_t ip) {
   auto prog = manual(g, ip);
 
-  cfg::cfg *cfg = new cfg::cfg(prog);
+  cfg::cfg *cfg = new cfg::cfg();
+  cfg->add_program(prog);
 
   for(auto t : prog) {
     vector<gdsl::rreil::statement*>* rreil;
@@ -145,7 +147,15 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  cfg::cfg *cfg = gen_cfg(g, 0);
+  uint32_t buffer = 0x00e2d348;
+  g.set_code((unsigned char*)&buffer, 3, 0);
+
+  dectran dt(g);
+  dt.transduce_and_register();
+
+  auto &cfg = dt.get_cfg();
+
+//  cfg::cfg *cfg = gen_cfg(g, 0);
 //  cfg::cfg *cfg2 = gen_cfg(g, 3);
 //  cfg->merge(*cfg2, 49, 0);
 
@@ -172,10 +182,10 @@ int main(void) {
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
-  cfg->dot(dot_fs);
+  cfg.dot(dot_fs);
   dot_fs.close();
 
-  delete cfg;
+//  delete cfg;
 //  delete cfg2;
 
   return 0;

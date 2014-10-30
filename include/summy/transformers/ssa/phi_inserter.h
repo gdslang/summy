@@ -9,8 +9,8 @@
 
 #include <summy/transformers/transformer.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
+#include <summy/cfg/edge/phi_edge.h>
 #include <summy/cfg/observer.h>
-#include <summy/cfg/phi_edge.h>
 #include <vector>
 
 class phi_inserter: public transformer {

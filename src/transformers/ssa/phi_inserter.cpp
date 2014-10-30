@@ -6,7 +6,6 @@
  */
 
 #include <summy/transformers/ssa/phi_inserter.h>
-#include <summy/cfg/phi_edge.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd_elem.h>
@@ -15,6 +14,7 @@
 #include <vector>
 #include <iostream>
 #include <assert.h>
+#include <summy/cfg/edge/phi_edge.h>
 
 using namespace std;
 using namespace cfg;

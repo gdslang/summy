@@ -48,6 +48,7 @@ public:
 };
 
 typedef std::map<size_t, edge const*> edges_t;
+typedef std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> translated_program_t;
 
 class cfg {
   friend class bfs_iterator;
@@ -63,9 +64,10 @@ private:
   void add_node(node *n);
   void pop_updates();
 public:
-  cfg(std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> &translated_binary);
+  cfg();
   ~cfg();
 
+  void add_program(translated_program_t &translated_binary);
   size_t add_nodes(std::vector<gdsl::rreil::statement*> *statements, size_t from_node);
 
   size_t next_node_id();

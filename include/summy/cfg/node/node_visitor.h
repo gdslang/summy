@@ -17,7 +17,7 @@ class address_node;
 class node_visitor {
 private:
   std::function<void(node*)> node_callback = NULL;
-  std::function<void(address_node*)> start_node_callback = NULL;
+  std::function<void(address_node*)> address_node_callback = NULL;
 public:
   virtual ~node_visitor() {
   }
@@ -28,7 +28,7 @@ public:
   }
 
   virtual void visit(address_node *se) {
-    if(start_node_callback != NULL) start_node_callback(se);
+    if(address_node_callback != NULL) address_node_callback(se);
     _default();
   }
 
@@ -39,8 +39,8 @@ public:
     this->node_callback = node_callback;
   }
 
-  void _(std::function<void(address_node*)> start_node_callback) {
-    this->start_node_callback = start_node_callback;
+  void _(std::function<void(address_node*)> address_node_callback) {
+    this->address_node_callback = address_node_callback;
   }
 };
 
