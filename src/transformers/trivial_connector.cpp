@@ -36,40 +36,6 @@ trivial_connector::address_node_map_t trivial_connector::address_node_map() {
   return start_node_map;
 }
 
-//trivial_connector::address_node_map_t trivial_connector::ip_map() {
-//  trivial_connector::address_node_map_t start_node_map;
-//  for(auto node : *cfg) {
-//    size_t id = node->get_id();
-//    node_visitor nv;
-//    nv._([&](start_node *sn) {
-//      start_node_map[sn->get_address()] = id;
-//    });
-//    node->accept(nv);
-//    auto &edges = *cfg->out_edges(node->get_id());
-//    for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
-//      edge_visitor ev;
-//      ev._([&](stmt_edge *edge) {
-//        statement *stmt = edge->get_stmt();
-//        statement_visitor v;
-//        v._([&](assign *i) {
-//          if(rreil_evaluator::is_ip(i->get_lhs())) {
-//            bool evalable;
-//            size_t ip;
-//            rreil_evaluator re;
-//            tie(evalable, ip) = re.evaluate(i->get_rhs());
-//            if(!evalable)
-//              throw string("Can't evaluate IP value :-(");
-//            start_node_map[ip] = edge_it->first;
-//          }
-//        });
-//        stmt->accept(v);
-//      });
-//      edge_it->second->accept(ev);
-//    }
-//  }
-//  return start_node_map;
-//}
-
 void trivial_connector::transform() {
   auto address_node_map = this->address_node_map();
   queue<tuple<size_t, int_t>> branches;

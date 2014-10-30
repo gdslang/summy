@@ -15,10 +15,6 @@
 #include <summy/transformers/ssa/renamer.h>
 #include <vector>
 
-/*
- * Todo: class ssa: run analysis, transformations, register for future graph changes
- */
-
 class ssa : public big_step {
 private:
   analysis::liveness::liveness l;
@@ -33,6 +29,6 @@ private:
 public:
   ssa(cfg::cfg &cfg);
 
-  void transduce();
+  void transduce_and_register();
   void notify(std::vector<cfg::update> const &updates);
 };

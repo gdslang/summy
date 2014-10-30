@@ -21,7 +21,7 @@ ssa::ssa(cfg::cfg &cfg) :
     big_step(cfg), l(&cfg), fpl(&l), r(&cfg, l.result()), fpr(&r), pi(&cfg, r.result()), ren(&cfg, r.result()) {
 }
 
-void ssa::transduce() {
+void ssa::transduce_and_register() {
   fpl.iterate();
 //  cout << l;
 
