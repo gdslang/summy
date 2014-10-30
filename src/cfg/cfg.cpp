@@ -132,6 +132,7 @@ void cfg::cfg::commit_updates() {
     if(updates.size() == 0) break;
     for(auto &o : observers)
       o->notify(updates);
+    break;
   }
 }
 
@@ -244,6 +245,7 @@ void cfg::cfg::merge(class cfg &other, size_t merge_node, size_t other_merge_nod
       edge_mapping.second->accept(ecv);
       edge *e = ecv.get_edge();
       dst_edges[mapped_id(edge_mapping.first)] = e;
+      updates_stack.top().push_back(update { update_kind::INSERT, mapped_id(i), mapped_id(edge_mapping.first) });
     }
   }
 

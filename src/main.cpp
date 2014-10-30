@@ -147,13 +147,28 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  uint32_t buffer = 0x00e2d348;
-  g.set_code((unsigned char*)&buffer, 3, 0);
+  elf_provider elfp = [&]() {
+    try {
+      return elf_provider("a.out");
+    } catch(string &s) {
+      cout << "Error initializing elf provider: " << s << endl;
+      throw string("no elf() :/");
+    }
+  }();
+//  binary_provider::bin_range_t range = elfp.bin_range();
+  binary_provider::data_t data = elfp.get_data();
+  binary_provider::entry_t e;
+  tie(ignore, e) = elfp.entry("main");
+
+//  uint32_t buffer = 0xfc75c085;
+  g.set_code(data.data + e.offset, e.size, e.address);
 
   dectran dt(g);
   dt.transduce_and_register();
 
   auto &cfg = dt.get_cfg();
+  for(int i = 0; i < 10; i++)
+    cfg.commit_updates();
 
 //  cfg::cfg *cfg = gen_cfg(g, 0);
 //  cfg::cfg *cfg2 = gen_cfg(g, 3);

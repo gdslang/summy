@@ -28,6 +28,10 @@ public:
     return decoded;
   }
 
+//  void set_decoded(bool decoded) {
+//    return this->decoded = decoded;
+//  }
+
   virtual void dot(std::ostream &stream);
   virtual void accept(node_visitor &v);
 };

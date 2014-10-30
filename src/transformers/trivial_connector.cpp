@@ -90,9 +90,11 @@ void trivial_connector::transform() {
   auto dst_node = [&](int_t addr) {
     auto start_node_it = address_node_map.find(addr);
     if(start_node_it == address_node_map.end()) {
-      return cfg->create_node([&](size_t id) {
+      size_t new_addr_node = cfg->create_node([&](size_t id) {
         return new address_node(id, addr, false);
       });
+      start_node_it->second = new_addr_node;
+      return new_addr_node;
     } else
       return start_node_it->second;
   };
