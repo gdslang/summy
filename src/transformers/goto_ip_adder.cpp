@@ -22,7 +22,7 @@ void goto_ip_adder::transform() {
   vector<bool> dead_node = vector<bool>(cfg->node_count(), false);
   queue<node*> transform_queue;
 
-  for(auto node : *cfg) {
+  for(auto node : cfg_view) {
 //      printf("Next node...\n");
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {

@@ -22,7 +22,7 @@ using namespace gdsl::rreil;
 using namespace cfg;
 
 void decomposer::transform() {
-  for(auto node : *cfg) {
+  for(auto node : cfg_view) {
 //      printf("Next node...\n");
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end();) {

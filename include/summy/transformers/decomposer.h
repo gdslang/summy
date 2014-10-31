@@ -11,9 +11,7 @@
 
 class decomposer: public transformer {
 public:
-  decomposer(cfg::cfg *cfg) :
-      transformer(cfg) {
-  }
+  using transformer::transformer;
 
   virtual void transform();
 };

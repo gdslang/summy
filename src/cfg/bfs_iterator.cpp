@@ -10,6 +10,7 @@
 #include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <string>
+#include <assert.h>
 
 using std::string;
 
@@ -27,6 +28,7 @@ void cfg::bfs_iterator::check_next_component() {
 
 cfg::bfs_iterator::bfs_iterator(cfg *cfg, bool end) :
     _cfg(cfg), end(end) {
+  assert(end);
 }
 
 cfg::bfs_iterator::bfs_iterator(cfg *cfg) :
@@ -38,6 +40,12 @@ cfg::bfs_iterator::bfs_iterator(cfg *cfg) :
     });
     node->accept(nv);
   }
+  check_next_component();
+}
+
+cfg::bfs_iterator::bfs_iterator(cfg *cfg, size_t from) :
+    _cfg(cfg), end(false) {
+  components.push(from);
   check_next_component();
 }
 

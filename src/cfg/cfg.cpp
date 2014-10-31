@@ -132,7 +132,6 @@ void cfg::cfg::commit_updates() {
     if(updates.size() == 0) break;
     for(auto &o : observers)
       o->notify(updates);
-    break;
   }
 }
 
@@ -258,6 +257,10 @@ void cfg::cfg::merge(class cfg &other, size_t merge_node, size_t other_merge_nod
       in_edges[mapped_id(i)].insert(mapped_id(in_edge));
 }
 
+cfg::bfs_iterator cfg::cfg::begin(size_t from) {
+  return bfs_iterator(this, from);
+}
+
 cfg::bfs_iterator cfg::cfg::begin() {
   return bfs_iterator(this);
 }
@@ -276,4 +279,15 @@ cfg::edge_set_t cfg::cfg::adjacencies(std::set<size_t> nodes) {
       result.insert(tuple<size_t, size_t>(incoming, node));
   }
   return result;
+}
+
+cfg::bfs_iterator cfg::cfg_view::begin() {
+  if(rooted)
+    return cfg->begin(root);
+  else
+    return cfg->begin();
+}
+
+cfg::bfs_iterator cfg::cfg_view::end() {
+  return cfg->end();
 }

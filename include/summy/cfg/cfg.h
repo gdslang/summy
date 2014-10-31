@@ -86,6 +86,7 @@ public:
 
   void merge(class cfg &other, size_t merge_node, size_t other_merge_node);
 
+  bfs_iterator begin(size_t from);
   bfs_iterator begin();
   bfs_iterator end();
 
@@ -101,6 +102,22 @@ public:
   edge_set_t adjacencies(std::set<size_t> nodes);
 
   void dot(std::ostream &stream);
+};
+
+class cfg_view {
+private:
+  class cfg *cfg;
+  bool rooted;
+  size_t root;
+public:
+  cfg_view(class cfg *cfg, size_t root) :
+      cfg(cfg), rooted(true), root(root) {
+  }
+  cfg_view(class cfg *cfg) :
+      cfg(cfg), rooted(false), root(0) {
+  }
+  bfs_iterator begin();
+  bfs_iterator end();
 };
 
 }

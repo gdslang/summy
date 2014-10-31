@@ -42,6 +42,7 @@ private:
 
   bfs_iterator(cfg *cfg, bool end);
   bfs_iterator(cfg *cfg);
+  bfs_iterator(cfg *cfg, size_t from);
 public:
   node *operator*();
   bfs_iterator &operator++();

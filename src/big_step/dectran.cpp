@@ -21,31 +21,35 @@
 #include <limits.h>
 #include <vector>
 
-using gdsl::rreil::statement;
+using namespace gdsl::rreil;
 using namespace std;
 
 cfg::translated_program_t dectran::decode_translate() {
   cfg::translated_program_t prog;
-  while(gdsl.bytes_left() > 0) {
-    int_t ip = gdsl.get_ip();
+  if(gdsl.bytes_left() <= 0) {
+    throw string("Unable to decode");
+  }
+  int_t ip = gdsl.get_ip();
 
-//    gdsl::instruction insn = gdsl.decode();
+
+  statements_t *rreil;
+  if(blockwise_optimized) {
+    gdsl::block b = gdsl.decode_translate_block(gdsl::preservation::CONTEXT, LONG_MAX);
+    rreil = b.get_statements();
+  } else {
+    gdsl::instruction insn = gdsl.decode();
 //    printf("Instruction: %s\n", insn.to_string().c_str());
 //    printf("---------------------------------\n");
-//    auto rreil = insn.translate();
-    gdsl::block b = gdsl.decode_translate_block(gdsl::preservation::CONTEXT, LONG_MAX);
-    auto rreil = b.get_statements();
-
-    gdsl.reset_heap();
-
-    printf("RReil (no transformations):\n");
-    for(statement *s : *rreil)
-      printf("%s\n", s->to_string().c_str());
-
-    prog.push_back(make_tuple(ip, rreil));
-
-    break;
+    rreil = insn.translate();
   }
+
+  gdsl.reset_heap();
+
+//  printf("RReil (no transformations):\n");
+//  for(statement *s : *rreil)
+//    printf("%s\n", s->to_string().c_str());
+
+  prog.push_back(make_tuple(ip, rreil));
 
   return prog;
 }
@@ -71,17 +75,19 @@ void dectran::initial_cfg(cfg::cfg& cfg) {
     t->transform();
     delete t;
   }
+
+  /*
+   * We're not interested in trivial updates...
+   */
+  cfg.clear_updates();
 }
 
-dectran::dectran(gdsl::gdsl &gdsl) : big_step(cfg), gdsl(gdsl)  {
+dectran::dectran(gdsl::gdsl &gdsl, bool blockwise_optimized) :
+    big_step(cfg), gdsl(gdsl), tc(&cfg), blockwise_optimized(blockwise_optimized) {
 }
 
 void dectran::transduce_and_register() {
   initial_cfg(cfg);
-  /*
-   * Todo: trivial_connector must not traverse the whole graph!
-   */
-  trivial_connector tc(&cfg);
   tc.transform();
   cfg.register_observer(this);
 }
@@ -92,21 +98,21 @@ void dectran::notify(const std::vector<cfg::update> &updates) {
     if(update.kind != cfg::ERASE) {
       cfg::node_visitor nv;
       nv._([&](cfg::address_node *an) {
+        size_t an_id = an->get_id();
         if(!an->get_decoded()) {
           cfg::cfg cfg_new;
           if(!gdsl.seek(an->get_address())) {
             initial_cfg(cfg_new);
-            cfg.merge(cfg_new, an->get_id(), 0 /* Todo: fix */);
-
+            cfg.merge(cfg_new, an_id, 0 /* Todo: fix */);
+            /*
+             * From now on, an is freed
+             */
+            tc.set_root(an_id);
+            tc.transform();
           }
         }
       });
       cfg.get_node(update.to)->accept(nv);
     }
   }
-  /*
-   * Todo: trivial_connector must not traverse the whole graph!
-   */
-  trivial_connector tc(&cfg);
-  tc.transform();
 }

@@ -24,27 +24,25 @@ using namespace std;
 using namespace cfg;
 using namespace gdsl::rreil;
 
-trivial_connector::address_node_map_t trivial_connector::address_node_map() {
-  trivial_connector::address_node_map_t start_node_map;
-  for(auto node : *cfg) {
+void trivial_connector::update_address_node_map() {
+  for(auto node : cfg_view) {
     node_visitor nv;
     nv._([&](address_node *sn) {
-      start_node_map[sn->get_address()] = sn->get_id();
+      address_node_map[sn->get_address()] = sn->get_id();
     });
     node->accept(nv);
   }
-  return start_node_map;
 }
 
 void trivial_connector::transform() {
-  auto address_node_map = this->address_node_map();
+  update_address_node_map();
   queue<tuple<size_t, int_t>> branches;
   queue<tuple<size_t, sexpr*, bool, address*>> cond_branches;
 
   /*
    * Collect branch sites to be replaced
    */
-  for(auto node : *cfg) {
+  for(auto node : cfg_view) {
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       bool replace = false;
@@ -88,15 +86,15 @@ void trivial_connector::transform() {
   };
 
   auto dst_node = [&](int_t addr) {
-    auto start_node_it = address_node_map.find(addr);
-    if(start_node_it == address_node_map.end()) {
+    auto address_node_it = address_node_map.find(addr);
+    if(address_node_it == address_node_map.end()) {
       size_t new_addr_node = cfg->create_node([&](size_t id) {
         return new address_node(id, addr, false);
       });
-      start_node_it->second = new_addr_node;
+      address_node_map[addr] = new_addr_node;
       return new_addr_node;
     } else
-      return start_node_it->second;
+      return address_node_it->second;
   };
 
   /*

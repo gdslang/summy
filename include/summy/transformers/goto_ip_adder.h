@@ -11,9 +11,7 @@
 
 class goto_ip_adder : public transformer {
 public:
-  goto_ip_adder(cfg::cfg *cfg) :
-      transformer(cfg) {
-  }
+  using transformer::transformer;
 
   virtual void transform();
 };

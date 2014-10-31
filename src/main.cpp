@@ -163,12 +163,11 @@ int main(void) {
 //  uint32_t buffer = 0xfc75c085;
   g.set_code(data.data + e.offset, e.size, e.address);
 
-  dectran dt(g);
+  dectran dt(g, false);
   dt.transduce_and_register();
 
   auto &cfg = dt.get_cfg();
-  for(int i = 0; i < 10; i++)
-    cfg.commit_updates();
+  cfg.commit_updates();
 
 //  cfg::cfg *cfg = gen_cfg(g, 0);
 //  cfg::cfg *cfg2 = gen_cfg(g, 3);

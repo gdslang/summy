@@ -82,7 +82,7 @@ std::vector<int_t> *ip_propagator::analyze_ip() {
 void ip_propagator::transform() {
   auto ips = analyze_ip();
 
-  for(auto node : *cfg) {
+  for(auto node : cfg_view) {
     auto &edges = *cfg->out_edges(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       edge_visitor ev;
