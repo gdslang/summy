@@ -36,11 +36,16 @@ set<size_t> a::analysis::roots(set<size_t> const &all, const dependants_t &dep_d
       auto dd_it = dep_dants.find(node);
       if(dd_it != dep_dants.end())
         for(auto dep_dant : dd_it->second) {
-          bfs_q.push(dep_dant);
-          left.erase(dep_dant);
+          auto left_it = left.find(dep_dant);
+          if(left_it != left.end()) {
+            bfs_q.push(dep_dant);
+            left.erase(left_it);
+          }
+          result.erase(dep_dant);
         }
     }
   }
+
   return result;
 }
 
