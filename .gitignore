@@ -1,8 +1,11 @@
 /build/
-/summy
+/exec/build/
+/exec/summy
+
 /.cproject
 /.project
 /.settings
 
 /output.dot
 /a.out
+/libsummy.a
