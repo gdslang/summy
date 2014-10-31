@@ -1,3 +1,2 @@
 - generische print()-Funktion für alle Analysen; auch für subset_man; auch für subset_man
-- deps / initials nach oben
 - Warum funktioniert A.32 =:32 0 nicht bei liveness?

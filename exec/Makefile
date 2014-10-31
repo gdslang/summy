@@ -1,11 +1,10 @@
 # vim: noexpandtab
 
-GDSL=../gdsl-toolkit
 CC=gcc
 #CC=clang
 CPP=clang++
-LIBDS=-L$(GDSL)/lib -L..
-LIBS=-lsummy -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lcvc4 -lgmp -lgtest -lpthread -lelf
+LIBDS=-L..
+LIBS=-lsummy -ltardet -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lcvc4 -lgmp -lgtest -lpthread -lelf
 LIBFLAGS=$(LIBDS) $(LIBS)
 LDFLAGS=
 INCDS=-I../include -I$(GDSL)/include

@@ -26,7 +26,7 @@
 #include <summy/transformers/ip_propagator.h>
 #include <summy/transformers/trivial_connector.h>
 
-#include <summy/binary/elf_provider.h>
+#include <tardet/binary/elf_provider.h>
 
 #include <cppgdsl/rreil/copy_visitor.h>
 
