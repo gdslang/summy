@@ -1,51 +1,31 @@
+#include <summy/big_step/dectran.h>
+#include <summy/cfg/cfg.h>
+#include <summy/cfg/node/address_node.h>
+#include <summy/big_step/ssa.h>
+#include <cppgdsl/gdsl.h>
+#include <cppgdsl/frontend/bare_frontend.h>
+#include <tardet/binary/elf_provider.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
-#include <cppgdsl/gdsl.h>
-#include <cppgdsl/block.h>
-#include <cppgdsl/frontend/bare_frontend.h>
-#include <cppgdsl/instruction.h>
-#include <cppgdsl/rreil/rreil.h>
-
+#include <iosfwd>
 #include <vector>
 #include <map>
 #include <tuple>
-
-#include <summy/cfg/cfg.h>
-#include <summy/cfg/node/node.h>
-#include <summy/cfg/edge/edge.h>
-#include <summy/cfg/bfs_iterator.h>
 #include <iostream>
 #include <fstream>
 
-#include <summy/analysis/analysis.h>
-
-#include <summy/transformers/decomposer.h>
-#include <summy/transformers/goto_ip_adder.h>
-#include <summy/transformers/ip_propagator.h>
-#include <summy/transformers/trivial_connector.h>
-
-#include <tardet/binary/elf_provider.h>
-
-#include <cppgdsl/rreil/copy_visitor.h>
-
-#include <summy/analysis/reaching_defs/reaching_defs.h>
-#include <summy/analysis/adaptive_rd/adaptive_rd.h>
-#include <summy/analysis/reaching_defs/rd_elem.h>
-#include <summy/analysis/fixpoint.h>
-#include <summy/analysis/liveness/liveness.h>
-#include <summy/big_step/dectran.h>
-#include <summy/big_step/ssa.h>
-#include <summy/cfg/node/address_node.h>
-#include <summy/transformers/ssa/phi_inserter.h>
-#include <summy/transformers/ssa/renamer.h>
+#include <cvc4/expr/expr.h>
+#include <cvc4/cvc4.h>
 
 using cfg::address_node;
 using cfg::edge;
 
 using namespace gdsl::rreil;
 using namespace std;
+using namespace CVC4;
 
 unsigned char *elf(gdsl::gdsl &g) {
   elf_provider elfp = [&]() {
@@ -76,6 +56,14 @@ unsigned char *manual(gdsl::gdsl &g, uint64_t ip) {
 }
 
 int main(void) {
+  ExprManager em;
+  Expr a = em.mkVar("a", em.booleanType());
+//  Expr x = em.mkExpr(kind::OR, a, em.mkExpr(kind::NOT, a));
+  Expr x = em.mkExpr(kind::OR, a, a);
+  SmtEngine smt(&em);
+  std::cout << x << " is " << smt.query(x).isSat() << std::endl;
+  return 0;
+
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 

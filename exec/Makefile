@@ -9,7 +9,7 @@ LIBFLAGS=$(LIBDS) $(LIBS)
 LDFLAGS=
 INCDS=-I../include -I$(GDSL)/include
 CFLAGS=-c -O2 -ggdb3 -MMD -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
-CPPFLAGS=-c -O2 -ggdb3 -MMD -std=c++14 -Wall -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
+CPPFLAGS=-c -O2 -ggdb3 -MMD -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
 
 EXECUTABLE=summy
 
