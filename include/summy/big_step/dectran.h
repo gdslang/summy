@@ -19,8 +19,8 @@ private:
   trivial_connector tc;
   bool blockwise_optimized;
 
-  cfg::translated_program_t decode_translate();
-  void initial_cfg(cfg::cfg &cfg);
+  cfg::translated_program_t decode_translate(bool decode_multiple);
+  void initial_cfg(cfg::cfg &cfg, bool decode_multiple);
 public:
   dectran(gdsl::gdsl &g, bool blockwise_optimized);
 
@@ -31,6 +31,9 @@ public:
   /*
    * Decode and translate first block
    */
-  void transduce_and_register();
+  void transduce_and_register(bool decode_multiple);
+  void transduce_and_register() {
+    transduce_and_register(false);
+  }
   void notify(std::vector<cfg::update> const &updates);
 };

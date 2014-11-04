@@ -24,38 +24,38 @@
 using namespace gdsl::rreil;
 using namespace std;
 
-cfg::translated_program_t dectran::decode_translate() {
+cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   cfg::translated_program_t prog;
-  if(gdsl.bytes_left() <= 0) {
+  if(gdsl.bytes_left() <= 0)
     throw string("Unable to decode");
-  }
-  int_t ip = gdsl.get_ip();
+  do {
+    int_t ip = gdsl.get_ip();
 
+    statements_t *rreil;
+    if(blockwise_optimized) {
+      gdsl::block b = gdsl.decode_translate_block(gdsl::preservation::CONTEXT, LONG_MAX);
+      rreil = b.get_statements();
+    } else {
+      gdsl::instruction insn = gdsl.decode();
+  //    printf("Instruction: %s\n", insn.to_string().c_str());
+  //    printf("---------------------------------\n");
+      rreil = insn.translate();
+    }
 
-  statements_t *rreil;
-  if(blockwise_optimized) {
-    gdsl::block b = gdsl.decode_translate_block(gdsl::preservation::CONTEXT, LONG_MAX);
-    rreil = b.get_statements();
-  } else {
-    gdsl::instruction insn = gdsl.decode();
-//    printf("Instruction: %s\n", insn.to_string().c_str());
-//    printf("---------------------------------\n");
-    rreil = insn.translate();
-  }
+    gdsl.reset_heap();
 
-  gdsl.reset_heap();
+  //  printf("RReil (no transformations):\n");
+  //  for(statement *s : *rreil)
+  //    printf("%s\n", s->to_string().c_str());
 
-//  printf("RReil (no transformations):\n");
-//  for(statement *s : *rreil)
-//    printf("%s\n", s->to_string().c_str());
-
-  prog.push_back(make_tuple(ip, rreil));
+    prog.push_back(make_tuple(ip, rreil));
+  } while(decode_multiple && gdsl.bytes_left() > 0);
 
   return prog;
 }
 
-void dectran::initial_cfg(cfg::cfg& cfg) {
-  auto prog = decode_translate();
+void dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple) {
+  auto prog = decode_translate(decode_multiple);
   cfg.add_program(prog);
 
   for(auto t : prog) {
@@ -86,8 +86,8 @@ dectran::dectran(gdsl::gdsl &gdsl, bool blockwise_optimized) :
     big_step(cfg), gdsl(gdsl), tc(&cfg), blockwise_optimized(blockwise_optimized) {
 }
 
-void dectran::transduce_and_register() {
-  initial_cfg(cfg);
+void dectran::transduce_and_register(bool decode_multiple) {
+  initial_cfg(cfg, decode_multiple);
   tc.transform();
   cfg.register_observer(this);
 }
@@ -102,10 +102,10 @@ void dectran::notify(const std::vector<cfg::update> &updates) {
         if(!an->get_decoded()) {
           cfg::cfg cfg_new;
           if(!gdsl.seek(an->get_address())) {
-            initial_cfg(cfg_new);
+            initial_cfg(cfg_new, false);
             cfg.merge(cfg_new, an_id, 0 /* Todo: fix */);
             /*
-             * From now on, an is freed
+             * From now on, 'an' is freed
              */
             tc.set_root(an_id);
             tc.transform();
