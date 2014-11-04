@@ -13,7 +13,7 @@ CPPFLAGS=-c -O2 -ggdb3 -MMD -std=c++14 -Wall -Wno-tautological-undefined-compare
 
 EXECUTABLE=summy
 
-SPRE=.
+SPRE=src
 HPRE=include
 BPRE=build
 
