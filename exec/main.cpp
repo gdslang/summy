@@ -18,6 +18,7 @@
 #include <fstream>
 
 #include <cvc4/expr/expr.h>
+#include <cvc4/expr/expr_manager.h>
 #include <cvc4/cvc4.h>
 
 using cfg::address_node;
@@ -57,11 +58,57 @@ unsigned char *manual(gdsl::gdsl &g, uint64_t ip) {
 
 int main(void) {
   ExprManager em;
-  Expr a = em.mkVar("a", em.booleanType());
+//  Expr a = em.mkVar("a", em.booleanType());
+
+  Expr A = em.mkConst(Constr(0, "A"));
+  Expr A_true;
+  {
+    std::vector<Expr> children;
+    children.push_back(A);
+    children.push_back(em.mkConst(true));
+    A_true = em.mkExpr(kind::TUPLE, children);
+  }
+
+  Expr A_var;
+  {
+    std::vector<Expr> children;
+    children.push_back(A);
+    children.push_back(em.mkVar("x", em.booleanType()));
+    A_var = em.mkExpr(kind::TUPLE, children);
+  };
+
+//  Expr applied = em.mkExpr(kind::APPLY_CONSTR, v);
+  Expr a = em.mkVar("a", A_true.getType());
+  Expr b = em.mkVar("b", A_true.getType());
+
+  Expr a_ini = em.mkExpr(kind::EQUAL, a, A_true);
+  Expr y = em.mkVar("y", em.booleanType());
+  Expr b_ini = em.mkExpr(kind::EQUAL, b, A_var);
+//  Expr b_ini = em.mkExpr(kind::IFF, b, em.mkConst(false));
+  Expr ini = em.mkExpr(kind::AND, a_ini, b_ini);
+  Expr a_eq_b = em.mkExpr(kind::EQUAL, a, b);
+
+//  std::vector< std::pair<std::string, Type> > fields;
+//  fields.push_back({"A", em.integerType()});
+//  fields.push_back({"B", em.integerType()});
+//  Expr foo = em.mkConst(Record(fields));
+//  cout << foo << endl;
+
 //  Expr x = em.mkExpr(kind::OR, a, em.mkExpr(kind::NOT, a));
-  Expr x = em.mkExpr(kind::OR, a, a);
+  Expr x = em.mkExpr(kind::AND, ini, a_eq_b);
   SmtEngine smt(&em);
-  std::cout << x << " is " << smt.query(x).isSat() << std::endl;
+
+//  smt.setOption("check-models", SExpr("true"));
+  smt.setOption("produce-models", SExpr("true"));
+//  smt.setOption("produce-assignments", SExpr("true"));
+
+//  std::cout << x << " is " << smt.query(x) << std::endl;
+  std::cout << x << " is " << smt.checkSat(x) << std::endl;
+//  for(auto blah : smt.getAssertions())
+//    cout << blah << endl;
+//  smt.getProof()->toStream(cout);
+//  cout << smt.getAssignment() << endl;
+  cout << smt.getValue(b) << endl;
   return 0;
 
   gdsl::bare_frontend f("current");
