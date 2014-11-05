@@ -62,45 +62,71 @@ int main(void) {
 
 //  Expr Q = em.mkExpr(kind::)
 
-  Datatype root("root");
+  ArrayType at = em.mkArrayType(em.integerType(), em.integerType());
+  Expr arr = em.mkVar("arr", at);
+//  Expr update = em.mkExpr(kind::STORE, arr, em.mkConst(Rational(0)), em.mkConst(Rational(42)));
+  Expr update = em.mkExpr(kind::EQUAL, em.mkExpr(kind::SELECT, arr, em.mkConst(Rational(0))), em.mkConst(Rational(42)));
 
-  DatatypeConstructor A("A");
-  A.addArg("param", em.booleanType());
-  root.addConstructor(A);
+  Expr arr2 = em.mkVar("arr2", at);
 
-  DatatypeConstructor B("B");
-  root.addConstructor(B);
+  Expr x = em.mkBoundVar("x", em.integerType());
+  Expr y = em.mkVar("y", em.integerType());
 
-  cout << root << endl;
-  DatatypeType rootType = em.mkDatatypeType(root);
-  cout << rootType << endl;
+  Expr select_arr_x = em.mkExpr(kind::SELECT, arr, x);
+  Expr select_arr2_y = em.mkExpr(kind::SELECT, arr2, y);
+  Expr sel_eq = em.mkExpr(kind::EQUAL, select_arr_x, select_arr2_y);
 
-  Expr A_true = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[0].getConstructor(), em.mkConst(true));
-  Expr B_ = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[1].getConstructor());
+  Expr forall = em.mkExpr(kind::FORALL, em.mkExpr(kind::BOUND_VAR_LIST, x), em.mkExpr(kind::EQUAL, y, em.mkExpr(kind::PLUS, x, em.mkConst(Rational(2)))));
+//  Expr forall = em.mkExpr(kind::FORALL, em.mkExpr(kind::BOUND_VAR_LIST, x), em.mkExpr(kind::EQUAL, select_arr_x, em.mkExpr(kind::SELECT, arr, em.mkExpr(kind::PLUS, x, em.mkConst(Rational(2))))));
+//  Expr forall = em.mkExpr(kind::FORALL, em.mkExpr(kind::BOUND_VAR_LIST, x), em.mkExpr(kind::EQUAL, x, em.mkConst(Rational(2))));
+  cout << forall << endl;
 
-  Expr a = em.mkVar("a", rootType);
-  Expr b = em.mkVar("b", rootType);
-  Expr c = em.mkVar("c", rootType);
+  Expr r = em.mkExpr(kind::AND, update, forall);
+  r = em.mkExpr(kind::AND, r, sel_eq);
 
-  Expr x = em.mkVar("x", em.booleanType());
-  Expr y = em.mkVar("y", em.booleanType());
-  Expr A_x = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[0].getConstructor(), x);
-  Expr A_y = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[0].getConstructor(), y);
+  Expr sel_arr2_2 = em.mkExpr(kind::SELECT, arr2, em.mkConst(Rational(2)));
 
-  Expr a_ini = em.mkExpr(kind::EQUAL, a, A_true);
-  Expr b_ini = em.mkExpr(kind::EQUAL, b, A_x);
-  Expr b_ini2 = em.mkExpr(kind::EQUAL, b, A_y);
-  Expr a_b = em.mkExpr(kind::DISTINCT, a, b);
-  Expr a_c = em.mkExpr(kind::DISTINCT, a, c);
-  Expr b_c = em.mkExpr(kind::DISTINCT, b, c);
+  r = forall;
 
-  Expr r = em.mkExpr(kind::AND, a_ini, b_ini);
-//  r = em.mkExpr(kind::AND, r, a_b);
-  r = em.mkExpr(kind::AND, r, a_c);
-//  r = em.mkExpr(kind::AND, r, b_c);
-//  r = em.mkExpr(kind::AND, r, b_ini2);
-  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::IFF, y, em.mkConst(false)));
-  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, b, B_));
+//  Datatype root("root");
+//
+//  DatatypeConstructor A("A");
+//  A.addArg("param", em.booleanType());
+//  root.addConstructor(A);
+//
+//  DatatypeConstructor B("B");
+//  root.addConstructor(B);
+//
+//  cout << root << endl;
+//  DatatypeType rootType = em.mkDatatypeType(root);
+//  cout << rootType << endl;
+//
+//  Expr A_true = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[0].getConstructor(), em.mkConst(true));
+//  Expr B_ = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[1].getConstructor());
+//
+//  Expr a = em.mkVar("a", rootType);
+//  Expr b = em.mkVar("b", rootType);
+//  Expr c = em.mkVar("c", rootType);
+//
+//  Expr x = em.mkVar("x", em.booleanType());
+//  Expr y = em.mkVar("y", em.booleanType());
+//  Expr A_x = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[0].getConstructor(), x);
+//  Expr A_y = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[0].getConstructor(), y);
+//
+//  Expr a_ini = em.mkExpr(kind::EQUAL, a, A_true);
+//  Expr b_ini = em.mkExpr(kind::EQUAL, b, A_x);
+//  Expr b_ini2 = em.mkExpr(kind::EQUAL, b, A_y);
+//  Expr a_b = em.mkExpr(kind::DISTINCT, a, b);
+//  Expr a_c = em.mkExpr(kind::DISTINCT, a, c);
+//  Expr b_c = em.mkExpr(kind::DISTINCT, b, c);
+//
+//  Expr r = em.mkExpr(kind::AND, a_ini, b_ini);
+////  r = em.mkExpr(kind::AND, r, a_b);
+//  r = em.mkExpr(kind::AND, r, a_c);
+////  r = em.mkExpr(kind::AND, r, b_c);
+////  r = em.mkExpr(kind::AND, r, b_ini2);
+//  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::IFF, y, em.mkConst(false)));
+//  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, b, B_));
 
 //  Expr A = em.mkConst(Constr(0, "A"));
 //  Expr A_true;
@@ -156,7 +182,7 @@ int main(void) {
 //  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(100)), em.mkExpr(kind::PLUS, x, y)));
 ////  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(60)), em.mkExpr(kind::MINUS, x, y)));
   SmtEngine smt(&em);
-//
+
 ////  smt.setOption("check-models", SExpr("true"));
   smt.setOption("produce-models", SExpr("true"));
 ////  smt.setOption("produce-assignments", SExpr("true"));
@@ -168,9 +194,12 @@ int main(void) {
 ////  smt.getProof()->toStream(cout);
 ////  cout << smt.getAssignment() << endl;
 //
-  cout << "a := " << smt.getValue(a) << endl;
-  cout << "b := " << smt.getValue(b) << endl;
-  cout << "c := " << smt.getValue(c) << endl;
+
+  cout << select_arr_x << " := " << smt.getValue(select_arr_x) << endl;
+  cout << sel_arr2_2 << " := " << smt.getValue(sel_arr2_2) << endl;
+//  cout << "a := " << smt.getValue(a) << endl;
+//  cout << "b := " << smt.getValue(b) << endl;
+//  cout << "c := " << smt.getValue(c) << endl;
   cout << "x := " << smt.getValue(x) << endl;
 //
 ////  smt.addToAssignment(em.mkExpr(kind::DISTINCT, b, smt.getValue(b)));
