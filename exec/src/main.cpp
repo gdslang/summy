@@ -60,94 +60,137 @@ int main(void) {
   ExprManager em;
 //  Expr a = em.mkVar("a", em.booleanType());
 
-  Expr A = em.mkConst(Constr(0, "A"));
-  Expr A_true;
-  {
-    std::vector<Expr> children;
-    children.push_back(A);
-    children.push_back(em.mkConst(Rational(1)));
-    A_true = em.mkExpr(kind::TUPLE, children);
-  }
+//  Expr Q = em.mkExpr(kind::)
 
-  Expr A_var;
-  Expr x = em.mkVar("x", em.integerType());
-  {
-    std::vector<Expr> children;
-    children.push_back(A);
-    children.push_back(x);
-    A_var = em.mkExpr(kind::TUPLE, children);
-  };
+  Datatype root("root");
 
-  Expr A_var_y;
-  Expr y = em.mkVar("y", em.integerType());
-  {
-    std::vector<Expr> children;
-    children.push_back(A);
-    children.push_back(y);
-    A_var_y = em.mkExpr(kind::TUPLE, children);
-  };
+  DatatypeConstructor A("A");
+  A.addArg("param", em.booleanType());
+  root.addConstructor(A);
 
-//  Expr applied = em.mkExpr(kind::APPLY_CONSTR, v);
-  Expr a = em.mkVar("a", A_true.getType());
-  Expr b = em.mkVar("b", A_true.getType());
-  Expr c = em.mkVar("c", A_true.getType());
+  DatatypeConstructor B("B");
+  root.addConstructor(B);
+
+  cout << root << endl;
+  DatatypeType rootType = em.mkDatatypeType(root);
+  cout << rootType << endl;
+
+  Expr A_true = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[0].getConstructor(), em.mkConst(true));
+  Expr B_ = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[1].getConstructor());
+
+  Expr a = em.mkVar("a", rootType);
+  Expr b = em.mkVar("b", rootType);
+  Expr c = em.mkVar("c", rootType);
+
+  Expr x = em.mkVar("x", em.booleanType());
+  Expr y = em.mkVar("y", em.booleanType());
+  Expr A_x = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[0].getConstructor(), x);
+  Expr A_y = em.mkExpr(kind::APPLY_CONSTRUCTOR, rootType.getDatatype()[0].getConstructor(), y);
 
   Expr a_ini = em.mkExpr(kind::EQUAL, a, A_true);
-  Expr b_ini = em.mkExpr(kind::EQUAL, b, A_var);
-  Expr c_ini = em.mkExpr(kind::EQUAL, c, A_var_y);
+  Expr b_ini = em.mkExpr(kind::EQUAL, b, A_x);
+  Expr b_ini2 = em.mkExpr(kind::EQUAL, b, A_y);
+  Expr a_b = em.mkExpr(kind::DISTINCT, a, b);
+  Expr a_c = em.mkExpr(kind::DISTINCT, a, c);
+  Expr b_c = em.mkExpr(kind::DISTINCT, b, c);
 
-//  Expr b_ini = em.mkExpr(kind::IFF, b, em.mkConst(false));
-  Expr ini = em.mkExpr(kind::AND, a_ini, b_ini);
-  ini = em.mkExpr(kind::AND, ini, c_ini);
-  Expr a_eq_b = em.mkExpr(kind::DISTINCT, a, b);
-  Expr a_dis_c = em.mkExpr(kind::DISTINCT, a, c);
+  Expr r = em.mkExpr(kind::AND, a_ini, b_ini);
+//  r = em.mkExpr(kind::AND, r, a_b);
+  r = em.mkExpr(kind::AND, r, a_c);
+//  r = em.mkExpr(kind::AND, r, b_c);
+//  r = em.mkExpr(kind::AND, r, b_ini2);
+  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::IFF, y, em.mkConst(false)));
+  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, b, B_));
 
-//  std::vector< std::pair<std::string, Type> > fields;
-//  fields.push_back({"A", em.integerType()});
-//  fields.push_back({"B", em.integerType()});
-//  Expr foo = em.mkConst(Record(fields));
-//  cout << foo << endl;
-
-//  Expr x = em.mkExpr(kind::OR, a, em.mkExpr(kind::NOT, a));
-  Expr r = em.mkExpr(kind::AND, ini, a_eq_b);
-  r = em.mkExpr(kind::AND, r, a_dis_c);
-  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(100)), em.mkExpr(kind::PLUS, x, y)));
-//  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(60)), em.mkExpr(kind::MINUS, x, y)));
+//  Expr A = em.mkConst(Constr(0, "A"));
+//  Expr A_true;
+//  {
+//    std::vector<Expr> children;
+//    children.push_back(A);
+//    children.push_back(em.mkConst(Rational(1)));
+//    A_true = em.mkExpr(kind::TUPLE, children);
+//  }
+//
+//  Expr A_var;
+//  Expr x = em.mkVar("x", em.integerType());
+//  {
+//    std::vector<Expr> children;
+//    children.push_back(A);
+//    children.push_back(x);
+//    A_var = em.mkExpr(kind::TUPLE, children);
+//  };
+//
+//  Expr A_var_y;
+//  Expr y = em.mkVar("y", em.integerType());
+//  {
+//    std::vector<Expr> children;
+//    children.push_back(A);
+//    children.push_back(y);
+//    A_var_y = em.mkExpr(kind::TUPLE, children);
+//  };
+//
+////  Expr applied = em.mkExpr(kind::APPLY_CONSTR, v);
+//  Expr a = em.mkVar("a", A_true.getType());
+//  Expr b = em.mkVar("b", A_true.getType());
+//  Expr c = em.mkVar("c", A_true.getType());
+//
+//  Expr a_ini = em.mkExpr(kind::EQUAL, a, A_true);
+//  Expr b_ini = em.mkExpr(kind::EQUAL, b, A_var);
+//  Expr c_ini = em.mkExpr(kind::EQUAL, c, A_var_y);
+//
+////  Expr b_ini = em.mkExpr(kind::IFF, b, em.mkConst(false));
+//  Expr ini = em.mkExpr(kind::AND, a_ini, b_ini);
+//  ini = em.mkExpr(kind::AND, ini, c_ini);
+//  Expr a_eq_b = em.mkExpr(kind::DISTINCT, a, b);
+//  Expr a_dis_c = em.mkExpr(kind::DISTINCT, a, c);
+//
+////  std::vector< std::pair<std::string, Type> > fields;
+////  fields.push_back({"A", em.integerType()});
+////  fields.push_back({"B", em.integerType()});
+////  Expr foo = em.mkConst(Record(fields));
+////  cout << foo << endl;
+//
+////  Expr x = em.mkExpr(kind::OR, a, em.mkExpr(kind::NOT, a));
+//  Expr r = em.mkExpr(kind::AND, ini, a_eq_b);
+//  r = em.mkExpr(kind::AND, r, a_dis_c);
+//  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(100)), em.mkExpr(kind::PLUS, x, y)));
+////  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(60)), em.mkExpr(kind::MINUS, x, y)));
   SmtEngine smt(&em);
-
-//  smt.setOption("check-models", SExpr("true"));
+//
+////  smt.setOption("check-models", SExpr("true"));
   smt.setOption("produce-models", SExpr("true"));
-//  smt.setOption("produce-assignments", SExpr("true"));
-
-//  std::cout << x << " is " << smt.query(x) << std::endl;
+////  smt.setOption("produce-assignments", SExpr("true"));
+//
+////  std::cout << x << " is " << smt.query(x) << std::endl;
   std::cout << r << " is " << smt.checkSat(r) << std::endl;
-//  for(auto blah : smt.getAssertions())
-//    cout << blah << endl;
-//  smt.getProof()->toStream(cout);
-//  cout << smt.getAssignment() << endl;
-
+////  for(auto blah : smt.getAssertions())
+////    cout << blah << endl;
+////  smt.getProof()->toStream(cout);
+////  cout << smt.getAssignment() << endl;
+//
   cout << "a := " << smt.getValue(a) << endl;
   cout << "b := " << smt.getValue(b) << endl;
   cout << "c := " << smt.getValue(c) << endl;
-
-//  smt.addToAssignment(em.mkExpr(kind::DISTINCT, b, smt.getValue(b)));
-  Expr next = em.mkExpr(kind::DISTINCT, b, smt.getValue(b));
-  cout << next << endl;
-  smt.assertFormula(next);
-  std::cout << r << " is " << smt.checkSat(r) << std::endl;
-
-  cout << "a := " << smt.getValue(a) << endl;
-  cout << "b := " << smt.getValue(b) << endl;
-  cout << "c := " << smt.getValue(c) << endl;
-
-  next = em.mkExpr(kind::DISTINCT, b, smt.getValue(b));
-  cout << next << endl;
-  smt.assertFormula(next);
-  std::cout << r << " is " << smt.checkSat(r) << std::endl;
-
-  cout << "a := " << smt.getValue(a) << endl;
-  cout << "b := " << smt.getValue(b) << endl;
-  cout << "c := " << smt.getValue(c) << endl;
+  cout << "x := " << smt.getValue(x) << endl;
+//
+////  smt.addToAssignment(em.mkExpr(kind::DISTINCT, b, smt.getValue(b)));
+//  Expr next = em.mkExpr(kind::DISTINCT, b, smt.getValue(b));
+//  cout << next << endl;
+//  smt.assertFormula(next);
+//  std::cout << r << " is " << smt.checkSat(r) << std::endl;
+//
+//  cout << "a := " << smt.getValue(a) << endl;
+//  cout << "b := " << smt.getValue(b) << endl;
+//  cout << "c := " << smt.getValue(c) << endl;
+//
+//  next = em.mkExpr(kind::DISTINCT, b, smt.getValue(b));
+//  cout << next << endl;
+//  smt.assertFormula(next);
+//  std::cout << r << " is " << smt.checkSat(r) << std::endl;
+//
+//  cout << "a := " << smt.getValue(a) << endl;
+//  cout << "b := " << smt.getValue(b) << endl;
+//  cout << "c := " << smt.getValue(c) << endl;
   return 0;
 
   gdsl::bare_frontend f("current");
