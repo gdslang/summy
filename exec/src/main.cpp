@@ -63,30 +63,38 @@ int main(void) {
 //  Expr Q = em.mkExpr(kind::)
 
   ArrayType at = em.mkArrayType(em.integerType(), em.integerType());
-  Expr arr = em.mkVar("arr", at);
+  Expr m0 = em.mkVar("m0", at);
 //  Expr update = em.mkExpr(kind::STORE, arr, em.mkConst(Rational(0)), em.mkConst(Rational(42)));
-  Expr update = em.mkExpr(kind::EQUAL, em.mkExpr(kind::SELECT, arr, em.mkConst(Rational(0))), em.mkConst(Rational(42)));
 
-  Expr arr2 = em.mkVar("arr2", at);
+  Expr m0_update = em.mkExpr(kind::EQUAL, em.mkExpr(kind::SELECT, m0, em.mkConst(Rational(0))), em.mkConst(Rational(99)));
+  Expr m0_update_2 = em.mkExpr(kind::EQUAL, em.mkExpr(kind::SELECT, m0, em.mkConst(Rational(10))), em.mkConst(Rational(77)));
 
-  Expr x = em.mkBoundVar("x", em.integerType());
-  Expr y = em.mkVar("y", em.integerType());
+  Expr m1 = em.mkVar("m1", at);
+  Expr m1_ini = em.mkExpr(kind::EQUAL, m1, em.mkExpr(kind::STORE, m0, em.mkConst(Rational(0)), em.mkConst(Rational(42))));
 
-  Expr select_arr_x = em.mkExpr(kind::SELECT, arr, x);
-  Expr select_arr2_y = em.mkExpr(kind::SELECT, arr2, y);
-  Expr sel_eq = em.mkExpr(kind::EQUAL, select_arr_x, select_arr2_y);
+  Expr r = em.mkExpr(kind::AND, m0_update, m0_update_2);
+  r = em.mkExpr(kind::AND, r, m1_ini);
 
-  Expr forall = em.mkExpr(kind::FORALL, em.mkExpr(kind::BOUND_VAR_LIST, x), em.mkExpr(kind::EQUAL, y, em.mkExpr(kind::PLUS, x, em.mkConst(Rational(2)))));
+//  Expr x = em.mkVar("x", em.integerType());
+//  Expr y = em.mkVar("y", em.integerType());
+
+//  Expr select_arr_x = em.mkExpr(kind::SELECT, arr, x);
+//  Expr select_arr2_y = em.mkExpr(kind::SELECT, arr2, y);
+//  Expr sel_eq = em.mkExpr(kind::EQUAL, select_arr_x, select_arr2_y);
+
+//  Expr arr_eq = em.mkExpr(kind::EQUAL, m0, m1);
+
+//  Expr forall = em.mkExpr(kind::FORALL, em.mkExpr(kind::BOUND_VAR_LIST, x), em.mkExpr(kind::EQUAL, y, em.mkExpr(kind::PLUS, x, em.mkConst(Rational(2)))));
 //  Expr forall = em.mkExpr(kind::FORALL, em.mkExpr(kind::BOUND_VAR_LIST, x), em.mkExpr(kind::EQUAL, select_arr_x, em.mkExpr(kind::SELECT, arr, em.mkExpr(kind::PLUS, x, em.mkConst(Rational(2))))));
 //  Expr forall = em.mkExpr(kind::FORALL, em.mkExpr(kind::BOUND_VAR_LIST, x), em.mkExpr(kind::EQUAL, x, em.mkConst(Rational(2))));
-  cout << forall << endl;
+//  cout << forall << endl;
 
-  Expr r = em.mkExpr(kind::AND, update, forall);
-  r = em.mkExpr(kind::AND, r, sel_eq);
+//  Expr r = em.mkExpr(kind::AND, update, forall);
+//  r = em.mkExpr(kind::AND, r, sel_eq);
 
-  Expr sel_arr2_2 = em.mkExpr(kind::SELECT, arr2, em.mkConst(Rational(2)));
+//  Expr r = em.mkExpr(kind::AND, update, arr_eq);
 
-  r = forall;
+//  Expr sel_arr2_2 = em.mkExpr(kind::SELECT, m1, em.mkConst(Rational(0)));
 
 //  Datatype root("root");
 //
@@ -195,12 +203,13 @@ int main(void) {
 ////  cout << smt.getAssignment() << endl;
 //
 
-  cout << select_arr_x << " := " << smt.getValue(select_arr_x) << endl;
-  cout << sel_arr2_2 << " := " << smt.getValue(sel_arr2_2) << endl;
+  cout << m0 << " := " << smt.getValue(m0) << endl;
+  cout << m1 << " := " << smt.getValue(m1) << endl;
+//  cout << sel_arr2_2 << " := " << smt.getValue(sel_arr2_2) << endl;
 //  cout << "a := " << smt.getValue(a) << endl;
 //  cout << "b := " << smt.getValue(b) << endl;
 //  cout << "c := " << smt.getValue(c) << endl;
-  cout << "x := " << smt.getValue(x) << endl;
+//  cout << "x := " << smt.getValue(x) << endl;
 //
 ////  smt.addToAssignment(em.mkExpr(kind::DISTINCT, b, smt.getValue(b)));
 //  Expr next = em.mkExpr(kind::DISTINCT, b, smt.getValue(b));
