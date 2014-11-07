@@ -4,7 +4,7 @@
 #include <summy/big_step/ssa.h>
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/frontend/bare_frontend.h>
-#include <tardet/binary/elf_provider.h>
+#include <bjutil/binary/elf_provider.h>
 
 #include <stdio.h>
 #include <stdlib.h>
