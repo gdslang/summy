@@ -23,7 +23,7 @@ namespace reaching_defs {
 typedef std::vector<std::shared_ptr<rd_elem>> state_t;
 typedef ::analysis::analysis_result<state_t> reaching_defs_result_t;
 
-class reaching_defs: public analysis {
+class reaching_defs: public fp_analysis {
 private:
   state_t state;
   ::analysis::liveness::liveness_result lv_result;

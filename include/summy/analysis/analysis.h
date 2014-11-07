@@ -34,7 +34,7 @@ struct dependency {
   size_t sink;
 };
 
-class analysis {
+class fp_analysis {
 public:
   typedef std::function<std::shared_ptr<lattice_elem>()> constraint_t;
   typedef std::map<size_t, std::set<size_t>> dependants_t;
@@ -56,8 +56,8 @@ protected:
   virtual void init_fixpoint_pending();
   void init();
 public:
-  analysis(cfg::cfg *cfg);
-  virtual ~analysis() {
+  fp_analysis(cfg::cfg *cfg);
+  virtual ~fp_analysis() {
   }
 
   void update(std::vector<::cfg::update> const &updates);
@@ -77,9 +77,9 @@ public:
   }
 
   virtual void put(std::ostream &out) = 0;
-  friend std::ostream &operator<< (std::ostream &out, analysis &_this);
+  friend std::ostream &operator<< (std::ostream &out, fp_analysis &_this);
 };
 
-std::ostream &operator<<(std::ostream &out, analysis &_this);
+std::ostream &operator<<(std::ostream &out, fp_analysis &_this);
 
 }

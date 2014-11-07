@@ -31,7 +31,7 @@ struct liveness_result : public ::analysis::analysis_result<state_t> {
   bool contains(size_t node_id, singleton_t s);
 };
 
-class liveness : public analysis {
+class liveness : public fp_analysis {
 private:
   state_t state;
   newly_live_t pn_newly_live;

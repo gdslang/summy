@@ -32,7 +32,7 @@ struct adaptive_rd_result : public ::analysis::analysis_result<state_t> {
   }
 };
 
-class adaptive_rd: public analysis {
+class adaptive_rd: public fp_analysis {
 private:
   state_t state;
   in_states_t in_states;

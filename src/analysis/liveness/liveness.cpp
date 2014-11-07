@@ -183,7 +183,7 @@ void analysis::liveness::liveness::init_state() {
     state[i] = dynamic_pointer_cast<lv_elem>(bottom());
 }
 
-analysis::liveness::liveness::liveness(class cfg *cfg) : analysis(cfg) {
+analysis::liveness::liveness::liveness(class cfg *cfg) : fp_analysis(cfg) {
   init();
 }
 

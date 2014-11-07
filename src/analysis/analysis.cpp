@@ -13,11 +13,11 @@
 #include <set>
 #include <map>
 
-namespace a = analysis;
 using namespace cfg;
 using namespace std;
+using namespace analysis;
 
-set<size_t> a::analysis::roots(set<size_t> const &all, const dependants_t &dep_dants) {
+set<size_t> fp_analysis::roots(set<size_t> const &all, const dependants_t &dep_dants) {
   set<size_t >result;
   set<size_t> left = all;
 
@@ -49,18 +49,18 @@ set<size_t> a::analysis::roots(set<size_t> const &all, const dependants_t &dep_d
   return result;
 }
 
-void ::analysis::analysis::init_fixpoint_pending() {
+void fp_analysis::init_fixpoint_pending() {
   for(size_t i = 0; i < cfg->node_count(); i++)
     fixpoint_pending.insert(i);
 
   fixpoint_pending = roots(fixpoint_pending, _dependants);
 }
 
-::analysis::analysis::analysis(class cfg *cfg) :
+fp_analysis::fp_analysis(class cfg *cfg) :
     cfg(cfg) {
 }
 
-void ::analysis::analysis::init() {
+void ::fp_analysis::fp_analysis::init() {
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
     auto &edges = *cfg->out_edges(node_id);
@@ -75,7 +75,7 @@ void ::analysis::analysis::init() {
   init_state();
 }
 
-void ::analysis::analysis::update(vector<struct update> const &updates) {
+void fp_analysis::update(vector<struct update> const &updates) {
 //  auto print_set = [](auto &s) {
 //    cout << "{";
 //    bool first = true;
@@ -162,7 +162,7 @@ void ::analysis::analysis::update(vector<struct update> const &updates) {
   }
 }
 
-std::ostream &::analysis::operator <<(std::ostream &out, analysis &_this) {
+std::ostream &operator <<(std::ostream &out, fp_analysis &_this) {
   _this.put(out);
   return out;
 }

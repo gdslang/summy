@@ -99,7 +99,7 @@ void analysis::adaptive_rd::adaptive_rd::init_state() {
 }
 
 adaptive_rd::adaptive_rd::adaptive_rd(class cfg *cfg, liveness_result lv_result) :
-    analysis::analysis(cfg), in_states(cfg->node_count()), lv_result(lv_result) {
+    fp_analysis(cfg), in_states(cfg->node_count()), lv_result(lv_result) {
   init();
 }
 

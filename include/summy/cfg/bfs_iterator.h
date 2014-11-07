@@ -34,6 +34,7 @@ private:
    */
   std::queue<size_t> components;
   bool end;
+  bool backwards;
 
   /**
    * Move to next component if necessary
@@ -42,7 +43,7 @@ private:
 
   bfs_iterator(cfg *cfg, bool end);
   bfs_iterator(cfg *cfg);
-  bfs_iterator(cfg *cfg, size_t from);
+  bfs_iterator(cfg *cfg, size_t from, bool backwards = false);
 public:
   node *operator*();
   bfs_iterator &operator++();

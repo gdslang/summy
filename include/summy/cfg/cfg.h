@@ -48,6 +48,7 @@ public:
 };
 
 typedef std::map<size_t, edge const*> edges_t;
+typedef std::set<size_t> in_edges_t;
 typedef std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> translated_program_t;
 
 class cfg {
@@ -56,7 +57,7 @@ class cfg {
 private:
   std::vector<node*> nodes;
   std::vector<edges_t*> edges;
-  std::vector<std::set<size_t>> in_edges;
+  std::vector<in_edges_t> _in_edges;
 
   std::stack<std::vector<update>> updates_stack;
   std::vector<observer*> observers;
@@ -79,6 +80,7 @@ public:
   size_t create_node(std::function<class node*(size_t)> constr);
 
   edges_t const* out_edges(size_t id);
+  in_edges_t const& in_edges(size_t id);
   void update_edge(size_t from, size_t to, const edge *edge);
   void update_destroy_edge(size_t from, size_t to, const edge *edge);
   void erase_edge(size_t from, size_t to);

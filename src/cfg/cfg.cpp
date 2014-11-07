@@ -29,7 +29,7 @@ cfg::update_pop::~update_pop() {
 void cfg::cfg::add_node(node *n) {
   nodes.push_back(n);
   edges.push_back(new edges_t());
-  in_edges.resize(in_edges.size() + 1);
+  _in_edges.resize(_in_edges.size() + 1);
 }
 
 cfg::cfg::cfg() {
@@ -82,7 +82,7 @@ void cfg::cfg::update_destroy_edge(size_t from, size_t to, const edge *edge) {
     updates_stack.top().push_back(update { update_kind::INSERT, from, to });
     edges[from]->operator [](to) = edge;
   }
-  in_edges[to].insert(from);
+  _in_edges[to].insert(from);
 }
 
 void cfg::cfg::update_edge(size_t from, size_t to, const edge *edge) {
@@ -94,20 +94,20 @@ void cfg::cfg::update_edge(size_t from, size_t to, const edge *edge) {
     updates_stack.top().push_back(update { update_kind::INSERT, from, to });
     edges[from]->operator [](to) = edge;
   }
-  in_edges[to].insert(from);
+  _in_edges[to].insert(from);
 }
 
 void cfg::cfg::erase_edge(size_t from, size_t to) {
   edges[from]->erase(to);
   updates_stack.top().push_back(update { update_kind::ERASE, from, to });
-  in_edges[to].erase(from);
+  _in_edges[to].erase(from);
 }
 
 void cfg::cfg::erase_destroy_edge(size_t from, size_t to) {
   delete edges[from]->operator [](to);
   edges[from]->erase(to);
   updates_stack.top().push_back(update { update_kind::ERASE, from, to });
-  in_edges[to].erase(from);
+  _in_edges[to].erase(from);
 }
 
 void cfg::cfg::register_observer(observer *o) {
@@ -200,6 +200,10 @@ cfg::edges_t const* cfg::cfg::out_edges(size_t id) {
   return edges[id];
 }
 
+const cfg::in_edges_t &cfg::cfg::in_edges(size_t id) {
+  return _in_edges[id];
+}
+
 void cfg::cfg::merge(class cfg &other, size_t merge_node, size_t other_merge_node) {
   if(merge_node > nodes.size() || other_merge_node > other.nodes.size())
     throw string("Invalid merge node(s)");
@@ -251,10 +255,10 @@ void cfg::cfg::merge(class cfg &other, size_t merge_node, size_t other_merge_nod
   /*
    * Copy in_edges
    */
-  in_edges.resize(offset + other.in_edges.size() - 1);
-  for(size_t i = 0; i < other.in_edges.size(); i++)
-    for(auto in_edge : other.in_edges[i])
-      in_edges[mapped_id(i)].insert(mapped_id(in_edge));
+  _in_edges.resize(offset + other._in_edges.size() - 1);
+  for(size_t i = 0; i < other._in_edges.size(); i++)
+    for(auto in_edge : other._in_edges[i])
+      _in_edges[mapped_id(i)].insert(mapped_id(in_edge));
 }
 
 cfg::bfs_iterator cfg::cfg::begin(size_t from) {
@@ -275,7 +279,7 @@ cfg::edge_set_t cfg::cfg::adjacencies(std::set<size_t> nodes) {
     auto const &out_edges = this->out_edges(node);
     for(auto &mapping : *out_edges)
       result.insert(tuple<size_t, size_t>(node, mapping.first));
-    for(auto &incoming : in_edges[node])
+    for(auto &incoming : _in_edges[node])
       result.insert(tuple<size_t, size_t>(incoming, node));
   }
   return result;
@@ -291,3 +295,5 @@ cfg::bfs_iterator cfg::cfg_view::begin() {
 cfg::bfs_iterator cfg::cfg_view::end() {
   return cfg->end();
 }
+
+

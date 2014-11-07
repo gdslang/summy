@@ -27,7 +27,7 @@ void cfg::bfs_iterator::check_next_component() {
 }
 
 cfg::bfs_iterator::bfs_iterator(cfg *cfg, bool end) :
-    _cfg(cfg), end(end) {
+    _cfg(cfg), end(end), backwards(false) {
   assert(end);
 }
 
@@ -43,8 +43,8 @@ cfg::bfs_iterator::bfs_iterator(cfg *cfg) :
   check_next_component();
 }
 
-cfg::bfs_iterator::bfs_iterator(cfg *cfg, size_t from) :
-    _cfg(cfg), end(false) {
+cfg::bfs_iterator::bfs_iterator(cfg *cfg, size_t from, bool backwards) :
+    _cfg(cfg), end(false), backwards(backwards) {
   components.push(from);
   check_next_component();
 }
@@ -58,12 +58,21 @@ cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
   if(end) throw string("No more nodes");
   size_t next = inner_component.front();
   inner_component.pop();
-  auto &edges = *_cfg->out_edges(next);
-  for(auto edge : edges)
-    if(seen.find(edge.first) == seen.end()) {
-      seen.insert(edge.first);
-      inner_component.push(edge.first);
+  auto handle_edge = [&](size_t to) {
+    if(seen.find(to) == seen.end()) {
+      seen.insert(to);
+      inner_component.push(to);
     }
+  };
+  if(backwards) {
+    auto &edges = _cfg->in_edges(next);
+    for(auto &edge : edges)
+      handle_edge(edge);
+  } else {
+    auto &edges = *_cfg->out_edges(next);
+    for(auto &edge : edges)
+      handle_edge(edge.first);
+  }
   check_next_component();
   return *this;
 }

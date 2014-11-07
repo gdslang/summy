@@ -93,7 +93,7 @@ void analysis::reaching_defs::reaching_defs::init_state() {
 }
 
 reaching_defs::reaching_defs::reaching_defs(class cfg *cfg, liveness_result lv_result) :
-    analysis::analysis(cfg), lv_result(lv_result) {
+    fp_analysis::fp_analysis(cfg), lv_result(lv_result) {
   init();
 }
 

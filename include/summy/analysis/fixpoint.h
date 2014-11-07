@@ -13,18 +13,18 @@
 
 namespace analysis {
 
-class analysis;
+class fp_analysis;
 
 class fixpoint : cfg::observer {
 private:
-  analysis *analysis;
+  fp_analysis *analysis;
   std::set<size_t> seen;
   std::set<size_t> updated;
 public:
   virtual ~fixpoint() {
   }
 
-  fixpoint(class analysis *analysis) : analysis(analysis) {
+  fixpoint(class fp_analysis *analysis) : analysis(analysis) {
   }
 
   void iterate();
