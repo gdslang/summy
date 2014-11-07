@@ -261,8 +261,8 @@ void cfg::cfg::merge(class cfg &other, size_t merge_node, size_t other_merge_nod
       _in_edges[mapped_id(i)].insert(mapped_id(in_edge));
 }
 
-cfg::bfs_iterator cfg::cfg::begin(size_t from) {
-  return bfs_iterator(this, from);
+cfg::bfs_iterator cfg::cfg::begin(size_t from, bool backwards) {
+  return bfs_iterator(this, from, backwards);
 }
 
 cfg::bfs_iterator cfg::cfg::begin() {
@@ -287,7 +287,7 @@ cfg::edge_set_t cfg::cfg::adjacencies(std::set<size_t> nodes) {
 
 cfg::bfs_iterator cfg::cfg_view::begin() {
   if(rooted)
-    return cfg->begin(root);
+    return cfg->begin(root, backwards);
   else
     return cfg->begin();
 }

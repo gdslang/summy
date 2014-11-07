@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <summy/analysis/analysis.h>
+#include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/analysis/reaching_defs/rd_elem.h>
 #include <vector>

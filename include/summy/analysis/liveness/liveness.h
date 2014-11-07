@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include <summy/analysis/analysis.h>
+#include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/liveness/lv_elem.h>
 #include <summy/cfg/edge/edge.h>
 #include <memory>

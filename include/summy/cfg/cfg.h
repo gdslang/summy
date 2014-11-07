@@ -88,7 +88,7 @@ public:
 
   void merge(class cfg &other, size_t merge_node, size_t other_merge_node);
 
-  bfs_iterator begin(size_t from);
+  bfs_iterator begin(size_t from, bool backwards);
   bfs_iterator begin();
   bfs_iterator end();
 
@@ -111,12 +111,16 @@ private:
   class cfg *cfg;
   bool rooted;
   size_t root;
+  bool backwards;
 public:
+  cfg_view(class cfg *cfg, size_t root, bool backwards) :
+      cfg(cfg), rooted(true), root(root), backwards(backwards) {
+  }
   cfg_view(class cfg *cfg, size_t root) :
-      cfg(cfg), rooted(true), root(root) {
+      cfg(cfg), rooted(true), root(root), backwards(false) {
   }
   cfg_view(class cfg *cfg) :
-      cfg(cfg), rooted(false), root(0) {
+      cfg(cfg), rooted(false), root(0), backwards(false) {
   }
   bfs_iterator begin();
   bfs_iterator end();

@@ -6,7 +6,7 @@
  */
 
 #include <summy/analysis/fixpoint.h>
-#include <summy/analysis/analysis.h>
+#include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/lattice_elem.h>
 #include <queue>
 #include <iostream>

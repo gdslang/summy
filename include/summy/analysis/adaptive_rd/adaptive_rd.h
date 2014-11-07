@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <summy/analysis/analysis.h>
+#include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd_elem.h>
 #include <summy/cfg/edge/edge.h>
@@ -36,14 +36,14 @@ class adaptive_rd: public fp_analysis {
 private:
   state_t state;
   in_states_t in_states;
-  ::analysis::liveness::liveness_result lv_result;
+  liveness::liveness_result lv_result;
 
   virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   virtual void remove_constraint(size_t from, size_t to);
   virtual dependency gen_dependency(size_t from, size_t to);
   virtual void init_state();
 public:
-  adaptive_rd(cfg::cfg *cfg, ::analysis::liveness::liveness_result lv_result);
+  adaptive_rd(cfg::cfg *cfg, liveness::liveness_result lv_result);
   ~adaptive_rd();
 
   std::shared_ptr<lattice_elem> bottom();

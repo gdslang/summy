@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/analysis.h>
+#include <summy/analysis/fp_analysis.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <algorithm>
