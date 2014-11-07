@@ -57,23 +57,23 @@ unsigned char *manual(gdsl::gdsl &g, uint64_t ip) {
 }
 
 int main(void) {
-  ExprManager em;
+//  ExprManager em;
 //  Expr a = em.mkVar("a", em.booleanType());
 
 //  Expr Q = em.mkExpr(kind::)
 
-  ArrayType at = em.mkArrayType(em.integerType(), em.integerType());
-  Expr m0 = em.mkVar("m0", at);
+//  ArrayType at = em.mkArrayType(em.integerType(), em.integerType());
+//  Expr m0 = em.mkVar("m0", at);
 //  Expr update = em.mkExpr(kind::STORE, arr, em.mkConst(Rational(0)), em.mkConst(Rational(42)));
 
-  Expr m0_update = em.mkExpr(kind::EQUAL, em.mkExpr(kind::SELECT, m0, em.mkConst(Rational(0))), em.mkConst(Rational(99)));
-  Expr m0_update_2 = em.mkExpr(kind::EQUAL, em.mkExpr(kind::SELECT, m0, em.mkConst(Rational(10))), em.mkConst(Rational(77)));
-
-  Expr m1 = em.mkVar("m1", at);
-  Expr m1_ini = em.mkExpr(kind::EQUAL, m1, em.mkExpr(kind::STORE, m0, em.mkConst(Rational(0)), em.mkConst(Rational(42))));
-
-  Expr r = em.mkExpr(kind::AND, m0_update, m0_update_2);
-  r = em.mkExpr(kind::AND, r, m1_ini);
+//  Expr m0_update = em.mkExpr(kind::EQUAL, em.mkExpr(kind::SELECT, m0, em.mkConst(Rational(0))), em.mkConst(Rational(99)));
+//  Expr m0_update_2 = em.mkExpr(kind::EQUAL, em.mkExpr(kind::SELECT, m0, em.mkConst(Rational(10))), em.mkConst(Rational(77)));
+//
+//  Expr m1 = em.mkVar("m1", at);
+//  Expr m1_ini = em.mkExpr(kind::EQUAL, m1, em.mkExpr(kind::STORE, m0, em.mkConst(Rational(0)), em.mkConst(Rational(42))));
+//
+//  Expr r = em.mkExpr(kind::AND, m0_update, m0_update_2);
+//  r = em.mkExpr(kind::AND, r, m1_ini);
 
 //  Expr x = em.mkVar("x", em.integerType());
 //  Expr y = em.mkVar("y", em.integerType());
@@ -189,22 +189,22 @@ int main(void) {
 //  r = em.mkExpr(kind::AND, r, a_dis_c);
 //  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(100)), em.mkExpr(kind::PLUS, x, y)));
 ////  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(60)), em.mkExpr(kind::MINUS, x, y)));
-  SmtEngine smt(&em);
+//  SmtEngine smt(&em);
 
 ////  smt.setOption("check-models", SExpr("true"));
-  smt.setOption("produce-models", SExpr("true"));
+//  smt.setOption("produce-models", SExpr("true"));
 ////  smt.setOption("produce-assignments", SExpr("true"));
 //
 ////  std::cout << x << " is " << smt.query(x) << std::endl;
-  std::cout << r << " is " << smt.checkSat(r) << std::endl;
+//  std::cout << r << " is " << smt.checkSat(r) << std::endl;
 ////  for(auto blah : smt.getAssertions())
 ////    cout << blah << endl;
 ////  smt.getProof()->toStream(cout);
 ////  cout << smt.getAssignment() << endl;
 //
 
-  cout << m0 << " := " << smt.getValue(m0) << endl;
-  cout << m1 << " := " << smt.getValue(m1) << endl;
+//  cout << m0 << " := " << smt.getValue(m0) << endl;
+//  cout << m1 << " := " << smt.getValue(m1) << endl;
 //  cout << sel_arr2_2 << " := " << smt.getValue(sel_arr2_2) << endl;
 //  cout << "a := " << smt.getValue(a) << endl;
 //  cout << "b := " << smt.getValue(b) << endl;
@@ -229,7 +229,6 @@ int main(void) {
 //  cout << "a := " << smt.getValue(a) << endl;
 //  cout << "b := " << smt.getValue(b) << endl;
 //  cout << "c := " << smt.getValue(c) << endl;
-  return 0;
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
