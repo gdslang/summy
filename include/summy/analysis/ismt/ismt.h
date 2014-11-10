@@ -6,6 +6,8 @@
  */
 
 #pragma once
+#include <summy/analysis/ismt/cvc_context.h>
+#include <summy/analysis/ismt/smt_builder.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/cfg/cfg.h>
 
@@ -15,9 +17,12 @@ class ismt {
 private:
   cfg::cfg *cfg;
   liveness::liveness_result lv_result;
+  cvc_context context;
+  smt_builder *smtb;
 
 public:
   ismt(cfg::cfg *cfg, liveness::liveness_result lv_result) : cfg(cfg), lv_result(lv_result) {
+    smtb = new smt_builder(context);
   }
   void analyse(size_t from);
 };

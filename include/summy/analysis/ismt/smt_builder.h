@@ -13,17 +13,26 @@
 
 namespace analysis {
 
-class smt_builder : private summy::rreil::visitor {
+class smt_builder : public summy::rreil::visitor {
 private:
+//  using base = summy::rreil::visitor;
+
   cvc_context &context;
   std::vector<CVC4::Expr> sub_exprs;
 
-  void visit(gdsl::rreil::id *i);
+  CVC4::Expr pop();
+public:
+  void _default(gdsl::rreil::id *i);
 //  void visit(gdsl::rreil::variable *v);
   void visit(gdsl::rreil::assign *a);
-public:
+
+  void visit(gdsl::rreil::lin_binop *a);
+  void visit(gdsl::rreil::lin_imm *a);
+  void visit(gdsl::rreil::lin_scale *a);
+
   smt_builder(cvc_context &context) : context(context) {
   }
+  CVC4::Expr build(gdsl::rreil::statement *s);
 };
 
 }  // namespace analysis

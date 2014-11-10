@@ -20,7 +20,13 @@
 #include <cvc4/expr/expr.h>
 #include <cvc4/expr/expr_manager.h>
 #include <cvc4/cvc4.h>
+#include <summy/analysis/fixpoint.h>
+#include <summy/analysis/ismt/ismt.h>
+#include <summy/analysis/liveness/liveness.h>
 
+using analysis::fixpoint;
+using analysis::ismt;
+using analysis::liveness::liveness;
 using cfg::address_node;
 using cfg::edge;
 
@@ -251,6 +257,14 @@ int main(void) {
 
   ssa ssa(cfg);
   ssa.transduce_and_register();
+
+  liveness lv(&cfg);
+  fixpoint fpl(&lv);
+  fpl.iterate();
+  lv.put(cout);
+  ismt _ismt(&cfg, lv.result());
+  _ismt.analyse(5);
+
 //  cfg.clear_updates();
 
 //  cfg.update_edge(178, ani, foo);

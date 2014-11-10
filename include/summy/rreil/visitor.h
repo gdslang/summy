@@ -14,14 +14,19 @@ namespace summy {
 namespace rreil {
 
 class visitor : public gdsl::rreil::visitor, public id_visitor {
-private:
+protected:
   virtual void visit(ssa_id *si) {
     summy::rreil::id_visitor::visit(si);
   }
+//  using gdsl::rreil::visitor::visit;
+//  using id_visitor::visit;
 
 public:
   using gdsl::rreil::visitor::_;
   using summy::rreil::id_visitor::_;
+
+  using gdsl::rreil::visitor::_default;
+  using id_visitor::_default;
 };
 
 

@@ -32,7 +32,7 @@ cfg::bfs_iterator::bfs_iterator(cfg *cfg, bool end) :
 }
 
 cfg::bfs_iterator::bfs_iterator(cfg *cfg) :
-    _cfg(cfg), end(false) {
+    _cfg(cfg), end(false), backwards(false) {
   for(auto node : cfg->nodes) {
     node_visitor nv;
     nv._([&](address_node *sn) {

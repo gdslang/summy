@@ -20,8 +20,6 @@ BPRE=build
 CSOURCES=$(shell find $(SPRE)/ -type f -name '*.c')
 CPPSOURCES=$(shell find $(SPRE)/ -type f -name '*.cpp')
 
-.PHONY: test
-
 all: pre-build $(EXECUTABLE)
 
 SDIRS=$(shell find $(SPRE)/ -type d)
@@ -34,7 +32,7 @@ COBJECTS=$(CSOURCES:$(SPRE)/%.c=$(BPRE)/%.o)
 CPPOBJECTS=$(CPPSOURCES:$(SPRE)/%.cpp=$(BPRE)/%.o)
 OBJECTS=$(COBJECTS) $(CPPOBJECTS)
 
-$(EXECUTABLE): $(OBJECTS)
+$(EXECUTABLE): $(OBJECTS) ../lib$(EXECUTABLE).a
 	$(CPP) $(LDFLAGS) $(OBJECTS) $(LIBFLAGS) -o $@
 
 -include ${COBJECTS:.o=.d}
@@ -45,6 +43,7 @@ $(COBJECTS): $(BPRE)/%.o : $(SPRE)/%.c
 $(CPPOBJECTS): $(BPRE)/%.o : $(SPRE)/%.cpp
 	$(CPP) $(CPPFLAGS) $< -o $@
 
+.PHONY: test
 test:
 	$(MAKE) -C test/
 
