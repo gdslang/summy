@@ -23,6 +23,7 @@
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/ismt/ismt.h>
 #include <summy/analysis/liveness/liveness.h>
+#include <cstdio>
 
 using analysis::fixpoint;
 using analysis::ismt;
@@ -60,6 +61,25 @@ unsigned char *manual(gdsl::gdsl &g, uint64_t ip) {
   *buffer = 0x00e2d348;
   g.set_code((unsigned char*)buffer, sizeof(*buffer), ip);
   return (unsigned char*)buffer;
+}
+
+unsigned char *example(gdsl::gdsl &g, uint64_t ip) {
+  unsigned char *buffer;
+  size_t buffer_length;
+  FILE *ms = open_memstream((char**)&buffer, &buffer_length);
+
+  FILE *exf = fopen("example.bin", "r");
+  while(!feof(exf)) {
+    size_t n = 512;
+    char loc[n];
+    n = fread(loc, 1, n, exf);
+    fwrite(loc, 1, n, ms);
+  }
+  fclose(exf);
+
+  fclose(ms);
+  g.set_code(buffer, buffer_length, ip);
+  return buffer;
 }
 
 int main(void) {
@@ -239,7 +259,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto buffer = elf(g);
+  auto buffer = example(g, 0);
 
   dectran dt(g, false);
   dt.transduce_and_register();
@@ -263,7 +283,7 @@ int main(void) {
   fpl.iterate();
   lv.put(cout);
   ismt _ismt(&cfg, lv.result());
-  _ismt.analyse(5);
+  _ismt.analyse(30);
 
 //  cfg.clear_updates();
 

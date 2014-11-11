@@ -18,12 +18,11 @@ private:
   cfg::cfg *cfg;
   liveness::liveness_result lv_result;
   cvc_context context;
-  smt_builder *smtb;
+  smt_builder smtb;
 
 public:
-  ismt(cfg::cfg *cfg, liveness::liveness_result lv_result) : cfg(cfg), lv_result(lv_result) {
-    smtb = new smt_builder(context);
-  }
+  ismt(cfg::cfg *cfg, liveness::liveness_result lv_result);
+  ~ismt();
   void analyse(size_t from);
 };
 
