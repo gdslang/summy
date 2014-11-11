@@ -17,11 +17,12 @@ class ismt {
 private:
   cfg::cfg *cfg;
   liveness::liveness_result lv_result;
+  adaptive_rd::adaptive_rd_result rd_result;
   cvc_context context;
   smt_builder smtb;
 
 public:
-  ismt(cfg::cfg *cfg, liveness::liveness_result lv_result);
+  ismt(cfg::cfg *cfg, liveness::liveness_result lv_result, adaptive_rd::adaptive_rd_result rd_result);
   ~ismt();
   void analyse(size_t from);
 };

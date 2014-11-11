@@ -20,11 +20,13 @@
 #include <cvc4/expr/expr.h>
 #include <cvc4/expr/expr_manager.h>
 #include <cvc4/cvc4.h>
+#include <summy/analysis/adaptive_rd/adaptive_rd.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/ismt/ismt.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <cstdio>
 
+using analysis::adaptive_rd::adaptive_rd;
 using analysis::fixpoint;
 using analysis::ismt;
 using analysis::liveness::liveness;
@@ -281,9 +283,12 @@ int main(void) {
   liveness lv(&cfg);
   fixpoint fpl(&lv);
   fpl.iterate();
-  lv.put(cout);
-  ismt _ismt(&cfg, lv.result());
-  _ismt.analyse(30);
+  adaptive_rd rd(&cfg, lv.result());
+  fixpoint fpr(&rd);
+  fpr.iterate();
+  rd.put(cout);
+  ismt _ismt(&cfg, lv.result(), rd.result());
+  _ismt.analyse(34);
 
 //  cfg.clear_updates();
 

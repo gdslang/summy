@@ -20,8 +20,8 @@ using namespace gdsl::rreil;
 using namespace CVC4;
 namespace sr = summy::rreil;
 
-analysis::ismt::ismt(class cfg *cfg, liveness::liveness_result lv_result) :
-    cfg(cfg), lv_result(lv_result), smtb(context) {
+analysis::ismt::ismt(class cfg *cfg, liveness::liveness_result lv_result, adaptive_rd::adaptive_rd_result rd_result) :
+    cfg(cfg), lv_result(lv_result), rd_result(rd_result), smtb(context) {
 //  smtb = new smt_builder(context);
 }
 
@@ -59,7 +59,7 @@ void analysis::ismt::analyse(size_t from) {
           ass->get_lhs()->accept(srv);
 //          cout << endl;
           if(live) {
-            Expr e = smtb.build(stmt);
+            Expr e = smtb.build(stmt, rd_result.result[*from]);
             cout << *stmt << ": " << e << endl;
             if(first) {
               first = false;

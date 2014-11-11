@@ -32,8 +32,6 @@ public:
 
   std::tuple<bool, int_t> evaluate(gdsl::rreil::expr *expr);
   std::tuple<bool, int_t> evaluate(gdsl::rreil::linear *lin);
-
-
 };
 
 struct rreil_prop {
