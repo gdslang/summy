@@ -9,6 +9,7 @@
 #include <summy/tools/rreil_util.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <string>
+#include <vector>
 
 using namespace std;
 using namespace CVC4;
@@ -94,57 +95,37 @@ void smt_builder::visit(gdsl::rreil::assign *a) {
   Expr rhs_conc;
   if(ass_size == 0 || ass_size == 64) rhs_conc = rhs;
   else {
-    if(offset == 0) {
-      shared_ptr<id> lhs_id_wrapped(a->get_lhs()->get_id(), [&](void *x) {});
-      auto def_it = defs->get_elements().find(lhs_id_wrapped);
-      string id_old_str;
-      if(def_it != defs->get_elements().end()) id_old_str = def_it->first->to_string();
-      else throw string("blah");
-      Expr id_old_exp = id_by_string(id_old_str);
+    shared_ptr<id> lhs_id_wrapped(a->get_lhs()->get_id(), [&](void *x) {});
+    auto def_it = defs->get_elements().find(lhs_id_wrapped);
+    string id_old_str;
+    if(def_it != defs->get_elements().end()) id_old_str = def_it->first->to_string();
+    else throw string("blah");
+    Expr id_old_exp = id_by_string(id_old_str);
 
-      auto extract_lower = BitVectorExtract(0, ass_size - 1);
-      Expr ass_lower = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_lower), rhs);
+    struct slice {
+      Expr e;
+      unsigned high;
+      unsigned low;
+      slice(Expr e, unsigned high, unsigned low) :
+          e(e), high(high), low(low) {
+      }
+    };
 
-      auto extract_upper = BitVectorExtract(ass_size, 63);
-      Expr ass_upper = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_upper), id_old_exp);
+    auto concat = [&](vector<slice> slices) {
+      vector<Expr> exprs;
+      for(auto &slice : slices) {
+        auto extract_upper = BitVectorExtract(slice.high, slice.low);
+        exprs.push_back(man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_upper), slice.e));
+      }
+      rhs_conc = man.mkExpr(kind::BITVECTOR_CONCAT, exprs);
+    };
 
-      rhs_conc = man.mkExpr(kind::BITVECTOR_CONCAT, ass_upper, ass_lower);
-    } else if(offset + ass_size == 64) {
-      shared_ptr<id> lhs_id_wrapped(a->get_lhs()->get_id(), [&](void *x) {});
-      auto def_it = defs->get_elements().find(lhs_id_wrapped);
-      string id_old_str;
-      if(def_it != defs->get_elements().end()) id_old_str = def_it->first->to_string();
-      else throw string("blah");
-      Expr id_old_exp = id_by_string(id_old_str);
-
-      auto extract_lower = BitVectorExtract(offset - 1, 0);
-      Expr ass_lower = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_lower), id_old_exp);
-
-      auto extract_upper = BitVectorExtract(offset, 63);
-      Expr ass_upper = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_upper), rhs);
-
-
-
-      rhs_conc = man.mkExpr(kind::BITVECTOR_CONCAT, ass_upper, ass_lower);
-    } else {
-      shared_ptr<id> lhs_id_wrapped(a->get_lhs()->get_id(), [&](void *x) {});
-      auto def_it = defs->get_elements().find(lhs_id_wrapped);
-      string id_old_str;
-      if(def_it != defs->get_elements().end()) id_old_str = def_it->first->to_string();
-      else throw string("blah");
-      Expr id_old_exp = id_by_string(id_old_str);
-
-      auto extract_lower = BitVectorExtract(offset - 1, 0);
-      Expr ass_lower = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_lower), id_old_exp);
-
-      auto extract_middle = BitVectorExtract(ass_size - 1, 0);
-      Expr ass_middle = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_middle), rhs);
-
-      auto extract_upper = BitVectorExtract(63, offset + ass_size);
-      Expr ass_upper = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_upper), id_old_exp);
-
-      rhs_conc = man.mkExpr(kind::BITVECTOR_CONCAT, ass_upper, ass_middle, ass_lower);
-    }
+    if(offset == 0)
+      concat({slice(id_old_exp, 63, ass_size), slice(rhs, 0, ass_size - 1)});
+    else if(offset + ass_size == 64)
+      concat({slice(rhs, 63, offset), slice(id_old_exp, offset - 1, 0)});
+    else
+      concat({ slice(id_old_exp, 63, ass_size + offset), slice(rhs, ass_size - 1, 0), slice(id_old_exp, offset - 1, 0)});
   }
   Expr ass = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
   sub_exprs.push_back(ass);
