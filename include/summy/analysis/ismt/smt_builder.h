@@ -19,6 +19,7 @@ class smt_builder: public summy::rreil::visitor {
 private:
 //  using base = summy::rreil::visitor;
   std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs;
+  bool rhs = false;
 
   cvc_context &context;
   std::vector<CVC4::Expr> sub_exprs;
@@ -27,7 +28,7 @@ private:
   CVC4::Expr id_by_string(std::string s);
 public:
   void _default(gdsl::rreil::id *i);
-//  void visit(gdsl::rreil::variable *v);
+  void visit(gdsl::rreil::variable *v);
   void visit(gdsl::rreil::assign *a);
 
   void visit(gdsl::rreil::lin_binop *a);

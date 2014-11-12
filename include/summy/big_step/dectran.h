@@ -12,6 +12,8 @@
 #include <summy/transformers/trivial_connector.h>
 #include <cppgdsl/gdsl.h>
 
+#include <set>
+
 class dectran : public big_step {
 private:
   cfg::cfg cfg;
@@ -26,6 +28,10 @@ public:
 
   cfg::cfg &get_cfg() {
     return cfg;
+  }
+
+  std::set<size_t> const& get_unresolved() {
+    return tc.get_unresolved();
   }
 
   /*

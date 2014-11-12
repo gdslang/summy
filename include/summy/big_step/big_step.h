@@ -20,6 +20,9 @@ public:
   virtual ~big_step() {
   }
 
+  /*
+   * Todo: Trennen, register() völlig optional machen
+   */
   virtual void transduce_and_register() = 0;
 
   static cfg::updates_t combine_updates(const cfg::updates_t edges_ana, const cfg::edge_set_t edges_fn);

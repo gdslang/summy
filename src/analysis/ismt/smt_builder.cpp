@@ -6,6 +6,8 @@
  */
 
 #include <summy/analysis/ismt/smt_builder.h>
+#include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/ssa_id.h>
 #include <summy/tools/rreil_util.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <string>
@@ -15,6 +17,7 @@ using namespace std;
 using namespace CVC4;
 using namespace analysis;
 using namespace gdsl::rreil;
+namespace sr = summy::rreil;
 
 CVC4::Expr analysis::smt_builder::pop() {
   if(sub_exprs.empty())
@@ -43,8 +46,14 @@ void smt_builder::_default(gdsl::rreil::id *i) {
   sub_exprs.push_back(i_exp);
 }
 
-//void analysis::smt_builder::visit(gdsl::rreil::variable *v) {
-//}
+void analysis::smt_builder::visit(gdsl::rreil::variable *v) {
+  v->get_id()->accept(*this);
+  if(v->get_offset() > 0 && rhs) {
+    Expr c = pop();
+    auto &man = context.get_manager();
+    sub_exprs.push_back(man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, v->get_offset())), c));
+  }
+}
 
 void analysis::smt_builder::visit(gdsl::rreil::lin_binop *a) {
   auto &man = context.get_manager();
@@ -84,7 +93,9 @@ void analysis::smt_builder::visit(gdsl::rreil::lin_scale *a) {
 void smt_builder::visit(gdsl::rreil::assign *a) {
 //  base::visit(a);
   auto &man = context.get_manager();
+  rhs = true;
   a->get_rhs()->accept(*this);
+  rhs = false;
   Expr rhs = pop();
   a->get_lhs()->accept(*this);
   Expr lhs = pop();
@@ -99,7 +110,19 @@ void smt_builder::visit(gdsl::rreil::assign *a) {
     auto def_it = defs->get_elements().find(lhs_id_wrapped);
     string id_old_str;
     if(def_it != defs->get_elements().end()) id_old_str = def_it->first->to_string();
-    else throw string("blah");
+    else {
+      sr::id_visitor siv;
+      siv._([&](sr::ssa_id *si) {
+        id_old_str = si->get_id()->to_string();
+      });
+      siv._default([&](id *di) {
+        /*
+         * Todo: Can this program point be reached?
+         */
+        id_old_str = di->to_string();
+      });
+      lhs_id_wrapped->accept(siv);
+    }
     Expr id_old_exp = id_by_string(id_old_str);
 
     struct slice {
@@ -130,7 +153,6 @@ void smt_builder::visit(gdsl::rreil::assign *a) {
   Expr ass = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
   sub_exprs.push_back(ass);
 }
-
 
 
 CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s, std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs) {

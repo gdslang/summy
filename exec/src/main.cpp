@@ -288,7 +288,8 @@ int main(void) {
   fpr.iterate();
   rd.put(cout);
   ismt _ismt(&cfg, lv.result(), rd.result());
-  _ismt.analyse(34);
+  for(auto &unres : dt.get_unresolved())
+  _ismt.analyse(unres);
 
 //  cfg.clear_updates();
 

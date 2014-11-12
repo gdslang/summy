@@ -58,7 +58,8 @@ void trivial_connector::transform() {
           if(evalable) {
             replace = true;
             branches.push(make_tuple(edge_it->first, value));
-          }
+          } else
+            unresolved.insert(edge_it->first);
         });
         v._([&](cbranch *i) {
           replace = true;
@@ -143,6 +144,7 @@ void trivial_connector::transform() {
       size_t dest_node_id = cfg->create_node([&](size_t id) {
         return new (class node)(id);
       });
+      unresolved.insert(dest_node_id);
 
       cfg->update_edge(cond_end_node_id, dest_node_id, new stmt_edge(branch));
 
