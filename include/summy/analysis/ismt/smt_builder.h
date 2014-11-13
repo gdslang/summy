@@ -16,7 +16,7 @@
 
 namespace analysis {
 
-class smt_builder: public summy::rreil::visitor {
+class smt_builder: private summy::rreil::visitor {
 private:
 //  using base = summy::rreil::visitor;
   std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs;
@@ -29,7 +29,7 @@ private:
   CVC4::Expr id_by_string(std::string s);
 
   void handle_assign(size_t size, gdsl::rreil::variable *lhs_, std::function<void()> rhs_accept);
-public:
+
   void _default(gdsl::rreil::id *i);
   void visit(gdsl::rreil::variable *v);
   void visit(gdsl::rreil::assign *a);
@@ -37,7 +37,7 @@ public:
   void visit(gdsl::rreil::lin_binop *a);
   void visit(gdsl::rreil::lin_imm *a);
   void visit(gdsl::rreil::lin_scale *a);
-
+public:
   smt_builder(cvc_context &context) :
       context(context) {
   }

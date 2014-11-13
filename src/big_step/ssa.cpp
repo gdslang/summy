@@ -21,7 +21,7 @@ ssa::ssa(cfg::cfg &cfg) :
     big_step(cfg), l(&cfg), fpl(&l), r(&cfg, l.result()), fpr(&r), pi(&cfg, r.result()), ren(&cfg, r.result()) {
 }
 
-void ssa::transduce_and_register() {
+void ssa::transduce() {
   fpl.iterate();
 //  cout << l;
 
@@ -51,8 +51,6 @@ void ssa::transduce_and_register() {
       fpr.notify(cfg.get_updates());
     }
   }
-
-  cfg.register_observer(this);
 }
 
 void ssa::notify(const std::vector<cfg::update> &updates) {

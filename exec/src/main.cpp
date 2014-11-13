@@ -264,7 +264,8 @@ int main(void) {
   auto buffer = example(g, 0);
 
   dectran dt(g, false);
-  dt.transduce_and_register();
+  dt.transduce();
+  dt.register_();
 
   auto &cfg = dt.get_cfg();
   cfg.commit_updates();
@@ -278,16 +279,16 @@ int main(void) {
 //
 
   ssa ssa(cfg);
-  ssa.transduce_and_register();
+  ssa.transduce();
 
-  liveness lv(&cfg);
-  fixpoint fpl(&lv);
-  fpl.iterate();
-  adaptive_rd rd(&cfg, lv.result());
-  fixpoint fpr(&rd);
-  fpr.iterate();
-  rd.put(cout);
-  ismt _ismt(&cfg, lv.result(), rd.result());
+//  liveness lv(&cfg);
+//  fixpoint fpl(&lv);
+//  fpl.iterate();
+//  adaptive_rd rd(&cfg, lv.result());
+//  fixpoint fpr(&rd);
+//  fpr.iterate();
+//  rd.put(cout);
+  ismt _ismt(&cfg, ssa.lv_result(), ssa.rd_result());
   for(auto &unres : dt.get_unresolved())
   _ismt.analyse(unres);
 

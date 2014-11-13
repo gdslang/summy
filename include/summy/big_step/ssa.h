@@ -29,6 +29,14 @@ private:
 public:
   ssa(cfg::cfg &cfg);
 
-  void transduce_and_register();
+  analysis::liveness::liveness_result lv_result() {
+    return l.result();
+  }
+
+  analysis::adaptive_rd::adaptive_rd_result rd_result() {
+    return r.result();
+  }
+
+  void transduce();
   void notify(std::vector<cfg::update> const &updates);
 };

@@ -37,9 +37,9 @@ public:
   /*
    * Decode and translate first block
    */
-  void transduce_and_register(bool decode_multiple);
-  void transduce_and_register() {
-    transduce_and_register(false);
+  void transduce(bool decode_multiple);
+  void transduce() {
+    transduce(false);
   }
   void notify(std::vector<cfg::update> const &updates);
 };

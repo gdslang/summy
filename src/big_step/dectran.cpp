@@ -86,10 +86,9 @@ dectran::dectran(gdsl::gdsl &gdsl, bool blockwise_optimized) :
     big_step(cfg), gdsl(gdsl), tc(&cfg), blockwise_optimized(blockwise_optimized) {
 }
 
-void dectran::transduce_and_register(bool decode_multiple) {
+void dectran::transduce(bool decode_multiple) {
   initial_cfg(cfg, decode_multiple);
   tc.transform();
-  cfg.register_observer(this);
 }
 
 void dectran::notify(const std::vector<cfg::update> &updates) {

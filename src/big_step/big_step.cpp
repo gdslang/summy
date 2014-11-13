@@ -24,3 +24,7 @@ updates_t big_step::combine_updates(const updates_t edges_ana, const edge_set_t 
   }
   return result;
 }
+
+void big_step::register_() {
+  cfg.register_observer(this);
+}
