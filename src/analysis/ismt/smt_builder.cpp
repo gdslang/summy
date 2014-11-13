@@ -20,8 +20,7 @@ using namespace gdsl::rreil;
 namespace sr = summy::rreil;
 
 CVC4::Expr analysis::smt_builder::pop() {
-  if(sub_exprs.empty())
-    throw string(":/");
+  if(sub_exprs.empty()) throw string(":/");
   Expr r = sub_exprs.back();
   sub_exprs.pop_back();
   return r;
@@ -30,8 +29,7 @@ CVC4::Expr analysis::smt_builder::pop() {
 CVC4::Expr analysis::smt_builder::id_by_string(std::string s) {
   auto &var_map = context.get_var_map();
   auto i_it = var_map.find(s);
-  if(i_it != var_map.end())
-    return i_it->second;
+  if(i_it != var_map.end()) return i_it->second;
   else {
     auto &man = context.get_manager();
     Expr i_exp = man.mkVar(s, man.mkBitVectorType(64));
@@ -90,73 +88,90 @@ void analysis::smt_builder::visit(gdsl::rreil::lin_scale *a) {
   sub_exprs.push_back(r);
 }
 
-void smt_builder::visit(gdsl::rreil::assign *a) {
-//  base::visit(a);
-  auto &man = context.get_manager();
-  rhs = true;
-  a->get_rhs()->accept(*this);
-  rhs = false;
-  Expr rhs = pop();
-  a->get_lhs()->accept(*this);
-  Expr lhs = pop();
+void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable *lhs_gr, std::function<void()> rhs_accept) {
+  //  base::visit(a);
+    auto &man = context.get_manager();
+    rhs = true;
+    rhs_accept();
+    rhs = false;
+    Expr rhs = pop();
+    lhs_gr->accept(*this);
+    Expr lhs = pop();
 
-  int_t ass_size = rreil_prop::size_of_assign(a);
-  int_t offset = a->get_lhs()->get_offset();
+//    int_t ass_size = rreil_prop::size_of_assign(a);
+    int_t ass_size = size;
+    int_t offset = lhs_gr->get_offset();
 
-  Expr rhs_conc;
-  if(ass_size == 0 || ass_size == 64) rhs_conc = rhs;
-  else {
-    shared_ptr<id> lhs_id_wrapped(a->get_lhs()->get_id(), [&](void *x) {});
-    auto def_it = defs->get_elements().find(lhs_id_wrapped);
-    string id_old_str;
-    if(def_it != defs->get_elements().end()) id_old_str = def_it->first->to_string();
+    Expr rhs_conc;
+    if(ass_size == 0 || ass_size == 64) rhs_conc = rhs;
     else {
-      sr::id_visitor siv;
-      siv._([&](sr::ssa_id *si) {
-        id_old_str = si->get_id()->to_string();
-      });
-      siv._default([&](id *di) {
-        /*
-         * Todo: Can this program point be reached?
-         */
-        id_old_str = di->to_string();
-      });
-      lhs_id_wrapped->accept(siv);
-    }
-    Expr id_old_exp = id_by_string(id_old_str);
-
-    struct slice {
-      Expr e;
-      unsigned high;
-      unsigned low;
-      slice(Expr e, unsigned high, unsigned low) :
-          e(e), high(high), low(low) {
+      shared_ptr<id> lhs_id_wrapped(lhs_gr->get_id(), [&](void *x) {});
+      auto def_it = defs->get_elements().find(lhs_id_wrapped);
+      string id_old_str;
+      if(def_it != defs->get_elements().end()) id_old_str = def_it->first->to_string();
+      else {
+        sr::id_visitor siv;
+        siv._([&](sr::ssa_id *si) {
+          id_old_str = si->get_id()->to_string();
+        });
+        siv._default([&](id *di) {
+          /*
+           * Todo: Can this program point be reached?
+           */
+          id_old_str = di->to_string();
+        });
+        lhs_id_wrapped->accept(siv);
       }
-    };
+      Expr id_old_exp = id_by_string(id_old_str);
 
-    auto concat = [&](vector<slice> slices) {
-      vector<Expr> exprs;
-      for(auto &slice : slices) {
-        auto extract_upper = BitVectorExtract(slice.high, slice.low);
-        exprs.push_back(man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_upper), slice.e));
-      }
-      rhs_conc = man.mkExpr(kind::BITVECTOR_CONCAT, exprs);
-    };
+      struct slice {
+        Expr e;
+        unsigned high;
+        unsigned low;
+        slice(Expr e, unsigned high, unsigned low) :
+            e(e), high(high), low(low) {
+        }
+      };
 
-    if(offset == 0)
-      concat({slice(id_old_exp, 63, ass_size), slice(rhs, 0, ass_size - 1)});
-    else if(offset + ass_size == 64)
-      concat({slice(rhs, 63, offset), slice(id_old_exp, offset - 1, 0)});
-    else
-      concat({ slice(id_old_exp, 63, ass_size + offset), slice(rhs, ass_size - 1, 0), slice(id_old_exp, offset - 1, 0)});
+      auto concat = [&](vector<slice> slices) {
+        vector<Expr> exprs;
+        for(auto &slice : slices) {
+          auto extract_upper = BitVectorExtract(slice.high, slice.low);
+          exprs.push_back(man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_upper), slice.e));
+        }
+        rhs_conc = man.mkExpr(kind::BITVECTOR_CONCAT, exprs);
+      };
+
+    if(offset == 0) concat( { slice(id_old_exp, 63, ass_size), slice(rhs, 0, ass_size - 1) });
+    else if(offset + ass_size == 64) concat( { slice(rhs, 63, offset), slice(id_old_exp, offset - 1, 0) });
+    else concat(
+        { slice(id_old_exp, 63, ass_size + offset), slice(rhs, ass_size - 1, 0), slice(id_old_exp, offset - 1, 0) });
   }
-  Expr ass = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
-  sub_exprs.push_back(ass);
+    Expr ass = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
+    sub_exprs.push_back(ass);
 }
 
 
-CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s, std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs) {
+void smt_builder::visit(gdsl::rreil::assign *a) {
+  handle_assign(rreil_prop::size_of_assign(a), a->get_lhs(), [&]() {
+    a->get_rhs()->accept(*this);
+  });
+}
+
+
+CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s,
+    std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs) {
   this->defs = defs;
   s->accept(*this);
   return pop();
 }
+
+CVC4::Expr analysis::smt_builder::build(cfg::phi_assign const *pa,
+    std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs) {
+  this->defs = defs;
+  handle_assign(pa->get_size(), pa->get_lhs(), [&]() {
+    pa->get_rhs()->accept(*this);
+  });
+  return pop();
+}
+
