@@ -37,31 +37,44 @@ class adaptive_rd_elem : public lattice_elem {
 private:
   bool contains_undef;
   const elements_t elements;
+  size_t memory_rev;
 
 public:
   const elements_t &get_elements() {
     return elements;
   }
 
-  adaptive_rd_elem(elements_t elements) : contains_undef(true), elements(elements) {
+  size_t get_memory_rev() {
+    return memory_rev;
   }
-  adaptive_rd_elem(bool contains_undef, elements_t elements) :
-      contains_undef(contains_undef), elements(elements) {
+
+  adaptive_rd_elem(elements_t elements, size_t memory_rev) :
+      contains_undef(true), elements(elements), memory_rev(memory_rev) {
+  }
+
+  adaptive_rd_elem(bool contains_undef, elements_t elements, size_t memory_rev) :
+      contains_undef(contains_undef), elements(elements), memory_rev(memory_rev) {
+  }
+
+  /*
+   * Copy constructor
+   */
+  adaptive_rd_elem(adaptive_rd_elem &e) :
+      lattice_elem(e), contains_undef(e.contains_undef), elements(e.elements), memory_rev(e.memory_rev) {
   }
 
   /**
    * Bottom constructor
    */
-  adaptive_rd_elem() : contains_undef(false) {
+  adaptive_rd_elem() : contains_undef(false), memory_rev(0) {
   }
-  adaptive_rd_elem(adaptive_rd_elem &e) : lattice_elem(e), elements(e.elements) {
-    this->contains_undef = e.contains_undef;
-  }
+
 
   virtual adaptive_rd_elem *lub(::analysis::lattice_elem *other, size_t current_node);
   virtual adaptive_rd_elem *add(std::vector<singleton_t> elements);
   virtual adaptive_rd_elem *remove(id_set_t elements);
   virtual adaptive_rd_elem *remove(std::function<bool(singleton_key_t, singleton_value_t)> pred);
+  virtual adaptive_rd_elem *set_memory_rev(size_t memory_rev);
 
   virtual bool operator>=(::analysis::lattice_elem &other);
 

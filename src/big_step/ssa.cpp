@@ -26,7 +26,7 @@ void ssa::transduce() {
 //  cout << l;
 
   fpr.iterate();
-//  cout << r;
+  r.put(cout);
 
   {
     cfg::update_pop up = cfg.push_updates();

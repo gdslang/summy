@@ -14,6 +14,7 @@
 #include <memory>
 #include <tuple>
 #include <iostream>
+#include <sstream>
 
 using namespace analysis;
 using namespace std;
@@ -55,7 +56,11 @@ adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::lub(::an
   explicit_lub(other_casted->elements);
   explicit_lub(explicit_undef);
 
-  return new adaptive_rd_elem(contains_undef || other_casted->contains_undef, lubbed);
+  size_t memory_rev = this->memory_rev;
+  if(memory_rev != other_casted->memory_rev)
+    memory_rev = current_node;
+
+  return new adaptive_rd_elem(contains_undef || other_casted->contains_undef, lubbed, memory_rev);
 }
 
 adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::add(std::vector<singleton_t> elements) {
@@ -67,13 +72,13 @@ adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::add(std:
     if(added.find(k) != added.end()) throw string("Element does already exist :/");
     added[k] = v;
   }
-  return new adaptive_rd_elem(contains_undef, added);
+  return new adaptive_rd_elem(contains_undef, added, memory_rev);
 }
 adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::remove(id_set_t elements) {
   elements_t removed = this->elements;
   for(auto id : elements)
     removed.erase(id);
-  return new adaptive_rd_elem(contains_undef, removed);
+  return new adaptive_rd_elem(contains_undef, removed, memory_rev);
 }
 
 adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::remove(
@@ -81,15 +86,19 @@ adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::remove(
   elements_t removed;
   for(auto &e : this->elements)
     if(!pred(e.first, e.second)) removed.insert(e);
-  return new adaptive_rd_elem(contains_undef, removed);
+  return new adaptive_rd_elem(contains_undef, removed, memory_rev);
 }
 
-#include <sstream>
+adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::set_memory_rev(size_t memory_rev) {
+  return new adaptive_rd_elem(contains_undef, elements, memory_rev);
+}
+
 
 bool analysis::adaptive_rd::adaptive_rd_elem::operator >=(::analysis::lattice_elem &other) {
   adaptive_rd_elem &other_casted = dynamic_cast<adaptive_rd_elem&>(other);
   if(contains_undef && !other_casted.contains_undef) return true;
   if(!contains_undef && other_casted.contains_undef) return false;
+  if(memory_rev != other_casted.memory_rev) return false;
   return equal(this->elements.begin(), this->elements.end(), other_casted.elements.begin(), other_casted.elements.end(),
       singleton_equals);
 }
@@ -100,7 +109,7 @@ void analysis::adaptive_rd::adaptive_rd_elem::put(std::ostream &out) {
   for(auto it = elements.begin(); it != elements.end(); it++, i++) {
     out << *it->first << " -> " << it->second << (i < elements.size() - 1 ? ", " : "");
   }
-  out << "}";
+  out << " | memory -> " << memory_rev << "}";
   if(contains_undef) out << "+";
 }
 

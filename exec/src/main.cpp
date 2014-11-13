@@ -261,7 +261,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto buffer = example(g, 0);
+  auto buffer = elf(g);
 
   dectran dt(g, false);
   dt.transduce();
@@ -281,16 +281,9 @@ int main(void) {
   ssa ssa(cfg);
   ssa.transduce();
 
-//  liveness lv(&cfg);
-//  fixpoint fpl(&lv);
-//  fpl.iterate();
-//  adaptive_rd rd(&cfg, lv.result());
-//  fixpoint fpr(&rd);
-//  fpr.iterate();
-//  rd.put(cout);
-  ismt _ismt(&cfg, ssa.lv_result(), ssa.rd_result());
-  for(auto &unres : dt.get_unresolved())
-  _ismt.analyse(unres);
+//  ismt _ismt(&cfg, ssa.lv_result(), ssa.rd_result());
+//  for(auto &unres : dt.get_unresolved())
+//  _ismt.analyse(unres);
 
 //  cfg.clear_updates();
 

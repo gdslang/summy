@@ -56,11 +56,16 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
     statement *stmt = edge->get_stmt();
     statement_visitor v;
     v._([&](assign *a) {
-          id_assigned(rreil_prop::size_of_assign(a), a->get_lhs());
-        });
+      id_assigned(rreil_prop::size_of_assign(a), a->get_lhs());
+    });
     v._([&](load *l) {
-          id_assigned(l->get_size(), l->get_lhs());
-        });
+      id_assigned(l->get_size(), l->get_lhs());
+    });
+    v._([&](store *s) {
+      transfer_f = [=]() {
+        return shared_ptr<adaptive_rd_elem>(state[from]->set_memory_rev(to));
+      };
+    });
     stmt->accept(v);
   });
   ev._([&](const phi_edge *edge) {
@@ -107,11 +112,11 @@ analysis::adaptive_rd::adaptive_rd::~adaptive_rd() {
 }
 
 shared_ptr<analysis::lattice_elem> adaptive_rd::adaptive_rd::bottom() {
-  return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(false, elements_t()));
+  return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(false, elements_t(), 0));
 }
 
 shared_ptr<analysis::lattice_elem> adaptive_rd::adaptive_rd::start_value() {
-  return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(true, elements_t()));
+  return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(true, elements_t(), 0));
 }
 
 shared_ptr<::analysis::lattice_elem> adaptive_rd::adaptive_rd::get(size_t node) {

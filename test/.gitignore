@@ -2,4 +2,5 @@
 /example_[a-z]
 /test
 /test[0-9]
+/test3_mem
 
