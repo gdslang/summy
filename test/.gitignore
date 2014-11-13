@@ -1,10 +1,5 @@
 /build/
-/example_a
-/example_b
-/example_g
-/example_h
+/example_[a-z]
 /test
-/test2
-/test3
-/test4
+/test[0-9]
 

@@ -33,17 +33,38 @@ void analysis::ismt::analyse(size_t from) {
   set<string> vars;
 
   ExprManager &man = context.get_manager();
-  bool first = true;
-  Expr acc;
+
+  struct expr_acc {
+    bool empty = true;
+    Expr acc;
+    kind::Kind_t kind;
+    ExprManager &man;
+    expr_acc(kind::Kind_t kind, ExprManager &man) :
+        kind(kind), man(man) {
+    }
+    void add(Expr next) {
+      if(empty) {
+        empty = false;
+        acc = next;
+      } else {
+        acc = man.mkExpr(kind, acc, next);
+      }
+    }
+  };
+
+  expr_acc exp_glob(kind::AND, man);
 
   cfg_view cv(cfg, from, true);
   for(auto node : cv) {
     size_t node_id = node->get_id();
+    expr_acc exp_node(kind::OR, man);
+
     auto &edges = cfg->in_edges(node->get_id());
     for(auto from = edges.begin(); from != edges.end(); from++) {
       auto _edge = cfg->out_edges(*from)->at(node_id);
+      expr_acc exp_edge(kind::AND, man);
 
-      auto handle_assignment = [&](auto a, kind::Kind_t kind) {
+      auto handle_assignment = [&](auto a) {
         bool live = false;
         sr::visitor srv;
 //          cout << *ass << ":: ";
@@ -58,12 +79,7 @@ void analysis::ismt::analyse(size_t from) {
         if(live) {
           Expr e = smtb.build(a, rd_result.result[*from]);
 //          cout << *a << ": " << e << endl;
-          if(first) {
-            first = false;
-            acc = e;
-          } else {
-            acc = man.mkExpr(kind, acc, e);
-          }
+          exp_edge.add(e);
         }
       };
 
@@ -72,7 +88,7 @@ void analysis::ismt::analyse(size_t from) {
         statement *stmt = sedge->get_stmt();
         statement_visitor sv;
         sv._([&](assign *ass) {
-          handle_assignment(ass, kind::AND);
+          handle_assignment(ass);
         });
         sv._([&](branch *b) {
           vars.insert(b->get_target()->get_lin()->to_string());
@@ -81,13 +97,19 @@ void analysis::ismt::analyse(size_t from) {
       });
       ev._([&](const phi_edge *pe) {
         for(auto &ass : pe->get_assignments())
-          handle_assignment(&ass, kind::OR);
+          handle_assignment(&ass);
       });
       _edge->accept(ev);
+
+      if(!exp_edge.empty)
+        exp_node.add(exp_edge.acc);
     }
+
+    if(!exp_node.empty)
+      exp_glob.add(exp_node.acc);
   }
 
-  if(first)
+  if(exp_glob.empty)
     return;
 
   SmtEngine &se = context.get_smtEngine();
@@ -95,8 +117,8 @@ void analysis::ismt::analyse(size_t from) {
   Result r;
   size_t max = 10;
   while(--max) {
-    r = se.checkSat(acc);
-    cout << acc << " is " << r << endl;
+    r = se.checkSat(exp_glob.acc);
+    cout << exp_glob.acc << " is " << r << endl;
     if(r.isSat() != Result::SAT)
       break;
 
