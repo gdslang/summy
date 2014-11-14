@@ -77,7 +77,7 @@ void analysis::ismt::analyse(size_t from) {
         a->get_lhs()->accept(srv);
 //          cout << endl;
         if(live) {
-          Expr e = smtb.build(a, rd_result.result[*from]);
+          Expr e = smtb.build(a, rd_result.result[*from], rd_result.result[node_id]);
 //          cout << *a << ": " << e << endl;
           exp_edge.add(e);
         }
@@ -122,13 +122,13 @@ void analysis::ismt::analyse(size_t from) {
     if(r.isSat() != Result::SAT)
       break;
 
-    auto &var_map = context.get_var_map();
     for(auto var : vars) {
-      Expr unpack = man.mkExpr(kind::BITVECTOR_TO_NAT, var_map[var]);
-      cout << "\e[1m\e[31m" << var_map[var] << " := " << se.getValue(unpack) << "\e[0m" << endl;
+      Expr var_exp = context.var(var);
+      Expr unpack = man.mkExpr(kind::BITVECTOR_TO_NAT, var_exp);
+      cout << "\e[1m\e[31m" << var_exp << " := " << se.getValue(unpack) << "\e[0m" << endl;
     }
     for(auto var : vars) {
-      Expr v = var_map[var];
+      Expr v = context.var(var);
       se.assertFormula(man.mkExpr(kind::DISTINCT, v, se.getValue(v)));
     }
   };

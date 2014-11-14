@@ -281,9 +281,9 @@ int main(void) {
   ssa ssa(cfg);
   ssa.transduce();
 
-//  ismt _ismt(&cfg, ssa.lv_result(), ssa.rd_result());
-//  for(auto &unres : dt.get_unresolved())
-//  _ismt.analyse(unres);
+  ismt _ismt(&cfg, ssa.lv_result(), ssa.rd_result());
+  for(auto &unres : dt.get_unresolved())
+  _ismt.analyse(unres);
 
 //  cfg.clear_updates();
 

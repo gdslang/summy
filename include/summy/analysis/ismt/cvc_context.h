@@ -13,12 +13,16 @@
 namespace analysis {
 
 typedef std::map<std::string, CVC4::Expr> var_map_t;
+typedef std::map<size_t, CVC4::Expr> memory_map_t;
 
 class cvc_context {
 private:
   CVC4::ExprManager manager;
   CVC4::SmtEngine smtEngine;
   var_map_t var_map;
+
+  CVC4::ArrayType mem_type;
+  memory_map_t mem_map;
 public:
   cvc_context();
 
@@ -28,9 +32,8 @@ public:
   CVC4::SmtEngine &get_smtEngine() {
     return smtEngine;
   }
-  var_map_t &get_var_map() {
-    return var_map;
-  }
+  CVC4::Expr var(std::string name);
+  CVC4::Expr memory(size_t rev);
 };
 }  // namespace analysis
 

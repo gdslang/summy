@@ -12,4 +12,26 @@ using namespace CVC4;
 
 analysis::cvc_context::cvc_context() : smtEngine(&manager) {
   smtEngine.setOption("produce-models", SExpr("true"));
+
+  mem_type = manager.mkArrayType(manager.mkBitVectorType(56), manager.mkBitVectorType(64));
+}
+
+CVC4::Expr analysis::cvc_context::var(std::string name) {
+  auto i_it = var_map.find(name);
+  if(i_it != var_map.end()) return i_it->second;
+  else {
+    Expr i_exp = manager.mkVar(name, manager.mkBitVectorType(64));
+    var_map[name] = i_exp;
+    return i_exp;
+  }
+}
+
+CVC4::Expr analysis::cvc_context::memory(size_t rev) {
+  auto rev_it = mem_map.find(rev);
+  if(rev_it != mem_map.end()) return rev_it->second;
+  else {
+    Expr mem = manager.mkVar("m_" + rev, mem_type);
+    mem_map[rev] = mem;
+    return mem;
+  }
 }
