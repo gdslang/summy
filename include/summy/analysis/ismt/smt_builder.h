@@ -19,11 +19,13 @@ namespace analysis {
 class smt_builder: private summy::rreil::visitor {
 private:
 //  using base = summy::rreil::visitor;
-  std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_before;
-  std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_after;
   bool rhs = false;
 
   cvc_context &context;
+  adaptive_rd::adaptive_rd_result rd_result;
+  size_t from = 0;
+  size_t to = 0;
+
   std::vector<CVC4::Expr> sub_exprs;
 
   CVC4::Expr pop();
@@ -40,16 +42,16 @@ private:
 
   void visit(gdsl::rreil::assign *a);
 
+  CVC4::Expr enforce_aligned(size_t size, CVC4::Expr address);
   void visit(gdsl::rreil::load *l);
   void visit(gdsl::rreil::store *s);
 public:
-  smt_builder(cvc_context &context) :
-      context(context) {
+  smt_builder(cvc_context &context, adaptive_rd::adaptive_rd_result rd_result) :
+      context(context), rd_result(rd_result) {
   }
-  CVC4::Expr build(gdsl::rreil::statement *s, std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_befores,
-      std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_after);
-  CVC4::Expr build(cfg::phi_assign const *pa, std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_before,
-      std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_after);
+  CVC4::Expr build(gdsl::rreil::statement *s);
+  CVC4::Expr build(cfg::phi_assign const *pa);
+  void edge(size_t from, size_t to);
 };
 
 }  // namespace analysis

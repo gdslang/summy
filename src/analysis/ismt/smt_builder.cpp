@@ -6,12 +6,14 @@
  */
 
 #include <summy/analysis/ismt/smt_builder.h>
+#include <summy/rreil/copy_visitor.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/ssa_id.h>
 #include <summy/tools/rreil_util.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <string>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 using namespace CVC4;
@@ -82,23 +84,18 @@ CVC4::Expr analysis::smt_builder::concat_rhs(id *lhs_id, size_t size, size_t off
   if(size == 0 || size == 64) rhs_conc = rhs;
   else {
     shared_ptr<id> lhs_id_wrapped(lhs_id, [&](void *x) {});
-    auto def_it = defs_before->get_elements().find(lhs_id_wrapped);
-    string id_old_str;
-    if(def_it != defs_before->get_elements().end()) id_old_str = def_it->first->to_string();
-    else {
-      sr::id_visitor siv;
-      siv._([&](sr::ssa_id *si) {
-        id_old_str = si->get_id()->to_string();
-      });
-      siv._default([&](id *di) {
-        /*
-         * Todo: Can this program point be reached?
-         */
-        id_old_str = di->to_string();
-      });
-      lhs_id_wrapped->accept(siv);
-    }
-    Expr id_old_exp = context.var(id_old_str);
+
+    auto def_it = rd_result.result[from]->get_elements().find(lhs_id_wrapped);
+    size_t def_node = 0;
+    if(def_it != rd_result.result[from]->get_elements().end()) def_node = def_it->second;
+    sr::copy_visitor civ;
+    civ._([&](gdsl::rreil::id *inner, int_t rev) {
+      return inner;
+    });
+    lhs_id_wrapped->accept(civ);
+    id *id_old = def_node > 0 ? new sr::ssa_id(civ.get_id(), def_node) : civ.get_id();
+    Expr id_old_exp = context.var(id_old->to_string());
+    delete id_old;
 
     struct slice {
       Expr e;
@@ -118,10 +115,9 @@ CVC4::Expr analysis::smt_builder::concat_rhs(id *lhs_id, size_t size, size_t off
       rhs_conc = man.mkExpr(kind::BITVECTOR_CONCAT, exprs);
     };
 
-  if(offset == 0) concat({ slice(id_old_exp, 63, size), slice(rhs, 0, size - 1) });
-  else if(offset + size == 64) concat( { slice(rhs, 63, offset), slice(id_old_exp, offset - 1, 0) });
-  else concat(
-      { slice(id_old_exp, 63, size + offset), slice(rhs, size - 1, 0), slice(id_old_exp, offset - 1, 0) });
+    if(offset == 0) concat( { slice(id_old_exp, 63, size), slice(rhs, size - 1, 0) });
+    else if(offset + size == 64) concat( { slice(rhs, 63, offset), slice(id_old_exp, offset - 1, 0) });
+    else concat( { slice(id_old_exp, 63, size + offset), slice(rhs, size - 1, 0), slice(id_old_exp, offset - 1, 0) });
   }
   return rhs_conc;
 }
@@ -153,24 +149,24 @@ void smt_builder::visit(gdsl::rreil::assign *a) {
   });
 }
 
-CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s,
-    std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_before,
-    std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_after) {
-  this->defs_before = defs_before;
-  this->defs_after = defs_after;
+CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s) {
   s->accept(*this);
   return pop();
 }
 
-CVC4::Expr analysis::smt_builder::build(cfg::phi_assign const *pa,
-    std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_before,
-    std::shared_ptr<analysis::adaptive_rd::adaptive_rd_elem> defs_after) {
-  this->defs_before = defs_before;
-  this->defs_after = defs_after;
+CVC4::Expr analysis::smt_builder::build(cfg::phi_assign const *pa) {
   handle_assign(pa->get_size(), pa->get_lhs(), [&]() {
     pa->get_rhs()->accept(*this);
   });
   return pop();
+}
+
+CVC4::Expr analysis::smt_builder::enforce_aligned(size_t size, CVC4::Expr address) {
+  auto &man = context.get_manager();
+  size_t addr_low_real_sz = log2(size/8);
+  Expr addr_low_real = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(addr_low_real_sz - 1, 0)), address);
+  Expr addr_constr = man.mkExpr(kind::EQUAL, addr_low_real, man.mkConst(BitVector(addr_low_real_sz, (unsigned long int)0)));
+  return addr_constr;
 }
 
 void analysis::smt_builder::visit(gdsl::rreil::load *l) {
@@ -181,17 +177,16 @@ void analysis::smt_builder::visit(gdsl::rreil::load *l) {
   l->get_lhs()->accept(*this);
   Expr lhs = pop();
 
-  Expr memory = context.memory(defs_before->get_memory_rev());
+  Expr memory = context.memory(rd_result.result[from]->get_memory_rev());
 
   auto &man = context.get_manager();
-  Expr higher_addr_bits = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 8)), address);
-  Expr drefed = man.mkExpr(kind::SELECT, memory, higher_addr_bits, address);
+  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
+  Expr drefed = man.mkExpr(kind::SELECT, memory, addr_high);
 
   if(l->get_size() < 64) {
-    Expr lower_addr_bits = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(7, 0)), address);
-    Expr lower_extended = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - 3)),
+    Expr lower_addr_bits = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(2, 0)), address);
+    Expr lower_extended = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - 3 - 3)),
         lower_addr_bits);
-//    Expr lower_bit_addr = man.mkExpr(kind::BITVECTOR_SHL, lower_extended, man.mkConst(BitVector(64, 3)));
     Expr lower_bit_addr = man.mkExpr(kind::BITVECTOR_CONCAT, lower_extended, man.mkConst(BitVector(3, (unsigned long int)0)));
     drefed = man.mkExpr(kind::BITVECTOR_LSHR, drefed, lower_bit_addr);
   } else if(l->get_size() > 64)
@@ -200,7 +195,11 @@ void analysis::smt_builder::visit(gdsl::rreil::load *l) {
   Expr rhs_conc = concat_rhs(l->get_lhs()->get_id(), l->get_size(), l->get_lhs()->get_offset(), drefed);
 
   Expr load = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
-  sub_exprs.push_back(load);
+//  Expr load = man.mkConst(true);
+
+
+  Expr all = l->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(l->get_size(), address), load) : load;
+  sub_exprs.push_back(all);
 }
 
 void analysis::smt_builder::visit(gdsl::rreil::store *s) {
@@ -210,18 +209,46 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
   s->get_rhs()->accept(*this);
   Expr rhs = pop();
 
-  Expr memory_before = context.memory(defs_before->get_memory_rev());
-  Expr memory_after = context.memory(defs_after->get_memory_rev());
+  Expr memory_before = context.memory(rd_result.result[from]->get_memory_rev());
+  Expr memory_after = context.memory(rd_result.result[to]->get_memory_rev());
 
   auto &man = context.get_manager();
-  if(s->get_size() == 64) {
-    //below
-  } else
-    throw 42;
+  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
 
-//  Expr drefed = man.mkExpr(kind::SELECT, memory_before, address);
-  Expr mem_stored = man.mkExpr(kind::STORE, memory_before, address, rhs);
+  Expr mem_new;
+  if(s->get_size() == 64) {
+    mem_new = rhs;
+  } else {
+    Expr lower_addr_bits = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(2, 0)), address);
+    Expr lower_extended = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - 3 - 3)),
+        lower_addr_bits);
+    Expr lower_bit_addr = man.mkExpr(kind::BITVECTOR_CONCAT, lower_extended, man.mkConst(BitVector(3, (unsigned long int)0)));
+
+    Expr mask = man.mkConst(BitVector(64, (unsigned long int)((1 << (s->get_size() - 1)) - 1)));
+    mask = man.mkExpr(kind::BITVECTOR_SHL, mask, lower_bit_addr);
+
+    Expr mem_old = man.mkExpr(kind::SELECT, memory_before, addr_high);
+    Expr mem_old_masked = man.mkExpr(kind::BITVECTOR_AND, mem_old, mask);
+
+//        cout << mem_old_masked << endl;
+//        context.get_smtEngine().checkSat(mem_old_masked);
+//        cout << ":-)";
+
+    Expr rhs_shifted = man.mkExpr(kind::BITVECTOR_SHL, rhs, lower_bit_addr);
+
+    mem_new = man.mkExpr(kind::BITVECTOR_OR, mem_old_masked, rhs_shifted);
+  }
+  Expr mem_stored = man.mkExpr(kind::STORE, memory_before, addr_high, mem_new);
 
   Expr store = man.mkExpr(kind::EQUAL, memory_after, mem_stored);
-  sub_exprs.push_back(store);
+
+  Expr all = s->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(s->get_size(), address), store) : store;
+  sub_exprs.push_back(all);
+}
+
+
+
+void analysis::smt_builder::edge(size_t from, size_t to) {
+  this->from = from;
+  this->to = to;
 }

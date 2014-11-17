@@ -7,13 +7,16 @@
 
 #include <summy/analysis/ismt/cvc_context.h>
 #include <cvc4/cvc4.h>
+#include <string>
+#include <sstream>
 
+using namespace std;
 using namespace CVC4;
 
 analysis::cvc_context::cvc_context() : smtEngine(&manager) {
   smtEngine.setOption("produce-models", SExpr("true"));
 
-  mem_type = manager.mkArrayType(manager.mkBitVectorType(56), manager.mkBitVectorType(64));
+  mem_type = manager.mkArrayType(manager.mkBitVectorType(61), manager.mkBitVectorType(64));
 }
 
 CVC4::Expr analysis::cvc_context::var(std::string name) {
@@ -30,7 +33,9 @@ CVC4::Expr analysis::cvc_context::memory(size_t rev) {
   auto rev_it = mem_map.find(rev);
   if(rev_it != mem_map.end()) return rev_it->second;
   else {
-    Expr mem = manager.mkVar("m_" + rev, mem_type);
+    stringstream name;
+    name << "m_" << rev;
+    Expr mem = manager.mkVar(name.str(), mem_type);
     mem_map[rev] = mem;
     return mem;
   }

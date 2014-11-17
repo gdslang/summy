@@ -21,7 +21,7 @@ using namespace CVC4;
 namespace sr = summy::rreil;
 
 analysis::ismt::ismt(class cfg *cfg, liveness::liveness_result lv_result, adaptive_rd::adaptive_rd_result rd_result) :
-    cfg(cfg), lv_result(lv_result), rd_result(rd_result), smtb(context) {
+    cfg(cfg), lv_result(lv_result), rd_result(rd_result), smtb(context, rd_result) {
 //  smtb = new smt_builder(context);
 }
 
@@ -62,7 +62,14 @@ void analysis::ismt::analyse(size_t from) {
     auto &edges = cfg->in_edges(node->get_id());
     for(auto from = edges.begin(); from != edges.end(); from++) {
       auto _edge = cfg->out_edges(*from)->at(node_id);
+      smtb.edge(*from, node_id);
       expr_acc exp_edge(kind::AND, man);
+
+      auto build = [&](auto stmt) {
+        Expr e = smtb.build(stmt);
+//          cout << *a << ": " << e << endl;
+        exp_edge.add(e);
+      };
 
       auto handle_assignment = [&](auto a) {
         bool live = false;
@@ -76,11 +83,8 @@ void analysis::ismt::analyse(size_t from) {
         });
         a->get_lhs()->accept(srv);
 //          cout << endl;
-        if(live) {
-          Expr e = smtb.build(a, rd_result.result[*from], rd_result.result[node_id]);
-//          cout << *a << ": " << e << endl;
-          exp_edge.add(e);
-        }
+        if(live)
+          build(a);
       };
 
       edge_visitor ev;
@@ -89,6 +93,12 @@ void analysis::ismt::analyse(size_t from) {
         statement_visitor sv;
         sv._([&](assign *ass) {
           handle_assignment(ass);
+        });
+        sv._([&](load *l) {
+          handle_assignment(l);
+        });
+        sv._([&](store *s) {
+          build(s);
         });
         sv._([&](branch *b) {
           vars.insert(b->get_target()->get_lin()->to_string());
@@ -113,6 +123,8 @@ void analysis::ismt::analyse(size_t from) {
     return;
 
   SmtEngine &se = context.get_smtEngine();
+
+  cout << exp_glob.acc << endl;
 
   Result r;
   size_t max = 10;

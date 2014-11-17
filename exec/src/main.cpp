@@ -261,7 +261,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto buffer = elf(g);
+  auto buffer = example(g, 0);
 
   dectran dt(g, false);
   dt.transduce();

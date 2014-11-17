@@ -23,7 +23,7 @@ ssa::ssa(cfg::cfg &cfg) :
 
 void ssa::transduce() {
   fpl.iterate();
-//  cout << l;
+  l.put(cout);
 
   fpr.iterate();
   r.put(cout);

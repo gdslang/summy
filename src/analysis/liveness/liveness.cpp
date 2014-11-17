@@ -53,7 +53,7 @@ bool analysis::liveness::liveness_result::contains(size_t node_id, singleton_t s
 }
 
 void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const ::cfg::edge* e) {
-  constraint_t transfer_f = [=]() {
+  function<shared_ptr<lv_elem>()> transfer_f = [=]() {
     return state[to];
   };
   auto acc_newly_live = [&](int_t size, function<void(visitor&)> accept_live) {
@@ -83,7 +83,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
   };
   auto access = [&](vector<singleton_t> newly_live) {
     transfer_f = [=]() {
-      return shared_ptr<lv_elem>(state[to]->add(newly_live));
+      return shared_ptr<lv_elem>(transfer_f()->add(newly_live));
     };
   };
   edge_visitor ev;
@@ -108,11 +108,13 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
       function<void(visitor&)> accept_live = [&](visitor &v) {
         s->get_address()->get_lin()->accept(v);
       };
-      acc_newly_live(s->get_address()->get_size(), accept_live);
+      auto newly_live = acc_newly_live(s->get_address()->get_size(), accept_live);
+      access(newly_live);
       accept_live = [&](visitor &v) {
         s->get_rhs()->accept(v);
       };
-      acc_newly_live(s->get_size(), accept_live);
+      newly_live = acc_newly_live(s->get_size(), accept_live);
+      access(newly_live);
     });
     v._([&](cbranch *c) {
       auto newly_live = acc_newly_live(1, [&](visitor &v) {
