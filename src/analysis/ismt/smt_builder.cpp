@@ -224,8 +224,9 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
         lower_addr_bits);
     Expr lower_bit_addr = man.mkExpr(kind::BITVECTOR_CONCAT, lower_extended, man.mkConst(BitVector(3, (unsigned long int)0)));
 
-    Expr mask = man.mkConst(BitVector(64, (unsigned long int)((1 << (s->get_size() - 1)) - 1)));
+    Expr mask = man.mkConst(BitVector(64, (unsigned long int)((1 << s->get_size()) - 1)));
     mask = man.mkExpr(kind::BITVECTOR_SHL, mask, lower_bit_addr);
+    mask = man.mkExpr(kind::BITVECTOR_NOT, mask);
 
     Expr mem_old = man.mkExpr(kind::SELECT, memory_before, addr_high);
     Expr mem_old_masked = man.mkExpr(kind::BITVECTOR_AND, mem_old, mask);
