@@ -19,11 +19,11 @@ int main(void) {
 
 	start:
 	asm (
-"movq $0, %rax\n"
-"movq $0, %rbx\n"
+//"movq $0, %rax\n"
+"movq $38813467, %rbx\n"
 //"movw $999, (%rax)\n"
 "movw $999, (%rax)\n"
-"movw (%rax), %bx\n"
+"movb (%rax), %bh\n"
 "jmp %rbx\n");
 	end:;
 
