@@ -113,6 +113,8 @@ void analysis::ismt::analyse(size_t from) {
 
       if(!exp_edge.empty)
         exp_node.add(exp_edge.acc);
+
+      state[*from][node_id] = exp_edge.acc;
     }
 
     if(!exp_node.empty)
@@ -144,4 +146,20 @@ void analysis::ismt::analyse(size_t from) {
       se.assertFormula(man.mkExpr(kind::DISTINCT, v, se.getValue(v)));
     }
   };
+}
+
+void analysis::ismt::dot(std::ostream &stream) {
+  stream << "digraph G {" << endl;
+  for(auto node : *cfg) {
+    stream << "  ";
+    node->dot(stream);
+    stream << endl;
+    auto const &edges = cfg->out_edges(node->get_id());
+    for(auto to = edges->begin(); to != edges->end(); to++) {
+      stream << "  " << node->get_id() << " -> " << to->first << " [label=\"";
+      stream << state[node->get_id()][to->first];
+      stream << "\"];" << endl;
+    }
+  }
+  stream << "}" << endl;
 }

@@ -140,6 +140,7 @@ void analysis::smt_builder::visit(gdsl::rreil::expr_cmp *ec) {
       throw string("Invalid comparison");
     }
   }
+  replace_size(1);
   sub_exprs.push_back(result);
 }
 
@@ -204,7 +205,7 @@ void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable *lh
   Expr rhs = pop();
   lhs_gr->get_id()->accept(*this);
   Expr lhs = pop();
-  pop_size();
+  size = pop_size();
 
 //  int_t ass_size = rreil_prop::size_of_assign(a);
   int_t ass_size = size;
@@ -283,6 +284,7 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
   Expr address = pop();
   s->get_rhs()->accept(*this);
   Expr rhs = pop();
+  size_t size = pop_size();
 
   Expr memory_before = context.memory(rd_result.result[from]->get_memory_rev());
   Expr memory_after = context.memory(rd_result.result[to]->get_memory_rev());
@@ -290,31 +292,33 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
   auto &man = context.get_manager();
   Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
 
+  Expr rhs_ext = size < 64 ? man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - size)), rhs) : rhs;
+
   Expr mem_new;
-  if(s->get_size() == 64) {
-    mem_new = rhs;
-  } else if(s->get_size() < 64) {
+  if(size == 64) {
+    mem_new = rhs_ext;
+  } else if(size < 64) {
     Expr lower_bit_addr = extract_lower_bit_addr(address);
 
-    Expr mask = man.mkConst(BitVector(64, (unsigned long int)((1 << s->get_size()) - 1)));
+    Expr mask = man.mkConst(BitVector(64, (unsigned long int)((1 << size) - 1)));
     mask = man.mkExpr(kind::BITVECTOR_SHL, mask, lower_bit_addr);
     mask = man.mkExpr(kind::BITVECTOR_NOT, mask);
 
     Expr mem_old = man.mkExpr(kind::SELECT, memory_before, addr_high);
     Expr mem_old_masked = man.mkExpr(kind::BITVECTOR_AND, mem_old, mask);
 
-//        cout << mem_old_masked << endl;
-//        context.get_smtEngine().checkSat(mem_old_masked);
-//        cout << ":-)";
-
-    Expr rhs_shifted = man.mkExpr(kind::BITVECTOR_SHL, rhs, lower_bit_addr);
+    Expr rhs_shifted = man.mkExpr(kind::BITVECTOR_SHL, rhs_ext, lower_bit_addr);
     mem_new = man.mkExpr(kind::BITVECTOR_OR, mem_old_masked, rhs_shifted);
   } else throw string("Invalid size");
   Expr mem_stored = man.mkExpr(kind::STORE, memory_before, addr_high, mem_new);
 
   Expr store = man.mkExpr(kind::EQUAL, memory_after, mem_stored);
 
-  Expr all = s->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(s->get_size(), address), store) : store;
+//  cout << store << endl;
+//  context.get_smtEngine().checkSat(store);
+//  cout << ":-)";
+
+  Expr all = size > 8 ? man.mkExpr(kind::AND, enforce_aligned(size, address), store) : store;
   sub_exprs.push_back(all);
 }
 

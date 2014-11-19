@@ -285,6 +285,11 @@ int main(void) {
   for(auto &unres : dt.get_unresolved())
   _ismt.analyse(unres);
 
+  ofstream ismt_fs;
+  ismt_fs.open("ismt.dot", ios::out);
+  _ismt.dot(ismt_fs);
+  ismt_fs.close();
+
 //  cfg.clear_updates();
 
 //  cfg.update_edge(178, ani, foo);
