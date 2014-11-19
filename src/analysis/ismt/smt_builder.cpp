@@ -21,6 +21,29 @@ using namespace analysis;
 using namespace gdsl::rreil;
 namespace sr = summy::rreil;
 
+size_t analysis::smt_builder::current_size() {
+  if(sizes.empty())
+    throw string("Size unknown");
+  return sizes.back();
+}
+
+size_t analysis::smt_builder::pop_size() {
+  if(sizes.empty())
+    throw string("Empty size stack");
+  size_t back = sizes.back();
+  sizes.pop_back();
+  return back;
+}
+
+void analysis::smt_builder::push_size(size_t size) {
+  sizes.push_back(size);
+}
+
+void analysis::smt_builder::replace_size(size_t size) {
+  pop_size();
+  push_size(size);
+}
+
 CVC4::Expr analysis::smt_builder::pop() {
   if(sub_exprs.empty()) throw string(":/");
   Expr r = sub_exprs.back();
@@ -36,10 +59,12 @@ void smt_builder::_default(gdsl::rreil::id *i) {
 
 void analysis::smt_builder::visit(gdsl::rreil::variable *v) {
   v->get_id()->accept(*this);
-  if(v->get_offset() > 0 && rhs) {
+  size_t size = current_size();
+  size_t offset = v->get_offset();
+  if(offset > 0 || size < 64) {
     Expr c = pop();
     auto &man = context.get_manager();
-    sub_exprs.push_back(man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, v->get_offset())), c));
+    sub_exprs.push_back(man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(offset + size - 1, offset)), c));
   }
 }
 
@@ -65,7 +90,7 @@ void analysis::smt_builder::visit(gdsl::rreil::lin_binop *a) {
 
 void analysis::smt_builder::visit(gdsl::rreil::lin_imm *a) {
   auto &man = context.get_manager();
-  Expr imm = man.mkConst(BitVector(64, (unsigned long int)a->get_imm()));
+  Expr imm = man.mkConst(BitVector(current_size(), (unsigned long int)a->get_imm()));
   sub_exprs.push_back(imm);
 }
 
@@ -76,6 +101,52 @@ void analysis::smt_builder::visit(gdsl::rreil::lin_scale *a) {
   Expr opnd = pop();
   Expr r = man.mkExpr(kind::BITVECTOR_MULT, factor_bv, opnd);
   sub_exprs.push_back(r);
+}
+
+void analysis::smt_builder::visit(gdsl::rreil::expr_cmp *ec) {
+  ec->get_opnd1()->accept(*this);
+  Expr opnd1 = pop();
+  ec->get_opnd2()->accept(*this);
+  Expr opnd2 = pop();
+
+  auto &man = context.get_manager();
+  Expr result;
+  switch(ec->get_op()) {
+    case CMP_EQ: {
+      result = man.mkExpr(kind::BITVECTOR_COMP, opnd1, opnd2);
+      break;
+    }
+    case CMP_NEQ: {
+      result = man.mkExpr(kind::BITVECTOR_NOT, man.mkExpr(kind::BITVECTOR_COMP, opnd1, opnd2));
+      break;
+    }
+    case CMP_LES: {
+      result = man.mkExpr(kind::BITVECTOR_SLE, opnd1, opnd2);
+      break;
+    }
+    case CMP_LEU: {
+      result = man.mkExpr(kind::BITVECTOR_ULE, opnd1, opnd2);
+      break;
+    }
+    case CMP_LTS: {
+      result = man.mkExpr(kind::BITVECTOR_SLT, opnd1, opnd2);
+      break;
+    }
+    case CMP_LTU: {
+      result = man.mkExpr(kind::BITVECTOR_ULT, opnd1, opnd2);
+      break;
+    }
+    default: {
+      throw string("Invalid comparison");
+    }
+  }
+  sub_exprs.push_back(result);
+}
+
+void analysis::smt_builder::visit(gdsl::rreil::address *addr) {
+  push_size(addr->get_size());
+  addr->get_lin()->accept(*this);
+  pop_size();
 }
 
 CVC4::Expr analysis::smt_builder::concat_rhs(id *lhs_id, size_t size, size_t offset, Expr rhs) {
@@ -123,14 +194,17 @@ CVC4::Expr analysis::smt_builder::concat_rhs(id *lhs_id, size_t size, size_t off
 }
 
 void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable *lhs_gr, std::function<void()> rhs_accept) {
+  /*
+   * Todo: what if size == 0?
+   */
 //    base::visit(a);
   auto &man = context.get_manager();
-  rhs = true;
+  sizes.push_back(size);
   rhs_accept();
-  rhs = false;
   Expr rhs = pop();
-  lhs_gr->accept(*this);
+  lhs_gr->get_id()->accept(*this);
   Expr lhs = pop();
+  pop_size();
 
 //  int_t ass_size = rreil_prop::size_of_assign(a);
   int_t ass_size = size;
@@ -141,7 +215,6 @@ void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable *lh
   Expr ass = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
   sub_exprs.push_back(ass);
 }
-
 
 void smt_builder::visit(gdsl::rreil::assign *a) {
   handle_assign(rreil_prop::size_of_assign(a), a->get_lhs(), [&]() {
@@ -179,12 +252,12 @@ CVC4::Expr analysis::smt_builder::extract_lower_bit_addr(CVC4::Expr address) {
 }
 
 void analysis::smt_builder::visit(gdsl::rreil::load *l) {
-  rhs = true;
+  push_size(l->get_size());
   l->get_address()->accept(*this);
   Expr address = pop();
-  rhs = false;
-  l->get_lhs()->accept(*this);
+  l->get_lhs()->get_id()->accept(*this);
   Expr lhs = pop();
+  pop_size();
 
   Expr memory = context.memory(rd_result.result[from]->get_memory_rev());
 
@@ -205,7 +278,7 @@ void analysis::smt_builder::visit(gdsl::rreil::load *l) {
 }
 
 void analysis::smt_builder::visit(gdsl::rreil::store *s) {
-  rhs = true;
+  push_size(s->get_size());
   s->get_address()->accept(*this);
   Expr address = pop();
   s->get_rhs()->accept(*this);

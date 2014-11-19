@@ -19,7 +19,7 @@ namespace analysis {
 class smt_builder: private summy::rreil::visitor {
 private:
 //  using base = summy::rreil::visitor;
-  bool rhs = false;
+  std::vector<size_t> sizes;
 
   cvc_context &context;
   adaptive_rd::adaptive_rd_result rd_result;
@@ -28,6 +28,10 @@ private:
 
   std::vector<CVC4::Expr> sub_exprs;
 
+  size_t current_size();
+  size_t pop_size();
+  void push_size(size_t size);
+  void replace_size(size_t size);
   CVC4::Expr pop();
 
   CVC4::Expr concat_rhs(gdsl::rreil::id *lhs_id, size_t size, size_t offset, CVC4::Expr rhs);
@@ -39,6 +43,10 @@ private:
   void visit(gdsl::rreil::lin_binop *a);
   void visit(gdsl::rreil::lin_imm *a);
   void visit(gdsl::rreil::lin_scale *a);
+
+  void visit(gdsl::rreil::expr_cmp *ec);
+
+  void visit(gdsl::rreil::address *addr);
 
   void visit(gdsl::rreil::assign *a);
 

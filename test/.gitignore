@@ -1,7 +1,5 @@
 /build/
-/example_[a-z]
-/example_[a-z][a-z]
-/test
-/test[0-9]
-/test3_mem
-
+/example_*
+!/example_*.c
+/test*
+!/test*.c
