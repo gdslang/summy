@@ -48,6 +48,10 @@ private:
   void visit(gdsl::rreil::lin_scale *a);
 
   void visit(gdsl::rreil::expr_cmp *ec);
+  void visit(gdsl::rreil::arbitrary *ab);
+
+  void visit(gdsl::rreil::expr_binop *eb);
+  void visit(gdsl::rreil::expr_ext *ext);
 
   void visit(gdsl::rreil::address *addr);
 

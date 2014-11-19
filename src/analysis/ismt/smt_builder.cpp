@@ -153,6 +153,101 @@ void analysis::smt_builder::visit(gdsl::rreil::expr_cmp *ec) {
   set_accumulator(result);
 }
 
+void analysis::smt_builder::visit(gdsl::rreil::arbitrary *ab) {
+  /*
+   * Todo: Arbitrary constructor?
+   */
+}
+
+
+void analysis::smt_builder::visit(gdsl::rreil::expr_binop *eb) {
+  eb->get_opnd1()->accept(*this);
+  Expr opnd1 = pop_accumulator();
+  eb->get_opnd2()->accept(*this);
+  Expr opnd2 = pop_accumulator();
+
+  ::CVC4::kind::Kind_t k;
+  switch(eb->get_op()) {
+    case BIN_MUL: {
+      k = kind::BITVECTOR_MULT;
+      break;
+    }
+    case BIN_DIV: {
+      k = kind::BITVECTOR_UDIV;
+      break;
+    }
+    case BIN_DIVS: {
+      k = kind::BITVECTOR_SDIV;
+      break;
+    }
+    case BIN_MOD: {
+      k = kind::BITVECTOR_UREM;
+      break;
+    }
+    case BIN_MODS: {
+      k = kind::BITVECTOR_SREM;
+      break;
+    }
+    case BIN_SHL: {
+      k = kind::BITVECTOR_SHL;
+      break;
+    }
+    case BIN_SHR: {
+      k = kind::BITVECTOR_LSHR;
+      break;
+    }
+    case BIN_SHRS: {
+      k = kind::BITVECTOR_ASHR;
+      break;
+    }
+    case BIN_AND: {
+      k = kind::BITVECTOR_AND;
+      break;
+    }
+    case BIN_OR: {
+      k = kind::BITVECTOR_OR;
+      break;
+    }
+    case BIN_XOR: {
+      k = kind::BITVECTOR_XOR;
+      break;
+    }
+    default: {
+      throw string("Invalid expression");
+    }
+  }
+  auto &man = context.get_manager();
+  Expr result = man.mkExpr(k, opnd1, opnd2);
+  set_accumulator(result);
+}
+
+void analysis::smt_builder::visit(gdsl::rreil::expr_ext *ext) {
+  size_t to_size = current_size();
+  push_size(ext->get_fromsize());
+  ext->get_opnd()->accept(*this);
+  Expr opnd = pop_accumulator();
+  pop_size();
+
+  auto &man = context.get_manager();
+  Expr r;
+  switch(ext->get_op()) {
+    case EXT_ZX: {
+      r = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(to_size - ext->get_fromsize())),
+          opnd);
+      break;
+    }
+    case EXT_SX: {
+      r = man.mkExpr(kind::BITVECTOR_SIGN_EXTEND, man.mkConst(BitVectorSignExtend(to_size - ext->get_fromsize())),
+          opnd);
+      break;
+    }
+    default: {
+      throw string("Invalid extension");
+    }
+  }
+  set_accumulator(r);;
+}
+
 void analysis::smt_builder::visit(gdsl::rreil::address *addr) {
   push_size(addr->get_size());
   addr->get_lin()->accept(*this);
