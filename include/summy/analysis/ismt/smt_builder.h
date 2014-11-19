@@ -43,6 +43,7 @@ private:
   void visit(gdsl::rreil::assign *a);
 
   CVC4::Expr enforce_aligned(size_t size, CVC4::Expr address);
+  CVC4::Expr extract_lower_bit_addr(CVC4::Expr address);
   void visit(gdsl::rreil::load *l);
   void visit(gdsl::rreil::store *s);
 public:

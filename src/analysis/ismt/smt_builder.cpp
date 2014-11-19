@@ -169,6 +169,15 @@ CVC4::Expr analysis::smt_builder::enforce_aligned(size_t size, CVC4::Expr addres
   return addr_constr;
 }
 
+CVC4::Expr analysis::smt_builder::extract_lower_bit_addr(CVC4::Expr address) {
+  auto &man = context.get_manager();
+  Expr lower_addr_bits = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(2, 0)), address);
+  Expr lower_extended = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - 3 - 3)),
+      lower_addr_bits);
+  Expr lower_bit_addr = man.mkExpr(kind::BITVECTOR_CONCAT, lower_extended, man.mkConst(BitVector(3, (unsigned long int)0)));
+  return lower_bit_addr;
+}
+
 void analysis::smt_builder::visit(gdsl::rreil::load *l) {
   rhs = true;
   l->get_address()->accept(*this);
@@ -184,19 +193,12 @@ void analysis::smt_builder::visit(gdsl::rreil::load *l) {
   Expr drefed = man.mkExpr(kind::SELECT, memory, addr_high);
 
   if(l->get_size() < 64) {
-    Expr lower_addr_bits = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(2, 0)), address);
-    Expr lower_extended = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - 3 - 3)),
-        lower_addr_bits);
-    Expr lower_bit_addr = man.mkExpr(kind::BITVECTOR_CONCAT, lower_extended, man.mkConst(BitVector(3, (unsigned long int)0)));
+    Expr lower_bit_addr = extract_lower_bit_addr(address);
     drefed = man.mkExpr(kind::BITVECTOR_LSHR, drefed, lower_bit_addr);
-  } else if(l->get_size() > 64)
-    throw string("Invalid size");
+  } else if(l->get_size() > 64) throw string("Invalid size");
 
   Expr rhs_conc = concat_rhs(l->get_lhs()->get_id(), l->get_size(), l->get_lhs()->get_offset(), drefed);
-
   Expr load = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
-//  Expr load = man.mkConst(true);
-
 
   Expr all = l->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(l->get_size(), address), load) : load;
   sub_exprs.push_back(all);
@@ -218,11 +220,8 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
   Expr mem_new;
   if(s->get_size() == 64) {
     mem_new = rhs;
-  } else {
-    Expr lower_addr_bits = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(2, 0)), address);
-    Expr lower_extended = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - 3 - 3)),
-        lower_addr_bits);
-    Expr lower_bit_addr = man.mkExpr(kind::BITVECTOR_CONCAT, lower_extended, man.mkConst(BitVector(3, (unsigned long int)0)));
+  } else if(s->get_size() < 64) {
+    Expr lower_bit_addr = extract_lower_bit_addr(address);
 
     Expr mask = man.mkConst(BitVector(64, (unsigned long int)((1 << s->get_size()) - 1)));
     mask = man.mkExpr(kind::BITVECTOR_SHL, mask, lower_bit_addr);
@@ -236,9 +235,8 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
 //        cout << ":-)";
 
     Expr rhs_shifted = man.mkExpr(kind::BITVECTOR_SHL, rhs, lower_bit_addr);
-
     mem_new = man.mkExpr(kind::BITVECTOR_OR, mem_old_masked, rhs_shifted);
-  }
+  } else throw string("Invalid size");
   Expr mem_stored = man.mkExpr(kind::STORE, memory_before, addr_high, mem_new);
 
   Expr store = man.mkExpr(kind::EQUAL, memory_after, mem_stored);
@@ -246,8 +244,6 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
   Expr all = s->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(s->get_size(), address), store) : store;
   sub_exprs.push_back(all);
 }
-
-
 
 void analysis::smt_builder::edge(size_t from, size_t to) {
   this->from = from;
