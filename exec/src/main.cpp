@@ -47,13 +47,18 @@ unsigned char *elf(gdsl::gdsl &g) {
     }
   }();
 //  binary_provider::bin_range_t range = elfp.bin_range();
-  binary_provider::data_t data = elfp.get_data();
-  binary_provider::entry_t e;
-  tie(ignore, e) = elfp.entry("main");
+  binary_provider::entry_t dottext = elfp.section(".text");
 
-  unsigned char *buffer = (unsigned char*)malloc(e.offset);
-  memcpy(buffer, data.data + e.offset, e.size);
-  g.set_code(buffer, e.size, e.address);
+  binary_provider::entry_t main;
+  tie(ignore, main) = elfp.entry("main");
+
+  unsigned char *buffer = (unsigned char*)malloc(dottext.size);
+  memcpy(buffer, elfp.get_data().data + dottext.offset, dottext.size);
+  g.set_code(buffer, (main.offset - dottext.offset) + main.size + 1000, dottext.address);
+  if(g.seek(main.address))
+    throw string(":/");
+  cout << g.get_ip() << endl;
+
   return buffer;
 }
 
@@ -261,7 +266,7 @@ int main(void) {
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto buffer = example(g, 0);
+  auto buffer = elf(g);
 
   dectran dt(g, false);
   dt.transduce();
@@ -276,7 +281,6 @@ int main(void) {
 //    return new address_node(id, 7777);
 //  });
 //  cfg.update_edge(ani, 179, new edge());
-//
 
   ssa ssa(cfg);
   ssa.transduce();

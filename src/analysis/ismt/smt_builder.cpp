@@ -149,6 +149,10 @@ void analysis::smt_builder::visit(gdsl::rreil::expr_cmp *ec) {
       throw string("Invalid comparison");
     }
   }
+
+
+  if(result.getType() == man.booleanType()) result = man.mkExpr(kind::ITE, result,
+      man.mkConst(BitVector(1, (unsigned long int)1)), man.mkConst(BitVector(1, (unsigned long int)0)));
   replace_size(1);
   set_accumulator(result);
 }
@@ -274,26 +278,30 @@ CVC4::Expr analysis::smt_builder::concat_rhs(id *lhs_id, size_t size, size_t off
     delete id_old;
 
     struct slice {
-      Expr e;
-      unsigned high;
-      unsigned low;
-      slice(Expr e, unsigned high, unsigned low) :
-          e(e), high(high), low(low) {
+      function<Expr(ExprManager&)> get;
+      slice(Expr e, unsigned high, unsigned low) {
+        get = [&](ExprManager &man) {
+          auto extract_upper = BitVectorExtract(high, low);
+          return man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_upper), e);
+        };
+      }
+      slice(Expr e) {
+        get = [&](ExprManager &man) {
+          return e;
+        };
       }
     };
 
     auto concat = [&](vector<slice> slices) {
       vector<Expr> exprs;
-      for(auto &slice : slices) {
-        auto extract_upper = BitVectorExtract(slice.high, slice.low);
-        exprs.push_back(man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_upper), slice.e));
-      }
+      for(auto &slice : slices)
+        exprs.push_back(slice.get(man));
       rhs_conc = man.mkExpr(kind::BITVECTOR_CONCAT, exprs);
     };
 
-    if(offset == 0) concat( { slice(id_old_exp, 63, size), slice(rhs, size - 1, 0) });
-    else if(offset + size == 64) concat( { slice(rhs, 63, offset), slice(id_old_exp, offset - 1, 0) });
-    else concat( { slice(id_old_exp, 63, size + offset), slice(rhs, size - 1, 0), slice(id_old_exp, offset - 1, 0) });
+    if(offset == 0) concat( { slice(id_old_exp, 63, size), slice(rhs) });
+    else if(offset + size == 64) concat( { slice(rhs), slice(id_old_exp, offset - 1, 0) });
+    else concat( { slice(id_old_exp, 63, size + offset), slice(rhs), slice(id_old_exp, offset - 1, 0) });
   }
   return rhs_conc;
 }
@@ -319,6 +327,11 @@ void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable *lh
 
   Expr ass = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
   set_accumulator(ass);
+
+//    cout << ass << endl;
+////    context.get_smtEngine().checkSat(man.mkExpr(kind::EQUAL, result, result));
+//    context.get_smtEngine().checkSat(ass);
+//    cout << ":-)" << endl;
 }
 
 void smt_builder::visit(gdsl::rreil::assign *a) {
@@ -417,10 +430,6 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
   Expr mem_stored = man.mkExpr(kind::STORE, memory_before, addr_high, mem_new);
 
   Expr store = man.mkExpr(kind::EQUAL, memory_after, mem_stored);
-
-//  cout << store << endl;
-//  context.get_smtEngine().checkSat(store);
-//  cout << ":-)";
 
   Expr all = size > 8 ? man.mkExpr(kind::AND, enforce_aligned(size, address), store) : store;
   set_accumulator(all);

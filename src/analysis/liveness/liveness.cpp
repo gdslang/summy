@@ -36,6 +36,7 @@ namespace sr = summy::rreil;
 static long long unsigned int range(unsigned long long offset, unsigned long long size) {
   if(size + offset > 64 || offset > 64)
     throw string("Such a big size/offset is not yet implemented");
+//    return (long long unsigned)(-1);
   long long unsigned r = (
       size + offset == 64 ? ((unsigned long long)(-1)) : (((unsigned long long)1 << (size + offset)) - 1))
       & ~(((unsigned long long)1 << offset) - 1);
@@ -140,10 +141,10 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
       throw string("Not implemented");
     });
     v._([&](prim *_) {
-      throw string("Not implemented");
+//      throw string("Not implemented");
     });
     v._([&](_throw *_) {
-      throw string("Not implemented");
+//      throw string("Not implemented");
     });
     v._default([&](statement *_) {
       throw string("Should not happen :/");

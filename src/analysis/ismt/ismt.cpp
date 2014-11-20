@@ -132,7 +132,7 @@ void analysis::ismt::analyse(size_t from) {
   size_t max = 10;
   while(--max) {
     r = se.checkSat(exp_glob.acc);
-    cout << exp_glob.acc << " is " << r << endl;
+//    cout << exp_glob.acc << " is " << r << endl;
     if(r.isSat() != Result::SAT)
       break;
 

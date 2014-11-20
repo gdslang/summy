@@ -20,6 +20,7 @@ int main(void) {
 	start:
 	asm (
 "mov $0x0000776655443322, %rax\n"
+//"shl $2, %rax\n"
 "shl $27, %rax\n"
 //"bsf %rbx, %rax\n"
 "jmp %rax\n"
