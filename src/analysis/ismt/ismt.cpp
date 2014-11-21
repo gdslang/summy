@@ -38,7 +38,7 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
     target(Expr exp, edge_id edge) : exp(exp), edge(edge) {
     }
 
-    bool operator <(target &other) const {
+    bool operator <(const target &other) const {
       return edge < other.edge;
     }
   };
@@ -78,7 +78,7 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 
     auto &edges = cfg->in_edges(node->get_id());
     for(auto from = edges.begin(); from != edges.end(); from++) {
-      auto _edge = cfg->out_edges(*from)->at(to_id);
+      auto _edge = cfg->out_edge_payloads(*from)->at(to_id);
       smtb.edge(*from, to_id);
       expr_acc exp_edge(kind::AND, man);
 
@@ -174,7 +174,7 @@ void analysis::ismt::dot(std::ostream &stream) {
     stream << "  ";
     node->dot(stream);
     stream << endl;
-    auto const &edges = cfg->out_edges(node->get_id());
+    auto const &edges = cfg->out_edge_payloads(node->get_id());
     for(auto to = edges->begin(); to != edges->end(); to++) {
       stream << "  " << node->get_id() << " -> " << to->first << " [label=\"";
       stream << state[node->get_id()][to->first];

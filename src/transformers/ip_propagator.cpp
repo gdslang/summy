@@ -45,7 +45,7 @@ std::vector<int_t> *ip_propagator::analyze_ip() {
     if(!(*calculated)[id])
       throw string("Unknown IP value");
     int_t ip_current = (*result)[id];
-    auto &edges = *cfg->out_edges(node->get_id());
+    auto &edges = *cfg->out_edge_payloads(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       edge_visitor ev;
       ev._([&](const stmt_edge *edge) {
@@ -83,7 +83,7 @@ void ip_propagator::transform() {
   auto ips = analyze_ip();
 
   for(auto node : cfg_view) {
-    auto &edges = *cfg->out_edges(node->get_id());
+    auto &edges = *cfg->out_edge_payloads(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       edge_visitor ev;
       ev._([&](const stmt_edge *edge) {

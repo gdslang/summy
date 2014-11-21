@@ -61,7 +61,7 @@ void phi_inserter::transform(std::vector<phi_task> &tasks) {
       return new (class node)(id);
     });
 
-    auto const &from_out_edges = *cfg->out_edges(task.from);
+    auto const &from_out_edges = *cfg->out_edge_payloads(task.from);
     cfg->update_edge(task.from, interm_node_id, from_out_edges.at(task.to));
     cfg->erase_edge(task.from, task.to);
 
@@ -73,7 +73,7 @@ void phi_inserter::transform() {
   vector<phi_task> tasks;
   for(auto node : *cfg) {
     size_t from = node->get_id();
-    auto &edges = *cfg->out_edges(node->get_id());
+    auto &edges = *cfg->out_edge_payloads(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       size_t to = edge_it->first;
       task_from_edge(tasks, from, to);

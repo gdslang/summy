@@ -33,7 +33,7 @@ cfg::bfs_iterator::bfs_iterator(cfg *cfg, bool end) :
 
 cfg::bfs_iterator::bfs_iterator(cfg *cfg) :
     _cfg(cfg), end(false), backwards(false) {
-  for(auto node : cfg->nodes) {
+  for(auto node : cfg->node_payloads) {
     node_visitor nv;
     nv._([&](address_node *sn) {
       components.push(sn->get_id());
@@ -51,7 +51,7 @@ cfg::bfs_iterator::bfs_iterator(cfg *cfg, size_t from, bool backwards) :
 
 cfg::node *cfg::bfs_iterator::operator *() {
   if(end) throw string("No more nodes");
-  return _cfg->nodes[inner_component.front()];
+  return _cfg->node_payloads[inner_component.front()];
 }
 
 cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
@@ -69,7 +69,7 @@ cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
     for(auto &edge : edges)
       handle_edge(edge);
   } else {
-    auto &edges = *_cfg->out_edges(next);
+    auto &edges = *_cfg->out_edge_payloads(next);
     for(auto &edge : edges)
       handle_edge(edge.first);
   }

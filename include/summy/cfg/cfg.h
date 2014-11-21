@@ -30,6 +30,18 @@ enum update_kind {
   INSERT, ERASE, UPDATE
 };
 
+/*
+ * Todo: Replace tuples with this struct
+ */
+struct edge_id {
+  size_t from;
+  size_t to;
+
+  edge_id(size_t from, size_t to) : from(from), to(to) {
+  }
+  bool operator <(const edge_id &other) const;
+};
+
 struct update {
   update_kind kind;
   size_t from;
@@ -47,7 +59,7 @@ public:
   ~update_pop();
 };
 
-typedef std::map<size_t, edge const*> edges_t;
+typedef std::map<size_t, edge const*> edge_payloads_t;
 typedef std::set<size_t> in_edges_t;
 typedef std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> translated_program_t;
 
@@ -55,8 +67,8 @@ class cfg {
   friend class bfs_iterator;
   friend struct update_pop;
 private:
-  std::vector<node*> nodes;
-  std::vector<edges_t*> edges;
+  std::vector<node*> node_payloads;
+  std::vector<edge_payloads_t*> edge_payloads;
   std::vector<in_edges_t> _in_edges;
 
   std::stack<std::vector<update>> updates_stack;
@@ -75,11 +87,11 @@ public:
   size_t node_count();
   bool contains(size_t node);
   bool contains_edge(size_t from, size_t to);
-  node *get_node(size_t id);
+  node *get_node_payload(size_t id);
 
   size_t create_node(std::function<class node*(size_t)> constr);
 
-  edges_t const* out_edges(size_t id);
+  edge_payloads_t const* out_edge_payloads(size_t id);
   in_edges_t const& in_edges(size_t id);
   void update_edge(size_t from, size_t to, const edge *edge);
   void update_destroy_edge(size_t from, size_t to, const edge *edge);

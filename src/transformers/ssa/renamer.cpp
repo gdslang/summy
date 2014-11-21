@@ -142,7 +142,7 @@ void renamer::transform() {
   vector<update_task> tasks;
   for(auto node : *cfg) {
     size_t from = node->get_id();
-    auto &edges = *cfg->out_edges(node->get_id());
+    auto &edges = *cfg->out_edge_payloads(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       size_t to = edge_it->first;
       task_from_edge(tasks, from, to, edge_it->second);
@@ -157,7 +157,7 @@ void renamer::update(std::set<std::tuple<size_t, size_t>> &updates) {
     size_t from;
     size_t to;
     tie(from, to) = update;
-    if(cfg->contains_edge(from, to)) task_from_edge(tasks, from, to, cfg->out_edges(from)->at(to));
+    if(cfg->contains_edge(from, to)) task_from_edge(tasks, from, to, cfg->out_edge_payloads(from)->at(to));
   }
   transform(tasks);
 }

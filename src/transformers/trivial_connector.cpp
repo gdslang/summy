@@ -43,7 +43,7 @@ void trivial_connector::transform() {
    * Collect branch sites to be replaced
    */
   for(auto node : cfg_view) {
-    auto &edges = *cfg->out_edges(node->get_id());
+    auto &edges = *cfg->out_edge_payloads(node->get_id());
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       bool replace = false;
       edge_visitor ev;

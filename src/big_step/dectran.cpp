@@ -111,7 +111,7 @@ void dectran::notify(const std::vector<cfg::update> &updates) {
           }
         }
       });
-      cfg.get_node(update.to)->accept(nv);
+      cfg.get_node_payload(update.to)->accept(nv);
     }
   }
 }
