@@ -15,6 +15,7 @@
 #include <set>
 
 using namespace std;
+using namespace analysis;
 using namespace cfg;
 using namespace gdsl::rreil;
 using namespace CVC4;
@@ -29,8 +30,24 @@ analysis::ismt::~ismt() {
 //  delete smtb;
 }
 
-void analysis::ismt::analyse(size_t from) {
-  set<string> vars;
+ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
+  struct target {
+    Expr exp;
+    edge_id edge;
+
+    target(Expr exp, edge_id edge) : exp(exp), edge(edge) {
+    }
+
+    bool operator <(target &other) const {
+      return edge < other.edge;
+    }
+  };
+
+//  auto target_comp = [](const target &a, const target &b) -> bool {
+//    return a.edge < b.edge;
+//  };
+//  set<target, decltype(target_comp)> targets(target_comp);
+  set<target> targets;
 
   ExprManager &man = context.get_manager();
 
@@ -56,13 +73,13 @@ void analysis::ismt::analyse(size_t from) {
 
   cfg_view cv(cfg, from, true);
   for(auto node : cv) {
-    size_t node_id = node->get_id();
+    size_t to_id = node->get_id();
     expr_acc exp_node(kind::OR, man);
 
     auto &edges = cfg->in_edges(node->get_id());
     for(auto from = edges.begin(); from != edges.end(); from++) {
-      auto _edge = cfg->out_edges(*from)->at(node_id);
-      smtb.edge(*from, node_id);
+      auto _edge = cfg->out_edges(*from)->at(to_id);
+      smtb.edge(*from, to_id);
       expr_acc exp_edge(kind::AND, man);
 
       auto build = [&](auto stmt) {
@@ -78,7 +95,7 @@ void analysis::ismt::analyse(size_t from) {
         srv._default([&](id *_id) {
 //            cout << *_id << ", ";
           shared_ptr<id> lhs_id_wrapped(_id, [&](void *x) {});
-          if(lv_result.contains(node_id, lhs_id_wrapped, 0, 64))
+          if(lv_result.contains(to_id, lhs_id_wrapped, 0, 64))
             live = true;
         });
         a->get_lhs()->accept(srv);
@@ -101,7 +118,7 @@ void analysis::ismt::analyse(size_t from) {
           build(s);
         });
         sv._([&](branch *b) {
-          vars.insert(b->get_target()->get_lin()->to_string());
+          targets.insert(target(smtb.build(b->get_target()), edge_id(*from, to_id)));
         });
         stmt->accept(sv);
       });
@@ -114,15 +131,16 @@ void analysis::ismt::analyse(size_t from) {
       if(!exp_edge.empty)
         exp_node.add(exp_edge.acc);
 
-      state[*from][node_id] = exp_edge.acc;
+      state[*from][to_id] = exp_edge.acc;
     }
 
     if(!exp_node.empty)
       exp_glob.add(exp_node.acc);
   }
 
+  ismt_edge_ass_t assignments;
   if(exp_glob.empty)
-    return;
+    return assignments;
 
   SmtEngine &se = context.get_smtEngine();
 
@@ -136,16 +154,18 @@ void analysis::ismt::analyse(size_t from) {
     if(r.isSat() != Result::SAT)
       break;
 
-    for(auto var : vars) {
-      Expr var_exp = context.var(var);
+    for(auto target : targets) {
+      Expr var_exp = target.exp;
       Expr unpack = man.mkExpr(kind::BITVECTOR_TO_NAT, var_exp);
       cout << "\e[1m\e[31m" << var_exp << " := " << se.getValue(unpack) << "\e[0m" << endl;
     }
-    for(auto var : vars) {
-      Expr v = context.var(var);
+    for(auto target : targets) {
+      Expr v = target.exp;
       se.assertFormula(man.mkExpr(kind::DISTINCT, v, se.getValue(v)));
     }
   };
+
+  return assignments;
 }
 
 void analysis::ismt::dot(std::ostream &stream) {

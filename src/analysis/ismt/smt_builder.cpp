@@ -340,18 +340,6 @@ void smt_builder::visit(gdsl::rreil::assign *a) {
   });
 }
 
-CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s) {
-  s->accept(*this);
-  return pop_accumulator();
-}
-
-CVC4::Expr analysis::smt_builder::build(cfg::phi_assign const *pa) {
-  handle_assign(pa->get_size(), pa->get_lhs(), [&]() {
-    pa->get_rhs()->accept(*this);
-  });
-  return pop_accumulator();
-}
-
 CVC4::Expr analysis::smt_builder::enforce_aligned(size_t size, CVC4::Expr address) {
   auto &man = context.get_manager();
   size_t addr_low_real_sz = log2(size/8);
@@ -433,6 +421,23 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
 
   Expr all = size > 8 ? man.mkExpr(kind::AND, enforce_aligned(size, address), store) : store;
   set_accumulator(all);
+}
+
+CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s) {
+  s->accept(*this);
+  return pop_accumulator();
+}
+
+CVC4::Expr analysis::smt_builder::build(gdsl::rreil::address *addr) {
+  addr->accept(*this);
+  return pop_accumulator();
+}
+
+CVC4::Expr analysis::smt_builder::build(cfg::phi_assign const *pa) {
+  handle_assign(pa->get_size(), pa->get_lhs(), [&]() {
+    pa->get_rhs()->accept(*this);
+  });
+  return pop_accumulator();
 }
 
 void analysis::smt_builder::edge(size_t from, size_t to) {

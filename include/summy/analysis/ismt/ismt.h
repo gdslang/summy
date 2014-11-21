@@ -12,9 +12,12 @@
 #include <summy/cfg/cfg.h>
 #include <iosfwd>
 #include <map>
+#include <set>
 #include <cvc4/cvc4.h>
 
 namespace analysis {
+
+typedef std::map<cfg::edge_id, std::set<size_t>> ismt_edge_ass_t;
 
 class ismt {
 private:
@@ -28,7 +31,7 @@ private:
 public:
   ismt(cfg::cfg *cfg, liveness::liveness_result lv_result, adaptive_rd::adaptive_rd_result rd_result);
   ~ismt();
-  void analyse(size_t from);
+  ismt_edge_ass_t analyse(size_t from);
   void dot(std::ostream &stream);
 };
 
