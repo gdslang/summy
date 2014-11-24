@@ -24,6 +24,11 @@ bool cfg::edge_id::operator <(const edge_id &other) const {
   return to < other.to;
 }
 
+std::ostream &cfg::operator <<(std::ostream &out, const edge_id &_this) {
+  out << "(" << _this.from << " -> " << _this.to << ")";
+  return out;
+}
+
 cfg::update_pop::update_pop(class cfg &cfg) : cfg(cfg) {
 }
 
@@ -300,5 +305,3 @@ cfg::bfs_iterator cfg::cfg_view::begin() {
 cfg::bfs_iterator cfg::cfg_view::end() {
   return cfg->end();
 }
-
-

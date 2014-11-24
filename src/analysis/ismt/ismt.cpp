@@ -158,6 +158,8 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       Expr var_exp = target.exp;
       Expr unpack = man.mkExpr(kind::BITVECTOR_TO_NAT, var_exp);
       cout << "\e[1m\e[31m" << var_exp << " := " << se.getValue(unpack) << "\e[0m" << endl;
+
+      assignments[target.edge].insert(stoull(se.getValue(unpack).toString()));
     }
     for(auto target : targets) {
       Expr v = target.exp;

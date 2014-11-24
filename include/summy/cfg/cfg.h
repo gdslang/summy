@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <iosfwd>
+#include <iostream>
 #include <vector>
 #include <map>
 #include <set>
@@ -41,6 +41,7 @@ struct edge_id {
   }
   bool operator <(const edge_id &other) const;
 };
+std::ostream &operator<<(std::ostream &out, const edge_id &_this);
 
 struct update {
   update_kind kind;

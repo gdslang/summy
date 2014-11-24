@@ -5,7 +5,7 @@
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <bjutil/binary/elf_provider.h>
-
+#include <bjutil/print.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -16,6 +16,7 @@
 #include <tuple>
 #include <iostream>
 #include <fstream>
+#include <functional>
 
 #include <cvc4/expr/expr.h>
 #include <cvc4/expr/expr_manager.h>
@@ -28,7 +29,6 @@
 
 using analysis::adaptive_rd::adaptive_rd;
 using analysis::fixpoint;
-using analysis::ismt;
 using analysis::liveness::liveness;
 using cfg::address_node;
 using cfg::edge;
@@ -36,6 +36,7 @@ using cfg::edge;
 using namespace gdsl::rreil;
 using namespace std;
 using namespace CVC4;
+using namespace analysis;
 
 unsigned char *elf(gdsl::gdsl &g) {
   elf_provider elfp = [&]() {
@@ -88,6 +89,21 @@ unsigned char *example(gdsl::gdsl &g, uint64_t ip) {
   g.set_code(buffer, buffer_length, ip);
   return buffer;
 }
+
+//template<typename X>
+//printer<map<X, X>, X> blah(map<X, X> fuucppmap) {
+//  auto pp = [](const X &a) {
+//    return string("a");
+//  };
+//
+//  return printer<map<X, X>, X>(fuucppmap, make_tuple(pp, pp));
+//}
+
+//template<typename X, typename Y, typename... T>
+//printer<map<X, Y>, X, Y> blah(map<X, Y> fuucppmap, T... p) {
+//  return printer<map<X, Y>, X, Y>(fuucppmap, p...);
+//}
+
 
 int main(void) {
 //  ExprManager em;
@@ -286,8 +302,56 @@ int main(void) {
   ssa.transduce();
 
   ismt _ismt(&cfg, ssa.lv_result(), ssa.rd_result());
-  for(auto &unres : dt.get_unresolved())
-  _ismt.analyse(unres);
+  for(auto &unres : dt.get_unresolved()) {
+    ismt_edge_ass_t asses = _ismt.analyse(unres);
+
+    /*
+     * Todo: printable-Oberklasse, die automatisch string erzeugt aus Argument
+     */
+
+    function<std::string(const cfg::edge_id &ass)> edge_id_printer = [](const cfg::edge_id &eid) {
+      stringstream ss;
+      ss << eid;
+      return ss.str();
+    };
+    function<std::string(const set<size_t> &ass)> ass_printer = [](const set<size_t> &ass) {
+      stringstream ss;
+      ss << print(ass);
+      return ss.str();
+    };
+
+    cout << print(asses, edge_id_printer, ass_printer) << endl;
+  }
+
+  std::map<size_t, size_t> fuucppmap;
+  fuucppmap[32] = 99;
+
+  function<string(const size_t&)> pp = [](const size_t &a) -> string {
+    return string("a");
+  };
+
+//  cout << blah(fuucppmap, make_tuple(pp, pp)) << endl;
+  cout << print(fuucppmap) << endl;
+
+//  cout << printer(fuucppmap, make_tuple(pp, pp)) << endl;
+
+//  struct target {
+//    int x;
+//
+//    target(int x) : x(x) {
+//    }
+//
+//    bool operator <(const target &other) const {
+//      return x < other.x;
+//    }
+//  };
+//  set<target> fuu;
+//  fuu.insert(target(1));
+//  fuu.insert(target(42));
+//  auto x = set_p<target>(fuu, [](const target &blah) {
+//    return string(":-)");
+//  });
+//  cout << ": " << x << endl;
 
   ofstream ismt_fs;
   ismt_fs.open("ismt.dot", ios::out);
