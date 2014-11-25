@@ -310,17 +310,13 @@ int main(void) {
      */
 
     function<std::string(const cfg::edge_id &ass)> edge_id_printer = [](const cfg::edge_id &eid) {
-      stringstream ss;
-      ss << eid;
-      return ss.str();
+      return stream(eid)();
     };
     function<std::string(const set<size_t> &ass)> ass_printer = [](const set<size_t> &ass) {
-      stringstream ss;
-      ss << print(ass);
-      return ss.str();
+      return stream(print(ass))();
     };
 
-    cout << print(asses, edge_id_printer, ass_printer) << endl;
+    cout << print(asses, stream<cfg::edge_id>(), ass_printer) << endl;
   }
 
   std::map<size_t, size_t> fuucppmap;
