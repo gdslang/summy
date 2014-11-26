@@ -8,7 +8,6 @@
 #pragma once
 
 #include "transformer.h"
-
 #include <map>
 extern "C" {
 #include <gdsl_generic.h>

@@ -5,7 +5,7 @@
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <bjutil/binary/elf_provider.h>
-#include <bjutil/print.h>
+#include <bjutil/printer.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -291,80 +291,21 @@ int main(void) {
   auto &cfg = dt.get_cfg();
   cfg.commit_updates();
 
-//  auto foo = cfg.out_edges(178)->at(179);
-//  cfg.erase_edge(178, 179);
-//  auto ani = cfg.create_node([&](size_t id) {
-//    return new address_node(id, 7777);
-//  });
-//  cfg.update_edge(ani, 179, new edge());
-
   ssa ssa(cfg);
   ssa.transduce();
 
   ismt _ismt(&cfg, ssa.lv_result(), ssa.rd_result());
+
   for(auto &unres : dt.get_unresolved()) {
     ismt_edge_ass_t asses = _ismt.analyse(unres);
 
-    /*
-     * Todo: printable-Oberklasse, die automatisch string erzeugt aus Argument
-     */
-
-    function<std::string(const cfg::edge_id &ass)> edge_id_printer = [](const cfg::edge_id &eid) {
-      return stream(eid)();
-    };
-    function<std::string(const set<size_t> &ass)> ass_printer = [](const set<size_t> &ass) {
-      return stream(print(ass))();
-    };
-
-    cout << print(asses, stream<cfg::edge_id>(), ass_printer) << endl;
+    cout << print(asses, stream<cfg::edge_id>(), stream_printer<set<size_t>>()) << endl;
   }
-
-  std::map<size_t, size_t> fuucppmap;
-  fuucppmap[32] = 99;
-
-  function<string(const size_t&)> pp = [](const size_t &a) -> string {
-    return string("a");
-  };
-
-//  cout << blah(fuucppmap, make_tuple(pp, pp)) << endl;
-  cout << print(fuucppmap) << endl;
-
-//  cout << printer(fuucppmap, make_tuple(pp, pp)) << endl;
-
-//  struct target {
-//    int x;
-//
-//    target(int x) : x(x) {
-//    }
-//
-//    bool operator <(const target &other) const {
-//      return x < other.x;
-//    }
-//  };
-//  set<target> fuu;
-//  fuu.insert(target(1));
-//  fuu.insert(target(42));
-//  auto x = set_p<target>(fuu, [](const target &blah) {
-//    return string(":-)");
-//  });
-//  cout << ": " << x << endl;
 
   ofstream ismt_fs;
   ismt_fs.open("ismt.dot", ios::out);
   _ismt.dot(ismt_fs);
   ismt_fs.close();
-
-//  cfg.clear_updates();
-
-//  cfg.update_edge(178, ani, foo);
-//  cfg.commit_updates();
-
-//  ofstream dot_fsb;
-//  dot_fsb.open("output_before.dot", ios::out);
-//  cfg.dot(dot_fsb);
-//  dot_fsb.close();
-//
-//  cfg.commit_updates();
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
