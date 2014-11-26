@@ -21,6 +21,8 @@ private:
   trivial_connector tc;
   bool blockwise_optimized;
 
+  std::set<size_t> unresolved;
+
   cfg::translated_program_t decode_translate(bool decode_multiple);
   void initial_cfg(cfg::cfg &cfg, bool decode_multiple);
 public:
@@ -31,7 +33,11 @@ public:
   }
 
   std::set<size_t> const& get_unresolved() {
-    return tc.get_unresolved();
+    return unresolved;
+  }
+
+  void resolve(size_t resolved) {
+    unresolved.erase(resolved);
   }
 
   /*

@@ -24,7 +24,7 @@ private:
   CVC4::ArrayType mem_type;
   memory_map_t mem_map;
 public:
-  cvc_context();
+  cvc_context(bool unsat_cores);
 
   CVC4::ExprManager &get_manager() {
     return manager;

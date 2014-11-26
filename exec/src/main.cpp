@@ -25,6 +25,7 @@
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/ismt/ismt.h>
 #include <summy/analysis/liveness/liveness.h>
+#include <summy/transformers/resolved_connector.h>
 #include <cstdio>
 
 using analysis::adaptive_rd::adaptive_rd;
@@ -106,7 +107,7 @@ unsigned char *example(gdsl::gdsl &g, uint64_t ip) {
 
 
 int main(void) {
-//  ExprManager em;
+  ExprManager em;
 //  Expr a = em.mkVar("a", em.booleanType());
 
 //  Expr Q = em.mkExpr(kind::)
@@ -145,16 +146,30 @@ int main(void) {
 
 //  Expr sel_arr2_2 = em.mkExpr(kind::SELECT, m1, em.mkConst(Rational(0)));
 
-//  Datatype root("root");
-//
-//  DatatypeConstructor A("A");
-//  A.addArg("param", em.booleanType());
-//  root.addConstructor(A);
-//
-//  DatatypeConstructor B("B");
-//  root.addConstructor(B);
-//
-//  cout << root << endl;
+  Datatype value_type("value");
+
+  DatatypeConstructor val_ctor("VAL");
+  val_ctor.addArg("value", em.mkBitVectorType(64));
+  value_type.addConstructor(val_ctor);
+
+  DatatypeConstructor undef_ctor("UNDEF");
+  value_type.addConstructor(undef_ctor);
+
+  cout << value_type << endl;
+
+  Expr var = em.mkBoundVar("a", em.integerType());
+  Expr varList = em.mkExpr(kind::BOUND_VAR_LIST, var);
+  Expr body = em.mkExpr(kind::PLUS, var, em.mkConst(Rational(3)));
+  Expr _f = em.mkExpr(kind::LAMBDA, varList, body);
+
+  Expr application = em.mkExpr(kind::APPLY, _f, em.mkConst(Rational(5)));
+
+  Expr comp = em.mkVar("comp", em.integerType());
+
+  Expr r = em.mkExpr(kind::EQUAL, application, comp);
+
+  cout << r << endl;
+
 //  DatatypeType rootType = em.mkDatatypeType(root);
 //  cout << rootType << endl;
 //
@@ -238,14 +253,14 @@ int main(void) {
 //  r = em.mkExpr(kind::AND, r, a_dis_c);
 //  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(100)), em.mkExpr(kind::PLUS, x, y)));
 ////  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(60)), em.mkExpr(kind::MINUS, x, y)));
-//  SmtEngine smt(&em);
+  SmtEngine smt(&em);
 
-////  smt.setOption("check-models", SExpr("true"));
-//  smt.setOption("produce-models", SExpr("true"));
-////  smt.setOption("produce-assignments", SExpr("true"));
+//  smt.setOption("check-models", SExpr("true"));
+  smt.setOption("produce-models", SExpr("true"));
+//  smt.setOption("produce-assignments", SExpr("true"));
 //
 ////  std::cout << x << " is " << smt.query(x) << std::endl;
-//  std::cout << r << " is " << smt.checkSat(r) << std::endl;
+  std::cout << r << " is " << smt.checkSat(r) << std::endl;
 ////  for(auto blah : smt.getAssertions())
 ////    cout << blah << endl;
 ////  smt.getProof()->toStream(cout);
@@ -254,7 +269,7 @@ int main(void) {
 
 //  cout << m0 << " := " << smt.getValue(m0) << endl;
 //  cout << m1 << " := " << smt.getValue(m1) << endl;
-//  cout << sel_arr2_2 << " := " << smt.getValue(sel_arr2_2) << endl;
+  cout << comp << " := " << smt.getValue(comp) << endl;
 //  cout << "a := " << smt.getValue(a) << endl;
 //  cout << "b := " << smt.getValue(b) << endl;
 //  cout << "c := " << smt.getValue(c) << endl;
@@ -278,6 +293,7 @@ int main(void) {
 //  cout << "a := " << smt.getValue(a) << endl;
 //  cout << "b := " << smt.getValue(b) << endl;
 //  cout << "c := " << smt.getValue(c) << endl;
+  exit(0);
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
@@ -289,23 +305,47 @@ int main(void) {
   dt.register_();
 
   auto &cfg = dt.get_cfg();
-  cfg.commit_updates();
 
-  ssa ssa(cfg);
-  ssa.transduce();
+  for(int i = 0; i < 4; i++) {
+    cfg.commit_updates();
 
-  ismt _ismt(&cfg, ssa.lv_result(), ssa.rd_result());
+    ssa ssa(cfg);
+    ssa.transduce();
 
-  for(auto &unres : dt.get_unresolved()) {
-    ismt_edge_ass_t asses = _ismt.analyse(unres);
+//    if(i > 0)
+//      break;
+
+    ismt _ismt(&cfg, ssa.lv_result(), ssa.rd_result());
+
+    edge_ass_t asses;
+
+    for(auto &unres : dt.get_unresolved()) {
+      ismt_edge_ass_t asses_loc = _ismt.analyse(unres);
+
+      for(auto &mapping : asses_loc) {
+        auto asses_it = asses.find(mapping.first);
+        if(asses_it == asses.end()) asses[mapping.first] = mapping.second;
+        else {
+          set_union(asses_it->second.begin(), asses_it->second.end(), mapping.second.begin(), mapping.second.end(),
+              inserter(asses_it->second, asses_it->second.end()));
+        }
+      }
+    }
+
+    for(auto &ass : asses)
+      dt.resolve(ass.first.to);
 
     cout << print(asses, stream<cfg::edge_id>(), stream_printer<set<size_t>>()) << endl;
+
+    ofstream ismt_fs;
+    ismt_fs.open("ismt.dot", ios::out);
+    _ismt.dot(ismt_fs);
+    ismt_fs.close();
+
+    resolved_connector rc(&cfg, asses);
+    rc.transform();
   }
 
-  ofstream ismt_fs;
-  ismt_fs.open("ismt.dot", ios::out);
-  _ismt.dot(ismt_fs);
-  ismt_fs.close();
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);

@@ -13,8 +13,13 @@
 using namespace std;
 using namespace CVC4;
 
-analysis::cvc_context::cvc_context() : smtEngine(&manager) {
+analysis::cvc_context::cvc_context(bool unsat_cores) : smtEngine(&manager) {
   smtEngine.setOption("produce-models", SExpr("true"));
+  smtEngine.setOption("incremental", SExpr("true"));
+  if(unsat_cores) {
+    smtEngine.setOption("produce-unsat-cores", SExpr("true"));
+//    smtEngine.setOption("tear-down-incremental", SExpr("true"));
+  }
 
   mem_type = manager.mkArrayType(manager.mkBitVectorType(61), manager.mkBitVectorType(64));
 }

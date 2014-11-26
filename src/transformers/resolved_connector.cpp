@@ -30,8 +30,8 @@ void resolved_connector::transform() {
 
       auto ip_assign = new assign(64, new variable(new arch_id("IP"), 0),
           new expr_sexpr(new sexpr_lin(new lin_imm(addr))));
-
       cfg->update_edge(eid.from, new_addr_node, new stmt_edge(ip_assign));
+      delete ip_assign;
     }
   }
 }

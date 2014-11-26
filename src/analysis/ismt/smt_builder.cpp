@@ -161,6 +161,9 @@ void analysis::smt_builder::visit(gdsl::rreil::arbitrary *ab) {
   /*
    * Todo: Arbitrary constructor?
    */
+  auto &man = context.get_manager();
+  Expr i_exp = man.mkVar("arbitrary", man.mkBitVectorType(current_size()));
+  set_accumulator(i_exp);
 }
 
 
@@ -342,9 +345,10 @@ void smt_builder::visit(gdsl::rreil::assign *a) {
 
 CVC4::Expr analysis::smt_builder::enforce_aligned(size_t size, CVC4::Expr address) {
   auto &man = context.get_manager();
-  size_t addr_low_real_sz = log2(size/8);
-  Expr addr_low_real = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(addr_low_real_sz - 1, 0)), address);
-  Expr addr_constr = man.mkExpr(kind::EQUAL, addr_low_real, man.mkConst(BitVector(addr_low_real_sz, (unsigned long int)0)));
+//  size_t addr_low_real_sz = log2(size/8);
+//  Expr addr_low_real = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(addr_low_real_sz - 1, 0)), address);
+//  Expr addr_constr = man.mkExpr(kind::EQUAL, addr_low_real, man.mkConst(BitVector(addr_low_real_sz, (unsigned long int)0)));
+  Expr addr_constr = man.mkConst(true);
   return addr_constr;
 }
 

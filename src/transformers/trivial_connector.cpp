@@ -34,7 +34,10 @@ void trivial_connector::update_address_node_map() {
   }
 }
 
-void trivial_connector::transform() {
+
+std::set<size_t> trivial_connector::transform_ur() {
+  std::set<size_t> unresolved;
+
   update_address_node_map();
   queue<tuple<size_t, int_t>> branches;
   queue<tuple<size_t, sexpr*, bool, address*>> cond_branches;
@@ -169,4 +172,10 @@ void trivial_connector::transform() {
     delete cond;
     delete addr;
   }
+
+  return unresolved;
+}
+
+void trivial_connector::transform() {
+  transform_ur();
 }

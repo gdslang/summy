@@ -107,7 +107,8 @@ void dectran::notify(const std::vector<cfg::update> &updates) {
              * From now on, 'an' is freed
              */
             tc.set_root(an_id);
-            tc.transform();
+            auto unres_new = tc.transform_ur();
+            unresolved.insert(unres_new.begin(), unres_new.end());
           }
         }
       });

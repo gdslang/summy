@@ -22,7 +22,7 @@ using namespace CVC4;
 namespace sr = summy::rreil;
 
 analysis::ismt::ismt(class cfg *cfg, liveness::liveness_result lv_result, adaptive_rd::adaptive_rd_result rd_result) :
-    cfg(cfg), lv_result(lv_result), rd_result(rd_result), smtb(context, rd_result) {
+    cfg(cfg), lv_result(lv_result), rd_result(rd_result), context(false), smtb(context, rd_result) {
 //  smtb = new smt_builder(context);
 }
 
@@ -68,6 +68,8 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       }
     }
   };
+
+  cout << "from: " << from << endl;
 
   expr_acc exp_glob(kind::AND, man);
 
@@ -134,6 +136,9 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       state[*from][to_id] = exp_edge.acc;
     }
 
+//    if(from == 223 && to_id == 28)
+//      break;
+
     if(!exp_node.empty)
       exp_glob.add(exp_node.acc);
   }
@@ -151,8 +156,10 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
   while(--max) {
     r = se.checkSat(exp_glob.acc);
 //    cout << exp_glob.acc << " is " << r << endl;
-    if(r.isSat() != Result::SAT)
+    if(r.isSat() != Result::SAT) {
+//      cout << "Unsat core: " << se.getUnsatCore() << endl;
       break;
+    }
 
     for(auto target : targets) {
       Expr var_exp = target.exp;
@@ -166,6 +173,9 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       se.assertFormula(man.mkExpr(kind::DISTINCT, v, se.getValue(v)));
     }
   };
+
+  if(!max)
+    return ismt_edge_ass_t();
 
   return assignments;
 }

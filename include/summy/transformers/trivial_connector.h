@@ -18,14 +18,11 @@ public:
   typedef std::map<int_t, size_t> address_node_map_t;
 private:
   trivial_connector::address_node_map_t address_node_map;
-  std::set<size_t> unresolved;
+
   void update_address_node_map();
 public:
   using transformer::transformer;
 
-  std::set<size_t> const& get_unresolved() {
-    return unresolved;
-  }
-
+  std::set<size_t> transform_ur();
   virtual void transform();
 };
