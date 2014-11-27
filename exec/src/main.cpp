@@ -107,7 +107,7 @@ unsigned char *example(gdsl::gdsl &g, uint64_t ip) {
 
 
 int main(void) {
-  ExprManager em;
+//  ExprManager em;
 //  Expr a = em.mkVar("a", em.booleanType());
 
 //  Expr Q = em.mkExpr(kind::)
@@ -146,29 +146,29 @@ int main(void) {
 
 //  Expr sel_arr2_2 = em.mkExpr(kind::SELECT, m1, em.mkConst(Rational(0)));
 
-  Datatype value_type("value");
+//  Datatype value_type("value");
+//
+//  DatatypeConstructor val_ctor("VAL");
+//  val_ctor.addArg("value", em.mkBitVectorType(64));
+//  value_type.addConstructor(val_ctor);
+//
+//  DatatypeConstructor undef_ctor("UNDEF");
+//  value_type.addConstructor(undef_ctor);
+//
+//  cout << value_type << endl;
 
-  DatatypeConstructor val_ctor("VAL");
-  val_ctor.addArg("value", em.mkBitVectorType(64));
-  value_type.addConstructor(val_ctor);
-
-  DatatypeConstructor undef_ctor("UNDEF");
-  value_type.addConstructor(undef_ctor);
-
-  cout << value_type << endl;
-
-  Expr var = em.mkBoundVar("a", em.integerType());
-  Expr varList = em.mkExpr(kind::BOUND_VAR_LIST, var);
-  Expr body = em.mkExpr(kind::PLUS, var, em.mkConst(Rational(3)));
-  Expr _f = em.mkExpr(kind::LAMBDA, varList, body);
-
-  Expr application = em.mkExpr(kind::APPLY, _f, em.mkConst(Rational(5)));
-
-  Expr comp = em.mkVar("comp", em.integerType());
-
-  Expr r = em.mkExpr(kind::EQUAL, application, comp);
-
-  cout << r << endl;
+//  Expr var = em.mkBoundVar("a", em.integerType());
+//  Expr varList = em.mkExpr(kind::BOUND_VAR_LIST, var);
+////  Expr body = em.mkExpr(kind::PLUS, var, em.mkConst(Rational(3)));
+//  Expr _f = em.mkExpr(kind::LAMBDA, varList, var);
+//
+//  Expr application = em.mkExpr(kind::APPLY, _f, em.mkConst(Rational(5)));
+//
+//  Expr comp = em.mkVar("comp", em.integerType());
+//
+//  Expr r = em.mkExpr(kind::EQUAL, application, comp);
+//
+//  cout << r << endl;
 
 //  DatatypeType rootType = em.mkDatatypeType(root);
 //  cout << rootType << endl;
@@ -253,14 +253,14 @@ int main(void) {
 //  r = em.mkExpr(kind::AND, r, a_dis_c);
 //  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(100)), em.mkExpr(kind::PLUS, x, y)));
 ////  r = em.mkExpr(kind::AND, r, em.mkExpr(kind::EQUAL, em.mkConst(Rational(60)), em.mkExpr(kind::MINUS, x, y)));
-  SmtEngine smt(&em);
+//  SmtEngine smt(&em);
 
 //  smt.setOption("check-models", SExpr("true"));
-  smt.setOption("produce-models", SExpr("true"));
+//  smt.setOption("produce-models", SExpr("true"));
 //  smt.setOption("produce-assignments", SExpr("true"));
 //
 ////  std::cout << x << " is " << smt.query(x) << std::endl;
-  std::cout << r << " is " << smt.checkSat(r) << std::endl;
+//  std::cout << r << " is " << smt.checkSat(r) << std::endl;
 ////  for(auto blah : smt.getAssertions())
 ////    cout << blah << endl;
 ////  smt.getProof()->toStream(cout);
@@ -269,7 +269,7 @@ int main(void) {
 
 //  cout << m0 << " := " << smt.getValue(m0) << endl;
 //  cout << m1 << " := " << smt.getValue(m1) << endl;
-  cout << comp << " := " << smt.getValue(comp) << endl;
+//  cout << comp << " := " << smt.getValue(comp) << endl;
 //  cout << "a := " << smt.getValue(a) << endl;
 //  cout << "b := " << smt.getValue(b) << endl;
 //  cout << "c := " << smt.getValue(c) << endl;
@@ -293,12 +293,12 @@ int main(void) {
 //  cout << "a := " << smt.getValue(a) << endl;
 //  cout << "b := " << smt.getValue(b) << endl;
 //  cout << "c := " << smt.getValue(c) << endl;
-  exit(0);
+//  exit(0);
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto buffer = elf(g);
+  auto buffer = example(g, 0);
 
   dectran dt(g, false);
   dt.transduce();
@@ -306,7 +306,7 @@ int main(void) {
 
   auto &cfg = dt.get_cfg();
 
-  for(int i = 0; i < 4; i++) {
+  for(int i = 0; i < 1; i++) {
     cfg.commit_updates();
 
     ssa ssa(cfg);
