@@ -21,10 +21,6 @@ private:
   CVC4::SmtEngine smtEngine;
   var_map_t var_map;
 
-  CVC4::DatatypeType value_type;
-  CVC4::Expr val_ctor;
-  CVC4::Expr val_sel;
-
   CVC4::ArrayType mem_type;
   memory_map_t mem_map;
 public:
@@ -38,11 +34,6 @@ public:
   }
   CVC4::Expr var(std::string name);
   CVC4::Expr memory(size_t rev);
-
-  CVC4::Expr add(CVC4::Expr a, CVC4::Expr b);
-
-  CVC4::Expr pack(CVC4::Expr expr);
-  CVC4::Expr unpack(CVC4::Expr expr);
 };
 }  // namespace analysis
 
