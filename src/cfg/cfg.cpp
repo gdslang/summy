@@ -165,7 +165,6 @@ void cfg::cfg::dot(std::ostream &stream, node_callback_t node_cb, edge_callback_
   stream << "digraph G {" << endl;
   for(auto node : node_payloads) {
     stream << "  ";
-//    node->dot(stream);
     node_cb(*node, stream);
     stream << endl;
   }
@@ -174,7 +173,6 @@ void cfg::cfg::dot(std::ostream &stream, node_callback_t node_cb, edge_callback_
     auto &c = *edge_payloads[i];
     for(auto it = c.begin(); it != c.end(); it++) {
       stream << "  " << node_payloads[i]->get_id() << " -> " << node_payloads[it->first]->get_id() << " [label=";
-//      it->second->dot(stream);
       edge_cb(edge_id(i, it->first), stream);
       stream << "];" << endl;
     }
