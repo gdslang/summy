@@ -161,11 +161,12 @@ cfg::update_pop cfg::cfg::push_updates() {
   return update_pop { *this };
 }
 
-void cfg::cfg::dot(std::ostream &stream) {
+void cfg::cfg::dot(std::ostream &stream, node_callback_t node_cb, edge_callback_t edge_cb) {
   stream << "digraph G {" << endl;
   for(auto node : node_payloads) {
     stream << "  ";
-    node->dot(stream);
+//    node->dot(stream);
+    node_cb(*node, stream);
     stream << endl;
   }
   stream << endl;
@@ -173,11 +174,22 @@ void cfg::cfg::dot(std::ostream &stream) {
     auto &c = *edge_payloads[i];
     for(auto it = c.begin(); it != c.end(); it++) {
       stream << "  " << node_payloads[i]->get_id() << " -> " << node_payloads[it->first]->get_id() << " [label=";
-      it->second->dot(stream);
+//      it->second->dot(stream);
+      edge_cb(edge_id(i, it->first), stream);
       stream << "];" << endl;
     }
   }
   stream << "}" << endl;
+}
+
+void cfg::cfg::dot(std::ostream &stream, node_callback_t node_cb) {
+  dot(stream, node_cb, [&](edge_id eid, std::ostream &stream) {
+    edge_payloads[eid.from]->at(eid.to)->dot(stream);
+  });
+}
+
+void cfg::cfg::dot(std::ostream &stream) {
+  dot(stream, &node::dot);
 }
 
 size_t cfg::cfg::next_node_id() {

@@ -116,6 +116,10 @@ public:
 
   edge_set_t adjacencies(std::set<size_t> nodes);
 
+  typedef std::function<void(node&, std::ostream&)> node_callback_t;
+  typedef std::function<void(edge_id, std::ostream&)> edge_callback_t;
+  void dot(std::ostream &stream, node_callback_t node_cb, edge_callback_t edge_cb);
+  void dot(std::ostream &stream, node_callback_t node_cb);
   void dot(std::ostream &stream);
 };
 
