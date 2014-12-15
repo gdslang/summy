@@ -22,7 +22,8 @@ using namespace CVC4;
 namespace sr = summy::rreil;
 
 analysis::ismt::ismt(class cfg *cfg, liveness::liveness_result lv_result, adaptive_rd::adaptive_rd_result rd_result) :
-    cfg(cfg), lv_result(lv_result), rd_result(rd_result), context(false), smtb(context, rd_result) {
+    cfg(cfg), lv_result(lv_result), rd_result(rd_result), context(false), smtb(context, rd_result),
+        smt_defb(context, rd_result) {
 //  smtb = new smt_builder(context);
 }
 
@@ -82,12 +83,15 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
     for(auto from = edges.begin(); from != edges.end(); from++) {
       auto _edge = cfg->out_edge_payloads(*from)->at(to_id);
       smtb.edge(*from, to_id);
+      smt_defb.edge(*from, to_id);
       expr_acc exp_edge(kind::AND, man);
 
       auto build = [&](auto stmt) {
         Expr e = smtb.build(stmt);
+        Expr e_def = smt_defb.build(stmt);
 //          cout << *a << ": " << e << endl;
-        exp_edge.add(e);
+        Expr comb = man.mkExpr(kind::AND, e, e_def);
+        exp_edge.add(comb);
       };
 
       auto handle_assignment = [&](auto a) {

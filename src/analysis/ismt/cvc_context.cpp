@@ -34,6 +34,10 @@ CVC4::Expr analysis::cvc_context::var(std::string name) {
   }
 }
 
+CVC4::Expr analysis::cvc_context::var_def(std::string name) {
+  return var(name + "_def");
+}
+
 CVC4::Expr analysis::cvc_context::memory(size_t rev) {
   auto rev_it = mem_map.find(rev);
   if(rev_it != mem_map.end()) return rev_it->second;
