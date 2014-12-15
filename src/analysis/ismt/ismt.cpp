@@ -34,9 +34,10 @@ analysis::ismt::~ismt() {
 ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
   struct target {
     Expr exp;
+    Expr exp_def;
     edge_id edge;
 
-    target(Expr exp, edge_id edge) : exp(exp), edge(edge) {
+    target(Expr exp, Expr exp_def, edge_id edge) : exp(exp), exp_def(exp_def), edge(edge) {
     }
 
     bool operator <(const target &other) const {
@@ -124,7 +125,7 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
           build(s);
         });
         sv._([&](branch *b) {
-          targets.insert(target(smtb.build(b->get_target()), edge_id(*from, to_id)));
+          targets.insert(target(smtb.build(b->get_target()), smt_defb.build_target(b->get_target()), edge_id(*from, to_id)));
         });
         stmt->accept(sv);
       });
@@ -155,6 +156,16 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 
   cout << exp_glob.acc << endl;
 
+//  se.assertFormula(man.mkExpr(kind::))
+
+  /*
+   * Todo: Enforce defined targets separately
+   */
+  for(auto &target : targets) {
+    cout << "Asserting " << target.exp_def << endl;
+    se.assertFormula(target.exp_def);
+  }
+
   Result r;
   size_t max = 10;
   while(--max) {
@@ -165,10 +176,11 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       break;
     }
 
-    for(auto target : targets) {
+    for(auto &target : targets) {
       Expr var_exp = target.exp;
       Expr unpack = man.mkExpr(kind::BITVECTOR_TO_NAT, var_exp);
       cout << "\e[1m\e[31m" << var_exp << " := " << se.getValue(unpack) << "\e[0m" << endl;
+//      cout << "\e[1m\e[31m" << context.var("A_26_def") << " := " << se.getValue(context.var("A_26_def")) << "\e[0m" << endl;
 
       assignments[target.edge].insert(stoull(se.getValue(unpack).toString()));
     }

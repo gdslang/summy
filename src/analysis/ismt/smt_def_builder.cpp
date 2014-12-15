@@ -60,10 +60,29 @@ void analysis::smt_def_builder::set_accumulator(CVC4::Expr accumulator) {
   this->accumulator_set = true;
 }
 
+CVC4::Expr analysis::smt_def_builder::var(std::string name) {
+  return context.var(name + "_def");
+}
+
+void analysis::smt_def_builder::visit_id(gdsl::rreil::id *i, size_t rev) {
+  Expr result;
+  if(!rev) {
+    auto &man = context.get_manager();
+    Expr zero = man.mkConst(BitVector(current_size(), (unsigned long int)(0)));
+    result = zero;
+  } else {
+    auto i_str = i->to_string();
+    result = var(i_str);
+  }
+  set_accumulator(result);
+}
+
+void analysis::smt_def_builder::visit(summy::rreil::ssa_id *si) {
+  visit_id(si, si->get_version());
+}
+
 void smt_def_builder::_default(gdsl::rreil::id *i) {
-  auto i_str = i->to_string();
-  Expr i_exp = context.var_def(i_str);
-  set_accumulator(i_exp);
+  visit_id(i, 0);
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::variable *v) {
@@ -307,7 +326,7 @@ CVC4::Expr analysis::smt_def_builder::concat_rhs(id *lhs_id, size_t size, size_t
     });
     lhs_id_wrapped->accept(civ);
     id *id_old = def_node > 0 ? new sr::ssa_id(civ.get_id(), def_node) : civ.get_id();
-    Expr id_old_exp = context.var(id_old->to_string());
+    Expr id_old_exp = var(id_old->to_string());
     delete id_old;
 
     struct slice {
@@ -462,16 +481,20 @@ CVC4::Expr analysis::smt_def_builder::build(gdsl::rreil::statement *s) {
   return pop_accumulator();
 }
 
-CVC4::Expr analysis::smt_def_builder::build(gdsl::rreil::address *addr) {
-  addr->accept(*this);
-  return pop_accumulator();
-}
-
 CVC4::Expr analysis::smt_def_builder::build(cfg::phi_assign const *pa) {
   handle_assign(pa->get_size(), pa->get_lhs(), [&]() {
     pa->get_rhs()->accept(*this);
   });
   return pop_accumulator();
+}
+
+CVC4::Expr analysis::smt_def_builder::build_target(gdsl::rreil::address *addr) {
+  addr->accept(*this);
+  push_size(addr->get_size());
+  auto &man = context.get_manager();
+  Expr result = man.mkExpr(kind::EQUAL, defined_boolbv(pop_accumulator()), man.mkConst(BitVector(1, (unsigned long int)(1))));
+  pop_size();
+  return result;
 }
 
 void analysis::smt_def_builder::edge(size_t from, size_t to) {

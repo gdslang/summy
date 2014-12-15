@@ -33,7 +33,7 @@ public:
     return smtEngine;
   }
   CVC4::Expr var(std::string name);
-  CVC4::Expr var_def(std::string name);
+//  CVC4::Expr var_def(std::string name);
   CVC4::Expr memory(size_t rev);
 };
 }  // namespace analysis

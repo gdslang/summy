@@ -6,8 +6,7 @@
  */
 
 #pragma once
-
-#pragma once
+#include <summy/rreil/id/ssa_id.h>
 #include <summy/rreil/visitor.h>
 #include <summy/analysis/ismt/cvc_context.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
@@ -51,7 +50,11 @@ private:
   CVC4::Expr defined_boolbv(CVC4::Expr a, CVC4::Expr b);
   CVC4::Expr defined(CVC4::Expr a, CVC4::Expr b);
 
+  CVC4::Expr var(std::string name);
+  void visit_id(gdsl::rreil::id *i, size_t rev);
   void _default(gdsl::rreil::id *i);
+  void visit(summy::rreil::ssa_id *si);
+
   void visit(gdsl::rreil::variable *v);
 
   void visit(gdsl::rreil::lin_binop *a);
@@ -77,8 +80,8 @@ public:
       context(context), rd_result(rd_result) {
   }
   CVC4::Expr build(gdsl::rreil::statement *s);
-  CVC4::Expr build(gdsl::rreil::address *addr);
   CVC4::Expr build(cfg::phi_assign const *pa);
+  CVC4::Expr build_target(gdsl::rreil::address *addr);
   void edge(size_t from, size_t to);
 };
 
