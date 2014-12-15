@@ -28,6 +28,12 @@ private:
   bool accumulator_set = false;
   CVC4::Expr accumulator;
 
+//  std::function<CVC4::Expr(smt_def_builder*, std::string)> var_current;
+  /*
+   * Todo: Safety
+   */
+  CVC4::Expr (smt_def_builder::*var_current)(std::string);
+
   cvc_context &context;
   adaptive_rd::adaptive_rd_result rd_result;
   size_t from = 0;
@@ -51,6 +57,7 @@ private:
   CVC4::Expr defined(CVC4::Expr a, CVC4::Expr b);
 
   CVC4::Expr var(std::string name);
+  CVC4::Expr var_def(std::string name);
   void visit_id(gdsl::rreil::id *i, size_t rev);
   void _default(gdsl::rreil::id *i);
   void visit(summy::rreil::ssa_id *si);

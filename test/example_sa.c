@@ -18,7 +18,8 @@ int main(void) {
 	__exit();
 
 	start:
-	asm ("movq $999, (%rax)\n"
+	asm (
+"movq $999, (%rax)\n"
 "movq (%rax), %rbx\n"
 "jmp %rbx\n");
 	end:;

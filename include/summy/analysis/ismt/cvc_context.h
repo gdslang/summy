@@ -23,6 +23,9 @@ private:
 
   CVC4::ArrayType mem_type;
   memory_map_t mem_map;
+  memory_map_t mem_def_map;
+
+  CVC4::Expr memory(memory_map_t &m, std::string base, size_t rev);
 public:
   cvc_context(bool unsat_cores);
 
@@ -35,6 +38,7 @@ public:
   CVC4::Expr var(std::string name);
 //  CVC4::Expr var_def(std::string name);
   CVC4::Expr memory(size_t rev);
+  CVC4::Expr memory_def(size_t rev);
 };
 }  // namespace analysis
 

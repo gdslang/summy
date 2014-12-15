@@ -188,7 +188,7 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       Expr v = target.exp;
       se.assertFormula(man.mkExpr(kind::DISTINCT, v, se.getValue(v)));
     }
-  };
+  }
 
   if(!max)
     return ismt_edge_ass_t();

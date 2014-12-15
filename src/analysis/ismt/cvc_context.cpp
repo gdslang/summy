@@ -34,18 +34,26 @@ CVC4::Expr analysis::cvc_context::var(std::string name) {
   }
 }
 
+CVC4::Expr analysis::cvc_context::memory(memory_map_t &m, string base, size_t rev) {
+  auto rev_it = m.find(rev);
+  if(rev_it != m.end()) return rev_it->second;
+  else {
+    stringstream name;
+    name << base << rev;
+    Expr mem = manager.mkVar(name.str(), mem_type);
+    m[rev] = mem;
+    return mem;
+  }
+}
+
 //CVC4::Expr analysis::cvc_context::var_def(std::string name) {
 //  return var(name + "_def");
 //}
 
 CVC4::Expr analysis::cvc_context::memory(size_t rev) {
-  auto rev_it = mem_map.find(rev);
-  if(rev_it != mem_map.end()) return rev_it->second;
-  else {
-    stringstream name;
-    name << "m_" << rev;
-    Expr mem = manager.mkVar(name.str(), mem_type);
-    mem_map[rev] = mem;
-    return mem;
-  }
+  return memory(mem_map, "m_", rev);
+}
+
+CVC4::Expr analysis::cvc_context::memory_def(size_t rev) {
+  return memory(mem_def_map, "m_def_", rev);
 }

@@ -61,6 +61,10 @@ void analysis::smt_def_builder::set_accumulator(CVC4::Expr accumulator) {
 }
 
 CVC4::Expr analysis::smt_def_builder::var(std::string name) {
+  return context.var(name);
+}
+
+CVC4::Expr analysis::smt_def_builder::var_def(std::string name) {
   return context.var(name + "_def");
 }
 
@@ -72,7 +76,7 @@ void analysis::smt_def_builder::visit_id(gdsl::rreil::id *i, size_t rev) {
     result = zero;
   } else {
     auto i_str = i->to_string();
-    result = var(i_str);
+    result = (this->*var_current)(i_str);
   }
   set_accumulator(result);
 }
@@ -326,7 +330,7 @@ CVC4::Expr analysis::smt_def_builder::concat_rhs(id *lhs_id, size_t size, size_t
     });
     lhs_id_wrapped->accept(civ);
     id *id_old = def_node > 0 ? new sr::ssa_id(civ.get_id(), def_node) : civ.get_id();
-    Expr id_old_exp = var(id_old->to_string());
+    Expr id_old_exp = (this->*var_current)(id_old->to_string());
     delete id_old;
 
     struct slice {
@@ -411,14 +415,18 @@ CVC4::Expr analysis::smt_def_builder::extract_lower_bit_addr(CVC4::Expr address)
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
+  var_current = &smt_def_builder::var;
   push_size(l->get_size());
   l->get_address()->accept(*this);
   Expr address = pop_accumulator();
+
+  var_current = &smt_def_builder::var_def;
   l->get_lhs()->get_id()->accept(*this);
   Expr lhs = pop_accumulator();
   pop_size();
 
-  Expr memory = context.memory(rd_result.result[from]->get_memory_rev());
+  size_t mem_rev = rd_result.result[from]->get_memory_rev();
+  Expr memory = context.memory_def(mem_rev);
 
   auto &man = context.get_manager();
   Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
@@ -433,19 +441,31 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
   Expr load = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
 
   Expr all = l->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(l->get_size(), address), load) : load;
-  set_accumulator(all);
+
+  Expr memory_ini = context.memory_def(0);
+  Expr drefed_ini = man.mkExpr(kind::SELECT, memory_ini, addr_high);
+  Expr initialization = man.mkExpr(kind::EQUAL, drefed_ini, man.mkConst(BitVector(64, (unsigned long int)(0))));
+
+  Expr all_plus_init = man.mkExpr(kind::AND, all, initialization);
+
+  cout << all_plus_init << endl;
+
+  set_accumulator(all_plus_init);
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
+  var_current = &smt_def_builder::var;
   push_size(s->get_size());
   s->get_address()->accept(*this);
   Expr address = pop_accumulator();
+
+  var_current = &smt_def_builder::var_def;
   s->get_rhs()->accept(*this);
   Expr rhs = pop_accumulator();
   size_t size = pop_size();
 
-  Expr memory_before = context.memory(rd_result.result[from]->get_memory_rev());
-  Expr memory_after = context.memory(rd_result.result[to]->get_memory_rev());
+  Expr memory_before = context.memory_def(rd_result.result[from]->get_memory_rev());
+  Expr memory_after = context.memory_def(rd_result.result[to]->get_memory_rev());
 
   auto &man = context.get_manager();
   Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
@@ -477,11 +497,15 @@ void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
 }
 
 CVC4::Expr analysis::smt_def_builder::build(gdsl::rreil::statement *s) {
+  var_current = &smt_def_builder::var_def;
+
   s->accept(*this);
   return pop_accumulator();
 }
 
 CVC4::Expr analysis::smt_def_builder::build(cfg::phi_assign const *pa) {
+  var_current = &smt_def_builder::var_def;
+
   handle_assign(pa->get_size(), pa->get_lhs(), [&]() {
     pa->get_rhs()->accept(*this);
   });
@@ -489,6 +513,8 @@ CVC4::Expr analysis::smt_def_builder::build(cfg::phi_assign const *pa) {
 }
 
 CVC4::Expr analysis::smt_def_builder::build_target(gdsl::rreil::address *addr) {
+  var_current = &smt_def_builder::var_def;
+
   addr->accept(*this);
   push_size(addr->get_size());
   auto &man = context.get_manager();
