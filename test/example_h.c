@@ -23,11 +23,11 @@ int main(void) {
 "mov $99, %rax\n"
 "cmp $99, %rax\n"
 "jne else\n"
-//"add $99, %rbx\n"
-//"jmp after\n"
+"add $99, %rbx\n"
+"jmp after\n"
 "else:\n"
-//"sub $77, %rbx\n"
-//"after:\n"
+"sub $77, %rbx\n"
+"after:\n"
 "jmp %rbx\n"
 );
 	end:;

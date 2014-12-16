@@ -23,10 +23,10 @@ ssa::ssa(cfg::cfg &cfg) :
 
 void ssa::transduce() {
   fpl.iterate();
-  l.put(cout);
+//  l.put(cout);
 
   fpr.iterate();
-  r.put(cout);
+//  r.put(cout);
 
   {
     cfg::update_pop up = cfg.push_updates();
@@ -50,6 +50,9 @@ void ssa::transduce() {
       fpl.notify(cfg.get_updates());
       fpr.notify(cfg.get_updates());
     }
+
+    l.put(cout);
+    r.put(cout);
   }
 }
 

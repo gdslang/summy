@@ -43,6 +43,9 @@ struct edge_id {
 };
 std::ostream &operator<<(std::ostream &out, const edge_id &_this);
 
+/*
+ * Todo: Verschiedene Typen für Kantenpayloads zusammenführen
+ */
 template<typename PAY_T>
 using edge_payload_map_t = std::map<edge_id, PAY_T>;
 //template<typename PAY_T>

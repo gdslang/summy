@@ -24,9 +24,10 @@ typedef cfg::edge_payload_map_t<bool> edge_bool_map_t;
 
 struct liveness_result : public ::analysis::analysis_result<state_t> {
   newly_live_t &pn_newly_live;
+  edge_bool_map_t &edge_liveness;
 
-  liveness_result(state_t &s, newly_live_t &pn_newly_live) :
-      analysis_result(s), pn_newly_live(pn_newly_live) {
+  liveness_result(state_t &s, newly_live_t &pn_newly_live, edge_bool_map_t &edge_liveness) :
+      analysis_result(s), pn_newly_live(pn_newly_live), edge_liveness(edge_liveness) {
   }
 
   bool contains(size_t node_id, singleton_key_t sk, unsigned long long offset, unsigned long long size);
