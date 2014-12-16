@@ -43,6 +43,15 @@ struct edge_id {
 };
 std::ostream &operator<<(std::ostream &out, const edge_id &_this);
 
+template<typename PAY_T>
+using edge_payload_map_t = std::map<edge_id, PAY_T>;
+//template<typename PAY_T>
+//using edge_payloads_gen_t = std::map<size_t, PAY_T>;
+//template<typename PAY_T>
+//using edges_payloads_gen_t = std::vector<size_t, PAY_T>;
+//typedef edge_payloads_gen_t<edge const*> edge_payloads_t;
+
+
 struct update {
   update_kind kind;
   size_t from;

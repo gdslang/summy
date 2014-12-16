@@ -75,7 +75,13 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
     singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(assignee->get_offset(), size));
 
     transfer_f = [=]() {
-      if(state[to]->contains_bit(lhs)) {
+      bool edge_live = state[to]->contains_bit(lhs);
+//      this->edge_liveness[edge_id(from, to)] = edge_live;
+//      cout << &(this->edge_liveness) << endl;
+      this->edge_liveness.insert(make_pair(edge_id(from, to), edge_live));
+//      this->edge_liveness[edge_id(from, to)] = true;
+//      (&this->edge_liveness)->operator[](edge_id(from, to)) = true;
+      if(edge_live) {
         shared_ptr<lv_elem> dead_removed(state[to]->remove({ lhs }));
         return shared_ptr<lv_elem>(dead_removed->add(newly_live));
       } else
@@ -84,6 +90,13 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
   };
   auto access = [&](vector<singleton_t> newly_live) {
     transfer_f = [=]() {
+//      cout << edge_id(from, to) << endl;
+//      cout << this->edge_liveness.size() << endl;
+//      cout << &(this->edge_liveness) << endl;
+//      (&this->edge_liveness)->operator[](edge_id(from, to)) = true;
+      this->edge_liveness.insert(std::pair<edge_id,bool>(edge_id(from, to),true));
+//      this->edge_liveness[from + to] = true;
+//      cout << this->edge_liveness.size() << endl;
       return shared_ptr<lv_elem>(transfer_f()->add(newly_live));
     };
   };

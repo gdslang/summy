@@ -73,7 +73,7 @@ void analysis::smt_def_builder::visit_id(gdsl::rreil::id *i, size_t rev) {
   Expr result;
   if(!rev) {
     auto &man = context.get_manager();
-    Expr zero = man.mkConst(BitVector(current_size(), (unsigned long int)(0)));
+    Expr zero = man.mkConst(BitVector(64, (unsigned long int)(0)));
     result = zero;
   } else {
     auto i_str = i->to_string();
@@ -446,7 +446,7 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
 
   Expr all_plus_init = man.mkExpr(kind::AND, all, initialization);
 
-  cout << all_plus_init << endl;
+//  cout << all_plus_init << endl;
 
   set_accumulator(all_plus_init);
 }

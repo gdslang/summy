@@ -75,10 +75,13 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 
   expr_acc exp_glob(kind::AND, man);
 
+  int i = 0;
+
   cfg_view cv(cfg, from, true);
   for(auto node : cv) {
     size_t to_id = node->get_id();
     expr_acc exp_node(kind::OR, man);
+
 
     auto &edges = cfg->in_edges(node->get_id());
     for(auto from = edges.begin(); from != edges.end(); from++) {
@@ -87,10 +90,19 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       smt_defb.edge(*from, to_id);
       expr_acc exp_edge(kind::AND, man);
 
+//      if(i++ >= 32)
+//        goto foo;
+//      if(i >= 25)
+//      cout << i << "~ " << *from << " ==> " << to_id << endl;
+
       auto build = [&](auto stmt) {
+//        if(i < 25 || i == 27 || i == 28 || i == 29 || i == 30 || i == 31)
+//          return;
         Expr e = smtb.build(stmt);
         Expr e_def = smt_defb.build(stmt);
-//          cout << *a << ": " << e << endl;
+        cout << "Kante: " <<  e << endl;
+        cout << "Kante def: " <<  e_def << endl;
+//          cout << *stmt << ": " << e_def << endl;
         Expr comb = man.mkExpr(kind::AND, e, e_def);
         exp_edge.add(comb);
       };
@@ -143,10 +155,10 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 
 //    if(from == 223 && to_id == 28)
 //      break;
-
     if(!exp_node.empty)
       exp_glob.add(exp_node.acc);
   }
+    foo:;
 
   ismt_edge_ass_t assignments;
   if(exp_glob.empty)
