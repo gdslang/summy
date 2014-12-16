@@ -418,8 +418,10 @@ CVC4::Expr analysis::smt_def_builder::extract_lower_bit_addr(CVC4::Expr address)
 void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
   var_current = &smt_def_builder::var_def;
   push_size(l->get_size());
-  l->get_address()->accept(*this);
-  Expr address = pop_accumulator();
+//  l->get_address()->accept(*this);
+//  Expr address = pop_accumulator();
+  smt_builder sb(context, rd_result);
+  Expr address = sb.build(l->get_address());
 
   var_current = &smt_def_builder::var_def;
   l->get_lhs()->get_id()->accept(*this);
@@ -429,36 +431,33 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
   size_t mem_rev = rd_result.result[from]->get_memory_rev();
   Expr memory = context.memory_def(mem_rev);
 
-  auto &man = context.get_manager();
-  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
-  Expr drefed = man.mkExpr(kind::SELECT, memory, addr_high);
-
-  if(l->get_size() < 64) {
-    Expr lower_bit_addr = extract_lower_bit_addr(address);
-    drefed = man.mkExpr(kind::BITVECTOR_LSHR, drefed, lower_bit_addr);
-  } else if(l->get_size() > 64) throw string("Invalid size");
+  Expr drefed = sb.load_memory(memory, l->get_size(), address);
 
   Expr rhs_conc = concat_rhs(l->get_lhs()->get_id(), l->get_size(), l->get_lhs()->get_offset(), drefed);
+  auto &man = context.get_manager();
   Expr load = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
 
   Expr all = l->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(l->get_size(), address), load) : load;
 
-  Expr memory_ini = context.memory_def(0);
-  Expr drefed_ini = man.mkExpr(kind::SELECT, memory_ini, addr_high);
-  Expr initialization = man.mkExpr(kind::EQUAL, drefed_ini, man.mkConst(BitVector(64, (unsigned long int)(0))));
+//  Expr memory_ini = context.memory_def(0);
+//  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
+//  Expr drefed_ini = man.mkExpr(kind::SELECT, memory_ini, addr_high);
+//  Expr initialization = man.mkExpr(kind::EQUAL, drefed_ini, man.mkConst(BitVector(64, (unsigned long int)(0))));
+//
+//  Expr all_plus_init = man.mkExpr(kind::AND, all, initialization);
 
-  Expr all_plus_init = man.mkExpr(kind::AND, all, initialization);
+//  cout << all_plus_init << endl;
 
-  cout << all_plus_init << endl;
+  all = man.mkConst(true);
 
-  set_accumulator(all_plus_init);
+  set_accumulator(all);
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
   var_current = &smt_def_builder::var_def;
   push_size(s->get_size());
-  s->get_address()->accept(*this);
-  Expr address = pop_accumulator();
+  smt_builder sb(context, rd_result);
+  Expr address = sb.build(s->get_address());
 
   var_current = &smt_def_builder::var_def;
   s->get_rhs()->accept(*this);
@@ -466,31 +465,11 @@ void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
   size_t size = pop_size();
 
   Expr memory_before = context.memory_def(rd_result.result[from]->get_memory_rev());
-  Expr memory_after = context.memory_def(rd_result.result[to]->get_memory_rev());
 
   auto &man = context.get_manager();
-  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
+  Expr mem_stored = sb.store_memory(memory_before, size, address, rhs);
 
-  Expr rhs_ext = size < 64 ? man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - size)), rhs) : rhs;
-
-  Expr mem_new;
-  if(size == 64) {
-    mem_new = rhs_ext;
-  } else if(size < 64) {
-    Expr lower_bit_addr = extract_lower_bit_addr(address);
-
-    Expr mask = man.mkConst(BitVector(64, (unsigned long int)((1 << size) - 1)));
-    mask = man.mkExpr(kind::BITVECTOR_SHL, mask, lower_bit_addr);
-    mask = man.mkExpr(kind::BITVECTOR_NOT, mask);
-
-    Expr mem_old = man.mkExpr(kind::SELECT, memory_before, addr_high);
-    Expr mem_old_masked = man.mkExpr(kind::BITVECTOR_AND, mem_old, mask);
-
-    Expr rhs_shifted = man.mkExpr(kind::BITVECTOR_SHL, rhs_ext, lower_bit_addr);
-    mem_new = man.mkExpr(kind::BITVECTOR_OR, mem_old_masked, rhs_shifted);
-  } else throw string("Invalid size");
-  Expr mem_stored = man.mkExpr(kind::STORE, memory_before, addr_high, mem_new);
-
+  Expr memory_after = context.memory_def(rd_result.result[to]->get_memory_rev());
   Expr store = man.mkExpr(kind::EQUAL, memory_after, mem_stored);
 
   Expr all = size > 8 ? man.mkExpr(kind::AND, enforce_aligned(size, address), store) : store;

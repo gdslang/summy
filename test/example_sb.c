@@ -19,9 +19,9 @@ int main(void) {
 
 	start:
 	asm (
-//"movq %rcx, %rax\n"
-//"addq $64, %rcx\n"
-//"movq $999, (%rax)\n"
+"movq %rcx, %rax\n"
+"addq $64, %rcx\n"
+"movq $999, (%rax)\n"
 "movq $273, (%rcx)\n"
 "movq (%rax), %rbx\n"
 "jmp %rbx\n");
