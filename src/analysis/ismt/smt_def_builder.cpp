@@ -6,6 +6,7 @@
  */
 
 #include <summy/analysis/ismt/smt_def_builder.h>
+#include <summy/analysis/ismt/smt_builder.h>
 #include <summy/rreil/copy_visitor.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/ssa_id.h>
@@ -415,7 +416,7 @@ CVC4::Expr analysis::smt_def_builder::extract_lower_bit_addr(CVC4::Expr address)
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
-  var_current = &smt_def_builder::var;
+  var_current = &smt_def_builder::var_def;
   push_size(l->get_size());
   l->get_address()->accept(*this);
   Expr address = pop_accumulator();
@@ -454,7 +455,7 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
-  var_current = &smt_def_builder::var;
+  var_current = &smt_def_builder::var_def;
   push_size(s->get_size());
   s->get_address()->accept(*this);
   Expr address = pop_accumulator();

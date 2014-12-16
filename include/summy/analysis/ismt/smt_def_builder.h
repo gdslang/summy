@@ -32,6 +32,9 @@ private:
   /*
    * Todo: Safety
    */
+  /*
+   * Todo: Andere Idee, smt_builder verwenden
+   */
   CVC4::Expr (smt_def_builder::*var_current)(std::string);
 
   cvc_context &context;
