@@ -369,6 +369,7 @@ CVC4::Expr analysis::smt_builder::load_memory(CVC4::Expr memory, size_t size, CV
   if(size < 64) {
     Expr lower_bit_addr = extract_lower_bit_addr(address);
     drefed = man.mkExpr(kind::BITVECTOR_LSHR, drefed, lower_bit_addr);
+    drefed = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(size - 1, 0)), drefed);
   } else if(size > 64) throw string("Invalid size");
 
   return drefed;

@@ -439,18 +439,16 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
 
   Expr all = l->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(l->get_size(), address), load) : load;
 
-//  Expr memory_ini = context.memory_def(0);
-//  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
-//  Expr drefed_ini = man.mkExpr(kind::SELECT, memory_ini, addr_high);
-//  Expr initialization = man.mkExpr(kind::EQUAL, drefed_ini, man.mkConst(BitVector(64, (unsigned long int)(0))));
-//
-//  Expr all_plus_init = man.mkExpr(kind::AND, all, initialization);
+  Expr memory_ini = context.memory_def(0);
+  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
+  Expr drefed_ini = man.mkExpr(kind::SELECT, memory_ini, addr_high);
+  Expr initialization = man.mkExpr(kind::EQUAL, drefed_ini, man.mkConst(BitVector(64, (unsigned long int)(0))));
 
-//  cout << all_plus_init << endl;
+  Expr all_plus_init = man.mkExpr(kind::AND, all, initialization);
 
-  all = man.mkConst(true);
+  cout << all_plus_init << endl;
 
-  set_accumulator(all);
+  set_accumulator(all_plus_init);
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
