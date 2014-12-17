@@ -295,6 +295,8 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_ext *ext) {
   Expr result;
   if(ext->get_fromsize() > to_size) result = man.mkExpr(kind::BITVECTOR_EXTRACT,
       man.mkConst(BitVectorExtract(to_size - 1, 0)), opnd);
+  else if(to_size == ext->get_fromsize())
+    result = opnd;
   else switch(ext->get_op()) {
     case EXT_ZX: {
       Expr upper_bits = man.mkConst(BitVector(to_size - ext->get_fromsize(), (unsigned long int)(-1)));

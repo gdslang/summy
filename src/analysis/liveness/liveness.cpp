@@ -76,12 +76,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
 
     transfer_f = [=]() {
       bool edge_live = state[to]->contains_bit(lhs);
-      if(to == 49)
-        cout << "xxx: " << (edge_live ? "live" : "dead") << endl;
-//      this->edge_liveness.insert(make_pair(edge_id(from, to), edge_live));
       this->edge_liveness[edge_id(from, to)] = edge_live;
-      if(to == 49)
-        cout << "xxx after insert: " << (this->edge_liveness.at(edge_id(from, to)) ? "live" : "dead") << endl;
       if(edge_live) {
         shared_ptr<lv_elem> dead_removed(state[to]->remove({ lhs }));
         return shared_ptr<lv_elem>(dead_removed->add(newly_live));
@@ -91,7 +86,6 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
   };
   auto access = [&](vector<singleton_t> newly_live) {
     transfer_f = [=]() {
-//      this->edge_liveness.insert(std::pair<edge_id,bool>(edge_id(from, to),true));
       this->edge_liveness[edge_id(from, to)] = true;
       return shared_ptr<lv_elem>(transfer_f()->add(newly_live));
     };
