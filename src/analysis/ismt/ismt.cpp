@@ -214,11 +214,15 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       test_mem_def(ptr, rev);
     };
 
-    test_var("t0_142");
-    test_var("t0_176");
-    test_var("A_143");
-    test_mem_both("BP", 49);
-    test_mem_both("BP", 51);
+//    test_var("t0_142");
+//    test_var("t0_176");
+//    test_var("A_143");
+//    test_var("B_201");
+//    test_mem_both("BP", 49);
+//    test_mem_both("BP", 51);
+//    test_mem_both("BP", 203);
+//    test_mem_both("BP", 201);
+    test_mem_both("BP", 103);
 
     cout << endl << "---------------" << endl;
 
