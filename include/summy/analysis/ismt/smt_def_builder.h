@@ -91,6 +91,7 @@ public:
   }
   CVC4::Expr build(gdsl::rreil::statement *s);
   CVC4::Expr build(cfg::phi_assign const *pa);
+  CVC4::Expr build(cfg::phi_memory const& pm);
   CVC4::Expr build_target(gdsl::rreil::address *addr);
   void edge(size_t from, size_t to);
 };

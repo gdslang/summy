@@ -147,6 +147,7 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       ev._([&](const phi_edge *pe) {
         for(auto &ass : pe->get_assignments())
           handle_assignment(&ass);
+        build(pe->get_memory());
       });
       _edge->accept(ev);
 

@@ -496,6 +496,11 @@ CVC4::Expr analysis::smt_def_builder::build(cfg::phi_assign const *pa) {
   return pop_accumulator();
 }
 
+CVC4::Expr analysis::smt_def_builder::build(cfg::phi_memory const& pm) {
+  auto &man = context.get_manager();
+  return man.mkExpr(kind::EQUAL, context.memory_def(pm.from), context.memory_def(pm.to));
+}
+
 CVC4::Expr analysis::smt_def_builder::build_target(gdsl::rreil::address *addr) {
   var_current = &smt_def_builder::var_def;
 

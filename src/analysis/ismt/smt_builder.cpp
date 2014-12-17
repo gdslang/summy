@@ -465,6 +465,11 @@ CVC4::Expr analysis::smt_builder::build(cfg::phi_assign const *pa) {
   return pop_accumulator();
 }
 
+CVC4::Expr analysis::smt_builder::build(cfg::phi_memory const& pm) {
+  auto &man = context.get_manager();
+  return man.mkExpr(kind::EQUAL, context.memory(pm.from), context.memory(pm.to));
+}
+
 void analysis::smt_builder::edge(size_t from, size_t to) {
   this->from = from;
   this->to = to;
