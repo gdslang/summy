@@ -289,9 +289,13 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_ext *ext) {
   Expr opnd = pop_accumulator();
   pop_size();
 
+  assert(to_size > 0);
+
   auto &man = context.get_manager();
   Expr result;
-  switch(ext->get_op()) {
+  if(ext->get_fromsize() > to_size) result = man.mkExpr(kind::BITVECTOR_EXTRACT,
+      man.mkConst(BitVectorExtract(to_size - 1, 0)), opnd);
+  else switch(ext->get_op()) {
     case EXT_ZX: {
       Expr upper_bits = man.mkConst(BitVector(to_size - ext->get_fromsize(), (unsigned long int)(-1)));
       result = man.mkExpr(kind::BITVECTOR_CONCAT, upper_bits, opnd);

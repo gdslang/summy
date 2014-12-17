@@ -56,9 +56,11 @@ void analysis::reaching_defs::reaching_defs::add_constraint(size_t from, size_t 
       v->get_id()->accept(cv);
       shared_ptr<id> id_ptr(cv.get_id());
       transfer_f = [=]() {
-        auto acc = shared_ptr<rd_elem>(state[from]->remove(id_set_t { id_ptr }));
-        if(lv_result.contains(to, id_ptr, v->get_offset(), size))
+        auto acc = state[from];
+        if(lv_result.contains(to, id_ptr, v->get_offset(), size)) {
+          acc = shared_ptr<rd_elem>(acc->remove(id_set_t { id_ptr }));
           acc = shared_ptr<rd_elem>(acc->add(rd_elem::elements_t {make_tuple(to, id_ptr)}));
+        }
         return cleanup_live(acc);
       };
     };

@@ -235,9 +235,13 @@ void analysis::smt_builder::visit(gdsl::rreil::expr_ext *ext) {
   Expr opnd = pop_accumulator();
   pop_size();
 
+  assert(to_size > 0);
+
   auto &man = context.get_manager();
   Expr r;
-  switch(ext->get_op()) {
+  if(ext->get_fromsize() > to_size) r = man.mkExpr(kind::BITVECTOR_EXTRACT,
+      man.mkConst(BitVectorExtract(to_size - 1, 0)), opnd);
+  else switch(ext->get_op()) {
     case EXT_ZX: {
       r = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(to_size - ext->get_fromsize())),
           opnd);
@@ -252,7 +256,8 @@ void analysis::smt_builder::visit(gdsl::rreil::expr_ext *ext) {
       throw string("Invalid extension");
     }
   }
-  set_accumulator(r);;
+  set_accumulator(r);
+  ;
 }
 
 void analysis::smt_builder::visit(gdsl::rreil::address *addr) {
@@ -398,6 +403,7 @@ CVC4::Expr analysis::smt_builder::store_memory(CVC4::Expr memory_before, size_t 
   auto &man = context.get_manager();
   Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
 
+  assert(size <= 64);
   Expr value_ext = size < 64 ? man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - size)), value) : value;
 
   Expr mem_new;
@@ -442,6 +448,7 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
 }
 
 CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s) {
+  cout << *s << endl;
   s->accept(*this);
   return pop_accumulator();
 }
