@@ -191,6 +191,10 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       break;
     }
 
+//    Expr test = context.var("B_49");
+//    Expr unpack_test = man.mkExpr(kind::BITVECTOR_TO_NAT, test);
+//    cout << "\e[1m\e[31m" << test << " := " << se.getValue(unpack_test) << "\e[0m" << endl;
+
     for(auto &target : targets) {
       Expr var_exp = target.exp;
       Expr unpack = man.mkExpr(kind::BITVECTOR_TO_NAT, var_exp);

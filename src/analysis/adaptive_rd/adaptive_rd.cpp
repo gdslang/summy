@@ -31,11 +31,7 @@ namespace sr = summy::rreil;
 
 void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
   auto cleanup_live = [=](shared_ptr<adaptive_rd_elem> acc) {
-    if(to == 44)
-    cout << "xxx cleaning up element: " << *acc << endl;
     return shared_ptr<adaptive_rd_elem>(acc->remove([&](shared_ptr<id> id, singleton_value_t v) {
-      if(to == 44)
-        cout << "xxx: " << *id << " removed? " << (!lv_result.contains(to, id, 0, 64)) << endl;
       return !lv_result.contains(to, id, 0, 64);
     }));
   };
@@ -49,17 +45,12 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
     shared_ptr<id> id_ptr(cv.get_id());
     transfer_f = [=]() {
 //    cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
-      if(to == 44)
-      cout << "xxx starting with: " << *state[from] << endl;
       auto acc = state[from];
       if(lv_result.contains(to, id_ptr, v->get_offset(), size)) {
         acc = shared_ptr<adaptive_rd_elem>(acc->remove(id_set_t {id_ptr}));
         acc = shared_ptr<adaptive_rd_elem>(acc->add( {singleton_t(id_ptr, to)}));
       }
-      auto __ = cleanup_live(acc);
-      if(to == 44)
-      cout << "xxx result: " << *__ << endl;
-      return __;
+      return cleanup_live(acc);
     };
   };
   edge_visitor ev;
