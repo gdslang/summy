@@ -191,9 +191,35 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       break;
     }
 
-//    Expr test = context.var("B_49");
-//    Expr unpack_test = man.mkExpr(kind::BITVECTOR_TO_NAT, test);
-//    cout << "\e[1m\e[31m" << test << " := " << se.getValue(unpack_test) << "\e[0m" << endl;
+    auto test_var = [&](string var) {
+      Expr test = context.var(var);
+      Expr unpack_test = man.mkExpr(kind::BITVECTOR_TO_NAT, test);
+      cout << "\e[1m\e[31m" << test << " := " << se.getValue(unpack_test) << "\e[0m" << endl;
+    };
+    auto test_mem = [&](string ptr, size_t rev) {
+      Expr pointer = context.var(ptr);
+      Expr mem_dref = man.mkExpr(kind::SELECT, context.memory(rev), man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), pointer));
+      Expr mem_test = man.mkExpr(kind::BITVECTOR_TO_NAT, mem_dref);
+      cout << "\e[1m\e[31m" << mem_dref << " := " << se.getValue(mem_test) << "\e[0m" << endl;
+    };
+    auto test_mem_def = [&](string ptr, size_t rev) {
+      Expr pointer = context.var(ptr);
+      Expr mem_dref = man.mkExpr(kind::SELECT, context.memory_def(rev), man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), pointer));
+      Expr mem_test = man.mkExpr(kind::BITVECTOR_TO_NAT, mem_dref);
+      cout << "\e[1m\e[31m" << mem_dref << " := " << se.getValue(mem_test) << "\e[0m" << endl;
+    };
+    auto test_mem_both = [&](string ptr, size_t rev) {
+      test_mem(ptr, rev);
+      test_mem_def(ptr, rev);
+    };
+
+    test_var("t0_142");
+    test_var("t0_176");
+    test_var("A_143");
+    test_mem_both("BP", 49);
+    test_mem_both("BP", 51);
+
+    cout << endl << "---------------" << endl;
 
     for(auto &target : targets) {
       Expr var_exp = target.exp;

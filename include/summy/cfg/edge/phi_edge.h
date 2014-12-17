@@ -39,17 +39,31 @@ public:
   ~phi_assign();
 };
 
+struct phi_memory {
+  size_t from;
+  size_t to;
+
+  phi_memory(size_t from, size_t to) :
+      from(from), to(to) {
+  }
+};
+
 typedef std::vector<phi_assign> assignments_t;
 
 class phi_edge: public edge {
 private:
   assignments_t assignments;
+  phi_memory memory;
 public:
-  phi_edge(assignments_t assignments);
+  phi_edge(assignments_t assignments, phi_memory memory);
   ~phi_edge();
 
   assignments_t const &get_assignments() const {
     return assignments;
+  }
+
+  phi_memory const &get_memory() const {
+    return memory;
   }
 
   void dot(std::ostream &stream) const;

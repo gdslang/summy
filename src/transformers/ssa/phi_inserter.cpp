@@ -52,7 +52,7 @@ void phi_inserter::task_from_edge(vector<phi_task> &tasks, size_t from, size_t t
   }
 
   if(phi_assignments.size() > 0)
-    tasks.push_back({ new phi_edge(phi_assignments), from, to });
+    tasks.push_back({ new phi_edge(phi_assignments, phi_memory(0, 0)), from, to });
 }
 
 void phi_inserter::transform(std::vector<phi_task> &tasks) {
