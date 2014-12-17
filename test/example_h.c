@@ -24,6 +24,7 @@ int main(void) {
 "cmp $99, %rax\n"
 "jne else\n"
 "add $99, %rbx\n"
+//"mov $207, %rbx\n"
 "jmp after\n"
 "else:\n"
 "sub $77, %rbx\n"
