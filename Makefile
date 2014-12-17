@@ -1,6 +1,6 @@
 CC=gcc
 #CC=clang
-CPP=clang++-3.6
+CPP=clang++
 INCDS=-Iinclude
 CFLAGS=-c -MMD -ggdb3 -O2 -std=c11 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
 CPPFLAGS=-c -MMD -ggdb3 -O2 -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)

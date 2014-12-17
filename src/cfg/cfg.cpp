@@ -20,8 +20,20 @@
 using namespace std;
 
 bool cfg::edge_id::operator <(const edge_id &other) const {
-  if(from < other.from) return true;
-  return to < other.to;
+  auto foo = [&]() {
+    if(from < other.from) return true;
+    else if(from > other.from) return false;
+    return to < other.to;
+  };
+  bool r = foo();
+  cout << "Comparing " << *this << " < " << other << " = " << r << endl;
+
+  return r;
+
+}
+
+bool cfg::edge_id::operator ==(const edge_id &other) const {
+  return from == other.from && to == other.to;
 }
 
 std::ostream &cfg::operator <<(std::ostream &out, const edge_id &_this) {

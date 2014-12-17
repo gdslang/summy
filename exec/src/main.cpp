@@ -312,6 +312,13 @@ int main(void) {
     ssa ssa(cfg);
     ssa.transduce();
 
+//    cout << ssa.lv_result().edge_liveness.at(cfg::edge_id(86, 56)) << endl;
+
+    for(auto &eid_it : ssa.lv_result().edge_liveness)
+      cout << eid_it.first.from << " -> " << eid_it.first.to << ": " << (eid_it.second ? "true" : "false") << endl;
+
+    exit(0);
+
 //    if(i > 0)
 //      break;
 

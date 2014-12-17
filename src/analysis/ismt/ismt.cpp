@@ -85,8 +85,10 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 
     auto &edges = cfg->in_edges(node->get_id());
     for(auto from = edges.begin(); from != edges.end(); from++) {
+      cout << "Trying: " << *from << " -> " << to_id << endl;
       if(!lv_result.edge_liveness[edge_id(*from, to_id)])
         continue;
+      cout << "Considering: " << *from << " -> " << to_id << endl;
 
       auto _edge = cfg->out_edge_payloads(*from)->at(to_id);
       smtb.edge(*from, to_id);
@@ -103,8 +105,8 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 //          return;
         Expr e = smtb.build(stmt);
         Expr e_def = smt_defb.build(stmt);
-        cout << "Kante: " <<  e << endl;
-        cout << "Kante def: " <<  e_def << endl;
+//        cout << "Kante: " <<  e << endl;
+//        cout << "Kante def: " <<  e_def << endl;
 //          cout << *stmt << ": " << e_def << endl;
         Expr comb = man.mkExpr(kind::AND, e, e_def);
         exp_edge.add(comb);

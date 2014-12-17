@@ -40,6 +40,7 @@ struct edge_id {
   edge_id(size_t from, size_t to) : from(from), to(to) {
   }
   bool operator <(const edge_id &other) const;
+  bool operator ==(const edge_id &other) const;
 };
 std::ostream &operator<<(std::ostream &out, const edge_id &_this);
 

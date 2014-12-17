@@ -22,6 +22,9 @@ typedef std::function<std::shared_ptr<lv_elem>()> constraint_t;
 typedef std::map<size_t, std::vector<singleton_t>> newly_live_t;
 typedef cfg::edge_payload_map_t<bool> edge_bool_map_t;
 
+/*
+ * Todo: const
+ */
 struct liveness_result : public ::analysis::analysis_result<state_t> {
   newly_live_t &pn_newly_live;
   edge_bool_map_t &edge_liveness;
