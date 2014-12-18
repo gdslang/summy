@@ -59,7 +59,7 @@ unsigned char *elf(gdsl::gdsl &g) {
   g.set_code(buffer, (main.offset - dottext.offset) + main.size + 1000, dottext.address);
   if(g.seek(main.address))
     throw string(":/");
-  cout << g.get_ip() << endl;
+//  cout << g.get_ip() << endl;
 
   return buffer;
 }

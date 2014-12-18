@@ -448,7 +448,6 @@ void analysis::smt_builder::visit(gdsl::rreil::store *s) {
 }
 
 CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s) {
-  cout << *s << endl;
   s->accept(*this);
   return pop_accumulator();
 }

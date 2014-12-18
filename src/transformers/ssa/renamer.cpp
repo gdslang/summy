@@ -122,6 +122,8 @@ void renamer::task_from_edge(std::vector<update_task>& tasks, size_t from, size_
     }
     size_t memory_from = rd_result.result[from]->get_memory_rev();
     size_t memory_to = rd_result.result[to]->get_memory_rev();
+    if(memory_from != memory_to)
+      update = true;
     add_update(from, to, new phi_edge(assignments_new, phi_memory(memory_from, memory_to)));
   });
   e->accept(ev);

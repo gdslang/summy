@@ -71,11 +71,7 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
     }
   };
 
-  cout << "from: " << from << endl;
-
   expr_acc exp_glob(kind::AND, man);
-
-  int i = 0;
 
   cfg_view cv(cfg, from, true);
   for(auto node : cv) {
@@ -93,19 +89,9 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       smt_defb.edge(*from, to_id);
       expr_acc exp_edge(kind::AND, man);
 
-//      if(i++ >= 32)
-//        goto foo;
-//      if(i >= 25)
-//      cout << i << "~ " << *from << " ==> " << to_id << endl;
-
       auto build = [&](auto stmt) {
-//        if(i < 25 || i == 27 || i == 28 || i == 29 || i == 30 || i == 31)
-//          return;
         Expr e = smtb.build(stmt);
         Expr e_def = smt_defb.build(stmt);
-//        cout << "Kante: " <<  e << endl;
-//        cout << "Kante def: " <<  e_def << endl;
-//          cout << *stmt << ": " << e_def << endl;
         Expr comb = man.mkExpr(kind::AND, e, e_def);
         exp_edge.add(comb);
       };
@@ -113,15 +99,12 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       auto handle_assignment = [&](auto a) {
         bool live = false;
         sr::visitor srv;
-//          cout << *ass << ":: ";
         srv._default([&](id *_id) {
-//            cout << *_id << ", ";
           shared_ptr<id> lhs_id_wrapped(_id, [&](void *x) {});
           if(lv_result.contains(to_id, lhs_id_wrapped, 0, 64))
             live = true;
         });
         a->get_lhs()->accept(srv);
-//          cout << endl;
         if(live)
           build(a);
       };
@@ -157,12 +140,9 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       state[*from][to_id] = exp_edge.acc;
     }
 
-//    if(from == 223 && to_id == 28)
-//      break;
     if(!exp_node.empty)
       exp_glob.add(exp_node.acc);
   }
-    foo:;
 
   ismt_edge_ass_t assignments;
   if(exp_glob.empty)
@@ -192,27 +172,27 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       break;
     }
 
-    auto test_var = [&](string var) {
-      Expr test = context.var(var);
-      Expr unpack_test = man.mkExpr(kind::BITVECTOR_TO_NAT, test);
-      cout << "\e[1m\e[31m" << test << " := " << se.getValue(unpack_test) << "\e[0m" << endl;
-    };
-    auto test_mem = [&](string ptr, size_t rev) {
-      Expr pointer = context.var(ptr);
-      Expr mem_dref = man.mkExpr(kind::SELECT, context.memory(rev), man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), pointer));
-      Expr mem_test = man.mkExpr(kind::BITVECTOR_TO_NAT, mem_dref);
-      cout << "\e[1m\e[31m" << mem_dref << " := " << se.getValue(mem_test) << "\e[0m" << endl;
-    };
-    auto test_mem_def = [&](string ptr, size_t rev) {
-      Expr pointer = context.var(ptr);
-      Expr mem_dref = man.mkExpr(kind::SELECT, context.memory_def(rev), man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), pointer));
-      Expr mem_test = man.mkExpr(kind::BITVECTOR_TO_NAT, mem_dref);
-      cout << "\e[1m\e[31m" << mem_dref << " := " << se.getValue(mem_test) << "\e[0m" << endl;
-    };
-    auto test_mem_both = [&](string ptr, size_t rev) {
-      test_mem(ptr, rev);
-      test_mem_def(ptr, rev);
-    };
+//    auto test_var = [&](string var) {
+//      Expr test = context.var(var);
+//      Expr unpack_test = man.mkExpr(kind::BITVECTOR_TO_NAT, test);
+//      cout << "\e[1m\e[31m" << test << " := " << se.getValue(unpack_test) << "\e[0m" << endl;
+//    };
+//    auto test_mem = [&](string ptr, size_t rev) {
+//      Expr pointer = context.var(ptr);
+//      Expr mem_dref = man.mkExpr(kind::SELECT, context.memory(rev), man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), pointer));
+//      Expr mem_test = man.mkExpr(kind::BITVECTOR_TO_NAT, mem_dref);
+//      cout << "\e[1m\e[31m" << mem_dref << " := " << se.getValue(mem_test) << "\e[0m" << endl;
+//    };
+//    auto test_mem_def = [&](string ptr, size_t rev) {
+//      Expr pointer = context.var(ptr);
+//      Expr mem_dref = man.mkExpr(kind::SELECT, context.memory_def(rev), man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), pointer));
+//      Expr mem_test = man.mkExpr(kind::BITVECTOR_TO_NAT, mem_dref);
+//      cout << "\e[1m\e[31m" << mem_dref << " := " << se.getValue(mem_test) << "\e[0m" << endl;
+//    };
+//    auto test_mem_both = [&](string ptr, size_t rev) {
+//      test_mem(ptr, rev);
+//      test_mem_def(ptr, rev);
+//    };
 
 //    test_var("t0_142");
 //    test_var("t0_176");
@@ -222,9 +202,7 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 //    test_mem_both("BP", 51);
 //    test_mem_both("BP", 203);
 //    test_mem_both("BP", 201);
-    test_mem_both("BP", 103);
-
-    cout << endl << "---------------" << endl;
+//    test_mem_both("BP", 103);
 
     for(auto &target : targets) {
       Expr var_exp = target.exp;
@@ -238,6 +216,8 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       Expr v = target.exp;
       se.assertFormula(man.mkExpr(kind::DISTINCT, v, se.getValue(v)));
     }
+
+//    cout << endl << "---------------" << endl << endl;
   }
 
   if(!max)

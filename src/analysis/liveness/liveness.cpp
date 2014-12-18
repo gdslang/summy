@@ -75,14 +75,23 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
     singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(assignee->get_offset(), size));
 
     transfer_f = [=]() {
-      bool edge_live = state[to]->contains_bit(lhs);
+      auto current_state = transfer_f();
+      bool edge_live = current_state->contains_bit(lhs);
       this->edge_liveness[edge_id(from, to)] = edge_live;
       if(edge_live) {
-        shared_ptr<lv_elem> dead_removed(state[to]->remove({ lhs }));
+        shared_ptr<lv_elem> dead_removed(current_state->remove({ lhs }));
         return shared_ptr<lv_elem>(dead_removed->add(newly_live));
       } else
-        return state[to];
+        return current_state;
     };
+  };
+  auto memory_phi_ass = [&](const phi_memory &m) {
+    if(m.from != m.to)
+      transfer_f = [=]() {
+        auto current_state = transfer_f();
+        this->edge_liveness[edge_id(from, to)] = true;
+        return current_state;
+      };
   };
   auto access = [&](vector<singleton_t> newly_live) {
     transfer_f = [=]() {
@@ -169,6 +178,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
       auto newly_live = acc_newly_live(ass.get_size(), accept_live);
       assignment(ass.get_size(), ass.get_lhs(), newly_live);
     }
+    memory_phi_ass(edge->get_memory());
   });
   e->accept(ev);
   (constraints[from])[to] = transfer_f;

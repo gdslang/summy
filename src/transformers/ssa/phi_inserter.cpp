@@ -51,7 +51,11 @@ void phi_inserter::task_from_edge(vector<phi_task> &tasks, size_t from, size_t t
     }
   }
 
-  if(phi_assignments.size() > 0)
+  bool mem_phi = false;
+  if(dst_state->get_memory_rev() != dst_incoming->get_memory_rev())
+    mem_phi = true;
+
+  if(phi_assignments.size() > 0 || mem_phi)
     tasks.push_back({ new phi_edge(phi_assignments, phi_memory(0, 0)), from, to });
 }
 
