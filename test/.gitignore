@@ -1,5 +1,7 @@
 /build/
 /example_*
 !/example_*.c
+!/example_*.cpp
 /test*
 !/test*.c
+!/test*.cpp

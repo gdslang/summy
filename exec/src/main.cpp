@@ -306,7 +306,7 @@ int main(void) {
 
   auto &cfg = dt.get_cfg();
 
-  for(int i = 0; i < 1; i++) {
+  for(int i = 0; i < 4; i++) {
     cfg.commit_updates();
 
     ssa ssa(cfg);
