@@ -7,7 +7,7 @@ LIBDS=-L..
 LIBS=-lsummy -lbjutil -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lcvc4 -lgmp -lgtest -lpthread -lelf
 LIBFLAGS=$(LIBDS) $(LIBS)
 LDFLAGS=
-INCDS=-I../include -I$(GDSL)/include
+INCDS=-I../include -Iinclude
 CFLAGS=-c -O2 -ggdb3 -MMD -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
 CPPFLAGS=-c -O2 -ggdb3 -MMD -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
 

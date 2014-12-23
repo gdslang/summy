@@ -26,6 +26,7 @@
 #include <summy/analysis/ismt/ismt.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/transformers/resolved_connector.h>
+#include <summy/test/asm_compile.h>
 #include <cstdio>
 
 using analysis::adaptive_rd::adaptive_rd;
@@ -294,6 +295,21 @@ int main(void) {
 //  cout << "b := " << smt.getValue(b) << endl;
 //  cout << "c := " << smt.getValue(c) << endl;
 //  exit(0);
+
+
+
+  try {
+    auto foo = asm_compile("nop\nadd %rax, %sfsdfrax");
+    for(auto &x : foo)
+      printf("%02x ", x);
+    printf("\n");
+
+  } catch(string &blah) {
+    cout << blah << endl;
+
+  }
+
+  return 0;
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
