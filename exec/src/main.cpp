@@ -298,16 +298,16 @@ int main(void) {
 
 
 
-  try {
-    auto foo = asm_compile("nop\nadd %rax, %sfsdfrax");
+//  try {
+    auto foo = asm_compile("nop\nadd %rax, %rax");
     for(auto &x : foo)
       printf("%02x ", x);
     printf("\n");
-
-  } catch(string &blah) {
-    cout << blah << endl;
-
-  }
+//
+//  } catch(string &blah) {
+//    cout << blah << endl;
+//
+//  }
 
   return 0;
 
