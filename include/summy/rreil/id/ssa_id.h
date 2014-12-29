@@ -34,6 +34,7 @@ public:
     return version;
   }
 
+  bool operator== (gdsl::rreil::id &other);
   void accept(gdsl::rreil::id_visitor &v);
 };
 
