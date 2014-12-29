@@ -36,10 +36,12 @@ std::vector<uint8_t> asm_compile(std::string _asm) {
        system("rm program.bin");
      });
 
-     ifstream bin_file;
-     bin_file.open("program.bin");
+     basic_ifstream<char> bin_file;
+     bin_file.open("program.bin", ios::binary);
 
-     data.insert(data.begin(), istream_iterator<uint8_t>(bin_file), istream_iterator<uint8_t>());
+//     data.insert(data.begin(), istreambuf_iterator<unsigned char>(bin_file), istreambuf_iterator<unsigned char>());
+     while(bin_file.good())
+       data.push_back(bin_file.get());
   });
   return data;
 }

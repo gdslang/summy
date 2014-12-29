@@ -74,14 +74,38 @@ static void targets_for_asm(set<size_t> &targets, string _asm) {
   ASSERT_EQ(targets.size(), 1);
 }
 
-TEST_F(ismt_test, Blahblah) {
+TEST_F(ismt_test, SimplePartialRegisterWrites) {
   set<size_t> targets;
   targets_for_asm(targets,
   "mov $999, %rax\n\
   add $42, %rax\n\
   mov $62, %ah\n\
-  jmp %rax\n");
+  jmp *%rax\n");
 
   size_t value = *targets.begin();
   ASSERT_EQ(value, 15889);
+}
+
+TEST_F(ismt_test, SimplePartialRegisterWrites2) {
+  set<size_t> targets;
+  targets_for_asm(targets,
+  "mov $999, %rax\n"
+  "add $42, %rax\n"
+  "mov $77, %bh\n"
+  "mov %bh, %ah\n"
+  "jmp *%rax\n");
+
+  size_t value = *targets.begin();
+  ASSERT_EQ(value, 19729);
+}
+
+TEST_F(ismt_test, SimplePartialRegisterWrites3) {
+  set<size_t> targets;
+  targets_for_asm(targets,
+  "movq $342, %rax\n"
+  "add $10, %ah\n"
+  "jmp *%rax\n");
+
+  size_t value = *targets.begin();
+  ASSERT_EQ(value, 2902);
 }

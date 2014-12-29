@@ -142,6 +142,8 @@ void cfg::cfg::unregister_observer(observer *o) {
 
 void cfg::cfg::commit_updates() {
   while(true) {
+    if(!updates_stack.size())
+      break;
     vector<update> updates = updates_stack.top();
     updates_stack.top().clear();
     if(updates.size() == 0) break;

@@ -51,8 +51,8 @@ void ssa::transduce() {
       fpr.notify(cfg.get_updates());
     }
 
-    l.put(cout);
-    r.put(cout);
+//    l.put(cout);
+//    r.put(cout);
   }
 }
 

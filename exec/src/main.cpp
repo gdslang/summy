@@ -300,10 +300,10 @@ int main(int argc, char **argv) {
 
 
 //  try {
-    auto foo = asm_compile("nop\nadd %rax, %rax");
-    for(auto &x : foo)
-      printf("%02x ", x);
-    printf("\n");
+//    auto foo = asm_compile("nop\nadd %rax, %rax");
+//    for(auto &x : foo)
+//      printf("%02x ", x);
+//    printf("\n");
 //
 //  } catch(string &blah) {
 //    cout << blah << endl;
