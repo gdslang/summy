@@ -27,6 +27,7 @@
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/transformers/resolved_connector.h>
 #include <summy/test/asm_compile.h>
+#include <summy/test/test.h>
 #include <cstdio>
 
 using analysis::adaptive_rd::adaptive_rd;
@@ -107,7 +108,7 @@ unsigned char *example(gdsl::gdsl &g, uint64_t ip) {
 //}
 
 
-int main(void) {
+int main(int argc, char **argv) {
   ExprManager em;
 //  Expr a = em.mkVar("a", em.booleanType());
 
@@ -308,6 +309,8 @@ int main(void) {
 //    cout << blah << endl;
 //
 //  }
+
+  summy_test_run(argc, argv);
 
   return 0;
 
