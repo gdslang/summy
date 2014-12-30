@@ -61,7 +61,7 @@ private:
 
   CVC4::Expr var(std::string name);
   CVC4::Expr var_def(std::string name);
-  void visit_id(gdsl::rreil::id *i, size_t rev);
+  CVC4::Expr id_at_rev(gdsl::rreil::id *i, size_t rev);
   void _default(gdsl::rreil::id *i);
   void visit(summy::rreil::ssa_id *si);
 

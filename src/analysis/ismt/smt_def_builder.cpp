@@ -69,7 +69,7 @@ CVC4::Expr analysis::smt_def_builder::var_def(std::string name) {
   return context.var(name + "_def");
 }
 
-void analysis::smt_def_builder::visit_id(gdsl::rreil::id *i, size_t rev) {
+CVC4::Expr analysis::smt_def_builder::id_at_rev(gdsl::rreil::id *i, size_t rev) {
   Expr result;
   if(!rev) {
     auto &man = context.get_manager();
@@ -79,15 +79,15 @@ void analysis::smt_def_builder::visit_id(gdsl::rreil::id *i, size_t rev) {
     auto i_str = i->to_string();
     result = (this->*var_current)(i_str);
   }
-  set_accumulator(result);
+  return result;
 }
 
 void analysis::smt_def_builder::visit(summy::rreil::ssa_id *si) {
-  visit_id(si, si->get_version());
+  set_accumulator(id_at_rev(si, si->get_version()));
 }
 
 void smt_def_builder::_default(gdsl::rreil::id *i) {
-  visit_id(i, 0);
+  set_accumulator(id_at_rev(i, 0));
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::variable *v) {
@@ -331,8 +331,9 @@ CVC4::Expr analysis::smt_def_builder::concat_rhs(id *lhs_id, size_t size, size_t
       return inner;
     });
     lhs_id_wrapped->accept(civ);
+
     id *id_old = def_node > 0 ? new sr::ssa_id(civ.get_id(), def_node) : civ.get_id();
-    Expr id_old_exp = (this->*var_current)(id_old->to_string());
+    Expr id_old_exp = id_at_rev(id_old, def_node);
     delete id_old;
 
     struct slice {
