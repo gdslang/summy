@@ -71,7 +71,6 @@ static void targets_for_asm(set<size_t> &targets, string _asm) {
   ASSERT_EQ(asses_loc.size(), 1);
 
   targets = asses_loc.begin()->second;
-  ASSERT_EQ(targets.size(), 1);
 }
 
 TEST_F(ismt_test, SimplePartialRegisterWrites) {
@@ -82,6 +81,7 @@ TEST_F(ismt_test, SimplePartialRegisterWrites) {
   mov $62, %ah\n\
   jmp *%rax\n"));
 
+  ASSERT_EQ(targets.size(), 1);
   size_t value = *targets.begin();
   ASSERT_EQ(value, 15889);
 }
@@ -95,6 +95,7 @@ TEST_F(ismt_test, SimplePartialRegisterWrites2) {
   "mov %bh, %ah\n"
   "jmp *%rax\n"));
 
+  ASSERT_EQ(targets.size(), 1);
   size_t value = *targets.begin();
   ASSERT_EQ(value, 19729);
 }
@@ -106,6 +107,7 @@ TEST_F(ismt_test, SimplePartialRegisterWrites3) {
   "add $10, %ah\n"
   "jmp *%rax\n"));
 
+  ASSERT_EQ(targets.size(), 1);
   size_t value = *targets.begin();
   ASSERT_EQ(value, 2902);
 }
@@ -118,6 +120,7 @@ TEST_F(ismt_test, PartialMemory) {
   "movb (%rax), %bh\n"
   "jmp *%rbx\n"));
 
+  ASSERT_EQ(targets.size(), 1);
   size_t value = *targets.begin();
   ASSERT_EQ(value, 38856475);
 }
@@ -134,7 +137,22 @@ TEST_F(ismt_test, AddressCalculations) {
   "lea (%rax, %rbx, 2), %rax\n"
   "jmp *%rax\n"));
 
+  ASSERT_EQ(targets.size(), 1);
   size_t value = *targets.begin();
   ASSERT_EQ(value, 0x544817e);
+}
+
+TEST_F(ismt_test, Shift) {
+  set<size_t> targets;
+  ASSERT_NO_FATAL_FAILURE(targets_for_asm(targets,
+  "mov $0x0000776655443322, %rax\n"
+  "shl $27, %rax\n"
+  "jmp *%rax\n"));
+
+  ASSERT_EQ(targets.size(), 2);
+  auto targets_it = targets.begin();
+  ASSERT_EQ(*targets_it, 131281400902434);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 3650767389219356672);
 }
 
