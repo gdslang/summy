@@ -193,11 +193,17 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 //      test_mem(ptr, rev);
 //      test_mem_def(ptr, rev);
 //    };
-
-//    test_var("t0_142");
-//    test_var("t0_176");
-//    test_var("A_143");
-//    test_var("B_201");
+//
+//    test_var("A_27");
+//    test_var("A_27_def");
+//    test_var("A_57");
+//    test_var("A_57_def");
+//    test_var("B_31");
+//    test_var("B_31_def");
+//    test_var("B_36");
+//    test_var("B_36_def");
+//    test_var("t0_61");
+//    test_var("t0_61_def");
 //    test_mem_both("BP", 49);
 //    test_mem_both("BP", 51);
 //    test_mem_both("BP", 203);
@@ -208,7 +214,6 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
       Expr var_exp = target.exp;
       Expr unpack = man.mkExpr(kind::BITVECTOR_TO_NAT, var_exp);
 //      cout << "\e[1m\e[31m" << var_exp << " := " << se.getValue(unpack) << "\e[0m" << endl;
-//      cout << "\e[1m\e[31m" << context.var("A_26_def") << " := " << se.getValue(context.var("A_26_def")) << "\e[0m" << endl;
 
       assignments[target.edge].insert(stoull(se.getValue(unpack).toString()));
     }

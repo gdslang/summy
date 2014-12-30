@@ -158,12 +158,7 @@ void analysis::smt_def_builder::visit(gdsl::rreil::lin_imm *a) {
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::lin_scale *a) {
-  auto &man = context.get_manager();
-  Expr factor_bv = man.mkConst(BitVector(64, (unsigned long int)a->get_const()));
   a->get_opnd()->accept(*this);
-  Expr opnd = pop_accumulator();
-  Expr r = man.mkExpr(kind::BITVECTOR_MULT, factor_bv, opnd);
-  set_accumulator(r);
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::expr_cmp *ec) {

@@ -310,14 +310,12 @@ int main(int argc, char **argv) {
 //
 //  }
 
-  summy_test_run(argc, argv);
-
-  return 0;
+  return summy_test_run(argc, argv);
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto buffer = elf(g);
+  auto buffer = example(g, 0);
 
   dectran dt(g, false);
   dt.transduce();
@@ -325,7 +323,7 @@ int main(int argc, char **argv) {
 
   auto &cfg = dt.get_cfg();
 
-  for(int i = 0; i < 4; i++) {
+  for(int i = 0; i < 1; i++) {
     cfg.commit_updates();
 
     ssa ssa(cfg);
