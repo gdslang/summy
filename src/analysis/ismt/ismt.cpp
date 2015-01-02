@@ -193,17 +193,12 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 //      test_mem(ptr, rev);
 //      test_mem_def(ptr, rev);
 //    };
-//
-//    test_var("B_7");
-//    test_var("B_7_def");
-//    test_var("A_57");
-//    test_var("A_57_def");
-//    test_var("B_31");
-//    test_var("B_31_def");
-//    test_var("B_36");
-//    test_var("B_36_def");
-//    test_var("t0_6");
-//    test_var("t0_6_def");
+
+//    test_var("BP_192");
+//    test_var("BP_192_def");
+//    test_var("t0_207");
+
+
 //    test_mem_both("BP", 49);
 //    test_mem_both("BP", 51);
 //    test_mem_both("BP", 203);

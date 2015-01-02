@@ -12,3 +12,4 @@
 #include <stdint.h>
 
 std::vector<uint8_t> asm_compile(std::string _asm);
+std::string c_compile(std::string program);

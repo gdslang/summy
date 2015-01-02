@@ -7,13 +7,14 @@
 
 
 #include <gtest/gtest.h>
+#include <bjutil/gdsl_init.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/gdsl.h>
-#include <summy/test/asm_compile.h>
 #include <summy/big_step/dectran.h>
 #include <summy/big_step/ssa.h>
 #include <summy/cfg/cfg.h>
 #include <summy/analysis/ismt/ismt.h>
+#include <summy/test/compile.h>
 #include <fstream>
 #include <iosfwd>
 #include <set>
@@ -38,14 +39,7 @@ protected:
   }
 };
 
-static void targets_for_asm(set<size_t> &targets, string _asm) {
-  auto compiled = asm_compile(_asm);
-
-  gdsl::bare_frontend f("current");
-  gdsl::gdsl g(&f);
-
-  g.set_code(compiled.data(), compiled.size(), 0);
-
+static void targets_for_gdsl(set<size_t> &targets, gdsl::gdsl &g) {
   dectran dt(g, false);
   dt.transduce();
   dt.register_();
@@ -73,6 +67,29 @@ static void targets_for_asm(set<size_t> &targets, string _asm) {
 
   if(asses_count == 1)
     targets = asses_loc.begin()->second;
+}
+
+static void targets_for_asm(set<size_t> &targets, string _asm) {
+  auto compiled = asm_compile(_asm);
+
+  gdsl::bare_frontend f("current");
+  gdsl::gdsl g(&f);
+
+  g.set_code(compiled.data(), compiled.size(), 0);
+
+  targets_for_gdsl(targets, g);
+}
+
+static void targets_for_c(set<size_t> &targets, string program) {
+  string filename = c_compile(program);
+
+  gdsl::bare_frontend f("current");
+  bj_gdsl bjg = gdsl_init_elf(&f, filename, ".text", "main");
+
+  string cmd = string("rm ") + filename;
+  system(cmd.c_str());
+
+  targets_for_gdsl(targets, *bjg.gdsl);
 }
 
 TEST_F(ismt_test, SimplePartialRegisterWrites) {
@@ -405,3 +422,79 @@ TEST_F(ismt_test, TwoPointersNoAliasUndefined) {
 
   ASSERT_EQ(targets.size(), 0);
 }
+
+TEST_F(ismt_test, CSimple) {
+  set<size_t> targets;
+  ASSERT_NO_FATAL_FAILURE(targets_for_c(targets,R"(
+  int main(void) {
+    register long int a = 3;
+    register int (*f)() = 10;
+    if(a > 22)
+      f += 4 + a;
+    else
+      f += 5 - a;
+    return f();
+  }
+  )"));
+
+  ASSERT_EQ(targets.size(), 2);
+  auto targets_it = targets.begin();
+  ASSERT_EQ(*targets_it, 12);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 17);
+}
+
+TEST_F(ismt_test, CComplex) {
+  set<size_t> targets;
+  ASSERT_NO_FATAL_FAILURE(targets_for_c(targets,R"(
+int main(void) {
+  register int a = 3;
+  register int (*f)() = 15;
+  x:
+  if(a == 1) {
+    if(a == 2)
+      a++;
+    else
+      f += 4 + a;
+  } else
+    f += 7 - a;
+  return f();
+}
+  )"));
+
+  ASSERT_EQ(targets.size(), 3);
+  auto targets_it = targets.begin();
+  ASSERT_EQ(*targets_it, 15);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 19);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 22);
+}
+
+//TEST_F(ismt_test, CSSAExam2013) {
+//  set<size_t> targets;
+//  ASSERT_NO_FATAL_FAILURE(targets_for_c(targets,R"(
+//int main(void) {
+//  register int a = 3;
+//  register int (*f)() = 15;
+//  x:
+//  if(a == 1) {
+//    if(a == 2)
+//      a++;
+//    else
+//      f += 4 + a;
+//    if(a == 3)
+//      goto x;
+//  } else
+//    f += 7 - a;
+//  return f();
+//}
+//  )"));
+//
+//  ASSERT_EQ(targets.size(), 2);
+//  auto targets_it = targets.begin();
+//  ASSERT_EQ(*targets_it, 12);
+//  targets_it++;
+//  ASSERT_EQ(*targets_it, 17);
+//}
+

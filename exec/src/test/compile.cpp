@@ -5,9 +5,9 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/test/asm_compile.h>
 #include <bjutil/scope.h>
 #include <stdlib.h>
+#include <summy/test/compile.h>
 #include <iostream>
 #include <fstream>
 #include <iterator>
@@ -44,4 +44,23 @@ std::vector<uint8_t> asm_compile(std::string _asm) {
        data.push_back(bin_file.get());
   });
   return data;
+}
+
+std::string c_compile(std::string program) {
+  string filename = "program.elf";
+
+  scope_exit exit([&]() {
+    ofstream c_file;
+    c_file.open("program.c");
+    c_file << program << endl;
+    c_file.close();
+
+    exit([&]() {
+      system("rm program.c");
+    });
+
+    if(system("gcc -std=c11 -w program.c -o program.elf")) throw string("Unable to compile assembly program");
+  });
+
+  return filename;
 }

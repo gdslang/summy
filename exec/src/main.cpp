@@ -26,8 +26,8 @@
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/ismt/ismt.h>
 #include <summy/analysis/liveness/liveness.h>
+#include <summy/test/compile.h>
 #include <summy/transformers/resolved_connector.h>
-#include <summy/test/asm_compile.h>
 #include <summy/test/test.h>
 #include <cstdio>
 
@@ -249,8 +249,8 @@ int main(int argc, char **argv) {
 
 //  auto buffer = example(g, 0);
 //  bj_gdsl bjg = gdsl_init_binfile(&f, "example.bin", 0);
-//  bj_gdsl bjg = gdsl_init_elf(&f, "a.out", ".text", "main", (size_t)1000);
-  bj_gdsl bjg = gdsl_init_immediate(&f, 0x00000000, 0);
+  bj_gdsl bjg = gdsl_init_elf(&f, "a.out", ".text", "main", (size_t)1000);
+//  bj_gdsl bjg = gdsl_init_immediate(&f, 0x00000000, 0);
 
 //  dectran dt(*bjg.gdsl, false);
   dectran dt(*bjg.gdsl, false);
@@ -295,8 +295,8 @@ int main(int argc, char **argv) {
     _ismt.dot(ismt_fs);
     ismt_fs.close();
 
-    resolved_connector rc(&cfg, asses);
-    rc.transform();
+//    resolved_connector rc(&cfg, asses);
+//    rc.transform();
   }
 
   ofstream dot_fs;
