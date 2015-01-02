@@ -350,3 +350,58 @@ TEST_F(ismt_test, IfThenElseFullyDefinedDoubleVar) {
   ASSERT_EQ(*targets_it, 314);
 }
 
+TEST_F(ismt_test, TwoPointersNoAlias) {
+  set<size_t> targets;
+  ASSERT_NO_FATAL_FAILURE(targets_for_asm(targets,
+  "movq %rcx, %rax\n"
+  "addq $64, %rcx\n"
+  "movq $999, (%rax)\n"
+  "movq $273, (%rcx)\n"
+  "movq (%rax), %rbx\n"
+  "jmp *%rbx\n"));
+
+  ASSERT_EQ(targets.size(), 1);
+  size_t value = *targets.begin();
+  ASSERT_EQ(value, 999);
+}
+
+TEST_F(ismt_test, TwoPointersMustAlias) {
+  set<size_t> targets;
+  ASSERT_NO_FATAL_FAILURE(targets_for_asm(targets,
+  "movq %rcx, %rax\n"
+  "movq $999, (%rax)\n"
+  "movq $273, (%rcx)\n"
+  "movq (%rax), %rbx\n"
+  "jmp *%rbx\n"));
+
+  ASSERT_EQ(targets.size(), 1);
+  size_t value = *targets.begin();
+  ASSERT_EQ(value, 273);
+}
+
+TEST_F(ismt_test, TwoPointersMayAlias) {
+  set<size_t> targets;
+  ASSERT_NO_FATAL_FAILURE(targets_for_asm(targets,
+  "movq $999, (%rax)\n"
+  "movq $273, (%rcx)\n"
+  "movq (%rax), %rbx\n"
+  "jmp *%rbx\n"));
+
+  ASSERT_EQ(targets.size(), 2);
+  auto targets_it = targets.begin();
+  ASSERT_EQ(*targets_it, 273);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 999);
+}
+
+TEST_F(ismt_test, TwoPointersNoAliasUndefined) {
+  set<size_t> targets;
+  ASSERT_NO_FATAL_FAILURE(targets_for_asm(targets,
+  "movq %rcx, %rax\n"
+  "addq $64, %rcx\n"
+  "movq $273, (%rcx)\n"
+  "movq (%rax), %rbx\n"
+  "jmp *%rbx\n"));
+
+  ASSERT_EQ(targets.size(), 0);
+}
