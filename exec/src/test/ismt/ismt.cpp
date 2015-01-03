@@ -471,6 +471,45 @@ int main(void) {
   ASSERT_EQ(*targets_it, 22);
 }
 
+
+TEST_F(ismt_test, CMemory) {
+  set<size_t> targets;
+  ASSERT_NO_FATAL_FAILURE(targets_for_c(targets,R"(
+int main(int argc, char **argv) {
+  register int a = 13;
+  register int (**f)();
+  *f = 42;
+  x:
+  if(a == 1) {
+    if(a == 2)
+      a++;
+    else
+      *f += 4;
+    if(a == 3)
+      goto x;
+  } else
+    f += 7 - a;
+  if(argc > 3) {
+    a = 2000 - 3*a;
+    f = a;
+  } else
+    f += 11;
+  return (*f)();
+}
+  )"));
+
+  ASSERT_EQ(targets.size(), 4);
+  auto targets_it = targets.begin();
+  ASSERT_EQ(*targets_it, 47);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 57);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 1958);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 1961);
+}
+
+
 //TEST_F(ismt_test, CSSAExam2013) {
 //  set<size_t> targets;
 //  ASSERT_NO_FATAL_FAILURE(targets_for_c(targets,R"(
