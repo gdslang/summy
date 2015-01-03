@@ -278,28 +278,31 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_binop *eb) {
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::expr_ext *ext) {
-  size_t to_size = current_size();
-  push_size(ext->get_fromsize());
+  size_t tosize = current_size();
+  size_t fromsize = ext->get_fromsize();
+  size_t op_size = fromsize < tosize ? fromsize : tosize;
+
+  push_size(op_size);
   ext->get_opnd()->accept(*this);
   Expr opnd = pop_accumulator();
   pop_size();
 
-  assert(to_size > 0);
+  assert(tosize > 0);
 
   auto &man = context.get_manager();
   Expr result;
-  if(ext->get_fromsize() > to_size) result = man.mkExpr(kind::BITVECTOR_EXTRACT,
-      man.mkConst(BitVectorExtract(to_size - 1, 0)), opnd);
-  else if(to_size == ext->get_fromsize())
+  if(fromsize > tosize) result = man.mkExpr(kind::BITVECTOR_EXTRACT,
+      man.mkConst(BitVectorExtract(tosize - 1, 0)), opnd);
+  else if(tosize == fromsize)
     result = opnd;
   else switch(ext->get_op()) {
     case EXT_ZX: {
-      Expr upper_bits = man.mkConst(BitVector(to_size - ext->get_fromsize(), (unsigned long int)(-1)));
+      Expr upper_bits = man.mkConst(BitVector(tosize - fromsize, (unsigned long int)(-1)));
       result = man.mkExpr(kind::BITVECTOR_CONCAT, upper_bits, opnd);
       break;
     }
     case EXT_SX: {
-      result = man.mkExpr(kind::BITVECTOR_SIGN_EXTEND, man.mkConst(BitVectorSignExtend(to_size - ext->get_fromsize())),
+      result = man.mkExpr(kind::BITVECTOR_SIGN_EXTEND, man.mkConst(BitVectorSignExtend(tosize - fromsize)),
           opnd);
       break;
     }
@@ -307,6 +310,7 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_ext *ext) {
       throw string("Invalid extension");
     }
   }
+
   set_accumulator(result);
 }
 

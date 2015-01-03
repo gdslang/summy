@@ -78,7 +78,6 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
     size_t to_id = node->get_id();
     expr_acc exp_node(kind::OR, man);
 
-
     auto &edges = cfg->in_edges(node->get_id());
     for(auto from = edges.begin(); from != edges.end(); from++) {
       if(!lv_result.edge_liveness[edge_id(*from, to_id)])
@@ -193,11 +192,13 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
 //      test_mem(ptr, rev);
 //      test_mem_def(ptr, rev);
 //    };
-
-//    test_var("BP_192");
-//    test_var("BP_192_def");
+//
+//    test_var("BP_41");
+//    test_var("BP_41_def");
+//
+//    test_var("BP_218");
+//    test_var("BP_218_def");
 //    test_var("t0_207");
-
 
 //    test_mem_both("BP", 49);
 //    test_mem_both("BP", 51);

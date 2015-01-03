@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
 //
 //  }
 
-//  return summy_test_run(argc, argv);
+  return summy_test_run(argc, argv);
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
