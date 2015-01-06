@@ -480,30 +480,46 @@ int main(int argc, char **argv) {
   register int (**f)();
   *f = 42;
   if(a == 1) {
-    if(a == 2)
+    if(a == 3)
+      a++;
+    if(a == 2) {
+      f += a + 1;
+      a = 5;
+    } else if(a == 9)
       a++;
     else
       *f += 4;
   } else
-    f += 7 - a;
+    *f += 7 - a;
+//{((419 -> 420) -> {36, 42, 46})}
   if(argc > 3) {
     a = 2000 - 3*a;
-    f = a;
+    *f = a;
   } else
-    f += 11;
+    *f += 4000 + a;
   return (*f)();
 }
   )"));
 
-  ASSERT_EQ(targets.size(), 4);
+  ASSERT_EQ(targets.size(), 9);
   auto targets_it = targets.begin();
-  ASSERT_EQ(*targets_it, 47);
-  targets_it++;
-  ASSERT_EQ(*targets_it, 57);
+  ASSERT_EQ(*targets_it, 1955);
   targets_it++;
   ASSERT_EQ(*targets_it, 1958);
   targets_it++;
   ASSERT_EQ(*targets_it, 1961);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 1985);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 4049);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 4056);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 4057);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 4059);
+  targets_it++;
+  ASSERT_EQ(*targets_it, 4060);
 }
 
 
