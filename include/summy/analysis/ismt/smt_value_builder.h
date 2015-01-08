@@ -30,7 +30,6 @@ private:
 //  size_t to = 0;
 
   CVC4::Expr get_id_old_exp(gdsl::rreil::id *id, size_t def_node);
-  void handle_assign(size_t size, gdsl::rreil::variable *lhs_, std::function<void()> rhs_accept);
 
   void _default(gdsl::rreil::id *i);
 
@@ -44,13 +43,7 @@ private:
   void visit(gdsl::rreil::expr_binop *eb);
   void visit(gdsl::rreil::expr_ext *ext);
 
-  void visit(gdsl::rreil::address *addr);
-
-  void visit(gdsl::rreil::assign *a);
-
   CVC4::Expr enforce_aligned(size_t size, CVC4::Expr address);
-  CVC4::Expr extract_lower_bit_addr(CVC4::Expr address);
-
 
   void visit(gdsl::rreil::load *l);
   void visit(gdsl::rreil::store *s);
@@ -62,11 +55,8 @@ public:
   CVC4::Expr load_memory(CVC4::Expr memory, size_t size, CVC4::Expr address);
   CVC4::Expr store_memory(CVC4::Expr memory_before, size_t size, CVC4::Expr address, CVC4::Expr value);
 
-  CVC4::Expr build(gdsl::rreil::statement *s);
+  using smt_builder::build;
   CVC4::Expr build(gdsl::rreil::address *addr);
-  CVC4::Expr build(cfg::phi_assign const *pa);
-  CVC4::Expr build(cfg::phi_memory const& pm);
-  void edge(size_t from, size_t to);
 };
 
 }  // namespace analysis

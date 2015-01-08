@@ -36,47 +36,25 @@ protected:
   CVC4::Expr current_accumulator();
   CVC4::Expr pop_accumulator();
   void set_accumulator(CVC4::Expr accumulator);
-//
+
   virtual CVC4::Expr get_id_old_exp(gdsl::rreil::id *id, size_t def_node) = 0;
   CVC4::Expr concat_rhs(gdsl::rreil::id *lhs_id, size_t size, size_t offset, CVC4::Expr rhs);
-//  void handle_assign(size_t size, gdsl::rreil::variable *lhs_, std::function<void()> rhs_accept);
-//
-//  void _default(gdsl::rreil::id *i);
+  void handle_assign(size_t size, gdsl::rreil::variable *lhs_, std::function<void()> rhs_accept);
+
   void visit(gdsl::rreil::variable *v);
-//
-//  void visit(gdsl::rreil::lin_binop *a);
-//  void visit(gdsl::rreil::lin_imm *a);
-//  void visit(gdsl::rreil::lin_scale *a);
-//
-//  void visit(gdsl::rreil::expr_cmp *ec);
-//  void visit(gdsl::rreil::arbitrary *ab);
-//
-//  void visit(gdsl::rreil::expr_binop *eb);
-//  void visit(gdsl::rreil::expr_ext *ext);
-//
-//  void visit(gdsl::rreil::address *addr);
-//
-//  void visit(gdsl::rreil::assign *a);
-//
-//  CVC4::Expr enforce_aligned(size_t size, CVC4::Expr address);
-//  CVC4::Expr extract_lower_bit_addr(CVC4::Expr address);
-//
-//
-//  void visit(gdsl::rreil::load *l);
-//  void visit(gdsl::rreil::store *s);
+  void visit(gdsl::rreil::address *addr);
+  void visit(gdsl::rreil::assign *a);
+
+  CVC4::Expr extract_lower_bit_addr(CVC4::Expr address);
 public:
   smt_builder(cvc_context &context, adaptive_rd::adaptive_rd_result rd_result) :
       context(context), rd_result(rd_result) {
   }
 
-//  CVC4::Expr load_memory(CVC4::Expr memory, size_t size, CVC4::Expr address);
-//  CVC4::Expr store_memory(CVC4::Expr memory_before, size_t size, CVC4::Expr address, CVC4::Expr value);
-//
-//  CVC4::Expr build(gdsl::rreil::statement *s);
-//  CVC4::Expr build(gdsl::rreil::address *addr);
-//  CVC4::Expr build(cfg::phi_assign const *pa);
-//  CVC4::Expr build(cfg::phi_memory const& pm);
-//  void edge(size_t from, size_t to);
+  CVC4::Expr build(gdsl::rreil::statement *s);
+  CVC4::Expr build(cfg::phi_assign const *pa);
+  CVC4::Expr build(cfg::phi_memory const& pm);
+  void edge(size_t from, size_t to);
 };
 
 }  // namespace analysis

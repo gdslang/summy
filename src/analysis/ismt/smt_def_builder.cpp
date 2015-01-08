@@ -38,7 +38,7 @@ CVC4::Expr analysis::smt_def_builder::id_at_rev(gdsl::rreil::id *i, size_t rev) 
     result = zero;
   } else {
     auto i_str = i->to_string();
-    result = (this->*var_current)(i_str);
+    result = var_def(i_str);
   }
   return result;
 }
@@ -161,7 +161,6 @@ void analysis::smt_def_builder::visit(gdsl::rreil::arbitrary *ab) {
   set_accumulator(i_exp);
 }
 
-
 void analysis::smt_def_builder::visit(gdsl::rreil::expr_binop *eb) {
   eb->get_opnd1()->accept(*this);
   Expr opnd1 = pop_accumulator();
@@ -264,77 +263,17 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_ext *ext) {
   set_accumulator(result);
 }
 
-void analysis::smt_def_builder::visit(gdsl::rreil::address *addr) {
-  push_size(addr->get_size());
-  addr->get_lin()->accept(*this);
-  pop_size();
-}
-
 CVC4::Expr analysis::smt_def_builder::get_id_old_exp(gdsl::rreil::id *id, size_t def_node) {
   return id_at_rev(id, def_node);
 }
 
-void analysis::smt_def_builder::handle_assign(size_t size, gdsl::rreil::variable *lhs_gr, std::function<void()> rhs_accept) {
-  /*
-   * Todo: what if size == 0?
-   */
-//    base::visit(a);
-  auto &man = context.get_manager();
-  sizes.push_back(size);
-  rhs_accept();
-  Expr rhs = pop_accumulator();
-  lhs_gr->get_id()->accept(*this);
-  Expr lhs = pop_accumulator();
-  size = pop_size();
-
-//  int_t ass_size = rreil_prop::size_of_assign(a);
-  int_t ass_size = size;
-  int_t offset = lhs_gr->get_offset();
-
-  Expr rhs_conc = concat_rhs(lhs_gr->get_id(), ass_size, offset, rhs);
-
-  Expr ass = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
-  set_accumulator(ass);
-
-//    cout << ass << endl;
-////    context.get_smtEngine().checkSat(man.mkExpr(kind::EQUAL, result, result));
-//    context.get_smtEngine().checkSat(ass);
-//    cout << ":-)" << endl;
-}
-
-void smt_def_builder::visit(gdsl::rreil::assign *a) {
-  handle_assign(rreil_prop::size_of_assign(a), a->get_lhs(), [&]() {
-    a->get_rhs()->accept(*this);
-  });
-}
-
-CVC4::Expr analysis::smt_def_builder::enforce_aligned(size_t size, CVC4::Expr address) {
-  auto &man = context.get_manager();
-//  size_t addr_low_real_sz = log2(size/8);
-//  Expr addr_low_real = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(addr_low_real_sz - 1, 0)), address);
-//  Expr addr_constr = man.mkExpr(kind::EQUAL, addr_low_real, man.mkConst(BitVector(addr_low_real_sz, (unsigned long int)0)));
-  Expr addr_constr = man.mkConst(true);
-  return addr_constr;
-}
-
-CVC4::Expr analysis::smt_def_builder::extract_lower_bit_addr(CVC4::Expr address) {
-  auto &man = context.get_manager();
-  Expr lower_addr_bits = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(2, 0)), address);
-  Expr lower_extended = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - 3 - 3)),
-      lower_addr_bits);
-  Expr lower_bit_addr = man.mkExpr(kind::BITVECTOR_CONCAT, lower_extended, man.mkConst(BitVector(3, (unsigned long int)0)));
-  return lower_bit_addr;
-}
-
 void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
-  var_current = &smt_def_builder::var_def;
   push_size(l->get_size());
 //  l->get_address()->accept(*this);
 //  Expr address = pop_accumulator();
   smt_value_builder sb(context, rd_result);
   Expr address = sb.build(l->get_address());
 
-  var_current = &smt_def_builder::var_def;
   l->get_lhs()->get_id()->accept(*this);
   Expr lhs = pop_accumulator();
   pop_size();
@@ -348,14 +287,12 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
   auto &man = context.get_manager();
   Expr load = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
 
-  Expr all = l->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(l->get_size(), address), load) : load;
-
   Expr memory_ini = context.memory_def(0);
   Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
   Expr drefed_ini = man.mkExpr(kind::SELECT, memory_ini, addr_high);
   Expr initialization = man.mkExpr(kind::EQUAL, drefed_ini, man.mkConst(BitVector(64, (unsigned long int)(0))));
 
-  Expr all_plus_init = man.mkExpr(kind::AND, all, initialization);
+  Expr all_plus_init = man.mkExpr(kind::AND, load, initialization);
 
 //  cout << all_plus_init << endl;
 
@@ -363,12 +300,10 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
-  var_current = &smt_def_builder::var_def;
   push_size(s->get_size());
   smt_value_builder sb(context, rd_result);
   Expr address = sb.build(s->get_address());
 
-  var_current = &smt_def_builder::var_def;
   s->get_rhs()->accept(*this);
   Expr rhs = pop_accumulator();
   size_t size = pop_size();
@@ -381,43 +316,14 @@ void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
   Expr memory_after = context.memory_def(rd_result.result[to]->get_memory_rev());
   Expr store = man.mkExpr(kind::EQUAL, memory_after, mem_stored);
 
-  Expr all = size > 8 ? man.mkExpr(kind::AND, enforce_aligned(size, address), store) : store;
-  set_accumulator(all);
-}
-
-CVC4::Expr analysis::smt_def_builder::build(gdsl::rreil::statement *s) {
-  var_current = &smt_def_builder::var_def;
-
-  s->accept(*this);
-  return pop_accumulator();
-}
-
-CVC4::Expr analysis::smt_def_builder::build(cfg::phi_assign const *pa) {
-  var_current = &smt_def_builder::var_def;
-
-  handle_assign(pa->get_size(), pa->get_lhs(), [&]() {
-    pa->get_rhs()->accept(*this);
-  });
-  return pop_accumulator();
-}
-
-CVC4::Expr analysis::smt_def_builder::build(cfg::phi_memory const& pm) {
-  auto &man = context.get_manager();
-  return man.mkExpr(kind::EQUAL, context.memory_def(pm.from), context.memory_def(pm.to));
+  set_accumulator(store);
 }
 
 CVC4::Expr analysis::smt_def_builder::build_target(gdsl::rreil::address *addr) {
-  var_current = &smt_def_builder::var_def;
-
   addr->accept(*this);
   push_size(addr->get_size());
   auto &man = context.get_manager();
   Expr result = man.mkExpr(kind::EQUAL, defined_boolbv(pop_accumulator()), man.mkConst(BitVector(1, (unsigned long int)(1))));
   pop_size();
   return result;
-}
-
-void analysis::smt_def_builder::edge(size_t from, size_t to) {
-  this->from = from;
-  this->to = to;
 }

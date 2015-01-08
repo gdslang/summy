@@ -30,13 +30,6 @@ private:
 //  CVC4::Expr accumulator;
 
 //  std::function<CVC4::Expr(smt_def_builder*, std::string)> var_current;
-  /*
-   * Todo: Safety
-   */
-  /*
-   * Todo: Andere Idee, smt_builder verwenden
-   */
-  CVC4::Expr (smt_def_builder::*var_current)(std::string);
 
 //  cvc_context &context;
 //  adaptive_rd::adaptive_rd_result rd_result;
@@ -44,7 +37,6 @@ private:
 //  size_t to = 0;
 
   CVC4::Expr get_id_old_exp(gdsl::rreil::id *id, size_t def_node);
-  void handle_assign(size_t size, gdsl::rreil::variable *lhs_, std::function<void()> rhs_accept);
 
   CVC4::Expr defined_boolbv(CVC4::Expr a);
   CVC4::Expr defined(CVC4::Expr a);
@@ -67,23 +59,15 @@ private:
   void visit(gdsl::rreil::expr_binop *eb);
   void visit(gdsl::rreil::expr_ext *ext);
 
-  void visit(gdsl::rreil::address *addr);
-
-  void visit(gdsl::rreil::assign *a);
-
-  CVC4::Expr enforce_aligned(size_t size, CVC4::Expr address);
-  CVC4::Expr extract_lower_bit_addr(CVC4::Expr address);
   void visit(gdsl::rreil::load *l);
   void visit(gdsl::rreil::store *s);
 public:
   smt_def_builder(cvc_context &context, adaptive_rd::adaptive_rd_result rd_result) :
       smt_builder(context, rd_result) {
   }
-  CVC4::Expr build(gdsl::rreil::statement *s);
-  CVC4::Expr build(cfg::phi_assign const *pa);
-  CVC4::Expr build(cfg::phi_memory const& pm);
+
+  using smt_builder::build;
   CVC4::Expr build_target(gdsl::rreil::address *addr);
-  void edge(size_t from, size_t to);
 };
 
 }  // namespace analysis
