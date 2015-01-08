@@ -1,12 +1,11 @@
 /*
- * smt_def_builder.h
+ * smt_builder.h
  *
- *  Created on: Dec 15, 2014
+ *  Created on: Nov 7, 2014
  *      Author: Julian Kranz
  */
 
 #pragma once
-#include <summy/rreil/id/ssa_id.h>
 #include <summy/rreil/visitor.h>
 #include <summy/analysis/ismt/cvc_context.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
@@ -16,27 +15,14 @@
 #include <vector>
 #include <memory>
 
-/*
- * Todo: Gemeinsame Superklasse mit smt_builder
- */
-
 namespace analysis {
 
-class smt_def_builder: public smt_builder {
+class smt_value_builder: public smt_builder {
 private:
 //  using base = summy::rreil::visitor;
 //  std::vector<size_t> sizes;
 //  bool accumulator_set = false;
 //  CVC4::Expr accumulator;
-
-//  std::function<CVC4::Expr(smt_def_builder*, std::string)> var_current;
-  /*
-   * Todo: Safety
-   */
-  /*
-   * Todo: Andere Idee, smt_builder verwenden
-   */
-  CVC4::Expr (smt_def_builder::*var_current)(std::string);
 
 //  cvc_context &context;
 //  adaptive_rd::adaptive_rd_result rd_result;
@@ -46,16 +32,7 @@ private:
   CVC4::Expr get_id_old_exp(gdsl::rreil::id *id, size_t def_node);
   void handle_assign(size_t size, gdsl::rreil::variable *lhs_, std::function<void()> rhs_accept);
 
-  CVC4::Expr defined_boolbv(CVC4::Expr a);
-  CVC4::Expr defined(CVC4::Expr a);
-  CVC4::Expr defined_boolbv(CVC4::Expr a, CVC4::Expr b);
-  CVC4::Expr defined(CVC4::Expr a, CVC4::Expr b);
-
-  CVC4::Expr var(std::string name);
-  CVC4::Expr var_def(std::string name);
-  CVC4::Expr id_at_rev(gdsl::rreil::id *i, size_t rev);
   void _default(gdsl::rreil::id *i);
-  void visit(summy::rreil::ssa_id *si);
 
   void visit(gdsl::rreil::lin_binop *a);
   void visit(gdsl::rreil::lin_imm *a);
@@ -73,17 +50,24 @@ private:
 
   CVC4::Expr enforce_aligned(size_t size, CVC4::Expr address);
   CVC4::Expr extract_lower_bit_addr(CVC4::Expr address);
+
+
   void visit(gdsl::rreil::load *l);
   void visit(gdsl::rreil::store *s);
 public:
-  smt_def_builder(cvc_context &context, adaptive_rd::adaptive_rd_result rd_result) :
-      smt_builder(context, rd_result) {
+  smt_value_builder(cvc_context &context, adaptive_rd::adaptive_rd_result rd_result) :
+    smt_builder(context, rd_result) {
   }
+
+  CVC4::Expr load_memory(CVC4::Expr memory, size_t size, CVC4::Expr address);
+  CVC4::Expr store_memory(CVC4::Expr memory_before, size_t size, CVC4::Expr address, CVC4::Expr value);
+
   CVC4::Expr build(gdsl::rreil::statement *s);
+  CVC4::Expr build(gdsl::rreil::address *addr);
   CVC4::Expr build(cfg::phi_assign const *pa);
   CVC4::Expr build(cfg::phi_memory const& pm);
-  CVC4::Expr build_target(gdsl::rreil::address *addr);
   void edge(size_t from, size_t to);
 };
 
 }  // namespace analysis
+

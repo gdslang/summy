@@ -7,7 +7,7 @@
 
 #pragma once
 #include <summy/analysis/ismt/cvc_context.h>
-#include <summy/analysis/ismt/smt_builder.h>
+#include <summy/analysis/ismt/smt_value_builder.h>
 #include <summy/analysis/ismt/smt_def_builder.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/cfg/cfg.h>
@@ -26,7 +26,7 @@ private:
   liveness::liveness_result lv_result;
   adaptive_rd::adaptive_rd_result rd_result;
   cvc_context context;
-  smt_builder smtb;
+  smt_value_builder smtb;
   smt_def_builder smt_defb;
 
   std::map<size_t, std::map<size_t, CVC4::Expr>> state;

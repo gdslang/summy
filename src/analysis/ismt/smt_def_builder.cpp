@@ -6,7 +6,7 @@
  */
 
 #include <summy/analysis/ismt/smt_def_builder.h>
-#include <summy/analysis/ismt/smt_builder.h>
+#include <summy/analysis/ismt/smt_value_builder.h>
 #include <summy/rreil/copy_visitor.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/ssa_id.h>
@@ -21,45 +21,6 @@ using namespace CVC4;
 using namespace analysis;
 using namespace gdsl::rreil;
 namespace sr = summy::rreil;
-
-size_t analysis::smt_def_builder::current_size() {
-  if(sizes.empty())
-    throw string("Size unknown");
-  return sizes.back();
-}
-
-size_t analysis::smt_def_builder::pop_size() {
-  if(sizes.empty())
-    throw string("Empty size stack");
-  size_t back = sizes.back();
-  sizes.pop_back();
-  return back;
-}
-
-void analysis::smt_def_builder::push_size(size_t size) {
-  sizes.push_back(size);
-}
-
-void analysis::smt_def_builder::replace_size(size_t size) {
-  pop_size();
-  push_size(size);
-}
-
-CVC4::Expr analysis::smt_def_builder::current_accumulator() {
-  if(!accumulator_set) throw string(":/");
-  return accumulator;
-}
-
-CVC4::Expr analysis::smt_def_builder::pop_accumulator() {
-  if(!accumulator_set) throw string(":/");
-  this->accumulator_set = false;
-  return accumulator;
-}
-
-void analysis::smt_def_builder::set_accumulator(CVC4::Expr accumulator) {
-  this->accumulator = accumulator;
-  this->accumulator_set = true;
-}
 
 CVC4::Expr analysis::smt_def_builder::var(std::string name) {
   return context.var(name);
@@ -88,17 +49,6 @@ void analysis::smt_def_builder::visit(summy::rreil::ssa_id *si) {
 
 void smt_def_builder::_default(gdsl::rreil::id *i) {
   set_accumulator(id_at_rev(i, 0));
-}
-
-void analysis::smt_def_builder::visit(gdsl::rreil::variable *v) {
-  v->get_id()->accept(*this);
-  size_t size = current_size();
-  size_t offset = v->get_offset();
-  if(offset > 0 || size < 64) {
-    Expr c = pop_accumulator();
-    auto &man = context.get_manager();
-    set_accumulator(man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(offset + size - 1, offset)), c));
-  }
 }
 
 CVC4::Expr analysis::smt_def_builder::defined_boolbv(CVC4::Expr a) {
@@ -320,53 +270,8 @@ void analysis::smt_def_builder::visit(gdsl::rreil::address *addr) {
   pop_size();
 }
 
-CVC4::Expr analysis::smt_def_builder::concat_rhs(id *lhs_id, size_t size, size_t offset, Expr rhs) {
-  auto &man = context.get_manager();
-  Expr rhs_conc;
-  if(size == 0 || size == 64) rhs_conc = rhs;
-  else {
-    shared_ptr<id> lhs_id_wrapped(lhs_id, [&](void *x) {});
-
-    auto def_it = rd_result.result[from]->get_elements().find(lhs_id_wrapped);
-    size_t def_node = 0;
-    if(def_it != rd_result.result[from]->get_elements().end()) def_node = def_it->second;
-    sr::copy_visitor civ;
-    civ._([&](gdsl::rreil::id *inner, int_t rev) {
-      return inner;
-    });
-    lhs_id_wrapped->accept(civ);
-
-    id *id_old = def_node > 0 ? new sr::ssa_id(civ.get_id(), def_node) : civ.get_id();
-    Expr id_old_exp = id_at_rev(id_old, def_node);
-    delete id_old;
-
-    struct slice {
-      function<Expr(ExprManager&)> get;
-      slice(Expr e, unsigned high, unsigned low) {
-        get = [&](ExprManager &man) {
-          auto extract_upper = BitVectorExtract(high, low);
-          return man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(extract_upper), e);
-        };
-      }
-      slice(Expr e) {
-        get = [&](ExprManager &man) {
-          return e;
-        };
-      }
-    };
-
-    auto concat = [&](vector<slice> slices) {
-      vector<Expr> exprs;
-      for(auto &slice : slices)
-        exprs.push_back(slice.get(man));
-      rhs_conc = man.mkExpr(kind::BITVECTOR_CONCAT, exprs);
-    };
-
-    if(offset == 0) concat( { slice(id_old_exp, 63, size), slice(rhs) });
-    else if(offset + size == 64) concat( { slice(rhs), slice(id_old_exp, offset - 1, 0) });
-    else concat( { slice(id_old_exp, 63, size + offset), slice(rhs), slice(id_old_exp, offset - 1, 0) });
-  }
-  return rhs_conc;
+CVC4::Expr analysis::smt_def_builder::get_id_old_exp(gdsl::rreil::id *id, size_t def_node) {
+  return id_at_rev(id, def_node);
 }
 
 void analysis::smt_def_builder::handle_assign(size_t size, gdsl::rreil::variable *lhs_gr, std::function<void()> rhs_accept) {
@@ -426,7 +331,7 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
   push_size(l->get_size());
 //  l->get_address()->accept(*this);
 //  Expr address = pop_accumulator();
-  smt_builder sb(context, rd_result);
+  smt_value_builder sb(context, rd_result);
   Expr address = sb.build(l->get_address());
 
   var_current = &smt_def_builder::var_def;
@@ -460,7 +365,7 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
 void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
   var_current = &smt_def_builder::var_def;
   push_size(s->get_size());
-  smt_builder sb(context, rd_result);
+  smt_value_builder sb(context, rd_result);
   Expr address = sb.build(s->get_address());
 
   var_current = &smt_def_builder::var_def;
