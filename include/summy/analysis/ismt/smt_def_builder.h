@@ -24,18 +24,6 @@ namespace analysis {
 
 class smt_def_builder: public smt_builder {
 private:
-//  using base = summy::rreil::visitor;
-//  std::vector<size_t> sizes;
-//  bool accumulator_set = false;
-//  CVC4::Expr accumulator;
-
-//  std::function<CVC4::Expr(smt_def_builder*, std::string)> var_current;
-
-//  cvc_context &context;
-//  adaptive_rd::adaptive_rd_result rd_result;
-//  size_t from = 0;
-//  size_t to = 0;
-
   CVC4::Expr get_id_old_exp(gdsl::rreil::id *id, size_t def_node);
 
   CVC4::Expr defined_boolbv(CVC4::Expr a);
@@ -46,6 +34,7 @@ private:
   CVC4::Expr var(std::string name);
   CVC4::Expr var_def(std::string name);
   CVC4::Expr id_at_rev(gdsl::rreil::id *i, size_t rev);
+
   void _default(gdsl::rreil::id *i);
   void visit(summy::rreil::ssa_id *si);
 
@@ -62,9 +51,7 @@ private:
   void visit(gdsl::rreil::load *l);
   void visit(gdsl::rreil::store *s);
 public:
-  smt_def_builder(cvc_context &context, adaptive_rd::adaptive_rd_result rd_result) :
-      smt_builder(context, rd_result) {
-  }
+  using smt_builder::smt_builder;
 
   using smt_builder::build;
   CVC4::Expr build_target(gdsl::rreil::address *addr);

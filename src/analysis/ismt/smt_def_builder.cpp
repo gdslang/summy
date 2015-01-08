@@ -22,33 +22,8 @@ using namespace analysis;
 using namespace gdsl::rreil;
 namespace sr = summy::rreil;
 
-CVC4::Expr analysis::smt_def_builder::var(std::string name) {
-  return context.var(name);
-}
-
-CVC4::Expr analysis::smt_def_builder::var_def(std::string name) {
-  return context.var(name + "_def");
-}
-
-CVC4::Expr analysis::smt_def_builder::id_at_rev(gdsl::rreil::id *i, size_t rev) {
-  Expr result;
-  if(!rev) {
-    auto &man = context.get_manager();
-    Expr zero = man.mkConst(BitVector(64, (unsigned long int)(0)));
-    result = zero;
-  } else {
-    auto i_str = i->to_string();
-    result = var_def(i_str);
-  }
-  return result;
-}
-
-void analysis::smt_def_builder::visit(summy::rreil::ssa_id *si) {
-  set_accumulator(id_at_rev(si, si->get_version()));
-}
-
-void smt_def_builder::_default(gdsl::rreil::id *i) {
-  set_accumulator(id_at_rev(i, 0));
+CVC4::Expr analysis::smt_def_builder::get_id_old_exp(gdsl::rreil::id *id, size_t def_node) {
+  return id_at_rev(id, def_node);
 }
 
 CVC4::Expr analysis::smt_def_builder::defined_boolbv(CVC4::Expr a) {
@@ -79,6 +54,35 @@ CVC4::Expr analysis::smt_def_builder::defined(CVC4::Expr a, CVC4::Expr b) {
   auto &man = context.get_manager();
   Expr anded = man.mkExpr(kind::BITVECTOR_AND, a, b);
   return defined(anded);
+}
+
+CVC4::Expr analysis::smt_def_builder::var(std::string name) {
+  return context.var(name);
+}
+
+CVC4::Expr analysis::smt_def_builder::var_def(std::string name) {
+  return context.var(name + "_def");
+}
+
+CVC4::Expr analysis::smt_def_builder::id_at_rev(gdsl::rreil::id *i, size_t rev) {
+  Expr result;
+  if(!rev) {
+    auto &man = context.get_manager();
+    Expr zero = man.mkConst(BitVector(64, (unsigned long int)(0)));
+    result = zero;
+  } else {
+    auto i_str = i->to_string();
+    result = var_def(i_str);
+  }
+  return result;
+}
+
+void smt_def_builder::_default(gdsl::rreil::id *i) {
+  set_accumulator(id_at_rev(i, 0));
+}
+
+void analysis::smt_def_builder::visit(summy::rreil::ssa_id *si) {
+  set_accumulator(id_at_rev(si, si->get_version()));
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::lin_binop *a) {
@@ -261,10 +265,6 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_ext *ext) {
   }
 
   set_accumulator(result);
-}
-
-CVC4::Expr analysis::smt_def_builder::get_id_old_exp(gdsl::rreil::id *id, size_t def_node) {
-  return id_at_rev(id, def_node);
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {

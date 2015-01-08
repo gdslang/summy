@@ -19,16 +19,6 @@ namespace analysis {
 
 class smt_value_builder: public smt_builder {
 private:
-//  using base = summy::rreil::visitor;
-//  std::vector<size_t> sizes;
-//  bool accumulator_set = false;
-//  CVC4::Expr accumulator;
-
-//  cvc_context &context;
-//  adaptive_rd::adaptive_rd_result rd_result;
-//  size_t from = 0;
-//  size_t to = 0;
-
   CVC4::Expr get_id_old_exp(gdsl::rreil::id *id, size_t def_node);
 
   void _default(gdsl::rreil::id *i);
