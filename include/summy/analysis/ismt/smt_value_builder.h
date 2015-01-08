@@ -20,6 +20,7 @@ namespace analysis {
 class smt_value_builder: public smt_builder {
 private:
   CVC4::Expr get_id_old_exp(gdsl::rreil::id *id, size_t def_node);
+  CVC4::Expr enforce_aligned(size_t size, CVC4::Expr address);
 
   void _default(gdsl::rreil::id *i);
 
@@ -33,14 +34,10 @@ private:
   void visit(gdsl::rreil::expr_binop *eb);
   void visit(gdsl::rreil::expr_ext *ext);
 
-  CVC4::Expr enforce_aligned(size_t size, CVC4::Expr address);
-
   void visit(gdsl::rreil::load *l);
   void visit(gdsl::rreil::store *s);
 public:
-  smt_value_builder(cvc_context &context, adaptive_rd::adaptive_rd_result rd_result) :
-    smt_builder(context, rd_result) {
-  }
+  using smt_builder::smt_builder;
 
   CVC4::Expr load_memory(CVC4::Expr memory, size_t size, CVC4::Expr address);
   CVC4::Expr store_memory(CVC4::Expr memory_before, size_t size, CVC4::Expr address, CVC4::Expr value);

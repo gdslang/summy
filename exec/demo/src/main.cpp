@@ -26,9 +26,7 @@
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/ismt/ismt.h>
 #include <summy/analysis/liveness/liveness.h>
-#include <summy/test/compile.h>
 #include <summy/transformers/resolved_connector.h>
-#include <summy/test/test.h>
 #include <cstdio>
 
 using analysis::adaptive_rd::adaptive_rd;
@@ -241,8 +239,6 @@ int main(int argc, char **argv) {
 //    cout << blah << endl;
 //
 //  }
-
-  return summy_test_run(argc, argv);
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);

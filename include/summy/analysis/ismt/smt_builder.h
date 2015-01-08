@@ -24,6 +24,8 @@ protected:
   CVC4::Expr accumulator;
 
   cvc_context &context;
+  CVC4::ExprManager &manager;
+
   adaptive_rd::adaptive_rd_result rd_result;
   size_t from = 0;
   size_t to = 0;
@@ -48,7 +50,7 @@ protected:
   CVC4::Expr extract_lower_bit_addr(CVC4::Expr address);
 public:
   smt_builder(cvc_context &context, adaptive_rd::adaptive_rd_result rd_result) :
-      context(context), rd_result(rd_result) {
+      context(context), manager(context.get_manager()), rd_result(rd_result) {
   }
 
   CVC4::Expr build(gdsl::rreil::statement *s);

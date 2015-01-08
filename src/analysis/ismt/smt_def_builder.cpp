@@ -27,32 +27,28 @@ CVC4::Expr analysis::smt_def_builder::get_id_old_exp(gdsl::rreil::id *id, size_t
 }
 
 CVC4::Expr analysis::smt_def_builder::defined_boolbv(CVC4::Expr a) {
-  auto &man = context.get_manager();
   size_t size = current_size();
 
-  Expr fully = man.mkConst(BitVector(size, (unsigned long int)(-1)));
-  Expr defined = man.mkExpr(kind::BITVECTOR_COMP, a, fully);
+  Expr fully = manager.mkConst(BitVector(size, (unsigned long int)(-1)));
+  Expr defined = manager.mkExpr(kind::BITVECTOR_COMP, a, fully);
 
   return defined;
 }
 
 CVC4::Expr analysis::smt_def_builder::defined(CVC4::Expr a) {
-  auto &man = context.get_manager();
   size_t size = current_size();
 
   Expr defined = defined_boolbv(a);
-  return man.mkExpr(kind::BITVECTOR_REPEAT, man.mkConst(BitVectorRepeat(size)), defined);
+  return manager.mkExpr(kind::BITVECTOR_REPEAT, manager.mkConst(BitVectorRepeat(size)), defined);
 }
 
 CVC4::Expr analysis::smt_def_builder::defined_boolbv(CVC4::Expr a, CVC4::Expr b) {
-  auto &man = context.get_manager();
-  Expr anded = man.mkExpr(kind::BITVECTOR_AND, a, b);
+  Expr anded = manager.mkExpr(kind::BITVECTOR_AND, a, b);
   return defined_boolbv(anded);
 }
 
 CVC4::Expr analysis::smt_def_builder::defined(CVC4::Expr a, CVC4::Expr b) {
-  auto &man = context.get_manager();
-  Expr anded = man.mkExpr(kind::BITVECTOR_AND, a, b);
+  Expr anded = manager.mkExpr(kind::BITVECTOR_AND, a, b);
   return defined(anded);
 }
 
@@ -67,8 +63,7 @@ CVC4::Expr analysis::smt_def_builder::var_def(std::string name) {
 CVC4::Expr analysis::smt_def_builder::id_at_rev(gdsl::rreil::id *i, size_t rev) {
   Expr result;
   if(!rev) {
-    auto &man = context.get_manager();
-    Expr zero = man.mkConst(BitVector(64, (unsigned long int)(0)));
+    Expr zero = manager.mkConst(BitVector(64, (unsigned long int)(0)));
     result = zero;
   } else {
     auto i_str = i->to_string();
@@ -86,7 +81,6 @@ void analysis::smt_def_builder::visit(summy::rreil::ssa_id *si) {
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::lin_binop *a) {
-//  auto &man = context.get_manager();
   a->get_opnd1()->accept(*this);
   Expr opnd1 = pop_accumulator();
   a->get_opnd2()->accept(*this);
@@ -106,8 +100,7 @@ void analysis::smt_def_builder::visit(gdsl::rreil::lin_binop *a) {
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::lin_imm *a) {
-  auto &man = context.get_manager();
-  Expr imm = man.mkConst(BitVector(current_size(), (unsigned long int)(-1)));
+  Expr imm = manager.mkConst(BitVector(current_size(), (unsigned long int)(-1)));
   set_accumulator(imm);
 }
 
@@ -160,8 +153,7 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_cmp *ec) {
 }
 
 void analysis::smt_def_builder::visit(gdsl::rreil::arbitrary *ab) {
-  auto &man = context.get_manager();
-  Expr i_exp = man.mkConst(BitVector(current_size(), (unsigned long int)(0)));
+  Expr i_exp = manager.mkConst(BitVector(current_size(), (unsigned long int)(0)));
   set_accumulator(i_exp);
 }
 
@@ -171,7 +163,6 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_binop *eb) {
   eb->get_opnd2()->accept(*this);
   Expr opnd2 = pop_accumulator();
 
-  auto &man = context.get_manager();
   Expr result;
 
 //  auto if_def = [&](Expr cond, Expr then) {
@@ -212,15 +203,15 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_binop *eb) {
       break;
     }
     case BIN_AND: {
-      result = man.mkExpr(kind::BITVECTOR_AND, opnd1, opnd2);
+      result = manager.mkExpr(kind::BITVECTOR_AND, opnd1, opnd2);
       break;
     }
     case BIN_OR: {
-      result = man.mkExpr(kind::BITVECTOR_AND, opnd1, opnd2);
+      result = manager.mkExpr(kind::BITVECTOR_AND, opnd1, opnd2);
       break;
     }
     case BIN_XOR: {
-      result = man.mkExpr(kind::BITVECTOR_AND, opnd1, opnd2);
+      result = manager.mkExpr(kind::BITVECTOR_AND, opnd1, opnd2);
       break;
     }
     default: {
@@ -242,20 +233,19 @@ void analysis::smt_def_builder::visit(gdsl::rreil::expr_ext *ext) {
 
   assert(tosize > 0);
 
-  auto &man = context.get_manager();
   Expr result;
-  if(fromsize > tosize) result = man.mkExpr(kind::BITVECTOR_EXTRACT,
-      man.mkConst(BitVectorExtract(tosize - 1, 0)), opnd);
+  if(fromsize > tosize) result = manager.mkExpr(kind::BITVECTOR_EXTRACT,
+      manager.mkConst(BitVectorExtract(tosize - 1, 0)), opnd);
   else if(tosize == fromsize)
     result = opnd;
   else switch(ext->get_op()) {
     case EXT_ZX: {
-      Expr upper_bits = man.mkConst(BitVector(tosize - fromsize, (unsigned long int)(-1)));
-      result = man.mkExpr(kind::BITVECTOR_CONCAT, upper_bits, opnd);
+      Expr upper_bits = manager.mkConst(BitVector(tosize - fromsize, (unsigned long int)(-1)));
+      result = manager.mkExpr(kind::BITVECTOR_CONCAT, upper_bits, opnd);
       break;
     }
     case EXT_SX: {
-      result = man.mkExpr(kind::BITVECTOR_SIGN_EXTEND, man.mkConst(BitVectorSignExtend(tosize - fromsize)),
+      result = manager.mkExpr(kind::BITVECTOR_SIGN_EXTEND, manager.mkConst(BitVectorSignExtend(tosize - fromsize)),
           opnd);
       break;
     }
@@ -284,15 +274,14 @@ void analysis::smt_def_builder::visit(gdsl::rreil::load *l) {
   Expr drefed = sb.load_memory(memory, l->get_size(), address);
 
   Expr rhs_conc = concat_rhs(l->get_lhs()->get_id(), l->get_size(), l->get_lhs()->get_offset(), drefed);
-  auto &man = context.get_manager();
-  Expr load = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
+  Expr load = manager.mkExpr(kind::EQUAL, rhs_conc, lhs);
 
   Expr memory_ini = context.memory_def(0);
-  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
-  Expr drefed_ini = man.mkExpr(kind::SELECT, memory_ini, addr_high);
-  Expr initialization = man.mkExpr(kind::EQUAL, drefed_ini, man.mkConst(BitVector(64, (unsigned long int)(0))));
+  Expr addr_high = manager.mkExpr(kind::BITVECTOR_EXTRACT, manager.mkConst(BitVectorExtract(63, 3)), address);
+  Expr drefed_ini = manager.mkExpr(kind::SELECT, memory_ini, addr_high);
+  Expr initialization = manager.mkExpr(kind::EQUAL, drefed_ini, manager.mkConst(BitVector(64, (unsigned long int)(0))));
 
-  Expr all_plus_init = man.mkExpr(kind::AND, load, initialization);
+  Expr all_plus_init = manager.mkExpr(kind::AND, load, initialization);
 
 //  cout << all_plus_init << endl;
 
@@ -310,11 +299,10 @@ void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
 
   Expr memory_before = context.memory_def(rd_result.result[from]->get_memory_rev());
 
-  auto &man = context.get_manager();
   Expr mem_stored = sb.store_memory(memory_before, size, address, rhs);
 
   Expr memory_after = context.memory_def(rd_result.result[to]->get_memory_rev());
-  Expr store = man.mkExpr(kind::EQUAL, memory_after, mem_stored);
+  Expr store = manager.mkExpr(kind::EQUAL, memory_after, mem_stored);
 
   set_accumulator(store);
 }
@@ -322,8 +310,7 @@ void analysis::smt_def_builder::visit(gdsl::rreil::store *s) {
 CVC4::Expr analysis::smt_def_builder::build_target(gdsl::rreil::address *addr) {
   addr->accept(*this);
   push_size(addr->get_size());
-  auto &man = context.get_manager();
-  Expr result = man.mkExpr(kind::EQUAL, defined_boolbv(pop_accumulator()), man.mkConst(BitVector(1, (unsigned long int)(1))));
+  Expr result = manager.mkExpr(kind::EQUAL, defined_boolbv(pop_accumulator()), manager.mkConst(BitVector(1, (unsigned long int)(1))));
   pop_size();
   return result;
 }

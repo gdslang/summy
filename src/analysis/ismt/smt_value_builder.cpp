@@ -21,6 +21,18 @@ using namespace analysis;
 using namespace gdsl::rreil;
 namespace sr = summy::rreil;
 
+CVC4::Expr analysis::smt_value_builder::get_id_old_exp(gdsl::rreil::id *id, size_t def_node) {
+  return context.var(id->to_string());
+}
+
+CVC4::Expr analysis::smt_value_builder::enforce_aligned(size_t size, CVC4::Expr address) {
+//  size_t addr_low_real_sz = log2(size/8);
+//  Expr addr_low_real = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(addr_low_real_sz - 1, 0)), address);
+//  Expr addr_constr = man.mkExpr(kind::EQUAL, addr_low_real, man.mkConst(BitVector(addr_low_real_sz, (unsigned long int)0)));
+  Expr addr_constr = manager.mkConst(true);
+  return addr_constr;
+}
+
 void smt_value_builder::_default(gdsl::rreil::id *i) {
   auto i_str = i->to_string();
   Expr i_exp = context.var(i_str);
@@ -28,7 +40,6 @@ void smt_value_builder::_default(gdsl::rreil::id *i) {
 }
 
 void analysis::smt_value_builder::visit(gdsl::rreil::lin_binop *a) {
-  auto &man = context.get_manager();
   a->get_opnd1()->accept(*this);
   Expr opnd1 = pop_accumulator();
   a->get_opnd2()->accept(*this);
@@ -36,11 +47,11 @@ void analysis::smt_value_builder::visit(gdsl::rreil::lin_binop *a) {
   Expr r;
   switch(a->get_op()) {
     case BIN_LIN_ADD: {
-      r = man.mkExpr(kind::BITVECTOR_PLUS, opnd1, opnd2);
+      r = manager.mkExpr(kind::BITVECTOR_PLUS, opnd1, opnd2);
       break;
     }
     case BIN_LIN_SUB: {
-      r = man.mkExpr(kind::BITVECTOR_SUB, opnd1, opnd2);
+      r = manager.mkExpr(kind::BITVECTOR_SUB, opnd1, opnd2);
       break;
     }
   }
@@ -48,17 +59,15 @@ void analysis::smt_value_builder::visit(gdsl::rreil::lin_binop *a) {
 }
 
 void analysis::smt_value_builder::visit(gdsl::rreil::lin_imm *a) {
-  auto &man = context.get_manager();
-  Expr imm = man.mkConst(BitVector(current_size(), (unsigned long int)a->get_imm()));
+  Expr imm = manager.mkConst(BitVector(current_size(), (unsigned long int)a->get_imm()));
   set_accumulator(imm);
 }
 
 void analysis::smt_value_builder::visit(gdsl::rreil::lin_scale *a) {
-  auto &man = context.get_manager();
-  Expr factor_bv = man.mkConst(BitVector(64, (unsigned long int)a->get_const()));
+  Expr factor_bv = manager.mkConst(BitVector(64, (unsigned long int)a->get_const()));
   a->get_opnd()->accept(*this);
   Expr opnd = pop_accumulator();
-  Expr r = man.mkExpr(kind::BITVECTOR_MULT, factor_bv, opnd);
+  Expr r = manager.mkExpr(kind::BITVECTOR_MULT, factor_bv, opnd);
   set_accumulator(r);
 }
 
@@ -68,31 +77,30 @@ void analysis::smt_value_builder::visit(gdsl::rreil::expr_cmp *ec) {
   ec->get_opnd2()->accept(*this);
   Expr opnd2 = pop_accumulator();
 
-  auto &man = context.get_manager();
   Expr result;
   switch(ec->get_op()) {
     case CMP_EQ: {
-      result = man.mkExpr(kind::BITVECTOR_COMP, opnd1, opnd2);
+      result = manager.mkExpr(kind::BITVECTOR_COMP, opnd1, opnd2);
       break;
     }
     case CMP_NEQ: {
-      result = man.mkExpr(kind::BITVECTOR_NOT, man.mkExpr(kind::BITVECTOR_COMP, opnd1, opnd2));
+      result = manager.mkExpr(kind::BITVECTOR_NOT, manager.mkExpr(kind::BITVECTOR_COMP, opnd1, opnd2));
       break;
     }
     case CMP_LES: {
-      result = man.mkExpr(kind::BITVECTOR_SLE, opnd1, opnd2);
+      result = manager.mkExpr(kind::BITVECTOR_SLE, opnd1, opnd2);
       break;
     }
     case CMP_LEU: {
-      result = man.mkExpr(kind::BITVECTOR_ULE, opnd1, opnd2);
+      result = manager.mkExpr(kind::BITVECTOR_ULE, opnd1, opnd2);
       break;
     }
     case CMP_LTS: {
-      result = man.mkExpr(kind::BITVECTOR_SLT, opnd1, opnd2);
+      result = manager.mkExpr(kind::BITVECTOR_SLT, opnd1, opnd2);
       break;
     }
     case CMP_LTU: {
-      result = man.mkExpr(kind::BITVECTOR_ULT, opnd1, opnd2);
+      result = manager.mkExpr(kind::BITVECTOR_ULT, opnd1, opnd2);
       break;
     }
     default: {
@@ -101,8 +109,8 @@ void analysis::smt_value_builder::visit(gdsl::rreil::expr_cmp *ec) {
   }
 
 
-  if(result.getType() == man.booleanType()) result = man.mkExpr(kind::ITE, result,
-      man.mkConst(BitVector(1, (unsigned long int)1)), man.mkConst(BitVector(1, (unsigned long int)0)));
+  if(result.getType() == manager.booleanType()) result = manager.mkExpr(kind::ITE, result,
+      manager.mkConst(BitVector(1, (unsigned long int)1)), manager.mkConst(BitVector(1, (unsigned long int)0)));
   replace_size(1);
   set_accumulator(result);
 }
@@ -111,8 +119,7 @@ void analysis::smt_value_builder::visit(gdsl::rreil::arbitrary *ab) {
   /*
    * Todo: Arbitrary constructor?
    */
-  auto &man = context.get_manager();
-  Expr i_exp = man.mkVar("arbitrary", man.mkBitVectorType(current_size()));
+  Expr i_exp = manager.mkVar("arbitrary", manager.mkBitVectorType(current_size()));
   set_accumulator(i_exp);
 }
 
@@ -173,8 +180,7 @@ void analysis::smt_value_builder::visit(gdsl::rreil::expr_binop *eb) {
       throw string("Invalid expression");
     }
   }
-  auto &man = context.get_manager();
-  Expr result = man.mkExpr(k, opnd1, opnd2);
+  Expr result = manager.mkExpr(k, opnd1, opnd2);
   set_accumulator(result);
 }
 
@@ -190,18 +196,17 @@ void analysis::smt_value_builder::visit(gdsl::rreil::expr_ext *ext) {
 
   assert(tosize > 0);
 
-  auto &man = context.get_manager();
   Expr r;
-  if(ext->get_fromsize() > tosize) r = man.mkExpr(kind::BITVECTOR_EXTRACT,
-      man.mkConst(BitVectorExtract(tosize - 1, 0)), opnd);
+  if(ext->get_fromsize() > tosize) r = manager.mkExpr(kind::BITVECTOR_EXTRACT,
+      manager.mkConst(BitVectorExtract(tosize - 1, 0)), opnd);
   else switch(ext->get_op()) {
     case EXT_ZX: {
-      r = man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(tosize - ext->get_fromsize())),
+      r = manager.mkExpr(kind::BITVECTOR_ZERO_EXTEND, manager.mkConst(BitVectorZeroExtend(tosize - ext->get_fromsize())),
           opnd);
       break;
     }
     case EXT_SX: {
-      r = man.mkExpr(kind::BITVECTOR_SIGN_EXTEND, man.mkConst(BitVectorSignExtend(tosize - ext->get_fromsize())),
+      r = manager.mkExpr(kind::BITVECTOR_SIGN_EXTEND, manager.mkConst(BitVectorSignExtend(tosize - ext->get_fromsize())),
           opnd);
       break;
     }
@@ -210,33 +215,6 @@ void analysis::smt_value_builder::visit(gdsl::rreil::expr_ext *ext) {
     }
   }
   set_accumulator(r);
-}
-
-CVC4::Expr analysis::smt_value_builder::get_id_old_exp(gdsl::rreil::id *id, size_t def_node) {
-  return context.var(id->to_string());
-}
-
-CVC4::Expr analysis::smt_value_builder::enforce_aligned(size_t size, CVC4::Expr address) {
-  auto &man = context.get_manager();
-//  size_t addr_low_real_sz = log2(size/8);
-//  Expr addr_low_real = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(addr_low_real_sz - 1, 0)), address);
-//  Expr addr_constr = man.mkExpr(kind::EQUAL, addr_low_real, man.mkConst(BitVector(addr_low_real_sz, (unsigned long int)0)));
-  Expr addr_constr = man.mkConst(true);
-  return addr_constr;
-}
-
-CVC4::Expr analysis::smt_value_builder::load_memory(CVC4::Expr memory, size_t size, CVC4::Expr address) {
-  auto &man = context.get_manager();
-  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
-  Expr drefed = man.mkExpr(kind::SELECT, memory, addr_high);
-
-  if(size < 64) {
-    Expr lower_bit_addr = extract_lower_bit_addr(address);
-    drefed = man.mkExpr(kind::BITVECTOR_LSHR, drefed, lower_bit_addr);
-    drefed = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(size - 1, 0)), drefed);
-  } else if(size > 64) throw string("Invalid size");
-
-  return drefed;
 }
 
 void analysis::smt_value_builder::visit(gdsl::rreil::load *l) {
@@ -250,40 +228,11 @@ void analysis::smt_value_builder::visit(gdsl::rreil::load *l) {
   Expr memory = context.memory(rd_result.result[from]->get_memory_rev());
   Expr drefed = load_memory(memory, l->get_size(), address);
 
-  auto &man = context.get_manager();
   Expr rhs_conc = concat_rhs(l->get_lhs()->get_id(), l->get_size(), l->get_lhs()->get_offset(), drefed);
-  Expr load = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
+  Expr load = manager.mkExpr(kind::EQUAL, rhs_conc, lhs);
 
-  Expr all = l->get_size() > 8 ? man.mkExpr(kind::AND, enforce_aligned(l->get_size(), address), load) : load;
+  Expr all = l->get_size() > 8 ? manager.mkExpr(kind::AND, enforce_aligned(l->get_size(), address), load) : load;
   set_accumulator(all);
-}
-
-CVC4::Expr analysis::smt_value_builder::store_memory(CVC4::Expr memory_before, size_t size, CVC4::Expr address, CVC4::Expr value) {
-  auto &man = context.get_manager();
-  Expr addr_high = man.mkExpr(kind::BITVECTOR_EXTRACT, man.mkConst(BitVectorExtract(63, 3)), address);
-
-  assert(size <= 64);
-  Expr value_ext = size < 64 ? man.mkExpr(kind::BITVECTOR_ZERO_EXTEND, man.mkConst(BitVectorZeroExtend(64 - size)), value) : value;
-
-  Expr mem_new;
-  if(size == 64) {
-    mem_new = value_ext;
-  } else if(size < 64) {
-    Expr lower_bit_addr = extract_lower_bit_addr(address);
-
-    Expr mask = man.mkConst(BitVector(64, (unsigned long int)((1 << size) - 1)));
-    mask = man.mkExpr(kind::BITVECTOR_SHL, mask, lower_bit_addr);
-    mask = man.mkExpr(kind::BITVECTOR_NOT, mask);
-
-    Expr mem_old = man.mkExpr(kind::SELECT, memory_before, addr_high);
-    Expr mem_old_masked = man.mkExpr(kind::BITVECTOR_AND, mem_old, mask);
-
-    Expr rhs_shifted = man.mkExpr(kind::BITVECTOR_SHL, value_ext, lower_bit_addr);
-    mem_new = man.mkExpr(kind::BITVECTOR_OR, mem_old_masked, rhs_shifted);
-  } else throw string("Invalid size");
-  Expr mem_stored = man.mkExpr(kind::STORE, memory_before, addr_high, mem_new);
-
-  return  mem_stored;
 }
 
 void analysis::smt_value_builder::visit(gdsl::rreil::store *s) {
@@ -299,11 +248,50 @@ void analysis::smt_value_builder::visit(gdsl::rreil::store *s) {
   Expr mem_stored = store_memory(memory_before, size, address, rhs);
 
   Expr memory_after = context.memory(rd_result.result[to]->get_memory_rev());
-  auto &man = context.get_manager();
-  Expr store = man.mkExpr(kind::EQUAL, memory_after, mem_stored);
+  Expr store = manager.mkExpr(kind::EQUAL, memory_after, mem_stored);
 
-  Expr all = size > 8 ? man.mkExpr(kind::AND, enforce_aligned(size, address), store) : store;
+  Expr all = size > 8 ? manager.mkExpr(kind::AND, enforce_aligned(size, address), store) : store;
   set_accumulator(all);
+}
+
+CVC4::Expr analysis::smt_value_builder::load_memory(CVC4::Expr memory, size_t size, CVC4::Expr address) {
+  Expr addr_high = manager.mkExpr(kind::BITVECTOR_EXTRACT, manager.mkConst(BitVectorExtract(63, 3)), address);
+  Expr drefed = manager.mkExpr(kind::SELECT, memory, addr_high);
+
+  if(size < 64) {
+    Expr lower_bit_addr = extract_lower_bit_addr(address);
+    drefed = manager.mkExpr(kind::BITVECTOR_LSHR, drefed, lower_bit_addr);
+    drefed = manager.mkExpr(kind::BITVECTOR_EXTRACT, manager.mkConst(BitVectorExtract(size - 1, 0)), drefed);
+  } else if(size > 64) throw string("Invalid size");
+
+  return drefed;
+}
+
+CVC4::Expr analysis::smt_value_builder::store_memory(CVC4::Expr memory_before, size_t size, CVC4::Expr address, CVC4::Expr value) {
+  Expr addr_high = manager.mkExpr(kind::BITVECTOR_EXTRACT, manager.mkConst(BitVectorExtract(63, 3)), address);
+
+  assert(size <= 64);
+  Expr value_ext = size < 64 ? manager.mkExpr(kind::BITVECTOR_ZERO_EXTEND, manager.mkConst(BitVectorZeroExtend(64 - size)), value) : value;
+
+  Expr mem_new;
+  if(size == 64) {
+    mem_new = value_ext;
+  } else if(size < 64) {
+    Expr lower_bit_addr = extract_lower_bit_addr(address);
+
+    Expr mask = manager.mkConst(BitVector(64, (unsigned long int)((1 << size) - 1)));
+    mask = manager.mkExpr(kind::BITVECTOR_SHL, mask, lower_bit_addr);
+    mask = manager.mkExpr(kind::BITVECTOR_NOT, mask);
+
+    Expr mem_old = manager.mkExpr(kind::SELECT, memory_before, addr_high);
+    Expr mem_old_masked = manager.mkExpr(kind::BITVECTOR_AND, mem_old, mask);
+
+    Expr rhs_shifted = manager.mkExpr(kind::BITVECTOR_SHL, value_ext, lower_bit_addr);
+    mem_new = manager.mkExpr(kind::BITVECTOR_OR, mem_old_masked, rhs_shifted);
+  } else throw string("Invalid size");
+  Expr mem_stored = manager.mkExpr(kind::STORE, memory_before, addr_high, mem_new);
+
+  return  mem_stored;
 }
 
 CVC4::Expr analysis::smt_value_builder::build(gdsl::rreil::address *addr) {
