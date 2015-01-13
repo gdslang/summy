@@ -36,6 +36,5 @@ public:
 
 struct rreil_prop {
   static bool is_ip(gdsl::rreil::variable *v);
-  static int_t size_of_assign(gdsl::rreil::assign *a);
   static int_t size_of_rhs(gdsl::rreil::assign *a);
 };

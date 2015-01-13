@@ -156,7 +156,7 @@ void analysis::smt_builder::visit(gdsl::rreil::address *addr) {
 }
 
 void smt_builder::visit(gdsl::rreil::assign *a) {
-  handle_assign(rreil_prop::size_of_assign(a), a->get_lhs(), [&]() {
+  handle_assign(a->get_size(), a->get_lhs(), [&]() {
     a->get_rhs()->accept(*this);
   });
 }

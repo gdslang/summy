@@ -65,7 +65,7 @@ void analysis::reaching_defs::reaching_defs::add_constraint(size_t from, size_t 
       };
     };
     v._([&](assign *a) {
-      id_assigned(rreil_prop::size_of_assign(a), a->get_lhs());
+      id_assigned(a->get_size(), a->get_lhs());
     });
     v._([&](load *l) {
       id_assigned(l->get_size(), l->get_lhs());

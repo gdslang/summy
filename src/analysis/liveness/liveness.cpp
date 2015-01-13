@@ -108,7 +108,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
         i->get_rhs()->accept(v);
       };
       auto newly_live = acc_newly_live(rreil_prop::size_of_rhs(i), accept_live);
-      assignment(rreil_prop::size_of_assign(i), i->get_lhs(), newly_live);
+      assignment(i->get_size(), i->get_lhs(), newly_live);
     });
     v._([&](load *l) {
       auto accept_live = [&](visitor &v) {
