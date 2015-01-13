@@ -21,7 +21,12 @@ using namespace std;
 
 bool cfg::edge_id::operator <(const edge_id &other) const {
   if(from < other.from) return true;
+  else if(from > other.from) return false;
   return to < other.to;
+}
+
+bool cfg::edge_id::operator ==(const edge_id &other) const {
+  return from == other.from && to == other.to;
 }
 
 std::ostream &cfg::operator <<(std::ostream &out, const edge_id &_this) {
@@ -137,6 +142,8 @@ void cfg::cfg::unregister_observer(observer *o) {
 
 void cfg::cfg::commit_updates() {
   while(true) {
+    if(!updates_stack.size())
+      break;
     vector<update> updates = updates_stack.top();
     updates_stack.top().clear();
     if(updates.size() == 0) break;

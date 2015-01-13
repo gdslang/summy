@@ -21,7 +21,6 @@ int main(void) {
 	asm (
 //"movq $0, %rax\n"
 "movq $38813467, %rbx\n"
-//"movw $999, (%rax)\n"
 "movw $999, (%rax)\n"
 "movb (%rax), %bh\n"
 "jmp %rbx\n");

@@ -1,9 +1,9 @@
 int main(int argc, char **argv) {
-  register int a = argc;
-  register int (*f)() = 0;
+  register long int a = 3;
+  register int (*f)() = 10;
   if(a > 22)
     f += 4 + a;
   else
-    f += 7 - a;
+    f += 5 - a;
   return f();
 }

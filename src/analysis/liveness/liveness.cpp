@@ -75,15 +75,27 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
     singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(assignee->get_offset(), size));
 
     transfer_f = [=]() {
-      if(state[to]->contains_bit(lhs)) {
-        shared_ptr<lv_elem> dead_removed(state[to]->remove({ lhs }));
+      auto current_state = transfer_f();
+      bool edge_live = current_state->contains_bit(lhs);
+      this->edge_liveness[edge_id(from, to)] = edge_live;
+      if(edge_live) {
+        shared_ptr<lv_elem> dead_removed(current_state->remove({ lhs }));
         return shared_ptr<lv_elem>(dead_removed->add(newly_live));
       } else
-        return state[to];
+        return current_state;
     };
+  };
+  auto memory_phi_ass = [&](const phi_memory &m) {
+    if(m.from != m.to)
+      transfer_f = [=]() {
+        auto current_state = transfer_f();
+        this->edge_liveness[edge_id(from, to)] = true;
+        return current_state;
+      };
   };
   auto access = [&](vector<singleton_t> newly_live) {
     transfer_f = [=]() {
+      this->edge_liveness[edge_id(from, to)] = true;
       return shared_ptr<lv_elem>(transfer_f()->add(newly_live));
     };
   };
@@ -96,7 +108,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
         i->get_rhs()->accept(v);
       };
       auto newly_live = acc_newly_live(rreil_prop::size_of_rhs(i), accept_live);
-      assignment(rreil_prop::size_of_assign(i), i->get_lhs(), newly_live);
+      assignment(i->get_size(), i->get_lhs(), newly_live);
     });
     v._([&](load *l) {
       auto accept_live = [&](visitor &v) {
@@ -166,6 +178,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
       auto newly_live = acc_newly_live(ass.get_size(), accept_live);
       assignment(ass.get_size(), ass.get_lhs(), newly_live);
     }
+    memory_phi_ass(edge->get_memory());
   });
   e->accept(ev);
   (constraints[from])[to] = transfer_f;
@@ -206,7 +219,7 @@ void analysis::liveness::liveness::update(size_t node, shared_ptr<lattice_elem> 
 }
 
 liveness_result analysis::liveness::liveness::result() {
-  return liveness_result(state, pn_newly_live);
+  return liveness_result(state, pn_newly_live, edge_liveness);
 }
 
 void analysis::liveness::liveness::put(std::ostream &out) {
@@ -222,4 +235,6 @@ void analysis::liveness::liveness::put(std::ostream &out) {
     }
     out << "}" << endl;
   }
+  for(auto &eid_it : this->edge_liveness)
+    cout << eid_it.first.from << " -> " << eid_it.first.to << ": " << (eid_it.second ? "live" : "dead") << endl;
 }

@@ -28,7 +28,8 @@ cfg::phi_assign::~phi_assign() {
   delete this->rhs;
 }
 
-cfg::phi_edge::phi_edge(assignments_t assignments) : assignments(assignments) {
+cfg::phi_edge::phi_edge(assignments_t assignments, phi_memory memory) :
+    assignments(assignments), memory(memory) {
 }
 
 cfg::phi_edge::~phi_edge() {
@@ -38,6 +39,7 @@ void cfg::phi_edge::dot(std::ostream &stream) const {
   stream << "\"";
   for(auto ass : assignments)
     stream << *ass.get_lhs() << " =:" << ass.get_size() << " " << *ass.get_rhs() << endl;
+  stream << "memory_" << memory.to << " =: memory_" << memory.from << endl;
   stream << "\"";
   stream << ", style=bold, color=green";
 }

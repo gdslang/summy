@@ -40,8 +40,21 @@ struct edge_id {
   edge_id(size_t from, size_t to) : from(from), to(to) {
   }
   bool operator <(const edge_id &other) const;
+  bool operator ==(const edge_id &other) const;
 };
 std::ostream &operator<<(std::ostream &out, const edge_id &_this);
+
+/*
+ * Todo: Verschiedene Typen für Kantenpayloads zusammenführen
+ */
+template<typename PAY_T>
+using edge_payload_map_t = std::map<edge_id, PAY_T>;
+//template<typename PAY_T>
+//using edge_payloads_gen_t = std::map<size_t, PAY_T>;
+//template<typename PAY_T>
+//using edges_payloads_gen_t = std::vector<size_t, PAY_T>;
+//typedef edge_payloads_gen_t<edge const*> edge_payloads_t;
+
 
 struct update {
   update_kind kind;

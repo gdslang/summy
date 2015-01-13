@@ -45,9 +45,11 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
     shared_ptr<id> id_ptr(cv.get_id());
     transfer_f = [=]() {
 //    cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
-      auto acc = shared_ptr<adaptive_rd_elem>(state[from]->remove(id_set_t {id_ptr}));
-      if(lv_result.contains(to, id_ptr, v->get_offset(), size))
-      acc = shared_ptr<adaptive_rd_elem>(acc->add( {singleton_t(id_ptr, to)}));
+      auto acc = state[from];
+      if(lv_result.contains(to, id_ptr, v->get_offset(), size)) {
+        acc = shared_ptr<adaptive_rd_elem>(acc->remove(id_set_t {id_ptr}));
+        acc = shared_ptr<adaptive_rd_elem>(acc->add( {singleton_t(id_ptr, to)}));
+      }
       return cleanup_live(acc);
     };
   };
@@ -56,7 +58,7 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
     statement *stmt = edge->get_stmt();
     statement_visitor v;
     v._([&](assign *a) {
-      id_assigned(rreil_prop::size_of_assign(a), a->get_lhs());
+      id_assigned(a->get_size(), a->get_lhs());
     });
     v._([&](load *l) {
       id_assigned(l->get_size(), l->get_lhs());

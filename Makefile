@@ -37,11 +37,15 @@ $(COBJECTS): $(BPRE)/%.o : $(SPRE)/%.c
 $(CPPOBJECTS): $(BPRE)/%.o : $(SPRE)/%.cpp
 	$(CPP) $(CPPFLAGS) $< -o $@
 
-.PHONY: exec
-exec: all
-	$(MAKE) -C exec/
+.PHONY: demo
+demo: all
+	$(MAKE) -C exec/demo/
+.PHONY: test
+test: all
+	$(MAKE) -C exec/tester/ && exec/tester/summy-tester
 
 .PHONY: clean
 clean:
 	rm -rf $(BDIRS) $(LIBRARY)
-	$(MAKE) -C exec/ clean
+	$(MAKE) -C exec/demo clean
+	$(MAKE) -C exec/tester clean

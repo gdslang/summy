@@ -6,6 +6,7 @@
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <bjutil/binary/elf_provider.h>
 #include <bjutil/printer.h>
+#include <bjutil/gdsl_init.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -39,74 +40,7 @@ using namespace std;
 using namespace CVC4;
 using namespace analysis;
 
-unsigned char *elf(gdsl::gdsl &g) {
-  elf_provider elfp = [&]() {
-    try {
-      return elf_provider("a.out");
-    } catch(string &s) {
-      cout << "Error initializing elf provider: " << s << endl;
-      throw string("no elf() :/");
-    }
-  }();
-//  binary_provider::bin_range_t range = elfp.bin_range();
-  binary_provider::entry_t dottext = elfp.section(".text");
-
-  binary_provider::entry_t main;
-  tie(ignore, main) = elfp.entry("main");
-
-  unsigned char *buffer = (unsigned char*)malloc(dottext.size);
-  memcpy(buffer, elfp.get_data().data + dottext.offset, dottext.size);
-  g.set_code(buffer, (main.offset - dottext.offset) + main.size + 1000, dottext.address);
-  if(g.seek(main.address))
-    throw string(":/");
-  cout << g.get_ip() << endl;
-
-  return buffer;
-}
-
-unsigned char *manual(gdsl::gdsl &g, uint64_t ip) {
-//  uint32_t buffer = 0x00ab48f3;
-  uint32_t *buffer = (uint32_t*)malloc(sizeof(uint32_t));
-  *buffer = 0x00e2d348;
-  g.set_code((unsigned char*)buffer, sizeof(*buffer), ip);
-  return (unsigned char*)buffer;
-}
-
-unsigned char *example(gdsl::gdsl &g, uint64_t ip) {
-  unsigned char *buffer;
-  size_t buffer_length;
-  FILE *ms = open_memstream((char**)&buffer, &buffer_length);
-
-  FILE *exf = fopen("example.bin", "r");
-  while(!feof(exf)) {
-    size_t n = 512;
-    char loc[n];
-    n = fread(loc, 1, n, exf);
-    fwrite(loc, 1, n, ms);
-  }
-  fclose(exf);
-
-  fclose(ms);
-  g.set_code(buffer, buffer_length, ip);
-  return buffer;
-}
-
-//template<typename X>
-//printer<map<X, X>, X> blah(map<X, X> fuucppmap) {
-//  auto pp = [](const X &a) {
-//    return string("a");
-//  };
-//
-//  return printer<map<X, X>, X>(fuucppmap, make_tuple(pp, pp));
-//}
-
-//template<typename X, typename Y, typename... T>
-//printer<map<X, Y>, X, Y> blah(map<X, Y> fuucppmap, T... p) {
-//  return printer<map<X, Y>, X, Y>(fuucppmap, p...);
-//}
-
-
-int main(void) {
+int main(int argc, char **argv) {
   ExprManager em;
 //  Expr a = em.mkVar("a", em.booleanType());
 
@@ -295,18 +229,33 @@ int main(void) {
 //  cout << "c := " << smt.getValue(c) << endl;
 //  exit(0);
 
+//  try {
+//    auto foo = asm_compile("nop\nadd %rax, %rax");
+//    for(auto &x : foo)
+//      printf("%02x ", x);
+//    printf("\n");
+//
+//  } catch(string &blah) {
+//    cout << blah << endl;
+//
+//  }
+
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  auto buffer = elf(g);
+//  auto buffer = example(g, 0);
+//  bj_gdsl bjg = gdsl_init_binfile(&f, "example.bin", 0);
+  bj_gdsl bjg = gdsl_init_elf(&f, "a.out", ".text", "main", (size_t)1000);
+//  bj_gdsl bjg = gdsl_init_immediate(&f, 0x00000000, 0);
 
-  dectran dt(g, false);
+//  dectran dt(*bjg.gdsl, false);
+  dectran dt(*bjg.gdsl, false);
   dt.transduce();
   dt.register_();
 
   auto &cfg = dt.get_cfg();
 
-  for(int i = 0; i < 4; i++) {
+  for(int i = 0; i < 1; i++) {
     cfg.commit_updates();
 
     ssa ssa(cfg);
@@ -342,17 +291,16 @@ int main(void) {
     _ismt.dot(ismt_fs);
     ismt_fs.close();
 
-    resolved_connector rc(&cfg, asses);
-    rc.transform();
+//    resolved_connector rc(&cfg, asses);
+//    rc.transform();
   }
-
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
   cfg.dot(dot_fs);
   dot_fs.close();
 
-  g.set_code(NULL, 0, 0);
-  free(buffer);
+//  g.set_code(NULL, 0, 0);
+//  free(buffer);
   return 0;
 }
