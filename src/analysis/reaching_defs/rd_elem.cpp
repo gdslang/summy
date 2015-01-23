@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/reaching_defs/rd_elem.h>
+#include <summy/analysis/reaching_defs/rd_state.h>
 #include <set>
 #include <algorithm>
 #include <memory>
@@ -33,7 +33,7 @@ bool analysis::reaching_defs::singleton_less::operator ()(singleton_t a, singlet
   return a_node < b_node;
 }
 
-::analysis::reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::remove(id_set_t subtrahend) {
+::analysis::reaching_defs::rd_state *analysis::reaching_defs::rd_state::remove(id_set_t subtrahend) {
 //  cout << "{";
 //  for(auto x : this->defs) {
 //    size_t a_node;
@@ -63,15 +63,15 @@ bool analysis::reaching_defs::singleton_less::operator ()(singleton_t a, singlet
 //  cout << "}" << endl;
 //  cout << "+++++++++++++++++++++" << endl;
 
-  return new rd_elem(contains_undef, difference_defs);
+  return new rd_state(contains_undef, difference_defs);
 }
 
-reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::domain_state *other, size_t current_node) {
-  rd_elem *other_casted = dynamic_cast<rd_elem*>(other);
+reaching_defs::rd_state *analysis::reaching_defs::rd_state::join(::analysis::domain_state *other, size_t current_node) {
+  rd_state *other_casted = dynamic_cast<rd_state*>(other);
 
   id_set_t ids_mine;
   id_set_t ids_other;
-  auto extract_ids = [&](id_set_t &dest, rd_elem::elements_t &elements) {
+  auto extract_ids = [&](id_set_t &dest, rd_state::elements_t &elements) {
     for(auto def : elements) {
       shared_ptr<id> id;
       tie(ignore, id) = def;
@@ -105,26 +105,26 @@ reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::domain
 //    cout << id->to_string() << ", ";
 //  cout << endl << endl;
 
-  rd_elem::elements_t explicit_undef;
+  rd_state::elements_t explicit_undef;
   for(auto id : ids_sym_diff)
     explicit_undef.insert(singleton_t(0, id));
 
   auto lubbed = eset.lub(other_casted->eset);
   auto result_set = lubbed.add(explicit_undef);
-  return new rd_elem(contains_undef || other_casted->contains_undef, result_set);
+  return new rd_state(contains_undef || other_casted->contains_undef, result_set);
 }
 
-reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::add(elements_t elements) {
+reaching_defs::rd_state *analysis::reaching_defs::rd_state::add(elements_t elements) {
   auto added = eset.add(elements);
-  return new rd_elem(contains_undef, added);
+  return new rd_state(contains_undef, added);
 }
 
-reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::remove(elements_t elements) {
+reaching_defs::rd_state *analysis::reaching_defs::rd_state::remove(elements_t elements) {
   auto removed = eset.remove(elements);
-  return new rd_elem(contains_undef, removed);
+  return new rd_state(contains_undef, removed);
 }
 
-reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::remove(
+reaching_defs::rd_state *analysis::reaching_defs::rd_state::remove(
     std::function<bool(size_t, std::shared_ptr<gdsl::rreil::id>)> pred) {
   elements_t removed;
   for(auto e : eset.get_elements()) {
@@ -134,17 +134,17 @@ reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::remove(
     if(!pred(def, id))
       removed.insert(e);
   }
-  return new rd_elem(contains_undef, removed);
+  return new rd_state(contains_undef, removed);
 }
 
-bool analysis::reaching_defs::rd_elem::operator >=(::analysis::domain_state &other) {
-  rd_elem &other_casted = dynamic_cast<rd_elem&>(other);
+bool analysis::reaching_defs::rd_state::operator >=(::analysis::domain_state &other) {
+  rd_state &other_casted = dynamic_cast<rd_state&>(other);
   if(contains_undef && !other_casted.contains_undef) return true;
   if(!contains_undef && other_casted.contains_undef) return false;
   return eset >= other_casted.eset;
 }
 
-void analysis::reaching_defs::rd_elem::put(std::ostream& out) {
+void analysis::reaching_defs::rd_state::put(std::ostream& out) {
   out << "{";
   size_t i = 0;
   for(auto it = eset.get_elements().begin(); it != eset.get_elements().end(); it++, i++) {

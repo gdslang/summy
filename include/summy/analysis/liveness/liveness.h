@@ -6,8 +6,8 @@
  */
 
 #pragma once
+#include <summy/analysis/liveness/lv_state.h>
 #include <summy/analysis/fp_analysis.h>
-#include <summy/analysis/liveness/lv_elem.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
 #include <memory>
@@ -17,8 +17,8 @@
 namespace analysis {
 namespace liveness {
 
-typedef std::vector<std::shared_ptr<lv_elem>> state_t;
-typedef std::function<std::shared_ptr<lv_elem>()> constraint_t;
+typedef std::vector<std::shared_ptr<lv_state>> state_t;
+typedef std::function<std::shared_ptr<lv_state>()> constraint_t;
 typedef std::map<size_t, std::vector<singleton_t>> newly_live_t;
 typedef cfg::edge_payload_map_t<bool> edge_bool_map_t;
 

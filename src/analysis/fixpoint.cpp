@@ -34,7 +34,7 @@ void fixpoint::iterate() {
       evaluated = constraint_it->second();
       for(constraint_it++; constraint_it != constraints.end(); constraint_it++) {
         auto calc = constraint_it->second();
-        evaluated = shared_ptr<domain_state>(calc->lub(evaluated.get(), node_id));
+        evaluated = shared_ptr<domain_state>(calc->join(evaluated.get(), node_id));
       }
       shared_ptr<domain_state> current = analysis->get(node_id);
 

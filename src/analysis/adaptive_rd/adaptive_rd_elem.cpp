@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/adaptive_rd/adaptive_rd_elem.h>
+#include <summy/analysis/adaptive_rd/adaptive_rd_state.h>
 #include <summy/analysis/util.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <set>
@@ -30,9 +30,9 @@ bool analysis::adaptive_rd::singleton_equals(const singleton_t& a, const singlet
   return print_id_no_version(a_k) == print_id_no_version(b_k) && a_v == b_v;
 }
 
-adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::lub(::analysis::domain_state *other,
+adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::join(::analysis::domain_state *other,
     size_t current_node) {
-  adaptive_rd_elem *other_casted = dynamic_cast<adaptive_rd_elem*>(other);
+  adaptive_rd_state *other_casted = dynamic_cast<adaptive_rd_state*>(other);
 
   elements_t explicit_undef;
   auto explicitify = [&](elements_t const &from, elements_t const &subst) {
@@ -60,10 +60,10 @@ adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::lub(::an
   if(memory_rev != other_casted->memory_rev)
     memory_rev = current_node;
 
-  return new adaptive_rd_elem(contains_undef || other_casted->contains_undef, lubbed, memory_rev);
+  return new adaptive_rd_state(contains_undef || other_casted->contains_undef, lubbed, memory_rev);
 }
 
-adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::add(std::vector<singleton_t> elements) {
+adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::add(std::vector<singleton_t> elements) {
   elements_t added = this->elements;
   for(auto e : elements) {
     singleton_key_t k;
@@ -72,30 +72,30 @@ adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::add(std:
     if(added.find(k) != added.end()) throw string("Element does already exist :/");
     added[k] = v;
   }
-  return new adaptive_rd_elem(contains_undef, added, memory_rev);
+  return new adaptive_rd_state(contains_undef, added, memory_rev);
 }
-adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::remove(id_set_t elements) {
+adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::remove(id_set_t elements) {
   elements_t removed = this->elements;
   for(auto id : elements)
     removed.erase(id);
-  return new adaptive_rd_elem(contains_undef, removed, memory_rev);
+  return new adaptive_rd_state(contains_undef, removed, memory_rev);
 }
 
-adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::remove(
+adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::remove(
     std::function<bool(singleton_key_t, singleton_value_t)> pred) {
   elements_t removed;
   for(auto &e : this->elements)
     if(!pred(e.first, e.second)) removed.insert(e);
-  return new adaptive_rd_elem(contains_undef, removed, memory_rev);
+  return new adaptive_rd_state(contains_undef, removed, memory_rev);
 }
 
-adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::set_memory_rev(size_t memory_rev) {
-  return new adaptive_rd_elem(contains_undef, elements, memory_rev);
+adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::set_memory_rev(size_t memory_rev) {
+  return new adaptive_rd_state(contains_undef, elements, memory_rev);
 }
 
 
-bool analysis::adaptive_rd::adaptive_rd_elem::operator >=(::analysis::domain_state &other) {
-  adaptive_rd_elem &other_casted = dynamic_cast<adaptive_rd_elem&>(other);
+bool analysis::adaptive_rd::adaptive_rd_state::operator >=(::analysis::domain_state &other) {
+  adaptive_rd_state &other_casted = dynamic_cast<adaptive_rd_state&>(other);
   if(contains_undef && !other_casted.contains_undef) return true;
   if(!contains_undef && other_casted.contains_undef) return false;
   if(memory_rev != other_casted.memory_rev) return false;
@@ -103,7 +103,7 @@ bool analysis::adaptive_rd::adaptive_rd_elem::operator >=(::analysis::domain_sta
       singleton_equals);
 }
 
-void analysis::adaptive_rd::adaptive_rd_elem::put(std::ostream &out) {
+void analysis::adaptive_rd::adaptive_rd_state::put(std::ostream &out) {
   out << "{";
   size_t i = 0;
   for(auto it = elements.begin(); it != elements.end(); it++, i++) {

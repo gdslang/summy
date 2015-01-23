@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include <summy/analysis/adaptive_rd/adaptive_rd_state.h>
 #include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/liveness/liveness.h>
-#include <summy/analysis/adaptive_rd/adaptive_rd_elem.h>
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/cfg.h>
 #include <vector>
@@ -22,8 +22,8 @@
 namespace analysis {
 namespace adaptive_rd {
 
-typedef std::vector<std::shared_ptr<adaptive_rd_elem>> state_t;
-typedef std::vector<std::map<size_t, shared_ptr<adaptive_rd_elem>>> in_states_t;
+typedef std::vector<std::shared_ptr<adaptive_rd_state>> state_t;
+typedef std::vector<std::map<size_t, shared_ptr<adaptive_rd_state>>> in_states_t;
 
 struct adaptive_rd_result : public ::analysis::analysis_result<state_t> {
   in_states_t &in_states;

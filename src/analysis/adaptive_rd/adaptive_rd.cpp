@@ -30,12 +30,12 @@ using analysis::liveness::liveness_result;
 namespace sr = summy::rreil;
 
 void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
-  auto cleanup_live = [=](shared_ptr<adaptive_rd_elem> acc) {
-    return shared_ptr<adaptive_rd_elem>(acc->remove([&](shared_ptr<id> id, singleton_value_t v) {
+  auto cleanup_live = [=](shared_ptr<adaptive_rd_state> acc) {
+    return shared_ptr<adaptive_rd_state>(acc->remove([&](shared_ptr<id> id, singleton_value_t v) {
       return !lv_result.contains(to, id, 0, 64);
     }));
   };
-  function<shared_ptr<adaptive_rd_elem>()> transfer_f = [=]() {
+  function<shared_ptr<adaptive_rd_state>()> transfer_f = [=]() {
 //    cout << "default handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
       return cleanup_live(state[from]);
     };
@@ -47,8 +47,8 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
 //    cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
       auto acc = state[from];
       if(lv_result.contains(to, id_ptr, v->get_offset(), size)) {
-        acc = shared_ptr<adaptive_rd_elem>(acc->remove(id_set_t {id_ptr}));
-        acc = shared_ptr<adaptive_rd_elem>(acc->add( {singleton_t(id_ptr, to)}));
+        acc = shared_ptr<adaptive_rd_state>(acc->remove(id_set_t {id_ptr}));
+        acc = shared_ptr<adaptive_rd_state>(acc->add( {singleton_t(id_ptr, to)}));
       }
       return cleanup_live(acc);
     };
@@ -65,7 +65,7 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
     });
     v._([&](store *s) {
       transfer_f = [=]() {
-        return shared_ptr<adaptive_rd_elem>(state[from]->set_memory_rev(to));
+        return shared_ptr<adaptive_rd_state>(state[from]->set_memory_rev(to));
       };
     });
     stmt->accept(v);
@@ -98,9 +98,9 @@ void analysis::adaptive_rd::adaptive_rd::init_state() {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<adaptive_rd_elem>(
+    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<adaptive_rd_state>(
         start_value());
-    else state[i] = dynamic_pointer_cast<adaptive_rd_elem>(bottom());
+    else state[i] = dynamic_pointer_cast<adaptive_rd_state>(bottom());
   }
   in_states.resize(cfg->node_count());
 }
@@ -114,11 +114,11 @@ analysis::adaptive_rd::adaptive_rd::~adaptive_rd() {
 }
 
 shared_ptr<analysis::domain_state> adaptive_rd::adaptive_rd::bottom() {
-  return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(false, elements_t(), 0));
+  return shared_ptr<adaptive_rd_state>(new adaptive_rd_state(false, elements_t(), 0));
 }
 
 shared_ptr<analysis::domain_state> adaptive_rd::adaptive_rd::start_value() {
-  return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(true, elements_t(), 0));
+  return shared_ptr<adaptive_rd_state>(new adaptive_rd_state(true, elements_t(), 0));
 }
 
 shared_ptr<::analysis::domain_state> adaptive_rd::adaptive_rd::get(size_t node) {
@@ -126,7 +126,7 @@ shared_ptr<::analysis::domain_state> adaptive_rd::adaptive_rd::get(size_t node) 
 }
 
 void adaptive_rd::update(size_t node, shared_ptr<::analysis::domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<adaptive_rd_elem>(state);
+  this->state[node] = dynamic_pointer_cast<adaptive_rd_state>(state);
 }
 
 adaptive_rd_result analysis::adaptive_rd::adaptive_rd::result() {

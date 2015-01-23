@@ -54,7 +54,7 @@ bool analysis::liveness::liveness_result::contains(size_t node_id, singleton_t s
 }
 
 void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const ::cfg::edge* e) {
-  function<shared_ptr<lv_elem>()> transfer_f = [=]() {
+  function<shared_ptr<lv_state>()> transfer_f = [=]() {
     return state[to];
   };
   auto acc_newly_live = [&](int_t size, function<void(visitor&)> accept_live) {
@@ -79,8 +79,8 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
       bool edge_live = current_state->contains_bit(lhs);
       this->edge_liveness[edge_id(from, to)] = edge_live;
       if(edge_live) {
-        shared_ptr<lv_elem> dead_removed(current_state->remove({ lhs }));
-        return shared_ptr<lv_elem>(dead_removed->add(newly_live));
+        shared_ptr<lv_state> dead_removed(current_state->remove({ lhs }));
+        return shared_ptr<lv_state>(dead_removed->add(newly_live));
       } else
         return current_state;
     };
@@ -96,7 +96,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
   auto access = [&](vector<singleton_t> newly_live) {
     transfer_f = [=]() {
       this->edge_liveness[edge_id(from, to)] = true;
-      return shared_ptr<lv_elem>(transfer_f()->add(newly_live));
+      return shared_ptr<lv_state>(transfer_f()->add(newly_live));
     };
   };
   edge_visitor ev;
@@ -196,7 +196,7 @@ void analysis::liveness::liveness::init_state() {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++)
-    state[i] = dynamic_pointer_cast<lv_elem>(bottom());
+    state[i] = dynamic_pointer_cast<lv_state>(bottom());
 }
 
 analysis::liveness::liveness::liveness(class cfg *cfg) : fp_analysis(cfg) {
@@ -207,7 +207,7 @@ analysis::liveness::liveness::~liveness() {
 }
 
 shared_ptr<analysis::domain_state> analysis::liveness::liveness::bottom() {
-  return make_shared<lv_elem>(elements_t {});
+  return make_shared<lv_state>(elements_t {});
 }
 
 shared_ptr<analysis::domain_state> analysis::liveness::liveness::get(size_t node) {
@@ -215,7 +215,7 @@ shared_ptr<analysis::domain_state> analysis::liveness::liveness::get(size_t node
 }
 
 void analysis::liveness::liveness::update(size_t node, shared_ptr<domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<lv_elem>(state);
+  this->state[node] = dynamic_pointer_cast<lv_state>(state);
 }
 
 liveness_result analysis::liveness::liveness::result() {

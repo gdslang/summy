@@ -34,7 +34,7 @@ bool singleton_equals(const singleton_t &a, const singleton_t &b);
 
 typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less_no_version> id_set_t;
 
-class adaptive_rd_elem : public domain_state {
+class adaptive_rd_state : public domain_state {
 private:
   bool contains_undef;
   const elements_t elements;
@@ -49,33 +49,33 @@ public:
     return memory_rev;
   }
 
-  adaptive_rd_elem(elements_t elements, size_t memory_rev) :
+  adaptive_rd_state(elements_t elements, size_t memory_rev) :
       contains_undef(true), elements(elements), memory_rev(memory_rev) {
   }
 
-  adaptive_rd_elem(bool contains_undef, elements_t elements, size_t memory_rev) :
+  adaptive_rd_state(bool contains_undef, elements_t elements, size_t memory_rev) :
       contains_undef(contains_undef), elements(elements), memory_rev(memory_rev) {
   }
 
   /*
    * Copy constructor
    */
-  adaptive_rd_elem(adaptive_rd_elem &e) :
+  adaptive_rd_state(adaptive_rd_state &e) :
       domain_state(e), contains_undef(e.contains_undef), elements(e.elements), memory_rev(e.memory_rev) {
   }
 
   /**
    * Bottom constructor
    */
-  adaptive_rd_elem() : contains_undef(false), memory_rev(0) {
+  adaptive_rd_state() : contains_undef(false), memory_rev(0) {
   }
 
 
-  virtual adaptive_rd_elem *lub(::analysis::domain_state *other, size_t current_node);
-  virtual adaptive_rd_elem *add(std::vector<singleton_t> elements);
-  virtual adaptive_rd_elem *remove(id_set_t elements);
-  virtual adaptive_rd_elem *remove(std::function<bool(singleton_key_t, singleton_value_t)> pred);
-  virtual adaptive_rd_elem *set_memory_rev(size_t memory_rev);
+  virtual adaptive_rd_state *join(::analysis::domain_state *other, size_t current_node);
+  virtual adaptive_rd_state *add(std::vector<singleton_t> elements);
+  virtual adaptive_rd_state *remove(id_set_t elements);
+  virtual adaptive_rd_state *remove(std::function<bool(singleton_key_t, singleton_value_t)> pred);
+  virtual adaptive_rd_state *set_memory_rev(size_t memory_rev);
 
   virtual bool operator>=(::analysis::domain_state &other);
 

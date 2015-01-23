@@ -8,12 +8,12 @@
 #include <summy/transformers/ssa/phi_inserter.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
-#include <summy/analysis/adaptive_rd/adaptive_rd_elem.h>
 #include <summy/rreil/copy_visitor.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <vector>
 #include <iostream>
 #include <assert.h>
+#include <summy/analysis/adaptive_rd/adaptive_rd_state.h>
 #include <summy/cfg/edge/phi_edge.h>
 
 using namespace std;
@@ -23,9 +23,9 @@ namespace sr = summy::rreil;
 using namespace gdsl::rreil;
 
 void phi_inserter::task_from_edge(vector<phi_task> &tasks, size_t from, size_t to) {
-  shared_ptr<adaptive_rd_elem> dst_incoming = (rd_result.in_states[to])[from];
+  shared_ptr<adaptive_rd_state> dst_incoming = (rd_result.in_states[to])[from];
   elements_t const &dst_incoming_elements = dst_incoming->get_elements();
-  shared_ptr<adaptive_rd_elem> dst_state = rd_result.result[to];
+  shared_ptr<adaptive_rd_state> dst_state = rd_result.result[to];
 
   assignments_t phi_assignments;
   for(auto &mapping : dst_state->get_elements()) {

@@ -23,7 +23,7 @@ public:
   virtual ~domain_state() {
   }
 
-  virtual domain_state *lub(domain_state *other, size_t current_node) = 0;
+  virtual domain_state *join(domain_state *other, size_t current_node) = 0;
   virtual bool operator>=(domain_state &other) = 0;
 
   virtual void put(std::ostream &out) = 0;

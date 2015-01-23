@@ -5,8 +5,9 @@
  *      Author: Julian Kranz
  */
 
+#include <summy/analysis/liveness/lv_state.h>
+
 #include <cppgdsl/rreil/id/id.h>
-#include <summy/analysis/liveness/lv_elem.h>
 #include <algorithm>
 #include <tuple>
 #include <iostream>
@@ -17,8 +18,8 @@ using gdsl::rreil::id;
 using namespace std;
 using namespace analysis::liveness;
 
-lv_elem *analysis::liveness::lv_elem::lub(::analysis::domain_state *other, size_t current_node) {
-  lv_elem *other_casted = dynamic_cast<lv_elem*>(other);
+lv_state *analysis::liveness::lv_state::join(::analysis::domain_state *other, size_t current_node) {
+  lv_state *other_casted = dynamic_cast<lv_state*>(other);
 
   /*
    * Todo: Use set_symmetric_difference / set_intersection (?)
@@ -35,10 +36,10 @@ lv_elem *analysis::liveness::lv_elem::lub(::analysis::domain_state *other, size_
     if(mapping == elements.end()) result.insert(mapping_other);
   }
 
-  return new lv_elem(result);
+  return new lv_state(result);
 }
 
-lv_elem *analysis::liveness::lv_elem::add(std::vector<singleton_t> elements) {
+lv_state *analysis::liveness::lv_state::add(std::vector<singleton_t> elements) {
   elements_t current = this->elements;
   for(auto &mapping : elements) {
     singleton_key_t key;
@@ -50,10 +51,10 @@ lv_elem *analysis::liveness::lv_elem::add(std::vector<singleton_t> elements) {
     else current[key] = current_mapping->second | value;
   }
 
-  return new lv_elem(current);
+  return new lv_state(current);
 }
 
-lv_elem *analysis::liveness::lv_elem::remove(std::vector<singleton_t> elements) {
+lv_state *analysis::liveness::lv_state::remove(std::vector<singleton_t> elements) {
   elements_t elements_removed = this->elements;
   for(auto &mapping : elements) {
     singleton_key_t key;
@@ -68,11 +69,11 @@ lv_elem *analysis::liveness::lv_elem::remove(std::vector<singleton_t> elements) 
         elements_removed.erase(key);
     }
   }
-  return new lv_elem(elements_removed);
+  return new lv_state(elements_removed);
 }
 
-bool analysis::liveness::lv_elem::operator >=(::analysis::domain_state &other) {
-  lv_elem &other_casted = dynamic_cast<lv_elem&>(other);
+bool analysis::liveness::lv_state::operator >=(::analysis::domain_state &other) {
+  lv_state &other_casted = dynamic_cast<lv_state&>(other);
   for(auto &mapping_other : other_casted.elements) {
     auto mapping = elements.find(mapping_other.first);
     if(mapping == elements.end()) return false;
@@ -81,7 +82,7 @@ bool analysis::liveness::lv_elem::operator >=(::analysis::domain_state &other) {
   return true;
 }
 
-bool analysis::liveness::lv_elem::contains_bit(singleton_t s) {
+bool analysis::liveness::lv_state::contains_bit(singleton_t s) {
   singleton_key_t id;
   singleton_value_t bits;
   tie(id, bits) = s;
@@ -91,7 +92,7 @@ bool analysis::liveness::lv_elem::contains_bit(singleton_t s) {
   return mapping->second & bits;
 }
 
-void analysis::liveness::lv_elem::put(std::ostream &out) {
+void analysis::liveness::lv_state::put(std::ostream &out) {
   out << "{";
   size_t i = 0;
   for(auto it = elements.begin(); it != elements.end(); it++, i++) {

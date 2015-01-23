@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include <summy/analysis/reaching_defs/rd_state.h>
 #include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/liveness/liveness.h>
-#include <summy/analysis/reaching_defs/rd_elem.h>
 #include <vector>
 #include <functional>
 #include <set>
@@ -20,7 +20,7 @@
 namespace analysis {
 namespace reaching_defs {
 
-typedef std::vector<std::shared_ptr<rd_elem>> state_t;
+typedef std::vector<std::shared_ptr<rd_state>> state_t;
 typedef ::analysis::analysis_result<state_t> reaching_defs_result_t;
 
 class reaching_defs: public fp_analysis {

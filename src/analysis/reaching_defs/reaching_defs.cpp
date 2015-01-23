@@ -28,7 +28,7 @@ using namespace analysis::reaching_defs;
 using analysis::liveness::liveness_result;
 
 void analysis::reaching_defs::reaching_defs::add_constraint(size_t from, size_t to, const ::cfg::edge* e) {
-  auto cleanup_live = [=](shared_ptr<rd_elem> acc) {
+  auto cleanup_live = [=](shared_ptr<rd_state> acc) {
 //        id_set_t rm_by_lv;
 //        cout << node_id << "->" << dest_node << ": ";
 //        for(auto newly_live : lv_result.pn_newly_live[node_id])
@@ -40,11 +40,11 @@ void analysis::reaching_defs::reaching_defs::add_constraint(size_t from, size_t 
 //          }
 //        cout << endl;
 //        return shared_ptr<rd_elem>(acc->remove(rm_by_lv));
-    return shared_ptr<rd_elem>(acc->remove([&](size_t def, shared_ptr<id> id) {
+    return shared_ptr<rd_state>(acc->remove([&](size_t def, shared_ptr<id> id) {
       return !lv_result.contains(to, id, 0, 64);
     }));
   };
-  function<shared_ptr<rd_elem>()> transfer_f = [=]() {
+  function<shared_ptr<rd_state>()> transfer_f = [=]() {
     return cleanup_live(state[from]);
   };
   edge_visitor ev;
@@ -58,8 +58,8 @@ void analysis::reaching_defs::reaching_defs::add_constraint(size_t from, size_t 
       transfer_f = [=]() {
         auto acc = state[from];
         if(lv_result.contains(to, id_ptr, v->get_offset(), size)) {
-          acc = shared_ptr<rd_elem>(acc->remove(id_set_t { id_ptr }));
-          acc = shared_ptr<rd_elem>(acc->add(rd_elem::elements_t {make_tuple(to, id_ptr)}));
+          acc = shared_ptr<rd_state>(acc->remove(id_set_t { id_ptr }));
+          acc = shared_ptr<rd_state>(acc->add(rd_state::elements_t {make_tuple(to, id_ptr)}));
         }
         return cleanup_live(acc);
       };
@@ -88,9 +88,9 @@ void analysis::reaching_defs::reaching_defs::init_state() {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<rd_elem>(
+    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<rd_state>(
         start_value());
-    else state[i] = dynamic_pointer_cast<rd_elem>(bottom());
+    else state[i] = dynamic_pointer_cast<rd_state>(bottom());
   }
 }
 
@@ -103,11 +103,11 @@ analysis::reaching_defs::reaching_defs::~reaching_defs() {
 }
 
 shared_ptr<analysis::domain_state> reaching_defs::reaching_defs::bottom() {
-    return shared_ptr<rd_elem>(new rd_elem());
+    return shared_ptr<rd_state>(new rd_state());
 }
 
 shared_ptr<analysis::domain_state> reaching_defs::reaching_defs::start_value() {
-    return shared_ptr<rd_elem>(new rd_elem(rd_elem::elements_t {}));
+    return shared_ptr<rd_state>(new rd_state(rd_state::elements_t {}));
 }
 
 shared_ptr<::analysis::domain_state> reaching_defs::reaching_defs::get(size_t node) {
@@ -115,7 +115,7 @@ shared_ptr<::analysis::domain_state> reaching_defs::reaching_defs::get(size_t no
 }
 
 void reaching_defs::update(size_t node, shared_ptr<::analysis::domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<rd_elem>(state);
+  this->state[node] = dynamic_pointer_cast<rd_state>(state);
 }
 
 reaching_defs_result_t analysis::reaching_defs::reaching_defs::result() {
