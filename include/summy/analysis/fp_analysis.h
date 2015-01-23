@@ -19,7 +19,7 @@ using std::shared_ptr;
 
 namespace analysis {
 
-class lattice_elem;
+class domain_state;
 
 template<typename STATE_T>
 struct analysis_result {
@@ -36,7 +36,7 @@ struct dependency {
 
 class fp_analysis {
 public:
-  typedef std::function<std::shared_ptr<lattice_elem>()> constraint_t;
+  typedef std::function<std::shared_ptr<domain_state>()> constraint_t;
   typedef std::map<size_t, std::set<size_t>> dependants_t;
 protected:
   cfg::cfg *cfg;
@@ -69,8 +69,8 @@ public:
     return fixpoint_pending;
   }
 
-  virtual shared_ptr<lattice_elem> get(size_t node) = 0;
-  virtual void update(size_t node, shared_ptr<lattice_elem> state) = 0;
+  virtual shared_ptr<domain_state> get(size_t node) = 0;
+  virtual void update(size_t node, shared_ptr<domain_state> state) = 0;
 
   virtual std::set<size_t> dependants(size_t node_id) {
     return _dependants[node_id];

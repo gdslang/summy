@@ -102,19 +102,19 @@ reaching_defs::reaching_defs::reaching_defs(class cfg *cfg, liveness_result lv_r
 analysis::reaching_defs::reaching_defs::~reaching_defs() {
 }
 
-shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::bottom() {
+shared_ptr<analysis::domain_state> reaching_defs::reaching_defs::bottom() {
     return shared_ptr<rd_elem>(new rd_elem());
 }
 
-shared_ptr<analysis::lattice_elem> reaching_defs::reaching_defs::start_value() {
+shared_ptr<analysis::domain_state> reaching_defs::reaching_defs::start_value() {
     return shared_ptr<rd_elem>(new rd_elem(rd_elem::elements_t {}));
 }
 
-shared_ptr<::analysis::lattice_elem> reaching_defs::reaching_defs::get(size_t node) {
+shared_ptr<::analysis::domain_state> reaching_defs::reaching_defs::get(size_t node) {
   return state[node];
 }
 
-void reaching_defs::update(size_t node, shared_ptr<::analysis::lattice_elem> state) {
+void reaching_defs::update(size_t node, shared_ptr<::analysis::domain_state> state) {
   this->state[node] = dynamic_pointer_cast<rd_elem>(state);
 }
 

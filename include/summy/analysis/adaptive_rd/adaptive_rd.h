@@ -46,11 +46,11 @@ public:
   adaptive_rd(cfg::cfg *cfg, liveness::liveness_result lv_result);
   ~adaptive_rd();
 
-  std::shared_ptr<lattice_elem> bottom();
-  std::shared_ptr<lattice_elem> start_value();
+  std::shared_ptr<domain_state> bottom();
+  std::shared_ptr<domain_state> start_value();
 
-  std::shared_ptr<lattice_elem> get(size_t node);
-  void update(size_t node, std::shared_ptr<lattice_elem> state);
+  std::shared_ptr<domain_state> get(size_t node);
+  void update(size_t node, std::shared_ptr<domain_state> state);
   adaptive_rd_result result();
 
   void put(std::ostream &out);

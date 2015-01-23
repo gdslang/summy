@@ -17,7 +17,7 @@ using gdsl::rreil::id;
 using namespace std;
 using namespace analysis::liveness;
 
-lv_elem *analysis::liveness::lv_elem::lub(::analysis::lattice_elem *other, size_t current_node) {
+lv_elem *analysis::liveness::lv_elem::lub(::analysis::domain_state *other, size_t current_node) {
   lv_elem *other_casted = dynamic_cast<lv_elem*>(other);
 
   /*
@@ -71,7 +71,7 @@ lv_elem *analysis::liveness::lv_elem::remove(std::vector<singleton_t> elements) 
   return new lv_elem(elements_removed);
 }
 
-bool analysis::liveness::lv_elem::operator >=(::analysis::lattice_elem &other) {
+bool analysis::liveness::lv_elem::operator >=(::analysis::domain_state &other) {
   lv_elem &other_casted = dynamic_cast<lv_elem&>(other);
   for(auto &mapping_other : other_casted.elements) {
     auto mapping = elements.find(mapping_other.first);

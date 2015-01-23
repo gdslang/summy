@@ -36,11 +36,11 @@ public:
   reaching_defs(cfg::cfg *cfg, ::analysis::liveness::liveness_result lv_result);
   ~reaching_defs();
 
-  std::shared_ptr<lattice_elem> bottom();
-  std::shared_ptr<lattice_elem> start_value();
+  std::shared_ptr<domain_state> bottom();
+  std::shared_ptr<domain_state> start_value();
 
-  std::shared_ptr<lattice_elem> get(size_t node);
-  void update(size_t node, std::shared_ptr<lattice_elem> state);
+  std::shared_ptr<domain_state> get(size_t node);
+  void update(size_t node, std::shared_ptr<domain_state> state);
   reaching_defs_result_t result();
 
   void put(std::ostream &out);

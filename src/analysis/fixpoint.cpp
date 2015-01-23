@@ -5,9 +5,9 @@
  *      Author: Julian Kranz
  */
 
+#include <summy/analysis/domain_state.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/fp_analysis.h>
-#include <summy/analysis/lattice_elem.h>
 #include <queue>
 #include <iostream>
 
@@ -27,16 +27,16 @@ void fixpoint::iterate() {
 //    cout << "Next node: " << node_id << endl;
 
     bool propagate;
-    shared_ptr<lattice_elem> evaluated;
+    shared_ptr<domain_state> evaluated;
     auto &constraints = analysis->constraints_at(node_id);
     if(constraints.size() > 0) {
       auto constraint_it = constraints.begin();
       evaluated = constraint_it->second();
       for(constraint_it++; constraint_it != constraints.end(); constraint_it++) {
         auto calc = constraint_it->second();
-        evaluated = shared_ptr<lattice_elem>(calc->lub(evaluated.get(), node_id));
+        evaluated = shared_ptr<domain_state>(calc->lub(evaluated.get(), node_id));
       }
-      shared_ptr<lattice_elem> current = analysis->get(node_id);
+      shared_ptr<domain_state> current = analysis->get(node_id);
 
 //      cout << "Current: " << *current << endl;
 //      cout << "Evaluated: " << *evaluated << endl;

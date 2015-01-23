@@ -7,8 +7,8 @@
  */
 
 #include <summy/analysis/liveness/liveness.h>
+#include <summy/analysis/domain_state.h>
 #include <summy/tools/rreil_util.h>
-#include <summy/analysis/lattice_elem.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/edge/edge.h>
@@ -206,15 +206,15 @@ analysis::liveness::liveness::liveness(class cfg *cfg) : fp_analysis(cfg) {
 analysis::liveness::liveness::~liveness() {
 }
 
-shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::bottom() {
+shared_ptr<analysis::domain_state> analysis::liveness::liveness::bottom() {
   return make_shared<lv_elem>(elements_t {});
 }
 
-shared_ptr<analysis::lattice_elem> analysis::liveness::liveness::get(size_t node) {
+shared_ptr<analysis::domain_state> analysis::liveness::liveness::get(size_t node) {
   return state[node];
 }
 
-void analysis::liveness::liveness::update(size_t node, shared_ptr<lattice_elem> state) {
+void analysis::liveness::liveness::update(size_t node, shared_ptr<domain_state> state) {
   this->state[node] = dynamic_pointer_cast<lv_elem>(state);
 }
 

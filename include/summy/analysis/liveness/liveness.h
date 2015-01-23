@@ -52,10 +52,10 @@ public:
   liveness(cfg::cfg *cfg);
   ~liveness();
 
-  shared_ptr<lattice_elem> bottom();
+  shared_ptr<domain_state> bottom();
 
-  shared_ptr<lattice_elem> get(size_t node);
-  void update(size_t node, shared_ptr<lattice_elem> state);
+  shared_ptr<domain_state> get(size_t node);
+  void update(size_t node, shared_ptr<domain_state> state);
   liveness_result result();
 
   void put(std::ostream &out);

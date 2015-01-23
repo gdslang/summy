@@ -113,19 +113,19 @@ adaptive_rd::adaptive_rd::adaptive_rd(class cfg *cfg, liveness_result lv_result)
 analysis::adaptive_rd::adaptive_rd::~adaptive_rd() {
 }
 
-shared_ptr<analysis::lattice_elem> adaptive_rd::adaptive_rd::bottom() {
+shared_ptr<analysis::domain_state> adaptive_rd::adaptive_rd::bottom() {
   return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(false, elements_t(), 0));
 }
 
-shared_ptr<analysis::lattice_elem> adaptive_rd::adaptive_rd::start_value() {
+shared_ptr<analysis::domain_state> adaptive_rd::adaptive_rd::start_value() {
   return shared_ptr<adaptive_rd_elem>(new adaptive_rd_elem(true, elements_t(), 0));
 }
 
-shared_ptr<::analysis::lattice_elem> adaptive_rd::adaptive_rd::get(size_t node) {
+shared_ptr<::analysis::domain_state> adaptive_rd::adaptive_rd::get(size_t node) {
   return state[node];
 }
 
-void adaptive_rd::update(size_t node, shared_ptr<::analysis::lattice_elem> state) {
+void adaptive_rd::update(size_t node, shared_ptr<::analysis::domain_state> state) {
   this->state[node] = dynamic_pointer_cast<adaptive_rd_elem>(state);
 }
 

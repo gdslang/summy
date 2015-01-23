@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include <summy/analysis/lattice_elem.h>
+#include <summy/analysis/domain_state.h>
 #include <algorithm>
 #include <set>
 

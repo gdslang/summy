@@ -66,7 +66,7 @@ bool analysis::reaching_defs::singleton_less::operator ()(singleton_t a, singlet
   return new rd_elem(contains_undef, difference_defs);
 }
 
-reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::lattice_elem *other, size_t current_node) {
+reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::lub(::analysis::domain_state *other, size_t current_node) {
   rd_elem *other_casted = dynamic_cast<rd_elem*>(other);
 
   id_set_t ids_mine;
@@ -137,7 +137,7 @@ reaching_defs::rd_elem *analysis::reaching_defs::rd_elem::remove(
   return new rd_elem(contains_undef, removed);
 }
 
-bool analysis::reaching_defs::rd_elem::operator >=(::analysis::lattice_elem &other) {
+bool analysis::reaching_defs::rd_elem::operator >=(::analysis::domain_state &other) {
   rd_elem &other_casted = dynamic_cast<rd_elem&>(other);
   if(contains_undef && !other_casted.contains_undef) return true;
   if(!contains_undef && other_casted.contains_undef) return false;

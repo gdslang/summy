@@ -30,7 +30,7 @@ bool analysis::adaptive_rd::singleton_equals(const singleton_t& a, const singlet
   return print_id_no_version(a_k) == print_id_no_version(b_k) && a_v == b_v;
 }
 
-adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::lub(::analysis::lattice_elem *other,
+adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::lub(::analysis::domain_state *other,
     size_t current_node) {
   adaptive_rd_elem *other_casted = dynamic_cast<adaptive_rd_elem*>(other);
 
@@ -94,7 +94,7 @@ adaptive_rd::adaptive_rd_elem *analysis::adaptive_rd::adaptive_rd_elem::set_memo
 }
 
 
-bool analysis::adaptive_rd::adaptive_rd_elem::operator >=(::analysis::lattice_elem &other) {
+bool analysis::adaptive_rd::adaptive_rd_elem::operator >=(::analysis::domain_state &other) {
   adaptive_rd_elem &other_casted = dynamic_cast<adaptive_rd_elem&>(other);
   if(contains_undef && !other_casted.contains_undef) return true;
   if(!contains_undef && other_casted.contains_undef) return false;

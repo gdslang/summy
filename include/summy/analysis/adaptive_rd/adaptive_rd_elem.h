@@ -7,8 +7,9 @@
 
 #pragma once
 
+#include <summy/analysis/domain_state.h>
+
 #include <cppgdsl/rreil/id/id.h>
-#include <summy/analysis/lattice_elem.h>
 #include <summy/analysis/subset_man.h>
 #include <summy/analysis/util.h>
 #include <set>
@@ -33,7 +34,7 @@ bool singleton_equals(const singleton_t &a, const singleton_t &b);
 
 typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less_no_version> id_set_t;
 
-class adaptive_rd_elem : public lattice_elem {
+class adaptive_rd_elem : public domain_state {
 private:
   bool contains_undef;
   const elements_t elements;
@@ -60,7 +61,7 @@ public:
    * Copy constructor
    */
   adaptive_rd_elem(adaptive_rd_elem &e) :
-      lattice_elem(e), contains_undef(e.contains_undef), elements(e.elements), memory_rev(e.memory_rev) {
+      domain_state(e), contains_undef(e.contains_undef), elements(e.elements), memory_rev(e.memory_rev) {
   }
 
   /**
@@ -70,13 +71,13 @@ public:
   }
 
 
-  virtual adaptive_rd_elem *lub(::analysis::lattice_elem *other, size_t current_node);
+  virtual adaptive_rd_elem *lub(::analysis::domain_state *other, size_t current_node);
   virtual adaptive_rd_elem *add(std::vector<singleton_t> elements);
   virtual adaptive_rd_elem *remove(id_set_t elements);
   virtual adaptive_rd_elem *remove(std::function<bool(singleton_key_t, singleton_value_t)> pred);
   virtual adaptive_rd_elem *set_memory_rev(size_t memory_rev);
 
-  virtual bool operator>=(::analysis::lattice_elem &other);
+  virtual bool operator>=(::analysis::domain_state &other);
 
   virtual void put(std::ostream &out);
 };
