@@ -47,6 +47,7 @@ private:
 public:
   node *operator*();
   bfs_iterator &operator++();
+  bfs_iterator &skip();
   friend bool operator==(const bfs_iterator &a, const bfs_iterator &b);
   friend bool operator!=(const bfs_iterator &a, const bfs_iterator &b);
 };

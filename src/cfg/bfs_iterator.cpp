@@ -77,6 +77,14 @@ cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
   return *this;
 }
 
+cfg::bfs_iterator &cfg::bfs_iterator::skip() {
+  if(end) throw string("No more nodes");
+  size_t next = inner_component.front();
+  inner_component.pop();
+  check_next_component();
+  return *this;
+}
+
 bool cfg::operator ==(const bfs_iterator &a, const bfs_iterator &b) {
   return (a.end && b.end)
       || ((!a.end && !b.end)
@@ -87,5 +95,3 @@ bool cfg::operator ==(const bfs_iterator &a, const bfs_iterator &b) {
 bool cfg::operator !=(const bfs_iterator &a, const bfs_iterator &b) {
   return !(a == b);
 }
-
-
