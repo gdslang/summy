@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include "analysis_result.h"
 #include <summy/cfg/cfg.h>
 #include <queue>
 #include <set>
@@ -20,14 +21,6 @@ using std::shared_ptr;
 namespace analysis {
 
 class domain_state;
-
-template<typename STATE_T>
-struct analysis_result {
-  STATE_T &result;
-
-  analysis_result(STATE_T &result) : result(result) {
-  }
-};
 
 struct dependency {
   size_t source;
