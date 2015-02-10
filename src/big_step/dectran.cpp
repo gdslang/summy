@@ -5,7 +5,6 @@
  *      Author: Julian Kranz
  */
 
-
 #include <summy/big_step/dectran.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <summy/cfg/node/address_node.h>
@@ -16,6 +15,7 @@
 #include <summy/transformers/trivial_connector.h>
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/block.h>
+#include <cppgdsl/optimization.h>
 #include <cppgdsl/instruction.h>
 #include <cppgdsl/rreil/statement/statement.h>
 #include <limits.h>
@@ -26,14 +26,15 @@ using namespace std;
 
 cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   cfg::translated_program_t prog;
-  if(gdsl.bytes_left() <= 0)
-    throw string("Unable to decode");
+  if(gdsl.bytes_left() <= 0) throw string("Unable to decode");
   do {
     int_t ip = gdsl.get_ip();
 
     statements_t *rreil;
     if(blockwise_optimized) {
-      gdsl::block b = gdsl.decode_translate_block(gdsl::preservation::CONTEXT, LONG_MAX);
+      gdsl::block b = gdsl.decode_translate_block(
+          gdsl::optimization_configuration::CONTEXT | gdsl::optimization_configuration::LIVENESS
+              | gdsl::optimization_configuration::FSUBST, LONG_MAX);
       rreil = b.get_statements();
     } else {
       gdsl::instruction insn = gdsl.decode();
@@ -44,9 +45,9 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
 
     gdsl.reset_heap();
 
-  //  printf("RReil (no transformations):\n");
-  //  for(statement *s : *rreil)
-  //    printf("%s\n", s->to_string().c_str());
+    //  printf("RReil (no transformations):\n");
+    //  for(statement *s : *rreil)
+    //    printf("%s\n", s->to_string().c_str());
 
     prog.push_back(make_tuple(ip, rreil));
   } while(decode_multiple && gdsl.bytes_left() > 0);

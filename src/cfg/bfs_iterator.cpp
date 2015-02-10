@@ -79,7 +79,6 @@ cfg::bfs_iterator &cfg::bfs_iterator::operator ++() {
 
 cfg::bfs_iterator &cfg::bfs_iterator::skip() {
   if(end) throw string("No more nodes");
-  size_t next = inner_component.front();
   inner_component.pop();
   check_next_component();
   return *this;
