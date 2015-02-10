@@ -5,8 +5,8 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/domain_state.h>
 #include <summy/analysis/fixpoint.h>
+#include <summy/analysis/domain_state.h>
 #include <summy/analysis/fp_analysis.h>
 #include <queue>
 #include <iostream>
@@ -14,15 +14,28 @@
 using namespace std;
 using namespace analysis;
 
+void analysis::fp_priority_queue::push(size_t value) {
+  inner.insert(value);
+}
+
+size_t analysis::fp_priority_queue::pop() {
+  size_t value;
+  auto it = inner.begin();
+  value = *it;
+  inner.erase(it);
+  return value;
+}
+
+bool analysis::fp_priority_queue::empty() {
+  return inner.empty();
+}
+
 void fixpoint::iterate() {
   updated.clear();
-  set<size_t> worklist = analysis->pending();
+  fp_priority_queue worklist = analysis->pending();
 
   while(!worklist.empty()) {
-    size_t node_id;
-    auto it = worklist.begin();
-    node_id = *it;
-    worklist.erase(it);
+    size_t node_id = worklist.pop();
 
 //    cout << "Next node: " << node_id << endl;
 
@@ -59,7 +72,7 @@ void fixpoint::iterate() {
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
       for(auto dependant : dependants)
-        worklist.insert(dependant);
+        worklist.push(dependant);
     }
 
     seen.insert(node_id);

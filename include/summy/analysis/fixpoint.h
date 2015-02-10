@@ -13,9 +13,24 @@
 
 namespace analysis {
 
+class fp_priority_queue {
+private:
+  std::set<size_t> inner;
+public:
+  fp_priority_queue() {
+  }
+  fp_priority_queue(std::set<size_t> init) :
+      inner(init) {
+  }
+
+  void push(size_t value);
+  size_t pop();
+  bool empty();
+};
+
 class fp_analysis;
 
-class fixpoint : cfg::observer {
+class fixpoint: cfg::observer {
 private:
   fp_analysis *analysis;
   std::set<size_t> seen;
@@ -24,7 +39,8 @@ public:
   virtual ~fixpoint() {
   }
 
-  fixpoint(class fp_analysis *analysis) : analysis(analysis) {
+  fixpoint(class fp_analysis *analysis) :
+      analysis(analysis) {
   }
 
   void iterate();
