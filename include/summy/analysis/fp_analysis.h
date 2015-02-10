@@ -27,9 +27,10 @@ struct dependency {
   size_t sink;
 };
 
+typedef std::function<std::shared_ptr<domain_state>()> constraint_t;
+
 class fp_analysis {
 public:
-  typedef std::function<std::shared_ptr<domain_state>()> constraint_t;
   typedef std::map<size_t, std::set<size_t>> dependants_t;
 protected:
   cfg::cfg *cfg;

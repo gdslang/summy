@@ -57,10 +57,14 @@ adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::join(:
   explicit_lub(explicit_undef);
 
   size_t memory_rev = this->memory_rev;
-  if(memory_rev != other_casted->memory_rev)
-    memory_rev = current_node;
+  if(memory_rev != other_casted->memory_rev) memory_rev = current_node;
 
   return new adaptive_rd_state(contains_undef || other_casted->contains_undef, lubbed, memory_rev);
+}
+
+adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::box(::analysis::domain_state *other,
+    size_t current_node) {
+  return new adaptive_rd::adaptive_rd_state(*dynamic_cast<adaptive_rd::adaptive_rd_state*>(other));
 }
 
 adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::add(std::vector<singleton_t> elements) {
@@ -93,7 +97,6 @@ adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::set_me
   return new adaptive_rd_state(contains_undef, elements, memory_rev);
 }
 
-
 bool analysis::adaptive_rd::adaptive_rd_state::operator >=(::analysis::domain_state &other) {
   adaptive_rd_state &other_casted = dynamic_cast<adaptive_rd_state&>(other);
   if(contains_undef && !other_casted.contains_undef) return true;
@@ -112,4 +115,3 @@ void analysis::adaptive_rd::adaptive_rd_state::put(std::ostream &out) {
   out << " | memory -> " << memory_rev << "}";
   if(contains_undef) out << "+";
 }
-

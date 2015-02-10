@@ -114,6 +114,10 @@ reaching_defs::rd_state *analysis::reaching_defs::rd_state::join(::analysis::dom
   return new rd_state(contains_undef || other_casted->contains_undef, result_set);
 }
 
+reaching_defs::rd_state *analysis::reaching_defs::rd_state::box(::analysis::domain_state *other, size_t current_node) {
+  return new rd_state(*dynamic_cast<rd_state*>(other));
+}
+
 reaching_defs::rd_state *analysis::reaching_defs::rd_state::add(elements_t elements) {
   auto added = eset.add(elements);
   return new rd_state(contains_undef, added);
