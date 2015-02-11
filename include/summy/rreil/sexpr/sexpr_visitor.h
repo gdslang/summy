@@ -26,9 +26,11 @@ public:
 
   virtual void visit(value_set *a);
 
+  using gdsl::rreil::sexpr_visitor::_;
   void _(value_set_callback_t c) {
     this->value_set_callback = c;
   }
+  using gdsl::rreil::sexpr_visitor::_default;
 };
 
 }
