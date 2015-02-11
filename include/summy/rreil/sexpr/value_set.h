@@ -7,12 +7,11 @@
 
 #pragma once
 #include <cppgdsl/rreil/sexpr/sexpr.h>
-#include <cppgdsl/rreil/sexpr/sexpr_visitor.h>
+#include <summy/value_set/value_set.h>
 #include <iostream>
 
 namespace summy {
 namespace rreil {
-
 
 class value_set : public gdsl::rreil::sexpr {
 private:

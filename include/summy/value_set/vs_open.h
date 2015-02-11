@@ -6,8 +6,8 @@
  */
 
 #pragma once
-#include <summy/value_set/value_set_visitor.h>
 #include "value_set.h"
+#include <summy/value_set/value_set_visitor.h>
 
 namespace summy {
 
