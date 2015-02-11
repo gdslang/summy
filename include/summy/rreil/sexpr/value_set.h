@@ -13,12 +13,6 @@
 namespace summy {
 namespace rreil {
 
-enum vsb_type {
-  INFINITY, CONSTANT
-};
-
-struct vs_boundary {
-};
 
 class value_set : public gdsl::rreil::sexpr {
 private:
