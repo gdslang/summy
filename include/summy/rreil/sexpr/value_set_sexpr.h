@@ -13,10 +13,17 @@
 namespace summy {
 namespace rreil {
 
-class value_set : public gdsl::rreil::sexpr {
+class value_set_sexpr: public gdsl::rreil::sexpr {
 private:
+  value_set *inner;
+
   void put(std::ostream &out);
 public:
+  value_set_sexpr(value_set *inner) :
+      inner(inner) {
+  }
+  ~value_set_sexpr();
+
   void accept(gdsl::rreil::sexpr_visitor &v);
 };
 

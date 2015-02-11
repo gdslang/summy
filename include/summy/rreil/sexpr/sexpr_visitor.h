@@ -13,18 +13,18 @@
 namespace summy {
 namespace rreil {
 
-class value_set;
+class value_set_sexpr;
 
-class id_visitor : public virtual gdsl::rreil::sexpr_visitor {
+class sexpr_visitor : public virtual gdsl::rreil::sexpr_visitor {
 public:
-  typedef std::function<void(value_set*)> value_set_callback_t;
+  typedef std::function<void(value_set_sexpr*)> value_set_callback_t;
 private:
   value_set_callback_t value_set_callback = NULL;
 public:
-  virtual ~id_visitor() {
+  virtual ~sexpr_visitor() {
   }
 
-  virtual void visit(value_set *a);
+  virtual void visit(value_set_sexpr *a);
 
   using gdsl::rreil::sexpr_visitor::_;
   void _(value_set_callback_t c) {
