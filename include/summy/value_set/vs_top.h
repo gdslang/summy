@@ -18,8 +18,8 @@ public:
   vs_top() {
   }
 
-  vs_shared_t join(vs_finite const *vsf);
-  vs_shared_t join(vs_open const *vsf);
+  vs_shared_t join(vs_finite const *vsf) const;
+  vs_shared_t join(vs_open const *vsf) const;
 
   void accept(value_set_visitor &v);
 };

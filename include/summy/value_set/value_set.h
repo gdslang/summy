@@ -27,9 +27,9 @@ public:
   friend std::ostream &operator<< (std::ostream &out, value_set &_this);
   virtual void accept(value_set_visitor &v) = 0;
 
-  virtual vs_shared_t join(vs_finite const *vsf) = 0;
-  virtual vs_shared_t join(vs_open const *vsf) = 0;
-  vs_shared_t join(vs_top const *vsf);
+  virtual vs_shared_t join(vs_finite const *vsf) const = 0;
+  virtual vs_shared_t join(vs_open const *vsf) const = 0;
+  vs_shared_t join(vs_top const *vsf) const;
   static vs_shared_t join(vs_shared_t a, vs_shared_t b);
 
   static vs_shared_t const top;

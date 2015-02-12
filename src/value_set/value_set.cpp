@@ -18,7 +18,7 @@ std::ostream &summy::operator <<(std::ostream &out, value_set &_this) {
   return out;
 }
 
-vs_shared_t value_set::join(const vs_top *vsf) {
+vs_shared_t value_set::join(const vs_top *vsf) const {
   return top;
 }
 

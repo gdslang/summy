@@ -15,10 +15,10 @@ void summy::vs_top::put(std::ostream &out) {
   out << "⊥";
 }
 
-vs_shared_t summy::vs_top::join(const vs_finite* vsf) {
+vs_shared_t summy::vs_top::join(const vs_finite* vsf) const {
 }
 
-vs_shared_t summy::vs_top::join(const vs_open* vsf) {
+vs_shared_t summy::vs_top::join(const vs_open* vsf) const {
 }
 
 void summy::vs_top::accept(value_set_visitor &v) {

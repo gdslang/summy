@@ -22,10 +22,11 @@ void summy::vs_open::put(std::ostream &out) {
   }
 }
 
-vs_shared_t summy::vs_open::join(const vs_finite *vsf) {
+vs_shared_t summy::vs_open::join(const vs_finite *vsf) const {
+  return vsf->join(this);
 }
 
-vs_shared_t summy::vs_open::join(const vs_open *vsf) {
+vs_shared_t summy::vs_open::join(const vs_open *vsf) const {
 }
 
 void summy::vs_open::accept(value_set_visitor &v) {
