@@ -13,18 +13,25 @@
 namespace summy {
 
 class vs_finite: public value_set {
+public:
+  typedef std::set<int64_t> elements_t;
 private:
-  std::set<int64_t> const elements;
+  elements_t const elements;
 
   void put(std::ostream &out);
 public:
-  vs_finite(std::set<int64_t> const elements) :
+  vs_finite() {
+  }
+  vs_finite(elements_t const elements) :
       elements(elements) {
   }
 
-  const std::set<int64_t> &get_elements() const {
+  const elements_t &get_elements() const {
     return elements;
   }
+
+  vs_shared_t join(vs_finite const *vsf);
+  vs_shared_t join(vs_open const *vsf);
 
   void accept(value_set_visitor &v);
 };

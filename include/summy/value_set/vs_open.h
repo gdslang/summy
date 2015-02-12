@@ -46,6 +46,9 @@ public:
     return open_dir;
   }
 
+  vs_shared_t join(vs_finite const *vsf);
+  vs_shared_t join(vs_open const *vsf);
+
   void accept(value_set_visitor &v);
 };
 

@@ -7,6 +7,7 @@
 #include <summy/value_set/value_set_visitor.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
+#include <summy/value_set/vs_top.h>
 #include <string>
 
 using namespace summy;
@@ -19,6 +20,11 @@ void value_set_visitor::visit(vs_finite *v) {
 
 void value_set_visitor::visit(vs_open *v) {
   if(vs_open_callback != NULL) vs_open_callback(v);
+  else _default(v);
+}
+
+void value_set_visitor::visit(vs_top *v) {
+  if(vs_top_callback != NULL) vs_top_callback(v);
   else _default(v);
 }
 

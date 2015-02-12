@@ -5,6 +5,9 @@
  *      Author: Julian Kranz
  */
 #include <summy/value_set/vs_open.h>
+#include <summy/value_set/vs_finite.h>
+
+using namespace summy;
 
 void summy::vs_open::put(std::ostream &out) {
   switch(open_dir) {
@@ -17,6 +20,12 @@ void summy::vs_open::put(std::ostream &out) {
       break;
     }
   }
+}
+
+vs_shared_t summy::vs_open::join(const vs_finite *vsf) {
+}
+
+vs_shared_t summy::vs_open::join(const vs_open *vsf) {
 }
 
 void summy::vs_open::accept(value_set_visitor &v) {

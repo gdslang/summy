@@ -6,11 +6,17 @@
  */
 
 #pragma once
-#include <cppgdsl/rreil/sexpr/sexpr.h>
-#include <cppgdsl/rreil/sexpr/sexpr_visitor.h>
 #include <iostream>
+#include <memory>
 
 namespace summy {
+
+class value_set;
+typedef std::shared_ptr<value_set> vs_shared_t;
+class vs_top;
+class vs_open;
+class vs_finite;
+class value_set_visitor;
 
 class value_set {
 private:
@@ -19,7 +25,15 @@ public:
   virtual ~value_set() {
   }
   friend std::ostream &operator<< (std::ostream &out, value_set &_this);
-  virtual void accept(gdsl::rreil::sexpr_visitor &v) = 0;
+  virtual void accept(value_set_visitor &v) = 0;
+
+  virtual vs_shared_t join(vs_finite const *vsf) = 0;
+  virtual vs_shared_t join(vs_open const *vsf) = 0;
+  vs_shared_t join(vs_top const *vsf);
+  static vs_shared_t join(vs_shared_t a, vs_shared_t b);
+
+  static vs_shared_t const top;
+  static vs_shared_t const bottom;
 };
 
 std::ostream &operator<<(std::ostream &out, value_set &_this);
