@@ -39,6 +39,9 @@ public:
   bool smaller_equals(vs_finite const *vsf) const;
   bool smaller_equals(vs_open const *vsf) const;
 
+  vs_shared_t narrow(vs_finite const *vsf) const;
+  vs_shared_t narrow(vs_open const *vsf) const;
+
   vs_shared_t widen(vs_finite const *vsf) const;
   vs_shared_t widen(vs_open const *vsf) const;
 

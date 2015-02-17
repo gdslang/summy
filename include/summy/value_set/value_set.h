@@ -32,6 +32,13 @@ public:
   bool smaller_equals(vs_top const *vsf) const;
   bool operator<=(vs_shared_t b);
 
+  static vs_shared_t box(vs_shared_t a, vs_shared_t b);
+
+  virtual vs_shared_t narrow(vs_finite const *vsf) const = 0;
+  virtual vs_shared_t narrow(vs_open const *vsf) const = 0;
+  vs_shared_t narrow(vs_top const *vsf) const;
+  static vs_shared_t narrow(vs_shared_t a, vs_shared_t b);
+
   virtual vs_shared_t widen(vs_finite const *vsf) const = 0;
   virtual vs_shared_t widen(vs_open const *vsf) const = 0;
   vs_shared_t widen(vs_top const *vsf) const;

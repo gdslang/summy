@@ -27,6 +27,12 @@
 #include <summy/analysis/ismt/ismt.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/transformers/resolved_connector.h>
+
+#include <summy/value_set/value_set.h>
+#include <summy/value_set/vs_finite.h>
+#include <summy/value_set/vs_open.h>
+#include <summy/value_set/vs_top.h>
+
 #include <cstdio>
 
 using analysis::adaptive_rd::adaptive_rd;
@@ -39,9 +45,10 @@ using namespace gdsl::rreil;
 using namespace std;
 using namespace CVC4;
 using namespace analysis;
+using namespace summy;
 
 int main(int argc, char **argv) {
-  ExprManager em;
+//  ExprManager em;
 //  Expr a = em.mkVar("a", em.booleanType());
 
 //  Expr Q = em.mkExpr(kind::)
@@ -239,6 +246,15 @@ int main(int argc, char **argv) {
 //    cout << blah << endl;
 //
 //  }
+  vs_shared_t s1 = make_shared<vs_finite>(vs_finite::elements_t {4, 2, 3});
+  vs_shared_t s2 = make_shared<vs_finite>(vs_finite::elements_t {1, 9});
+
+  vs_shared_t s3 = value_set::join(s1, s2);
+  vs_shared_t s4 = value_set::widen(s1, s2);
+
+  cout << *s4 << endl;
+
+  exit(0);
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);

@@ -54,6 +54,14 @@ bool summy::vs_open::smaller_equals(const vs_open *vsf) const {
   }
 }
 
+vs_shared_t summy::vs_open::narrow(const vs_finite *vsf) const {
+  return make_shared<vs_finite>(*vsf);
+}
+
+vs_shared_t summy::vs_open::narrow(const vs_open *vsf) const {
+  return make_shared<vs_open>(*this);
+}
+
 vs_shared_t summy::vs_open::widen(const vs_finite *vsf) const {
   switch(open_dir) {
     case DOWNWARD: {

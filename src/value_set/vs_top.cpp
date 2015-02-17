@@ -8,11 +8,13 @@
 #include <summy/value_set/vs_top.h>
 #include <summy/value_set/vs_open.h>
 #include <summy/value_set/vs_finite.h>
+#include <memory>
 
 using namespace summy;
+using namespace std;
 
 void summy::vs_top::put(std::ostream &out) {
-  out << "⊥";
+  out << "⊤";
 }
 
 bool summy::vs_top::smaller_equals(const vs_finite *vsf) const {
@@ -21,6 +23,14 @@ bool summy::vs_top::smaller_equals(const vs_finite *vsf) const {
 
 bool summy::vs_top::smaller_equals(const vs_open *vsf) const {
   return false;
+}
+
+vs_shared_t summy::vs_top::narrow(const vs_finite *vsf) const {
+  return make_shared<vs_finite>(*vsf);
+}
+
+vs_shared_t summy::vs_top::narrow(const vs_open *vsf) const {
+  return make_shared<vs_open>(*vsf);
 }
 
 vs_shared_t summy::vs_top::widen(const vs_finite *vsf) const {

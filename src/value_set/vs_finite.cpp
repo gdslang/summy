@@ -49,6 +49,14 @@ bool summy::vs_finite::smaller_equals(const vs_open *vsf) const {
   }
 }
 
+vs_shared_t summy::vs_finite::narrow(const vs_finite *vsf) const {
+  return make_shared<vs_finite>(*vsf);
+}
+
+vs_shared_t summy::vs_finite::narrow(const vs_open *vsf) const {
+  return value_set::bottom;
+}
+
 vs_shared_t summy::vs_finite::widen(const vs_finite *vsf) const {
   if(elements.empty())
     return make_shared<vs_finite>(*vsf);
@@ -56,7 +64,7 @@ vs_shared_t summy::vs_finite::widen(const vs_finite *vsf) const {
     return make_shared<vs_finite>(*this);
   if(min() <= vsf->min())
     return make_shared<vs_open>(UPWARD, min());
-  if(max() <= vsf->max())
+  if(max() >= vsf->max())
     return make_shared<vs_open>(DOWNWARD, max());
   return value_set::top;
 }

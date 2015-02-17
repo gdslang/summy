@@ -38,6 +38,33 @@ bool summy::value_set::operator <=(vs_shared_t b) {
   return result;
 }
 
+vs_shared_t value_set::box(vs_shared_t a, vs_shared_t b) {
+  if(*b <= a)
+    return narrow(a, b);
+  else
+    return widen(a, b);
+}
+
+vs_shared_t value_set::narrow(const vs_top *vsf) const {
+  return top;
+}
+
+vs_shared_t value_set::narrow(vs_shared_t a, vs_shared_t b) {
+  value_set_visitor vs;
+  vs_shared_t result;
+  vs._([&] (vs_finite *v) {
+    result = a->narrow(v);
+  });
+  vs._([&] (vs_open *v) {
+    result = a->narrow(v);
+  });
+  vs._([&] (vs_top *v) {
+    result = a->narrow(v);
+  });
+  b->accept(vs);
+  return result;
+}
+
 vs_shared_t value_set::widen(const vs_top *vsf) const {
   return top;
 }
