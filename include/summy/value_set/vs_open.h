@@ -37,6 +37,8 @@ private:
 public:
   vs_open(vs_open_dir open_dir, int64_t limit) : open_dir(open_dir), limit(limit) {
   }
+  vs_open(vs_open const &other) : open_dir(other.open_dir), limit(other.limit) {
+  }
 
   int64_t get_limit() const {
     return limit;
@@ -45,6 +47,12 @@ public:
   vs_open_dir get_open_dir() const {
     return open_dir;
   }
+
+  bool smaller_equals(vs_finite const *vsf) const;
+  bool smaller_equals(vs_open const *vsf) const;
+
+  vs_shared_t widen(vs_finite const *vsf) const;
+  vs_shared_t widen(vs_open const *vsf) const;
 
   vs_shared_t join(vs_finite const *vsf) const;
   vs_shared_t join(vs_open const *vsf) const;

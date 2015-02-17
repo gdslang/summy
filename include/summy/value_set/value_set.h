@@ -27,6 +27,16 @@ public:
   friend std::ostream &operator<< (std::ostream &out, value_set &_this);
   virtual void accept(value_set_visitor &v) = 0;
 
+  virtual bool smaller_equals(vs_finite const *vsf) const = 0;
+  virtual bool smaller_equals(vs_open const *vsf) const = 0;
+  bool smaller_equals(vs_top const *vsf) const;
+  bool operator<=(vs_shared_t b);
+
+  virtual vs_shared_t widen(vs_finite const *vsf) const = 0;
+  virtual vs_shared_t widen(vs_open const *vsf) const = 0;
+  vs_shared_t widen(vs_top const *vsf) const;
+  static vs_shared_t widen(vs_shared_t a, vs_shared_t b);
+
   virtual vs_shared_t join(vs_finite const *vsf) const = 0;
   virtual vs_shared_t join(vs_open const *vsf) const = 0;
   vs_shared_t join(vs_top const *vsf) const;

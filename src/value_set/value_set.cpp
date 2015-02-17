@@ -18,6 +18,46 @@ std::ostream &summy::operator <<(std::ostream &out, value_set &_this) {
   return out;
 }
 
+bool summy::value_set::smaller_equals(const vs_top *vsf) const {
+  return true;
+}
+
+bool summy::value_set::operator <=(vs_shared_t b) {
+  value_set_visitor vs;
+  bool result;
+  vs._([&] (vs_finite *v) {
+    result = smaller_equals(v);
+  });
+  vs._([&] (vs_open *v) {
+    result = smaller_equals(v);
+  });
+  vs._([&] (vs_top *v) {
+    result = smaller_equals(v);
+  });
+  b->accept(vs);
+  return result;
+}
+
+vs_shared_t value_set::widen(const vs_top *vsf) const {
+  return top;
+}
+
+vs_shared_t value_set::widen(vs_shared_t a, vs_shared_t b) {
+  value_set_visitor vs;
+  vs_shared_t result;
+  vs._([&] (vs_finite *v) {
+    result = a->widen(v);
+  });
+  vs._([&] (vs_open *v) {
+    result = a->widen(v);
+  });
+  vs._([&] (vs_top *v) {
+    result = a->widen(v);
+  });
+  b->accept(vs);
+  return result;
+}
+
 vs_shared_t value_set::join(const vs_top *vsf) const {
   return top;
 }
@@ -40,4 +80,3 @@ vs_shared_t value_set::join(vs_shared_t a, vs_shared_t b) {
 
 vs_shared_t const value_set::top = make_shared<vs_top>();
 vs_shared_t const value_set::bottom = make_shared<vs_finite>();
-

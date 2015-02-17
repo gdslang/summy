@@ -25,10 +25,22 @@ public:
   vs_finite(elements_t const elements) :
       elements(elements) {
   }
+  vs_finite(vs_finite const &other) :
+      elements(other.elements) {
+  }
+
+  int64_t min() const;
+  int64_t max() const;
 
   const elements_t &get_elements() const {
     return elements;
   }
+
+  bool smaller_equals(vs_finite const *vsf) const;
+  bool smaller_equals(vs_open const *vsf) const;
+
+  vs_shared_t widen(vs_finite const *vsf) const;
+  vs_shared_t widen(vs_open const *vsf) const;
 
   vs_shared_t join(vs_finite const *vsf) const;
   vs_shared_t join(vs_open const *vsf) const;
