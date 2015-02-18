@@ -18,33 +18,6 @@ std::ostream &summy::operator <<(std::ostream &out, value_set &_this) {
   return out;
 }
 
-bool summy::value_set::smaller_equals(const vs_top *vsf) const {
-  return true;
-}
-
-bool summy::value_set::operator <=(vs_shared_t b) {
-  value_set_visitor vs;
-  bool result;
-  vs._([&] (vs_finite *v) {
-    result = smaller_equals(v);
-  });
-  vs._([&] (vs_open *v) {
-    result = smaller_equals(v);
-  });
-  vs._([&] (vs_top *v) {
-    result = smaller_equals(v);
-  });
-  b->accept(vs);
-  return result;
-}
-
-vs_shared_t value_set::box(vs_shared_t a, vs_shared_t b) {
-  if(*b <= a)
-    return narrow(a, b);
-  else
-    return widen(a, b);
-}
-
 vs_shared_t value_set::narrow(const vs_top *vsf) const {
   return top;
 }
@@ -80,6 +53,77 @@ vs_shared_t value_set::widen(vs_shared_t a, vs_shared_t b) {
   });
   vs._([&] (vs_top *v) {
     result = a->widen(v);
+  });
+  b->accept(vs);
+  return result;
+}
+
+vs_shared_t value_set::box(vs_shared_t a, vs_shared_t b) {
+  if(*b <= a)
+    return narrow(a, b);
+  else
+    return widen(a, b);
+}
+
+vs_shared_t summy::value_set::add(const vs_top *vs) const {
+  return top;
+}
+
+vs_shared_t summy::value_set::operator +(vs_shared_t b) {
+  value_set_visitor vs;
+  vs_shared_t result;
+  vs._([&] (vs_finite *v) {
+    result = add(v);
+  });
+  vs._([&] (vs_open *v) {
+    result = add(v);
+  });
+  vs._([&] (vs_top *v) {
+    result = add(v);
+  });
+  b->accept(vs);
+  return result;
+}
+
+vs_shared_t summy::value_set::operator -() const {
+  return neg();
+}
+
+vs_shared_t summy::value_set::mul(const vs_top *vs) const {
+  return top;
+}
+
+vs_shared_t summy::value_set::operator *(vs_shared_t b) {
+  value_set_visitor vs;
+  vs_shared_t result;
+  vs._([&] (vs_finite *v) {
+    result = mul(v);
+  });
+  vs._([&] (vs_open *v) {
+    result = mul(v);
+  });
+  vs._([&] (vs_top *v) {
+    result = mul(v);
+  });
+  b->accept(vs);
+  return result;
+}
+
+bool summy::value_set::smaller_equals(const vs_top *vsf) const {
+  return true;
+}
+
+bool summy::value_set::operator <=(vs_shared_t b) {
+  value_set_visitor vs;
+  bool result;
+  vs._([&] (vs_finite *v) {
+    result = smaller_equals(v);
+  });
+  vs._([&] (vs_open *v) {
+    result = smaller_equals(v);
+  });
+  vs._([&] (vs_top *v) {
+    result = smaller_equals(v);
   });
   b->accept(vs);
   return result;

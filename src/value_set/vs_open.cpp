@@ -24,36 +24,6 @@ void summy::vs_open::put(std::ostream &out) {
   }
 }
 
-bool summy::vs_open::smaller_equals(const vs_finite *vsf) const {
-  return false;
-}
-
-bool summy::vs_open::smaller_equals(const vs_open *vsf) const {
-  switch(open_dir) {
-    case DOWNWARD: {
-      switch(vsf->open_dir) {
-        case DOWNWARD: {
-          return limit <= vsf->get_limit();
-        }
-        case UPWARD: {
-            return false;
-        }
-      }
-      break;
-    }
-    case UPWARD: {
-      switch(vsf->open_dir) {
-        case DOWNWARD: {
-          return false;
-        }
-        case UPWARD: {
-          return limit >= vsf->get_limit();
-        }
-      }
-    }
-  }
-}
-
 vs_shared_t summy::vs_open::narrow(const vs_finite *vsf) const {
   return make_shared<vs_finite>(*vsf);
 }
@@ -106,6 +76,104 @@ vs_shared_t summy::vs_open::widen(const vs_open *vsf) const {
   return value_set::top;
 }
 
+vs_shared_t summy::vs_open::add(const vs_finite *vs) const {
+  return vs->add(this);
+}
+
+vs_shared_t summy::vs_open::add(const vs_open *vs) const {
+  auto mk = [&]() {
+    return make_shared<vs_open>(open_dir, limit + vs->limit);
+  };
+  switch(open_dir) {
+    case DOWNWARD: {
+      switch(vs->open_dir) {
+        case DOWNWARD: {
+          return mk();
+        }
+        case UPWARD: {
+          return top;
+        }
+      }
+      break;
+    }
+    case UPWARD: {
+      switch(vs->open_dir) {
+        case DOWNWARD: {
+          return top;
+        }
+        case UPWARD: {
+          return mk();
+        }
+      }
+    }
+  }
+}
+
+vs_shared_t summy::vs_open::neg() const {
+  switch(open_dir) {
+    case DOWNWARD: {
+      return make_shared<vs_open>(UPWARD, -limit);
+    }
+    case UPWARD: {
+      return make_shared<vs_open>(DOWNWARD, -limit);
+    }
+  }
+}
+
+vs_shared_t summy::vs_open::mul(const vs_finite *vs) const {
+  return vs->mul(this);
+}
+
+vs_shared_t summy::vs_open::mul(const vs_open *vs) const {
+  auto one_sided = [](const vs_open *vs) {
+    switch(vs->open_dir) {
+      case DOWNWARD:
+        return sgn(vs->limit) <= 0;
+      case UPWARD:
+        return sgn(vs->limit) >= 0;
+    }
+  };
+  if(!one_sided(this) || !one_sided(vs))
+    return top;
+  auto mk = [&](auto open_dir) {
+    return make_shared<vs_open>(open_dir, limit*vs->limit);
+  };
+  if(open_dir == vs->open_dir)
+    return mk(UPWARD);
+  else
+    return mk(DOWNWARD);
+}
+
+bool summy::vs_open::smaller_equals(const vs_finite *vsf) const {
+  return false;
+}
+
+bool summy::vs_open::smaller_equals(const vs_open *vsf) const {
+  switch(open_dir) {
+    case DOWNWARD: {
+      switch(vsf->open_dir) {
+        case DOWNWARD: {
+          return limit <= vsf->get_limit();
+        }
+        case UPWARD: {
+            return false;
+        }
+      }
+      break;
+    }
+    case UPWARD: {
+      switch(vsf->open_dir) {
+        case DOWNWARD: {
+          return false;
+        }
+        case UPWARD: {
+          return limit >= vsf->get_limit();
+        }
+      }
+    }
+  }
+}
+
 vs_shared_t summy::vs_open::join(const vs_finite *vsf) const {
   return vsf->join(this);
 }
@@ -118,9 +186,10 @@ vs_shared_t summy::vs_open::join(const vs_open *vsf) const {
           return make_shared<vs_open>(DOWNWARD, max(limit, vsf->limit));
         }
         case UPWARD: {
-            return value_set::top;
+          return value_set::top;
         }
       }
+      break;
     }
     case UPWARD: {
       switch(vsf->open_dir) {
@@ -134,13 +203,6 @@ vs_shared_t summy::vs_open::join(const vs_open *vsf) const {
     }
   }
 }
-
-//          if(limit < vsf->limit && vsf->limit - limit <= 100) {
-//            vs_finite::elements_t elements;
-//            for(int64_t i = limit; i <= vsf->limit; i++)
-//              elements.insert(i);
-//            return make_shared<vs_finite>(elements);
-//          } else
 
 void summy::vs_open::accept(value_set_visitor &v) {
   v.visit(this);
