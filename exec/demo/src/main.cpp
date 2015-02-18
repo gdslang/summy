@@ -247,12 +247,27 @@ int main(int argc, char **argv) {
 //
 //  }
   vs_shared_t s1 = make_shared<vs_finite>(vs_finite::elements_t {4, 2, 3});
+  vs_shared_t s9 = make_shared<vs_finite>(vs_finite::elements_t {0, 4, 2, 3});
   vs_shared_t s2 = make_shared<vs_finite>(vs_finite::elements_t {1, 9});
+  vs_shared_t s10 = make_shared<vs_finite>(vs_finite::elements_t {-2, 3});
+  vs_shared_t s11 = -(*s1);
 
   vs_shared_t s3 = value_set::join(s1, s2);
   vs_shared_t s4 = value_set::widen(s1, s2);
 
-  cout << *s4 << endl;
+  vs_shared_t s5 = *s1 * s2;
+  vs_shared_t s6 = make_shared<vs_open>(DOWNWARD, 3);
+  vs_shared_t s8 = make_shared<vs_open>(DOWNWARD, -9);
+
+  vs_shared_t s7 = *s1 * s6;
+  cout << *s1 << "*" << *s6 << " = " << *s7 << endl;
+  cout << *s1 << "/" << *s6 << " = " << *(*s1 / s6) << endl;
+  cout << *s1 << "/" << *s8 << " = " << *(*s1 / s8) << endl;
+  cout << *s9 << "/" << *s8 << " = " << *(*s9 / s8) << endl;
+  cout << *s9 << "+" << *s2 << " = " << *(*s9 + s2) << endl;
+  cout << *s1 << "*" << *s10 << " = " << *(*s1 * s10) << endl;
+  cout << *s1 << "*" << *s8 << " = " << *(*s1 * s8) << endl;
+  cout << *s11 << "*" << *s8 << " = " << *(*s11 * s8) << endl;
 
   exit(0);
 

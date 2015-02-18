@@ -105,12 +105,66 @@ vs_shared_t summy::vs_finite::mul(const vs_open *vs) const {
     return *(-(*this)) * (-(*vs));
   switch(vs->get_open_dir()) {
     case DOWNWARD: {
-      return make_shared<vs_open>(DOWNWARD, max() * vs->get_limit());
+      if(vs->get_limit() < 0)
+        return make_shared<vs_open>(DOWNWARD, min() * vs->get_limit());
+      else
+        return make_shared<vs_open>(DOWNWARD, max() * vs->get_limit());
     }
     case UPWARD: {
-      return make_shared<vs_open>(UPWARD, min() * vs->get_limit());
+      if(vs->get_limit() < 0)
+        return make_shared<vs_open>(UPWARD, max() * vs->get_limit());
+      else
+        return make_shared<vs_open>(UPWARD, min() * vs->get_limit());
     }
   }
+}
+
+vs_shared_t summy::vs_finite::div(const vs_finite *vs) const {
+  elements_t re;
+  for(auto e1 : elements)
+    for(auto e2 : vs->elements) {
+      if(e2 == 0)
+        re.insert(0);
+      else if(e1 % e2 == 0)
+        re.insert(e1 / e2);
+    }
+  return make_shared<vs_finite>(re);
+}
+
+vs_shared_t summy::vs_finite::div(const vs_open *vs) const {
+  if(min() < -max_growth && max() > max_growth)
+    return top;
+  int64_t sign;
+  bool one_sided = vs->one_sided();
+  if(one_sided) sign = vs->get_open_dir() == DOWNWARD ? -1 : 1;
+  else sign = 1;
+  elements_t er;
+  if(min() < 0) for(int64_t i = min(); i < 0; i++) {
+    er.insert(sign * i);
+    if(!one_sided) er.insert(-i);
+  }
+  if(max() > 0) for(int64_t i = 1; i <= max(); i++) {
+    er.insert(sign * i);
+    if(!one_sided) er.insert(-i);
+  }
+  er.insert(0);
+  return make_shared<vs_finite>(er);
+}
+
+vs_shared_t summy::vs_finite::div(const vs_top *vs) const {
+  if(min() < -max_growth && max() > max_growth)
+    return top;
+  elements_t er;
+  if(min() < 0) for(int64_t i = min(); i < 0; i++) {
+    er.insert(i);
+    er.insert(-i);
+  }
+  if(max() > 0) for(int64_t i = 1; i <= max(); i++) {
+    er.insert(i);
+    er.insert(-i);
+  }
+  er.insert(0);
+  return make_shared<vs_finite>(er);
 }
 
 bool summy::vs_finite::smaller_equals(const vs_finite *vsf) const {
@@ -174,3 +228,4 @@ void summy::vs_finite::accept(value_set_visitor &v) {
 }
 
 vs_shared_t const vs_finite::zero = make_shared<vs_finite>(elements_t { 0 });
+size_t const vs_finite::max_growth = 100;

@@ -53,6 +53,18 @@ vs_shared_t summy::vs_top::mul(const vs_open *vs) const {
   return value_set::top;
 }
 
+vs_shared_t summy::vs_top::div(const vs_finite *vs) const {
+  return value_set::top;
+}
+
+vs_shared_t summy::vs_top::div(const vs_open *vs) const {
+  return value_set::top;
+}
+
+vs_shared_t summy::vs_top::div(const vs_top *vs) const {
+  return value_set::top;
+}
+
 bool summy::vs_top::smaller_equals(const vs_finite *vsf) const {
   return false;
 }

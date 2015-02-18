@@ -50,6 +50,10 @@ public:
   vs_shared_t mul(vs_finite const *vs) const;
   vs_shared_t mul(vs_open const *vs) const;
 
+  vs_shared_t div(vs_finite const *vs) const;
+  vs_shared_t div(vs_open const *vs) const;
+  vs_shared_t div(vs_top const *vs) const;
+
   bool smaller_equals(vs_finite const *vsf) const;
   bool smaller_equals(vs_open const *vsf) const;
 
@@ -59,6 +63,7 @@ public:
   void accept(value_set_visitor &v);
 
   static vs_shared_t const zero;
+  static size_t const max_growth;
 };
 
 }

@@ -65,13 +65,21 @@ public:
   vs_shared_t mul(vs_top const *vs) const;
   vs_shared_t operator*(vs_shared_t b);
 
+  virtual vs_shared_t div(vs_finite const *vs) const = 0;
+  virtual vs_shared_t div(vs_open const *vs) const = 0;
+  virtual vs_shared_t div(vs_top const *vs) const = 0;
+  vs_shared_t operator/(vs_shared_t b);
+
   /*
    * Lattice operations
    */
   virtual bool smaller_equals(vs_finite const *vsf) const = 0;
   virtual bool smaller_equals(vs_open const *vsf) const = 0;
   bool smaller_equals(vs_top const *vsf) const;
+  bool operator<=(value_set *b);
   bool operator<=(vs_shared_t b);
+
+  bool operator==(vs_shared_t b);
 
   virtual vs_shared_t join(vs_finite const *vsf) const = 0;
   virtual vs_shared_t join(vs_open const *vsf) const = 0;
