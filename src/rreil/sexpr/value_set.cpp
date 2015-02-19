@@ -11,11 +11,10 @@
 using gdsl::rreil::sexpr_visitor;
 
 void summy::rreil::value_set_sexpr::put(std::ostream &out) {
-  out << inner;
+  out << *inner;
 }
 
 summy::rreil::value_set_sexpr::~value_set_sexpr() {
-  delete inner;
 }
 
 void summy::rreil::value_set_sexpr::accept(gdsl::rreil::sexpr_visitor &v) {

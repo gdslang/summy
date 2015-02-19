@@ -15,16 +15,21 @@ namespace rreil {
 
 class value_set_sexpr: public gdsl::rreil::sexpr {
 private:
-  value_set *inner;
+  vs_shared_t inner;
 
   void put(std::ostream &out);
 public:
-  value_set_sexpr(value_set *inner) :
+  value_set_sexpr(vs_shared_t inner) :
       inner(inner) {
   }
   ~value_set_sexpr();
 
+  const vs_shared_t &get_inner() const {
+    return inner;
+  }
+
   void accept(gdsl::rreil::sexpr_visitor &v);
+
 };
 
 }

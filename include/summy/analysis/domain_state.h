@@ -14,6 +14,8 @@ using std::shared_ptr;
 namespace analysis {
 
 class domain_state {
+protected:
+  virtual void put(std::ostream &out) = 0;
 public:
   domain_state() {
 
@@ -27,8 +29,8 @@ public:
   virtual domain_state *box(domain_state *other, size_t current_node) = 0;
 
   virtual bool operator>=(domain_state &other) = 0;
+  bool operator<=(domain_state &other);
 
-  virtual void put(std::ostream &out) = 0;
   friend std::ostream &operator<< (std::ostream &out, domain_state &_this);
 };
 
