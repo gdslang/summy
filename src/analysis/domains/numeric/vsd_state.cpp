@@ -5,4 +5,4 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/value_sets/vsd_state.h>
+#include <summy/analysis/domains/numeric/vsd_state.h>
