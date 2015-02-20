@@ -10,14 +10,23 @@
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
 #include <set>
+#include <memory>
 
 namespace anaylsis {
 namespace api {
 
-class ptr_set {
-private:
+struct ptr {
+  std::shared_ptr<gdsl::rreil::id> id;
+  summy::vs_shared_t offset;
 
+  ptr(std::shared_ptr<gdsl::rreil::id> id, summy::vs_shared_t offset) :
+      id(id), offset(offset) {
+  }
+
+  bool operator <(struct ptr other);
 };
+
+typedef std::set<ptr> ptr_set_t;
 
 }
 }

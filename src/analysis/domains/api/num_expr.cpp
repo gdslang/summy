@@ -7,10 +7,18 @@
 
 #include <summy/analysis/domains/api/num_expr.h>
 
+/*
+ * num_expr
+ */
+
 std::ostream &analysis::api::operator <<(std::ostream &out, num_expr &_this) {
   _this.put(out);
   return out;
 }
+
+/*
+ * num_exr_cmp
+ */
 
 void analysis::api::num_expr_cmp::put(std::ostream &out) {
   out << *opnd << " ";
@@ -33,12 +41,27 @@ void analysis::api::num_expr_cmp::put(std::ostream &out) {
     }
   }
   out << " 0";
-
 }
+
+void analysis::api::num_expr_cmp::accept(num_visitor &v) {
+  v.visit(this);
+}
+
+/*
+ * num_expr_lin
+ */
 
 void analysis::api::num_expr_lin::put(std::ostream &out) {
   out << inner;
 }
+
+void analysis::api::num_expr_lin::accept(num_visitor &v) {
+  v.visit(this);
+}
+
+/*
+ * num_expr_bin
+ */
 
 void analysis::api::num_expr_bin::put(std::ostream &out) {
   out << *opnd1 << " ";
@@ -77,4 +100,8 @@ void analysis::api::num_expr_bin::put(std::ostream &out) {
     }
   }
   out << " " << *opnd2;
+}
+
+void analysis::api::num_expr_bin::accept(num_visitor &v) {
+  v.visit(this);
 }

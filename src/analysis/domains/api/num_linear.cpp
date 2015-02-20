@@ -23,6 +23,11 @@ std::ostream &analysis::api::operator <<(std::ostream &out, num_linear &_this) {
  * num_linear_term
  */
 
+void analysis::api::num_linear_term::put(std::ostream &out) {
+  if(scale != 1) out << scale << "*";
+  out << *var << " + " << *next;
+}
+
 analysis::api::num_linear_term::num_linear_term(int64_t scale, num_var *var) :
     scale(scale), var(var) {
   next = new num_linear_vs(vs_finite::zero);
@@ -33,9 +38,8 @@ analysis::api::num_linear_term::~num_linear_term() {
   delete next;
 }
 
-void analysis::api::num_linear_term::put(std::ostream &out) {
-  if(scale != 1) out << scale << "*";
-  out << *var << " + " << *next;
+void analysis::api::num_linear_term::accept(num_visitor &v) {
+  v.visit(this);
 }
 
 /*
@@ -44,4 +48,8 @@ void analysis::api::num_linear_term::put(std::ostream &out) {
 
 void analysis::api::num_linear_vs::put(std::ostream &out) {
   out << *value_set;
+}
+
+void analysis::api::num_linear_vs::accept(num_visitor &v) {
+  v.visit(this);
 }

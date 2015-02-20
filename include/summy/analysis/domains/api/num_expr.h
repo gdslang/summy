@@ -7,6 +7,7 @@
 
 #pragma once
 #include <summy/analysis/domains/api/num_linear.h>
+#include <summy/analysis/domains/api/num_visitor.h>
 
 namespace analysis {
 namespace api {
@@ -19,6 +20,7 @@ public:
   virtual ~num_expr() {
   }
 
+  virtual void accept(num_visitor &v) = 0;
   friend std::ostream &operator<<(std::ostream &out, num_expr &_this);
 };
 
@@ -38,6 +40,8 @@ public:
   num_expr_cmp(num_linear *opnd, num_cmp_op op) :
       opnd(opnd), op(op) {
   }
+
+  void accept(num_visitor &v);
 };
 
 class num_expr_lin: public num_expr {
@@ -50,6 +54,11 @@ public:
       inner(inner) {
   }
 
+  void accept(num_visitor &v);
+
+  num_linear *get_inner() {
+    return inner;
+  }
 };
 
 enum num_bin {
@@ -66,6 +75,20 @@ private:
 public:
   num_expr_bin(num_linear *opnd1, num_bin op, num_linear *opnd2) :
       opnd1(opnd1), op(op), opnd2(opnd2) {
+  }
+
+  void accept(num_visitor &v);
+
+  num_linear *get_opnd1() {
+    return opnd1;
+  }
+
+  num_bin get_op() const {
+    return op;
+  }
+
+  num_linear *get_opnd2() {
+    return opnd2;
   }
 };
 
