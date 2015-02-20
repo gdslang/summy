@@ -10,7 +10,7 @@
 #include <iosfwd>
 
 namespace analysis {
-namespace numeric {
+namespace api {
 
 class num_var {
 private:
