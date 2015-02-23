@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include <cppgdsl/rreil/id/id.h>
+#include <summy/analysis/domains/numeric/numeric_state.h>
 #include <iosfwd>
 
 namespace analysis {
@@ -14,13 +14,13 @@ namespace api {
 
 class num_var {
 private:
-  gdsl::rreil::id *id;
+  id_shared_t id;
 
 public:
-  num_var(gdsl::rreil::id *id) : id(id) {
+  num_var(id_shared_t id) : id(id) {
   }
 
-  gdsl::rreil::id *get_id() const {
+  id_shared_t get_id() const {
     return id;
   }
 

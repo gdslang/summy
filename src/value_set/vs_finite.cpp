@@ -227,5 +227,9 @@ void summy::vs_finite::accept(value_set_visitor &v) {
   v.visit(this);
 }
 
+vs_shared_t summy::vs_finite::single(int64_t value) {
+  return make_shared<vs_finite>(vs_finite::elements_t { value });;
+}
+
 vs_shared_t const vs_finite::zero = make_shared<vs_finite>(elements_t { 0 });
 size_t const vs_finite::max_growth = 100;

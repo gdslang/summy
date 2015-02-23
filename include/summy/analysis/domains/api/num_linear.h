@@ -37,6 +37,18 @@ private:
 
   virtual void put(std::ostream &out);
 public:
+  int64_t get_scale() {
+    return scale;
+  }
+
+  num_var *get_var() {
+    return var;
+  }
+
+  num_linear *get_next() {
+    return next;
+  }
+
   num_linear_term(int64_t scale, num_var *var, num_linear *next) :
       scale(scale), var(var), next(next) {
   }
@@ -60,6 +72,10 @@ public:
   }
 
   void accept(num_visitor &v);
+
+  summy::vs_shared_t get_value_set() {
+    return value_set;
+  }
 };
 
 }

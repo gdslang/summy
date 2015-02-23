@@ -62,6 +62,8 @@ public:
 
   void accept(value_set_visitor &v);
 
+  static vs_shared_t single(int64_t value);
+
   static vs_shared_t const zero;
   static size_t const max_growth;
 };
