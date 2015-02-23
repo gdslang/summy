@@ -11,6 +11,7 @@
 #include <summy/analysis/domains/api/num_visitor.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
+#include <bjutil/printer.h>
 #include <string>
 #include <memory>
 
@@ -20,6 +21,9 @@ using namespace analysis::api;
 using namespace std;
 
 void value_sets::vsd_state::put(std::ostream &out) {
+//  map<int, int*> a;
+//  out << print(a, stream<int>(), stream_ptr<int*>());
+//  out << print(elements, stream_ptr<singleton_key_t>(), stream_ptr<singleton_value_t>());
 }
 
 vs_shared_t value_sets::vsd_state::eval(num_linear *lin) {
