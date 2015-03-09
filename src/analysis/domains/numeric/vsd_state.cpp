@@ -24,6 +24,16 @@ void value_sets::vsd_state::put(std::ostream &out) {
 //  map<int, int*> a;
 //  out << print(a, stream<int>(), stream_ptr<int*>());
 //  out << print(elements, stream_ptr<singleton_key_t>(), stream_ptr<singleton_value_t>());
+  out << "{ ";
+  bool first = true;
+  for(auto &elem_it : elements) {
+    if(first)
+      first = false;
+    else
+      out << ", ";
+    out << *elem_it.first << " -> " << *elem_it.second;
+  }
+  out << "}";
 }
 
 vs_shared_t value_sets::vsd_state::eval(num_linear *lin) {
