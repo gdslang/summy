@@ -27,3 +27,4 @@ struct nap_lin {
 nap_lin operator +(id_shared_t a, nap_lin b);
 
 analysis::api::num_var *var(id_shared_t id);
+analysis::api::num_var *var_temporary();

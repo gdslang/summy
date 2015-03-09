@@ -36,3 +36,7 @@ nap_lin operator +(id_shared_t a, nap_lin b) {
 analysis::api::num_var *var(id_shared_t id) {
   return new num_var(id);
 }
+
+analysis::api::num_var *var_temporary() {
+  return var(rreil_builder::temporary());
+}

@@ -39,11 +39,15 @@ static void repl(T *(&o), T *n) {
 }
 
 TEST_F(vsd_state_test, SimpleAssignments) {
+  //automatic queue gc??
+
   vsd_state *s = new vsd_state(elements_t {});
 
-  auto a = rreil_builder::temporary();
-  auto var_a = var(a);
-  repl(s, s->assign(var_a, nap_lin(1).expr()));
+  auto a = var_temporary();
+  repl(s, s->assign(a, nap_lin(1).expr()));
 
   cout << *s << endl;
+
+  delete a;
+  delete s;
 }
