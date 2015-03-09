@@ -25,6 +25,8 @@ public:
   vs_finite(elements_t const elements) :
       elements(elements) {
   }
+  vs_finite(int64_t value) : elements({value}) {
+  }
   vs_finite(vs_finite const &other) :
       elements(other.elements) {
   }

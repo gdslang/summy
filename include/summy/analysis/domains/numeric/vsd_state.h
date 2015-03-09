@@ -47,9 +47,9 @@ public:
   summy::vs_shared_t lookup(id_shared_t id);
 
   bool operator>=(domain_state &other);
-  numeric_state *join(domain_state *other, size_t current_node);
-  numeric_state *box(domain_state *other, size_t current_node);
-  numeric_state *assign(api::num_var *lhs, api::num_expr *rhs);
+  vsd_state *join(domain_state *other, size_t current_node);
+  vsd_state *box(domain_state *other, size_t current_node);
+  vsd_state *assign(api::num_var *lhs, api::num_expr *rhs);
 };
 
 }

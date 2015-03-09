@@ -6,6 +6,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <iostream>
 #include <summy/analysis/domains/numeric/vsd_state.h>
 #include <summy/analysis/domains/api/api.h>
 #include <summy/test/analysis/domains/numeric_api_builder.h>
@@ -13,6 +14,7 @@
 using namespace analysis::api;
 using namespace analysis::value_sets;
 using namespace analysis;
+using namespace std;
 
 class vsd_state_test: public ::testing::Test {
 protected:
@@ -30,6 +32,18 @@ protected:
   }
 };
 
+template<typename T>
+static void repl(T *(&o), T *n) {
+  delete o;
+  o = n;
+}
+
 TEST_F(vsd_state_test, SimpleAssignments) {
   vsd_state *s = new vsd_state(elements_t {});
+
+  auto a = rreil_builder::temporary();
+  auto var_a = var(a);
+  repl(s, s->assign(var_a, nap_lin(1).expr()));
+
+  cout << *s << endl;
 }

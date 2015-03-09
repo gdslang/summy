@@ -18,13 +18,15 @@
 using namespace summy;
 using namespace analysis;
 using namespace analysis::api;
+using namespace analysis::value_sets;
+
 using namespace std;
 
 void value_sets::vsd_state::put(std::ostream &out) {
 //  map<int, int*> a;
 //  out << print(a, stream<int>(), stream_ptr<int*>());
 //  out << print(elements, stream_ptr<singleton_key_t>(), stream_ptr<singleton_value_t>());
-  out << "{ ";
+  out << "{";
   bool first = true;
   for(auto &elem_it : elements) {
     if(first)
@@ -95,15 +97,15 @@ bool analysis::value_sets::vsd_state::operator >=(domain_state &other) {
   return true;
 }
 
-numeric_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t current_node) {
+vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t current_node) {
   return NULL;
 }
 
-numeric_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t current_node) {
+vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t current_node) {
   return NULL;
 }
 
-numeric_state *value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
+vsd_state *value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
   elements_t elements_new = elements;
   elements_new[lhs->get_id()] = eval(rhs);
   return new vsd_state(elements_new);
