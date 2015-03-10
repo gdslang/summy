@@ -10,7 +10,11 @@
 #include <summy/analysis/domains/numeric/vsd_state.h>
 #include <summy/analysis/domains/api/api.h>
 #include <summy/test/analysis/domains/numeric_api_builder.h>
+#include <summy/value_set/value_set.h>
+#include <summy/value_set/vs_finite.h>
+#include <bjutil/autogc.h>
 
+using namespace summy;
 using namespace analysis::api;
 using namespace analysis::value_sets;
 using namespace analysis;
@@ -32,22 +36,24 @@ protected:
   }
 };
 
-template<typename T>
-static void repl(T *(&o), T *n) {
-  delete o;
-  o = n;
-}
+//template<typename T>
+//static void repl(T *(&o), T *n) {
+//  delete o;
+//  o = n;
+//}
 
 TEST_F(vsd_state_test, SimpleAssignments) {
-  //automatic queue gc??
+  autogc gc;
+  nab n(gc);
 
-  vsd_state *s = new vsd_state(elements_t {});
+  vsd_state *s = gc(new vsd_state(elements_t {}));
 
-  auto a = var_temporary();
-  repl(s, s->assign(a, nap_lin(1).expr()));
+  auto a = rreil_builder::temporary();
+  auto b = rreil_builder::temporary();
+  auto c = rreil_builder::temporary();
+  s = gc(s->assign(n.var(a), n.expr(nab_lin(1))));
+  s = gc(s->assign(n.var(b), n.expr(nab_lin(vs_shared_t(new vs_finite({2, 3, 4}))))));
+  s = gc(s->assign(n.var(c), n.expr((a + (2 * b + 3)))));
 
   cout << *s << endl;
-
-  delete a;
-  delete s;
 }

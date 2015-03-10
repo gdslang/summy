@@ -40,6 +40,7 @@ public:
   num_expr_cmp(num_linear *opnd, num_cmp_op op) :
       opnd(opnd), op(op) {
   }
+  ~num_expr_cmp();
 
   void accept(num_visitor &v);
 };
@@ -53,6 +54,7 @@ public:
   num_expr_lin(num_linear *inner) :
       inner(inner) {
   }
+  ~num_expr_lin();
 
   void accept(num_visitor &v);
 
@@ -76,6 +78,7 @@ public:
   num_expr_bin(num_linear *opnd1, num_bin op, num_linear *opnd2) :
       opnd1(opnd1), op(op), opnd2(opnd2) {
   }
+  ~num_expr_bin();
 
   void accept(num_visitor &v);
 

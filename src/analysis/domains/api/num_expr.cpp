@@ -43,6 +43,10 @@ void analysis::api::num_expr_cmp::put(std::ostream &out) {
   out << " 0";
 }
 
+analysis::api::num_expr_cmp::~num_expr_cmp() {
+  delete opnd;
+}
+
 void analysis::api::num_expr_cmp::accept(num_visitor &v) {
   v.visit(this);
 }
@@ -53,6 +57,10 @@ void analysis::api::num_expr_cmp::accept(num_visitor &v) {
 
 void analysis::api::num_expr_lin::put(std::ostream &out) {
   out << inner;
+}
+
+analysis::api::num_expr_lin::~num_expr_lin() {
+  delete inner;
 }
 
 void analysis::api::num_expr_lin::accept(num_visitor &v) {
@@ -100,6 +108,11 @@ void analysis::api::num_expr_bin::put(std::ostream &out) {
     }
   }
   out << " " << *opnd2;
+}
+
+analysis::api::num_expr_bin::~num_expr_bin() {
+  delete opnd1;
+  delete opnd2;
 }
 
 void analysis::api::num_expr_bin::accept(num_visitor &v) {
