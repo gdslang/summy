@@ -58,8 +58,7 @@ TEST_F(vsd_state_test, SimpleAssignments) {
   auto d = rreil_builder::temporary();
   s = gc(s->assign(n.var(d), n.expr(nab_lin(vs_shared_t(new vs_open(UPWARD, 3))))));
   auto e = rreil_builder::temporary();
-  s = gc(s->assign(n.var(e), n.expr((/*a + */(- c))/* + 5 * d*/)));
-
+  s = gc(s->assign(n.var(e), n.expr((a + (- c)) + 5 * d)));
   auto f = rreil_builder::temporary();
   s = gc(s->assign(n.var(f), n.expr(a + e)));
 

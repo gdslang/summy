@@ -29,6 +29,9 @@ struct nab_sf {
   id_shared_t id;
 
   operator nab_lin();
+
+  nab_sf(id_shared_t id) : factor(1), id(id) {
+  }
 };
 
 class nab {
@@ -44,7 +47,7 @@ public:
   analysis::api::num_linear *lin(nab_lin lin);
 };
 
-nab_lin operator +(id_shared_t a, nab_lin b);
+//nab_lin operator +(id_shared_t a, nab_lin b);
 nab_lin operator +(nab_sf a, nab_lin b);
 nab_lin operator +(nab_lin a, nab_sf b);
 nab_sf operator -(id_shared_t b);

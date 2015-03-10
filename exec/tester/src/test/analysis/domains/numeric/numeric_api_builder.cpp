@@ -53,13 +53,13 @@ analysis::api::num_linear *nab::lin(nab_lin lin) {
   return gc(lin.builder());
 }
 
-nab_lin operator +(id_shared_t a, nab_lin b) {
-  lin_builder_t builder = [=] {
-    num_var *var = new num_var(a);
-    return new num_linear_term(1, var, b.builder());
-  };
-  return nab_lin(builder);
-}
+//nab_lin operator +(id_shared_t a, nab_lin b) {
+//  lin_builder_t builder = [=] {
+//    num_var *var = new num_var(a);
+//    return new num_linear_term(1, var, b.builder());
+//  };
+//  return nab_lin(builder);
+//}
 
 nab_lin operator +(nab_sf a, nab_lin b) {
   lin_builder_t builder = [=] {
