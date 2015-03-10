@@ -69,13 +69,11 @@ private:
   virtual void put(std::ostream &out);
 public:
   num_linear_vs(summy::vs_shared_t value_set) : value_set(value_set) {
-    std::cout << "--- " << *value_set << std::endl;
   }
 
   void accept(num_visitor &v);
 
   summy::vs_shared_t get_value_set() {
-    std::cout << "--+ " << *value_set << std::endl;
     return value_set;
   }
 };

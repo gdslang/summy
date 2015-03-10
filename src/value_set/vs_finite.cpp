@@ -63,13 +63,10 @@ vs_shared_t summy::vs_finite::widen(const vs_open *vsf) const {
 }
 
 vs_shared_t summy::vs_finite::add(const vs_finite *vs) const {
-//  cout << "fooooo " << *(value_set*)vs << endl;
   elements_t re;
   for(auto e1 : elements)
-    for(auto e2 : vs->elements) {
-      cout << e1 << " + " << e2 << endl;
+    for(auto e2 : vs->elements)
       re.insert(e1 + e2);
-    }
   return make_shared<vs_finite>(re);
 }
 
