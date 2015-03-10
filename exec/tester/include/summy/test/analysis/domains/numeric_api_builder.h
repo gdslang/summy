@@ -27,6 +27,8 @@ struct nab_lin {
 struct nab_sf {
   int64_t factor;
   id_shared_t id;
+
+  operator nab_lin();
 };
 
 class nab {
@@ -44,4 +46,7 @@ public:
 
 nab_lin operator +(id_shared_t a, nab_lin b);
 nab_lin operator +(nab_sf a, nab_lin b);
+nab_lin operator +(nab_lin a, nab_sf b);
+nab_sf operator -(id_shared_t b);
 nab_sf operator *(int64_t factor, id_shared_t id);
+

@@ -55,7 +55,7 @@ public:
   num_linear_term(num_var *var, num_linear *next) : num_linear_term(1, var, next) {
   }
   num_linear_term(int64_t scale, num_var *var);
-  num_linear_term(num_var *var) : num_linear_term(scale, var) {
+  num_linear_term(num_var *var) : num_linear_term(1, var) {
   }
   ~num_linear_term();
 
@@ -69,11 +69,13 @@ private:
   virtual void put(std::ostream &out);
 public:
   num_linear_vs(summy::vs_shared_t value_set) : value_set(value_set) {
+    std::cout << "--- " << *value_set << std::endl;
   }
 
   void accept(num_visitor &v);
 
   summy::vs_shared_t get_value_set() {
+    std::cout << "--+ " << *value_set << std::endl;
     return value_set;
   }
 };

@@ -41,16 +41,29 @@ void value_sets::vsd_state::put(std::ostream &out) {
 vs_shared_t value_sets::vsd_state::eval(num_linear *lin) {
   num_visitor nv;
   vs_shared_t result;
+  cout << "IN EVAL" << endl;
   nv._([&](num_linear_term *lt) {
     vs_shared_t scale = vs_finite::single(lt->get_scale());
+    cout << "Scale: " << lt->get_scale() << endl;
     vs_shared_t id = lookup(lt->get_var()->get_id());
+    cout << "Lookup result: " << *id << endl;
     vs_shared_t next = eval(lt->get_next());
+    cout << *(id) << endl;
+    cout << *(scale) << endl;
+    cout << *(*scale * id) << endl;
+//    cout << "... >>>" << endl;
+//    cout << *scale << endl;
+//    cout << *id << endl;
+//    cout << *next << endl;
+//    cout << "... <<<" << endl;
     result = *(*scale * id) + next;
   });
   nv._([&](num_linear_vs *lvs) {
     result = lvs->get_value_set();
+    cout << "+++ " << *result << endl;
   });
   lin->accept(nv);
+  cout << "LEAVE EVAL " << *result << endl;
   return result;
 }
 
