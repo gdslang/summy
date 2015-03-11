@@ -157,7 +157,7 @@ vs_shared_t value_set::join(const vs_top *vsf) const {
   return top;
 }
 
-vs_shared_t value_set::join(vs_shared_t a, vs_shared_t b) {
+vs_shared_t value_set::join(vs_shared_t const a, vs_shared_t const b) {
   value_set_visitor vs;
   vs_shared_t result;
   vs._([&] (vs_finite *v) {
@@ -169,7 +169,7 @@ vs_shared_t value_set::join(vs_shared_t a, vs_shared_t b) {
   vs._([&] (vs_top *v) {
     result = a->join(v);
   });
-  b->accept(vs);
+  ((vs_shared_t)b)->accept(vs);
   return result;
 }
 

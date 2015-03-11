@@ -108,7 +108,21 @@ bool analysis::value_sets::vsd_state::operator >=(domain_state const &other) con
 }
 
 vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t current_node) {
-  return NULL;
+  vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
+
+  elements_t elems_new;
+  auto join = [&](elements_t const &from, elements_t const &to) {
+    for(auto &mapping_first : from) {
+      auto mapping_second = to.find(mapping_first.first);
+      if(mapping_second != to.end())
+        elems_new[mapping_first.first] = value_set::join(mapping_first.second, mapping_second->second);
+//        cout << "join(" << *mapping_first.second << ", " << *mapping_second->second << ") = " << *elems_new[mapping_first.first] << endl;
+    }
+  };
+  join(elements, other_casted->elements);
+  join(other_casted->elements, elements);
+
+  return new vsd_state(elems_new);
 }
 
 vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t current_node) {

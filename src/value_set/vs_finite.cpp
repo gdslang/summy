@@ -192,7 +192,7 @@ bool summy::vs_finite::smaller_equals(const vs_open *vsf) const {
 
 vs_shared_t summy::vs_finite::join(const vs_finite *vsf) const {
   elements_t elements_new;
-  set_intersection(elements.begin(), elements.end(), vsf->elements.begin(), vsf->elements.end(),
+  set_union(elements.begin(), elements.end(), vsf->elements.begin(), vsf->elements.end(),
       inserter(elements_new, elements_new.begin()));
   return make_shared<vs_finite>(elements_new);
 }

@@ -254,7 +254,7 @@ vs_shared_t summy::vs_open::join(const vs_open *vsf) const {
           return value_set::top;
         }
         case UPWARD: {
-          return make_shared<vs_open>(DOWNWARD, min(limit, vsf->limit));
+          return make_shared<vs_open>(UPWARD, min(limit, vsf->limit));
         }
       }
     }
