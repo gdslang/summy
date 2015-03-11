@@ -78,9 +78,9 @@ public:
   virtual adaptive_rd_state *remove(std::function<bool(singleton_key_t, singleton_value_t)> pred);
   virtual adaptive_rd_state *set_memory_rev(size_t memory_rev);
 
-  virtual bool operator>=(::analysis::domain_state &other);
+  virtual bool operator>=(::analysis::domain_state const &other) const;
 
-  virtual void put(std::ostream &out);
+  virtual void put(std::ostream &out) const;
 };
 
 }

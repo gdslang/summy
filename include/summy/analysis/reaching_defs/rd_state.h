@@ -63,9 +63,9 @@ public:
 
   virtual rd_state *remove(id_set_t ids);
 
-  virtual bool operator>=(::analysis::domain_state &other);
+  virtual bool operator>=(::analysis::domain_state const &other) const;
 
-  virtual void put(std::ostream &out);
+  virtual void put(std::ostream &out) const;
 };
 
 }

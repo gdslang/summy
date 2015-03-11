@@ -7,11 +7,12 @@
 
 #pragma once
 #include <memory>
+#include <string>
 #include <cppgdsl/rreil/id/id.h>
 
 typedef std::shared_ptr<gdsl::rreil::id> id_shared_t;
 
 class rreil_builder {
 public:
-  static id_shared_t temporary();
+  static id_shared_t temporary(std::string name);
 };

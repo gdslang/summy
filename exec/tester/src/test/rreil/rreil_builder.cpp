@@ -5,12 +5,12 @@
  *      Author: Julian Kranz
  */
 #include <summy/test/rreil/rreil_builder.h>
-#include <cppgdsl/rreil/id/virtual.h>
+#include <cppgdsl/rreil/id/arch_id.h>
+#include <string>
 
 using namespace std;
 using namespace gdsl::rreil;
 
-id_shared_t rreil_builder::temporary() {
-  static int_t i = 0;
-  return shared_ptr<id>(new _virtual(i++));
+id_shared_t rreil_builder::temporary(string name) {
+  return shared_ptr<id>(new arch_id(name));
 }

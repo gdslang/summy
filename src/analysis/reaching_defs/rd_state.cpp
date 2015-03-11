@@ -71,7 +71,7 @@ reaching_defs::rd_state *analysis::reaching_defs::rd_state::join(::analysis::dom
 
   id_set_t ids_mine;
   id_set_t ids_other;
-  auto extract_ids = [&](id_set_t &dest, rd_state::elements_t &elements) {
+  auto extract_ids = [&](id_set_t &dest, rd_state::elements_t const &elements) {
     for(auto def : elements) {
       shared_ptr<id> id;
       tie(ignore, id) = def;
@@ -141,14 +141,14 @@ reaching_defs::rd_state *analysis::reaching_defs::rd_state::remove(
   return new rd_state(contains_undef, removed);
 }
 
-bool analysis::reaching_defs::rd_state::operator >=(::analysis::domain_state &other) {
-  rd_state &other_casted = dynamic_cast<rd_state&>(other);
+bool analysis::reaching_defs::rd_state::operator >=(::analysis::domain_state const &other) const {
+  rd_state const &other_casted = dynamic_cast<rd_state const&>(other);
   if(contains_undef && !other_casted.contains_undef) return true;
   if(!contains_undef && other_casted.contains_undef) return false;
   return eset >= other_casted.eset;
 }
 
-void analysis::reaching_defs::rd_state::put(std::ostream& out) {
+void analysis::reaching_defs::rd_state::put(std::ostream& out) const {
   out << "{";
   size_t i = 0;
   for(auto it = eset.get_elements().begin(); it != eset.get_elements().end(); it++, i++) {

@@ -47,20 +47,47 @@ TEST_F(vsd_state_test, SimpleAssignments) {
   autogc gc;
   nab n(gc);
 
-  vsd_state *s = gc(new vsd_state(elements_t {}));
+  auto a = rreil_builder::temporary("a");
+  auto b = rreil_builder::temporary("b");
+  auto c = rreil_builder::temporary("c");
+  auto d = rreil_builder::temporary("d");
+  auto e = rreil_builder::temporary("e");
+  auto f = rreil_builder::temporary("f");
+  auto g = rreil_builder::temporary("g");
 
-  auto a = rreil_builder::temporary();
-  auto b = rreil_builder::temporary();
-  auto c = rreil_builder::temporary();
-  s = gc(s->assign(n.var(a), n.expr(nab_lin(1))));
-  s = gc(s->assign(n.var(b), n.expr(nab_lin(vs_shared_t(new vs_finite({2, 3, 4}))))));
-  s = gc(s->assign(n.var(c), n.expr((a + (2 * b + 3)))));
-  auto d = rreil_builder::temporary();
-  s = gc(s->assign(n.var(d), n.expr(nab_lin(vs_shared_t(new vs_open(UPWARD, 3))))));
-  auto e = rreil_builder::temporary();
-  s = gc(s->assign(n.var(e), n.expr((a + (- c)) + 5 * d)));
-  auto f = rreil_builder::temporary();
-  s = gc(s->assign(n.var(f), n.expr(a + e)));
+  auto assign_state = [&](auto &s, auto &a, auto &lin) {
+    s = gc(s->assign(n.var(a), n.expr(lin)));
+  };
 
-  cout << *s << endl;
+  vsd_state *s = gc(new vsd_state());
+  {
+    auto assign = [&](auto a, auto lin) {
+      assign_state(s, a, lin);
+    };
+
+    assign(a, nab_lin(1));
+    assign(b, nab_lin(vs_shared_t(new vs_finite( { 2, 3, 4 }))));
+    assign(c, a + (2 * b + 3));
+    assign(d, nab_lin(vs_shared_t(new vs_open(UPWARD, 3))));
+    assign(e, (a + (-c)) + 5 * d);
+    assign(f, a + e);
+    assign(g, a + (-c));
+  }
+
+  vsd_state *comp = gc(new vsd_state());
+  {
+    auto assign = [&](auto a, auto lin) {
+      assign_state(comp, a, lin);
+    };
+
+    assign(a, nab_lin(1));
+    assign(b, vs_shared_t(new vs_finite( { 2, 3, 4 })));
+    assign(c, vs_shared_t(new vs_finite( { 8, 10, 12 })));
+    assign(d, nab_lin(vs_shared_t(new vs_open(UPWARD, 3))));
+    assign(e, nab_lin(vs_shared_t(new vs_open(UPWARD, 4))));
+    assign(f, nab_lin(vs_shared_t(new vs_open(UPWARD, 5))));
+    assign(g, vs_shared_t(new vs_finite( { -11, -9, -7 })));
+  }
+
+  ASSERT_EQ(*s, *comp);
 }

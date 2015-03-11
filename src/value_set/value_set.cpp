@@ -129,7 +129,7 @@ bool summy::value_set::smaller_equals(const vs_top *vsf) const {
   return true;
 }
 
-bool summy::value_set::operator <=(value_set *b) {
+bool summy::value_set::operator <=(value_set const *b) const {
   value_set_visitor vs;
   bool result;
   vs._([&] (vs_finite *v) {
@@ -141,15 +141,15 @@ bool summy::value_set::operator <=(value_set *b) {
   vs._([&] (vs_top *v) {
     result = smaller_equals(v);
   });
-  b->accept(vs);
+  ((value_set*)b)->accept(vs);
   return result;
 }
 
-bool summy::value_set::operator <=(vs_shared_t b) {
+bool summy::value_set::operator <=(vs_shared_t const b) const {
   return operator <=(b.get());
 }
 
-bool summy::value_set::operator ==(vs_shared_t b) {
+bool summy::value_set::operator ==(vs_shared_t const b) const {
   return *this <= b && *b <= this;
 }
 

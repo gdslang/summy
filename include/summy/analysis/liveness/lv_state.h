@@ -43,9 +43,9 @@ public:
    * bit of the given singleton
    */
   bool contains_bit(singleton_t s);
-  virtual bool operator>=(::analysis::domain_state &other);
+  virtual bool operator>=(::analysis::domain_state const &other) const;
 
-  virtual void put(std::ostream &out);
+  virtual void put(std::ostream &out) const;
 };
 
 }

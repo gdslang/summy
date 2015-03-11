@@ -22,7 +22,7 @@ using namespace analysis::value_sets;
 
 using namespace std;
 
-void value_sets::vsd_state::put(std::ostream &out) {
+void value_sets::vsd_state::put(std::ostream &out) const {
 //  map<int, int*> a;
 //  out << print(a, stream<int>(), stream_ptr<int*>());
 //  out << print(elements, stream_ptr<singleton_key_t>(), stream_ptr<singleton_value_t>());
@@ -93,7 +93,17 @@ summy::vs_shared_t value_sets::vsd_state::lookup(id_shared_t id) {
     return value_set::top;
 }
 
-bool analysis::value_sets::vsd_state::operator >=(domain_state &other) {
+bool analysis::value_sets::vsd_state::operator >=(domain_state const &other) const {
+  vsd_state const &other_casted = dynamic_cast<vsd_state const&>(other);
+  for(auto &mapping_mine : elements) {
+    auto mapping_other = other_casted.elements.find(mapping_mine.first);
+    if(mapping_other != other_casted.elements.end()) {
+      if(!(*mapping_other->second <= mapping_mine.second))
+        return false;
+    } else
+      if(!(*mapping_mine.second == value_set::top))
+        return false;
+  }
   return true;
 }
 

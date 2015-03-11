@@ -9,6 +9,10 @@
 
 using namespace analysis;
 
-bool domain_state::operator <=(domain_state &other) {
+bool domain_state::operator <=(domain_state const &other) const {
   return other >= *this;
+}
+
+bool domain_state::operator ==(domain_state const &other) const {
+  return other >= *this && *this >= other;
 }

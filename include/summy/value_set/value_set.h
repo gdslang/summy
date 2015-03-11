@@ -76,10 +76,10 @@ public:
   virtual bool smaller_equals(vs_finite const *vsf) const = 0;
   virtual bool smaller_equals(vs_open const *vsf) const = 0;
   bool smaller_equals(vs_top const *vsf) const;
-  bool operator<=(value_set *b);
-  bool operator<=(vs_shared_t b);
+  bool operator<=(value_set const *b) const;
+  bool operator<=(vs_shared_t const b) const;
 
-  bool operator==(vs_shared_t b);
+  bool operator==(vs_shared_t const b) const;
 
   virtual vs_shared_t join(vs_finite const *vsf) const = 0;
   virtual vs_shared_t join(vs_open const *vsf) const = 0;

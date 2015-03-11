@@ -32,9 +32,11 @@ class vsd_state : public numeric_state {
 private:
   const elements_t elements;
 protected:
-  void put(std::ostream &out);
+  void put(std::ostream &out) const;
 public:
   vsd_state(elements_t elements) : elements(elements) {
+  }
+  vsd_state() : vsd_state(elements_t {}) {
   }
 
   const elements_t &get_elements() const {
@@ -46,7 +48,7 @@ public:
 
   summy::vs_shared_t lookup(id_shared_t id);
 
-  bool operator>=(domain_state &other);
+  bool operator>=(domain_state const &other) const;
   vsd_state *join(domain_state *other, size_t current_node);
   vsd_state *box(domain_state *other, size_t current_node);
   vsd_state *assign(api::num_var *lhs, api::num_expr *rhs);

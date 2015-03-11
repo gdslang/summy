@@ -27,7 +27,7 @@ public:
   virtual ~set_elem() {
   }
 
-  elements_t &get_elements() {
+  elements_t const &get_elements() const {
     return elements;
   }
 
@@ -54,7 +54,7 @@ public:
     return elements.find(s) != elements.end();
   }
 
-  virtual bool operator>=(set_elem &other) {
+  virtual bool operator>=(set_elem const &other) const {
 //    return !std::includes(other_casted.elements.begin(), other_casted.elements.end(), elements.begin(), elements.end(),
 //        SINGLETON_LESS());
     return std::includes(elements.begin(), elements.end(), other.elements.begin(), other.elements.end(),

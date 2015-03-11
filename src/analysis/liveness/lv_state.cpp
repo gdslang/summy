@@ -76,8 +76,8 @@ lv_state *analysis::liveness::lv_state::remove(std::vector<singleton_t> elements
   return new lv_state(elements_removed);
 }
 
-bool analysis::liveness::lv_state::operator >=(::analysis::domain_state &other) {
-  lv_state &other_casted = dynamic_cast<lv_state&>(other);
+bool analysis::liveness::lv_state::operator >=(::analysis::domain_state const &other) const {
+  lv_state const &other_casted = dynamic_cast<lv_state const&>(other);
   for(auto &mapping_other : other_casted.elements) {
     auto mapping = elements.find(mapping_other.first);
     if(mapping == elements.end()) return false;
@@ -96,7 +96,7 @@ bool analysis::liveness::lv_state::contains_bit(singleton_t s) {
   return mapping->second & bits;
 }
 
-void analysis::liveness::lv_state::put(std::ostream &out) {
+void analysis::liveness::lv_state::put(std::ostream &out) const {
   out << "{";
   size_t i = 0;
   for(auto it = elements.begin(); it != elements.end(); it++, i++) {

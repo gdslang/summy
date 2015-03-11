@@ -97,8 +97,8 @@ adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::set_me
   return new adaptive_rd_state(contains_undef, elements, memory_rev);
 }
 
-bool analysis::adaptive_rd::adaptive_rd_state::operator >=(::analysis::domain_state &other) {
-  adaptive_rd_state &other_casted = dynamic_cast<adaptive_rd_state&>(other);
+bool analysis::adaptive_rd::adaptive_rd_state::operator >=(::analysis::domain_state const &other) const {
+  adaptive_rd_state const &other_casted = dynamic_cast<adaptive_rd_state const&>(other);
   if(contains_undef && !other_casted.contains_undef) return true;
   if(!contains_undef && other_casted.contains_undef) return false;
   if(memory_rev != other_casted.memory_rev) return false;
@@ -106,7 +106,7 @@ bool analysis::adaptive_rd::adaptive_rd_state::operator >=(::analysis::domain_st
       singleton_equals);
 }
 
-void analysis::adaptive_rd::adaptive_rd_state::put(std::ostream &out) {
+void analysis::adaptive_rd::adaptive_rd_state::put(std::ostream &out) const {
   out << "{";
   size_t i = 0;
   for(auto it = elements.begin(); it != elements.end(); it++, i++) {
