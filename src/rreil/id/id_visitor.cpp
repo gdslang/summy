@@ -6,11 +6,17 @@
  */
 
 #include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/analysis_id.h>
 #include <summy/rreil/id/ssa_id.h>
 
 namespace sr = summy::rreil;
 
 void sr::id_visitor::visit(sr::ssa_id *a) {
   if(ssa_id_callback != NULL) ssa_id_callback(a);
+  else _default(a);
+}
+
+void sr::id_visitor::visit(sr::analysis_id *a) {
+  if(analysis_id_callback != NULL) analysis_id_callback(a);
   else _default(a);
 }

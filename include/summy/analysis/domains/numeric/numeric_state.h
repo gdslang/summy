@@ -20,7 +20,6 @@ class num_expr;
 class num_expr_cmp;
 }
 
-typedef std::shared_ptr<gdsl::rreil::id> id_shared_t;
 typedef std::vector<std::tuple<api::num_var*, api::num_var*>> num_var_pairs_t;
 
 class numeric_state : public domain_state {

@@ -8,10 +8,13 @@
 #pragma once
 #include <memory>
 #include <iostream>
+#include <cppgdsl/rreil/id/id.h>
 
 using std::shared_ptr;
 
 namespace analysis {
+
+typedef std::shared_ptr<gdsl::rreil::id> id_shared_t;
 
 class domain_state {
 protected:
