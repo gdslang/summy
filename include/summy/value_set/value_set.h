@@ -93,3 +93,9 @@ public:
 std::ostream &operator<<(std::ostream &out, value_set &_this);
 
 }
+
+#include "vs_finite.h"
+#include "vs_open.h"
+#include "vs_top.h"
+#include "vs_compare.h"
+#include "value_set_visitor.h"

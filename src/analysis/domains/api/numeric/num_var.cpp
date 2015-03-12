@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/domains/api/num_var.h>
+#include <summy/analysis/domains/api/numeric/num_var.h>
 
 std::ostream &analysis::api::operator <<(std::ostream &out, num_var &_this) {
   out << *_this.id;

@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/domains/api/num_linear.h>
+#include <summy/analysis/domains/api/numeric/num_linear.h>
 #include <summy/value_set/vs_finite.h>
 
 using namespace summy;

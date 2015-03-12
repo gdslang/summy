@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <summy/analysis/domains/api/num_var.h>
-#include <summy/analysis/domains/api/num_visitor.h>
+#include <summy/analysis/domains/api/numeric/num_var.h>
+#include <summy/analysis/domains/api/numeric/num_visitor.h>
 #include <summy/value_set/value_set.h>
 #include <iosfwd>
 

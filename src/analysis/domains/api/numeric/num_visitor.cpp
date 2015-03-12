@@ -5,9 +5,9 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/domains/api/num_visitor.h>
-#include <summy/analysis/domains/api/num_expr.h>
-#include <summy/analysis/domains/api/num_linear.h>
+#include <summy/analysis/domains/api/numeric/num_visitor.h>
+#include <summy/analysis/domains/api/numeric/num_expr.h>
+#include <summy/analysis/domains/api/numeric/num_linear.h>
 #include <string>
 
 using namespace analysis::api;

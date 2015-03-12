@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "num_expr.h"
-#include "num_linear.h"
-#include "num_var.h"
+#include "numeric/num_expr.h"
+#include "numeric/num_linear.h"
+#include "numeric/num_var.h"
+#include "numeric/num_visitor.h"
+
 #include "ptr_set.h"
-#include "num_visitor.h"

@@ -6,9 +6,7 @@
  */
 
 #include <summy/analysis/domains/numeric/vsd_state.h>
-#include <summy/analysis/domains/api/num_linear.h>
-#include <summy/analysis/domains/api/num_expr.h>
-#include <summy/analysis/domains/api/num_visitor.h>
+#include <summy/analysis/domains/api/api.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <bjutil/printer.h>
@@ -125,12 +123,51 @@ vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t cur
   return new vsd_state(elems_new);
 }
 
+vsd_state *analysis::value_sets::vsd_state::widen(domain_state *other, size_t current_node) {
+  elements_t elements_new;
+  vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
+  for(auto &mapping_other : other_casted->elements)
+      elements_new[mapping_other.first] = value_set::widen(lookup(mapping_other.first), mapping_other.second);
+  return new vsd_state(elements_new);
+}
+
+vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t current_node) {
+  elements_t elements_new;
+  vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
+  for(auto &mapping_other : other_casted->elements)
+      elements_new[mapping_other.first] = value_set::narrow(lookup(mapping_other.first), mapping_other.second);
+  return new vsd_state(elements_new);
+}
+
 vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t current_node) {
-  return NULL;
+  if(*other <= *this)
+    return this->narrow(other, current_node);
+  else
+    return this->widen(other, current_node);
 }
 
 vsd_state *value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
   elements_t elements_new = elements;
   elements_new[lhs->get_id()] = eval(rhs);
   return new vsd_state(elements_new);
+}
+
+numeric_state *analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
+  throw string("analysis::value_sets::vsd_state::assume(num_expr_cmp)");
+}
+
+numeric_state *analysis::value_sets::vsd_state::assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases) {
+  throw string("analysis::value_sets::vsd_state::assume(num_var, ptr_set_t)");
+}
+
+numeric_state *analysis::value_sets::vsd_state::kill(std::vector<api::num_var*> vars) {
+  throw string("analysis::value_sets::vsd_state::assume(std::vector<api::num_var*>)");
+}
+
+numeric_state *analysis::value_sets::vsd_state::equate_kill(num_var_pairs_t vars) {
+  throw string("analysis::value_sets::vsd_state::assume(num_var_pairs_t)");
+}
+
+numeric_state *analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {
+  throw string("analysis::value_sets::vsd_state::assume(num_var_pairs_t)");
 }

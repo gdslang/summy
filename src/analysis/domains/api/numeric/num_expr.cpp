@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/domains/api/num_expr.h>
+#include <summy/analysis/domains/api/numeric/num_expr.h>
 
 /*
  * num_expr

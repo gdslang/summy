@@ -49,9 +49,18 @@ public:
   summy::vs_shared_t lookup(id_shared_t id);
 
   bool operator>=(domain_state const &other) const;
+
   vsd_state *join(domain_state *other, size_t current_node);
+  vsd_state *widen(domain_state *other, size_t current_node);
+  vsd_state *narrow(domain_state *other, size_t current_node);
   vsd_state *box(domain_state *other, size_t current_node);
+
   vsd_state *assign(api::num_var *lhs, api::num_expr *rhs);
+  numeric_state *assume(api::num_expr_cmp *cmp);
+  numeric_state *assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases);
+  numeric_state *kill(std::vector<api::num_var*> vars);
+  numeric_state *equate_kill(num_var_pairs_t vars);
+  numeric_state *fold(num_var_pairs_t vars);
 };
 
 }
