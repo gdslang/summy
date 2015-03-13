@@ -18,10 +18,21 @@ namespace analysis {
 
 struct field {
   size_t size;
-
+  id_shared_t num_id;
 };
 
-//typedef map<id_shared_t, >
+/*
+ * region: offset -> size, numeric id
+ */
+typedef std::map<size_t, field> region_t;
+/*
+ * region_map: memory id -> memory region
+ */
+typedef std::map<id_shared_t, region_t> region_map_t;
+/*
+ * deref: numeric id -> memory region
+ */
+typedef std::map<id_shared_t, region_t> deref_t;
 
 /**
  * Memory domain state
@@ -29,6 +40,8 @@ struct field {
 class memory_state : public domain_state {
 private:
   std::shared_ptr<numeric_state> child_state;
+  region_map_t regions;
+  deref_t deref;
 protected:
   void put(std::ostream &out) const;
 public:
