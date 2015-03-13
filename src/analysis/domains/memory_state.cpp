@@ -6,8 +6,12 @@
  */
 
 #include <summy/analysis/domains/memory_state.h>
+#include <cppgdsl/rreil/variable.h>
 #include <string>
 #include <sstream>
+#include <tuple>
+
+using gdsl::rreil::variable;
 
 using namespace analysis;
 using namespace std;
@@ -41,15 +45,15 @@ void analysis::memory_state::put(std::ostream &out) const {
       field_size += 1;
 
       for(size_t i = 0; i < field_size; i++)
-        upper_boundary << '-';
+      upper_boundary << '-';
 
       field_line << "| " << field_str << ' ';
       for(size_t i = 0; i < field_size - field_str.length() - 3; i++)
-        field_line << ' ';
+      field_line << ' ';
 
       offset_size_boundary << pos_str << ' ';
       for(size_t i = 0; i < field_size - pos_str.length() - 1; i++)
-        offset_size_boundary << '-';
+      offset_size_boundary << '-';
     }
 
     upper_boundary << '-';
@@ -63,11 +67,11 @@ void analysis::memory_state::put(std::ostream &out) const {
     string sep = " -> ";
 
     for(size_t i = 0; i < memory_id_str.length() + sep.length(); i++)
-      out << ' ';
+    out << ' ';
     out << upper_boundary << endl;
     out << memory_id_str << sep << field_line << endl;
     for(size_t i = 0; i < memory_id_str.length() + sep.length(); i++)
-      out << ' ';
+    out << ' ';
     out << offset_size_boundary;
     out << endl;
   };
@@ -80,6 +84,28 @@ void analysis::memory_state::put(std::ostream &out) const {
   for(auto region_mapping : deref)
     print_fields(region_mapping.first, region_mapping.second);
   out << "}";
+}
+
+region_t &analysis::memory_state::region(id_shared_t id) {
+  auto mapping_it = regions.find(id);
+  if(mapping_it != regions.end()) return mapping_it->second;
+  else {
+    region_map_t::iterator ins_it;
+    tie(ins_it, ignore) = regions.insert(std::make_pair(id, region_t()));
+    return ins_it->second;
+  }
+}
+
+std::tuple<id_shared_t, memory_state*, numeric_state*> analysis::memory_state::transVar(id_shared_t var_id,
+    size_t offset, size_t size) {
+  auto &region = regions[var_id];
+  auto field_it = region.find(offset);
+  if(field_it == region.end())
+    throw string("analysis::memory_state::transVar(id_shared_t, size_t, size_t)");
+  field &f = field_it->second;
+  if(f.size != size)
+    throw string("analysis::memory_state::transVar(id_shared_t, size_t, size_t)");
+  return make_tuple(f.num_id, this, child_state);
 }
 
 bool analysis::memory_state::operator >=(const domain_state &other) const {
@@ -101,3 +127,9 @@ memory_state *analysis::memory_state::narrow(domain_state *other, size_t current
 memory_state *analysis::memory_state::box(domain_state *other, size_t current_node) {
   throw string("analysis::memory_state::box(domain_state,current_node)");
 }
+
+memory_state *analysis::memory_state::update(gdsl::rreil::assign *assign) {
+  variable *var = assign->get_lhs();
+
+}
+
