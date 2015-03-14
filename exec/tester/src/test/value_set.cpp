@@ -59,14 +59,39 @@ TEST_F(value_set_test, Addition) {
   vs_shared_t s1 = make_shared<vs_finite>(vs_finite::elements_t { 4, 2, 3 });
   vs_shared_t s9 = make_shared<vs_finite>(vs_finite::elements_t { 0, 4, 2, 3 });
   vs_shared_t s2 = make_shared<vs_finite>(vs_finite::elements_t { 1, 9 });
-  vs_shared_t s10 = make_shared<vs_finite>(vs_finite::elements_t { -2, 3 });
   vs_shared_t s6 = make_shared<vs_open>(DOWNWARD, 3);
-  vs_shared_t s8 = make_shared<vs_open>(DOWNWARD, -9);
+  vs_shared_t s8 = make_shared<vs_open>(UPWARD, -9);
   vs_shared_t s11 = -(*s1);
 
-  vs_shared_t s9_plus_s2 = make_shared<vs_finite>(vs_finite::elements_t {1, 3, 4, 5, 9, 11, 12, 13});
+  vs_shared_t s9_plus_s2 = make_shared<vs_finite>(vs_finite::elements_t { 1, 3, 4, 5, 9, 11, 12, 13 });
+  vs_shared_t s1_plus_s6 = make_shared<vs_open>(DOWNWARD, 7);
+  vs_shared_t s11_plus_s8 = make_shared<vs_open>(UPWARD, -13);
 
   ASSERT_EQ(*(*s9 + s2), s9_plus_s2);
+  ASSERT_EQ(*(*s1 + s6), s1_plus_s6);
+  ASSERT_EQ(*(*s11 + s8), s11_plus_s8);
+}
+
+TEST_F(value_set_test, Multiplication) {
+  vs_shared_t s1 = make_shared<vs_finite>(vs_finite::elements_t { 4, 2, 3 });
+  vs_shared_t s2 = make_shared<vs_finite>(vs_finite::elements_t { 1, 9 });
+  vs_shared_t s10 = make_shared<vs_finite>(vs_finite::elements_t { -2, 3 });
+  vs_shared_t s11 = -(*s1);
+
+  vs_shared_t s5 = *s1 * s2;
+  vs_shared_t s6 = make_shared<vs_open>(DOWNWARD, 3);
+  vs_shared_t s8 = make_shared<vs_open>(DOWNWARD, -9);
+
+  vs_shared_t s1_times_s6 = *s1 * s6;
+  vs_shared_t s1_times_s10 = make_shared<vs_finite>(vs_finite::elements_t {-8, -6, -4, 6, 9, 12});
+  vs_shared_t s1_times_s8 = make_shared<vs_open>(DOWNWARD, -18);
+  vs_shared_t s11_times_s8 = make_shared<vs_open>(UPWARD, 18);
+
+  ASSERT_EQ(*(*s1 * s6), s1_times_s6);
+  ASSERT_EQ(*(*s1 * s10), s1_times_s10);
+  ASSERT_EQ(*(*s1 * s8), s1_times_s8);
+  ASSERT_EQ(*(*s11 * s8), s11_times_s8);
+
 }
 
 TEST_F(value_set_test, Division) {
