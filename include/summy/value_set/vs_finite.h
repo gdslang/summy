@@ -33,6 +33,7 @@ public:
 
   int64_t min() const;
   int64_t max() const;
+  bool is_bottom() const;
 
   const elements_t &get_elements() const {
     return elements;
@@ -61,6 +62,8 @@ public:
 
   vs_shared_t join(vs_finite const *vsf) const;
   vs_shared_t join(vs_open const *vsf) const;
+
+  vs_shared_t meet(vs_open const *vsf) const;
 
   void accept(value_set_visitor &v);
 

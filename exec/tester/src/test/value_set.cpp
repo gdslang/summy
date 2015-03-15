@@ -91,7 +91,6 @@ TEST_F(value_set_test, Multiplication) {
   ASSERT_EQ(*(*s1 * s10), s1_times_s10);
   ASSERT_EQ(*(*s1 * s8), s1_times_s8);
   ASSERT_EQ(*(*s11 * s8), s11_times_s8);
-
 }
 
 TEST_F(value_set_test, Division) {
@@ -113,3 +112,49 @@ TEST_F(value_set_test, Division) {
   ASSERT_EQ(*(*s9 / s8), s9_div_s8);
   ASSERT_EQ(*(*sa / sb), sa_div_sb);
 }
+
+TEST_F(value_set_test, Join) {
+  vs_shared_t s1 = make_shared<vs_finite>(vs_finite::elements_t { -1, 1, 4, 2, 3 });
+  vs_shared_t s2 = make_shared<vs_finite>(vs_finite::elements_t { 0, 4, 2, 3, 16 });
+  vs_shared_t s3 = make_shared<vs_open>(UPWARD, -10);
+  vs_shared_t s4 = make_shared<vs_open>(UPWARD, 20);
+
+  vs_shared_t s1_join_s2 = make_shared<vs_finite>(vs_finite::elements_t { -1, 0, 1, 2, 3, 4, 16 });
+  vs_shared_t s2_join_s3 = make_shared<vs_open>(UPWARD, -10);
+  vs_shared_t s2_join_s4 = make_shared<vs_open>(UPWARD, 0);
+
+  ASSERT_EQ(*value_set::join(s1, s2), s1_join_s2);
+  ASSERT_EQ(*value_set::join(s2, s3), s2_join_s3);
+  ASSERT_EQ(*value_set::join(s2, s4), s2_join_s4);
+}
+
+TEST_F(value_set_test, Widen) {
+  vs_shared_t s1 = make_shared<vs_finite>(vs_finite::elements_t { -1, 1, 4, 2, 3 });
+  vs_shared_t s2 = make_shared<vs_open>(DOWNWARD, -10);
+  vs_shared_t s3 = make_shared<vs_open>(DOWNWARD, 20);
+  vs_shared_t s4 = make_shared<vs_open>(UPWARD, -5);
+  vs_shared_t s5 = make_shared<vs_open>(UPWARD, 19);
+
+  ASSERT_EQ(*s1, value_set::widen(value_set::bottom, s1));
+  ASSERT_EQ(*s2, value_set::widen(value_set::bottom, s2));
+  ASSERT_EQ(*value_set::top, value_set::widen(s2, s3));
+  ASSERT_EQ(*s3, value_set::widen(s3, s2));
+  ASSERT_EQ(*s4, value_set::widen(s4, s5));
+  ASSERT_EQ(*value_set::top, value_set::widen(s5, s4));
+  ASSERT_EQ(*value_set::top, value_set::widen(s1, s2));
+  ASSERT_EQ(*s3, value_set::widen(s1, s3));
+  ASSERT_EQ(*s4, value_set::widen(s1, s4));
+  ASSERT_EQ(*value_set::top, value_set::widen(s1, s5));
+}
+
+
+
+
+
+
+
+
+
+
+
+

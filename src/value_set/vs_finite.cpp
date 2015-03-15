@@ -19,11 +19,19 @@ void summy::vs_finite::put(std::ostream &out) {
 }
 
 int64_t summy::vs_finite::min() const {
+  if(elements.empty())
+    throw string("summy::vs_finite::min()");
   return *elements.begin();
 }
 
 int64_t summy::vs_finite::max() const {
+  if(elements.empty())
+    throw string("summy::vs_finite::max()");
   return *elements.rbegin();
+}
+
+bool summy::vs_finite::is_bottom() const {
+  return elements.empty();
 }
 
 vs_shared_t summy::vs_finite::narrow(const vs_finite *vsf) const {
@@ -35,7 +43,7 @@ vs_shared_t summy::vs_finite::narrow(const vs_open *vsf) const {
 }
 
 vs_shared_t summy::vs_finite::widen(const vs_finite *vsf) const {
-  if(elements.empty())
+  if(is_bottom())
     return make_shared<vs_finite>(*vsf);
   if(elements == vsf->get_elements())
     return make_shared<vs_finite>(*this);
@@ -47,6 +55,8 @@ vs_shared_t summy::vs_finite::widen(const vs_finite *vsf) const {
 }
 
 vs_shared_t summy::vs_finite::widen(const vs_open *vsf) const {
+  if(is_bottom())
+    return make_shared<vs_open>(*vsf);
   switch(vsf->get_open_dir()) {
     case DOWNWARD: {
       if(vsf->get_limit() >= max())
@@ -198,6 +208,19 @@ vs_shared_t summy::vs_finite::join(const vs_finite *vsf) const {
 }
 
 vs_shared_t summy::vs_finite::join(const vs_open *vsf) const {
+  switch(vsf->get_open_dir()) {
+    case DOWNWARD: {
+      return make_shared<vs_open>(DOWNWARD, std::max(vsf->get_limit(), max()));
+      break;
+    }
+    case UPWARD: {
+      return make_shared<vs_open>(UPWARD, std::min(vsf->get_limit(), min()));
+      break;
+    }
+  }
+}
+
+vs_shared_t summy::vs_finite::meet(const vs_open *vsf) const {
   elements_t elements_new;
   int64_t limit = vsf->get_limit();
   switch(vsf->get_open_dir()) {
