@@ -25,6 +25,10 @@ public:
 
   virtual void accept(num_visitor &v) = 0;
   friend std::ostream &operator<< (std::ostream &out, num_linear &_this);
+
+//  virtual void negate() = 0;
+//  virtual void add(summy::vs_shared_t vs) = 0;
+//  virtual void scale(summy::vs_shared_t vs) = 0;
 };
 
 std::ostream &operator<<(std::ostream &out, num_linear &_this);

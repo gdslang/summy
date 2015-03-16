@@ -143,6 +143,9 @@ memory_state *analysis::memory_state::update(gdsl::rreil::assign *assign) {
   numeric_state *child_state_new;
   tie(num_id, regions_new, child_state_new) = transVar(shared_copy(var->get_id()), var->get_offset(), assign->get_size());
   num_var *n_var = new num_var(num_id);
+  /*
+   * Variables in rhs; converter needs transVar() as parameter
+   */
   num_expr *n_expr = conv_expr(assign->get_rhs());
   child_state_new = child_state->assign(n_var, n_expr);
   return new memory_state(child_state_new, regions_new, deref);
