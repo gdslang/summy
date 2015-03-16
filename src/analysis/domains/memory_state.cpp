@@ -5,12 +5,16 @@
  *      Author: Julian Kranz
  */
 
+#include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/api/numeric/converter.h>
 #include <summy/analysis/domains/memory_state.h>
+#include <summy/rreil/shared_copy.h>
 #include <cppgdsl/rreil/variable.h>
 #include <string>
 #include <sstream>
 #include <tuple>
 
+using namespace analysis::api;
 using gdsl::rreil::variable;
 
 using namespace analysis;
@@ -96,16 +100,20 @@ region_t &analysis::memory_state::region(id_shared_t id) {
   }
 }
 
-std::tuple<id_shared_t, memory_state*, numeric_state*> analysis::memory_state::transVar(id_shared_t var_id,
+std::tuple<id_shared_t, region_map_t, numeric_state*> analysis::memory_state::transVar(id_shared_t var_id,
     size_t offset, size_t size) {
+  region_map_t regions = this->regions;
   auto &region = regions[var_id];
   auto field_it = region.find(offset);
-  if(field_it == region.end())
-    throw string("analysis::memory_state::transVar(id_shared_t, size_t, size_t)");
+  if(field_it == region.end()) {
+    /*
+     * Todo: this is broken ;-)
+     */
+    tie(field_it, ignore) = region.insert(make_pair(offset, field { size, var_id }));
+  }
   field &f = field_it->second;
-  if(f.size != size)
-    throw string("analysis::memory_state::transVar(id_shared_t, size_t, size_t)");
-  return make_tuple(f.num_id, this, child_state);
+  if(f.size != size) throw string("analysis::memory_state::transVar(id_shared_t, size_t, size_t)");
+  return make_tuple(f.num_id, regions, child_state);
 }
 
 bool analysis::memory_state::operator >=(const domain_state &other) const {
@@ -130,6 +138,13 @@ memory_state *analysis::memory_state::box(domain_state *other, size_t current_no
 
 memory_state *analysis::memory_state::update(gdsl::rreil::assign *assign) {
   variable *var = assign->get_lhs();
-
+  id_shared_t num_id;
+  region_map_t regions_new;
+  numeric_state *child_state_new;
+  tie(num_id, regions_new, child_state_new) = transVar(shared_copy(var->get_id()), var->get_offset(), assign->get_size());
+  num_var *n_var = new num_var(num_id);
+  num_expr *n_expr = conv_expr(assign->get_rhs());
+  child_state_new = child_state->assign(n_var, n_expr);
+  return new memory_state(child_state_new, regions_new, deref);
 }
 

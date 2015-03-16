@@ -48,8 +48,11 @@ protected:
   void put(std::ostream &out) const;
   region_t &region(id_shared_t id);
 
-  std::tuple<id_shared_t, memory_state*, numeric_state*> transVar(id_shared_t var_id, size_t offset, size_t size);
+  std::tuple<id_shared_t, region_map_t, numeric_state*> transVar(id_shared_t var_id, size_t offset, size_t size);
 public:
+  memory_state(numeric_state *child_state, region_map_t regions, deref_t deref) :
+      child_state(child_state), regions(regions), deref(deref) {
+  }
   memory_state(numeric_state *child_state) :
       child_state(child_state) {
   }

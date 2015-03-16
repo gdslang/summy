@@ -11,5 +11,6 @@
 #include "numeric/num_linear.h"
 #include "numeric/num_var.h"
 #include "numeric/num_visitor.h"
+#include "numeric/converter.h"
 
 #include "ptr_set.h"
