@@ -40,9 +40,10 @@ public:
   dstack(cfg::cfg *cfg);
   ~dstack();
 
-  shared_ptr<domain_state> bottom();
+  std::shared_ptr<domain_state> bottom();
+  std::shared_ptr<domain_state> start_value();
 
-  shared_ptr<domain_state> get(size_t node);
+  std::shared_ptr<domain_state> get(size_t node);
   void update(size_t node, shared_ptr<domain_state> state);
   dstack_result result();
 

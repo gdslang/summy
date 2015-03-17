@@ -30,19 +30,19 @@ typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> element
  */
 class vsd_state: public numeric_state {
 private:
-  bool bottom;
+  bool _is_bottom;
   const elements_t elements;
 protected:
   void put(std::ostream &out) const;
 public:
   vsd_state(elements_t elements) :
-      bottom(false), elements(elements) {
+    _is_bottom(false), elements(elements) {
   }
   vsd_state() :
       vsd_state(elements_t { }) {
   }
-  vsd_state(bool bottom) :
-      bottom(bottom), elements(elements_t { }) {
+  vsd_state(bool is_bottom) :
+    _is_bottom(is_bottom), elements(elements_t { }) {
   }
 
   const elements_t &get_elements() const {
@@ -50,7 +50,7 @@ public:
   }
 
   bool is_bottom() {
-    return bottom;
+    return _is_bottom;
   }
 
   summy::vs_shared_t eval(api::num_linear *lin);
@@ -71,6 +71,8 @@ public:
   numeric_state *kill(std::vector<api::num_var*> vars);
   numeric_state *equate_kill(num_var_pairs_t vars);
   numeric_state *fold(num_var_pairs_t vars);
+
+  static vsd_state *bottom();
 };
 
 }

@@ -171,3 +171,7 @@ numeric_state *analysis::value_sets::vsd_state::equate_kill(num_var_pairs_t vars
 numeric_state *analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {
   throw string("analysis::value_sets::vsd_state::assume(num_var_pairs_t)");
 }
+
+vsd_state *analysis::value_sets::vsd_state::bottom() {
+  return new vsd_state(true);
+}
