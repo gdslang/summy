@@ -63,7 +63,7 @@ void analysis::dstack::init_state() {
   }
 }
 
-analysis::dstack::dstack(cfg::cfg* cfg) : fp_analysis(cfg) {
+analysis::dstack::dstack(cfg::cfg *cfg) : fp_analysis(cfg) {
 }
 
 analysis::dstack::~dstack() {
@@ -74,16 +74,22 @@ shared_ptr<domain_state> analysis::dstack::bottom() {
 }
 
 std::shared_ptr<domain_state> analysis::dstack::start_value() {
+  return make_shared<memory_state>(vsd_state::top());
 }
 
 shared_ptr<domain_state> analysis::dstack::get(size_t node) {
+  return state[node];
 }
 
 void analysis::dstack::update(size_t node, shared_ptr<domain_state> state) {
+  this->state[node] = dynamic_pointer_cast<memory_state>(state);
 }
 
 dstack_result analysis::dstack::result() {
+  return dstack_result(state);
 }
 
-void analysis::dstack::put(std::ostream& out) {
+void analysis::dstack::put(std::ostream &out) {
+  for(size_t i = 0; i < state.size(); i++)
+    out << i << ": " << *state[i] << endl;
 }

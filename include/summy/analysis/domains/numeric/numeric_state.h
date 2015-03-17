@@ -24,7 +24,7 @@ typedef std::vector<std::tuple<api::num_var*, api::num_var*>> num_var_pairs_t;
 
 class numeric_state : public domain_state {
 public:
-  virtual bool is_bottom() = 0;
+  virtual bool is_bottom() const = 0;
 
   virtual numeric_state *assign(api::num_var *lhs, api::num_expr *rhs) = 0;
   virtual numeric_state *assume(api::num_expr_cmp *cmp) = 0;
@@ -32,6 +32,9 @@ public:
   virtual numeric_state *kill(std::vector<api::num_var*> vars) = 0;
   virtual numeric_state *equate_kill(num_var_pairs_t vars) = 0;
   virtual numeric_state *fold(num_var_pairs_t vars) = 0;
+
+  virtual numeric_state *join(domain_state *other, size_t current_node) = 0;
+  virtual numeric_state *box(domain_state *other, size_t current_node) = 0;
 };
 
 }

@@ -35,21 +35,27 @@ private:
 protected:
   void put(std::ostream &out) const;
 public:
+  vsd_state(bool is_bottom, elements_t elements) :
+      _is_bottom(is_bottom), elements(elements) {
+  }
   vsd_state(elements_t elements) :
-    _is_bottom(false), elements(elements) {
+      _is_bottom(false), elements(elements) {
   }
   vsd_state() :
       vsd_state(elements_t { }) {
   }
   vsd_state(bool is_bottom) :
-    _is_bottom(is_bottom), elements(elements_t { }) {
+      vsd_state(is_bottom, elements_t { }) {
+  }
+  vsd_state(vsd_state const &o) :
+      vsd_state(o._is_bottom, o.elements) {
   }
 
   const elements_t &get_elements() const {
     return elements;
   }
 
-  bool is_bottom() {
+  bool is_bottom() const {
     return _is_bottom;
   }
 
@@ -73,6 +79,7 @@ public:
   numeric_state *fold(num_var_pairs_t vars);
 
   static vsd_state *bottom();
+  static vsd_state *top();
 };
 
 }

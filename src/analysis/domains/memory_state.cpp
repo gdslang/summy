@@ -9,6 +9,8 @@
 #include <summy/analysis/domains/api/numeric/converter.h>
 #include <summy/analysis/domains/memory_state.h>
 #include <summy/rreil/shared_copy.h>
+#include <algorithm>
+
 #include <cppgdsl/rreil/variable.h>
 #include <string>
 #include <sstream>
@@ -121,11 +123,22 @@ bool analysis::memory_state::is_bottom() {
 }
 
 bool analysis::memory_state::operator >=(const domain_state &other) const {
-  throw string("analysis::memory_state::box(domain_state)");
+  /*
+   * Todo: This is broken
+   */
+  memory_state const &other_casted = dynamic_cast<memory_state const&>(other);
+  return *child_state >= *other_casted.child_state;
 }
 
 memory_state *analysis::memory_state::join(domain_state *other, size_t current_node) {
-  throw string("analysis::memory_state::box(domain_state,current_node)");
+  /*
+   * Todo: This is broken
+   */
+  memory_state *other_casted = dynamic_cast<memory_state *>(other);
+  region_map_t regions_new = regions;
+  for(auto region : other_casted->regions)
+    regions_new[region.first] = region.second;
+  return new memory_state(child_state->join(other_casted->child_state, current_node), regions_new, deref);
 }
 
 memory_state *analysis::memory_state::widen(domain_state *other, size_t current_node) {
@@ -137,7 +150,7 @@ memory_state *analysis::memory_state::narrow(domain_state *other, size_t current
 }
 
 memory_state *analysis::memory_state::box(domain_state *other, size_t current_node) {
-  throw string("analysis::memory_state::box(domain_state,current_node)");
+  return new memory_state(*this);
 }
 
 memory_state *analysis::memory_state::update(gdsl::rreil::assign *assign) {
@@ -145,7 +158,8 @@ memory_state *analysis::memory_state::update(gdsl::rreil::assign *assign) {
   id_shared_t num_id;
   region_map_t regions_new;
   numeric_state *child_state_new;
-  tie(num_id, regions_new, child_state_new) = transVar(shared_copy(var->get_id()), var->get_offset(), assign->get_size());
+  tie(num_id, regions_new, child_state_new) = transVar(shared_copy(var->get_id()), var->get_offset(),
+      assign->get_size());
   num_var *n_var = new num_var(num_id);
   /*
    * Variables in rhs; converter needs transVar() as parameter

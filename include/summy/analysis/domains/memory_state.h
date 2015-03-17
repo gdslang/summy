@@ -56,6 +56,9 @@ public:
   memory_state(numeric_state *child_state) :
       child_state(child_state) {
   }
+  memory_state(memory_state const &o) :
+    child_state(o.child_state), regions(o.regions), deref(o.deref) {
+  }
   ~memory_state() {
     delete child_state;
   }

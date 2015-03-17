@@ -93,6 +93,8 @@ summy::vs_shared_t value_sets::vsd_state::lookup(id_shared_t id) {
 
 bool analysis::value_sets::vsd_state::operator >=(domain_state const &other) const {
   vsd_state const &other_casted = dynamic_cast<vsd_state const&>(other);
+  if(other_casted.is_bottom())
+    return true;
   for(auto &mapping_mine : elements) {
     auto mapping_other = other_casted.elements.find(mapping_mine.first);
     if(mapping_other != other_casted.elements.end()) {
@@ -107,6 +109,10 @@ bool analysis::value_sets::vsd_state::operator >=(domain_state const &other) con
 
 vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t current_node) {
   vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
+  if(other_casted->is_bottom())
+    return new vsd_state(*this);
+  else if(is_bottom())
+    return new vsd_state(*other_casted);
 
   elements_t elems_new;
   auto join = [&](elements_t const &from, elements_t const &to) {
@@ -124,16 +130,20 @@ vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t cur
 }
 
 vsd_state *analysis::value_sets::vsd_state::widen(domain_state *other, size_t current_node) {
-  elements_t elements_new;
   vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
+  if(other_casted->is_bottom())
+    return new vsd_state(*this);
+  elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
       elements_new[mapping_other.first] = value_set::widen(lookup(mapping_other.first), mapping_other.second);
   return new vsd_state(elements_new);
 }
 
 vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t current_node) {
-  elements_t elements_new;
   vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
+  if(other_casted->is_bottom())
+    return new vsd_state(*this);
+  elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
       elements_new[mapping_other.first] = value_set::narrow(lookup(mapping_other.first), mapping_other.second);
   return new vsd_state(elements_new);
@@ -148,8 +158,9 @@ vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t curr
 
 vsd_state *value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
   elements_t elements_new = elements;
-  elements_new[lhs->get_id()] = eval(rhs);
-  return new vsd_state(elements_new);
+  vs_shared_t er = eval(rhs);
+  elements_new[lhs->get_id()] = er;
+  return new vsd_state(_is_bottom && *er == value_set::bottom, elements_new);
 }
 
 numeric_state *analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
@@ -174,4 +185,8 @@ numeric_state *analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {
 
 vsd_state *analysis::value_sets::vsd_state::bottom() {
   return new vsd_state(true);
+}
+
+vsd_state* analysis::value_sets::vsd_state::top() {
+  return new vsd_state();
 }
