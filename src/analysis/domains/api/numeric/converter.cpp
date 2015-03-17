@@ -9,8 +9,8 @@
 #include <summy/analysis/domains/api/api.h>
 #include <summy/rreil/shared_copy.h>
 #include <summy/value_set/vs_finite.h>
-#include <cppgdsl/rreil/expr/expr_visitor.h>
-#include <cppgdsl/rreil/linear/linear_visitor.h>
+#include <cppgdsl/rreil/expr/expr.h>
+#include <cppgdsl/rreil/linear/linear.h>
 
 using namespace analysis::api;
 using namespace gdsl::rreil;
@@ -29,7 +29,7 @@ static num_linear *add(num_linear *a, vs_shared_t vs) {
   num_linear *result = NULL;
   num_visitor nv;
   nv._([&](num_linear_term *v) {
-    num_var nv = new num_var(v->get_var()->get_id());
+    num_var *nv = new num_var(v->get_var()->get_id());
     result = new num_linear_term(v->get_scale(), nv, add(v->get_next(), vs));
   });
   nv._([&](num_linear_vs *v) {
@@ -44,7 +44,7 @@ static num_linear *add(num_linear *a, num_linear *b) {
   num_linear *result = NULL;
   num_visitor nv;
   nv._([&](num_linear_term *v) {
-    num_var nv = new num_var(v->get_var()->get_id());
+    num_var *nv = new num_var(v->get_var()->get_id());
     result = new num_linear_term(v->get_scale(), nv, add(v->get_next(), b));
   });
   nv._([&](num_linear_vs *v) {
