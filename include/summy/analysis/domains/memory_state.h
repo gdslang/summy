@@ -60,6 +60,8 @@ public:
     delete child_state;
   }
 
+  bool is_bottom();
+
   bool operator>=(domain_state const &other) const;
 
   memory_state *join(domain_state *other, size_t current_node);

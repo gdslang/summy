@@ -10,6 +10,7 @@
 #include <summy/rreil/shared_copy.h>
 #include <summy/value_set/vs_finite.h>
 #include <cppgdsl/rreil/expr/expr.h>
+#include <cppgdsl/rreil/sexpr/sexpr.h>
 #include <cppgdsl/rreil/linear/linear.h>
 
 using namespace analysis::api;
@@ -20,9 +21,8 @@ static num_var *conv_id(id *id) {
   return new num_var(shared_copy(id));
 }
 
-//static num_linear *conv_id(id *id) {
-//  num_var *v = num_var(shared_copy(id));
-//  return new num_linear_term(v);
+//static num_linear *conv_id_lin(id *id) {
+//  return new num_linear_term(conv_id(id));
 //}
 
 static num_linear *add(num_linear *a, vs_shared_t vs) {
@@ -37,7 +37,6 @@ static num_linear *add(num_linear *a, vs_shared_t vs) {
   });
   a->accept(nv);
   return result;
-
 }
 
 static num_linear *add(num_linear *a, num_linear *b) {
@@ -84,22 +83,86 @@ static num_linear *conv_linear(linear *lin, int64_t scale) {
   return result;
 }
 
+static num_linear *conv_linear(linear *lin) {
+  return conv_linear(lin, 1);
+}
+
+static analysis::api::num_expr *conv_sexpr(sexpr *se) {
+  num_expr *result = NULL;
+  sexpr_visitor sv;
+  sv._([&](arbitrary *x){
+    result = new num_expr_lin(new num_linear_vs(value_set::top));
+  });
+  sv._([&](sexpr_cmp *x){
+    result = new num_expr_lin(new num_linear_vs(value_set::top));
+  });
+  sv._([&](sexpr_lin *x){
+    result = new num_expr_lin(conv_linear(x->get_lin()));
+  });
+  se->accept(sv);
+  return result;
+}
+
 analysis::api::num_expr *conv_expr(gdsl::rreil::expr *expr) {
   num_expr *result = NULL;
   expr_visitor ev;
   ev._([&](expr_binop *e) {
+    num_linear *nl_opnd1 = conv_linear(e->get_opnd1());
+    num_linear *nl_opnd2 = conv_linear(e->get_opnd2());
+    auto rfo = [&](auto o) {
+        result = new num_expr_bin(nl_opnd1, o, nl_opnd2);
+    };
     switch(e->get_op()) {
       case BIN_MUL: {
-//        result = new num_expr_bin(conv_id(e->get))
+        rfo(MUL);
+        break;
+      }
+      case BIN_DIV:
+      case BIN_DIVS: {
+        rfo(DIV);
+        break;
+      }
+      case BIN_MOD:
+      case BIN_MODS: {
+        rfo(MOD);
+        break;
+      }
+      case BIN_SHL: {
+        rfo(SHL);
+        break;
+      }
+      case BIN_SHR: {
+        rfo(SHR);
+        break;
+      }
+      case BIN_SHRS: {
+        rfo(SHRS);
+        break;
+      }
+      case BIN_AND: {
+        rfo(AND);
+        break;
+      }
+      case BIN_OR: {
+        rfo(OR);
+        break;
+      }
+      case BIN_XOR: {
+        rfo(XOR);
         break;
       }
     }
   });
   ev._([&](expr_ext *e) {
-
+    /*
+     * Todo: This is broken
+     */
+    num_linear *nl_opnd = conv_linear(e->get_opnd());
+    result = new num_expr_lin(nl_opnd);
   });
   ev._([&](expr_sexpr *e) {
-
+    result = conv_sexpr(e->get_inner());
   });
   expr->accept(ev);
+  return result;
 }

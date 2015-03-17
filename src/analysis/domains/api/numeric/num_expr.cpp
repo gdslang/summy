@@ -94,6 +94,10 @@ void analysis::api::num_expr_bin::put(std::ostream &out) {
       out << ">>";
       break;
     }
+    case SHRS: {
+      out << ">>s";
+      break;
+    }
     case AND: {
       out << "&";
       break;

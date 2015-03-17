@@ -61,5 +61,5 @@ public:
   void put(std::ostream &out);
 };
 
-}  // namespace reaching_defs
+}  // namespace liveness
 }  // namespace analysis

@@ -21,26 +21,36 @@ class num_linear;
 namespace value_sets {
 
 typedef std::tuple<id_shared_t, summy::vs_shared_t> singleton_t;
-typedef std::tuple_element<0,singleton_t>::type singleton_key_t;
-typedef std::tuple_element<1,singleton_t>::type singleton_value_t;
+typedef std::tuple_element<0, singleton_t>::type singleton_key_t;
+typedef std::tuple_element<1, singleton_t>::type singleton_value_t;
 typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> elements_t;
 
 /**
  * Value set domain state
  */
-class vsd_state : public numeric_state {
+class vsd_state: public numeric_state {
 private:
+  bool bottom;
   const elements_t elements;
 protected:
   void put(std::ostream &out) const;
 public:
-  vsd_state(elements_t elements) : elements(elements) {
+  vsd_state(elements_t elements) :
+      bottom(false), elements(elements) {
   }
-  vsd_state() : vsd_state(elements_t {}) {
+  vsd_state() :
+      vsd_state(elements_t { }) {
+  }
+  vsd_state(bool bottom) :
+      bottom(bottom), elements(elements_t { }) {
   }
 
   const elements_t &get_elements() const {
     return elements;
+  }
+
+  bool is_bottom() {
+    return bottom;
   }
 
   summy::vs_shared_t eval(api::num_linear *lin);

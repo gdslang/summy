@@ -64,7 +64,7 @@ public:
 };
 
 enum num_bin {
-  MUL, DIV, MOD, SHL, SHR, AND, OR, XOR
+  MUL, DIV, MOD, SHL, SHR, SHRS, AND, OR, XOR
 };
 
 class num_expr_bin: public num_expr {

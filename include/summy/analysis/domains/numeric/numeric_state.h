@@ -24,6 +24,8 @@ typedef std::vector<std::tuple<api::num_var*, api::num_var*>> num_var_pairs_t;
 
 class numeric_state : public domain_state {
 public:
+  virtual bool is_bottom() = 0;
+
   virtual numeric_state *assign(api::num_var *lhs, api::num_expr *rhs) = 0;
   virtual numeric_state *assume(api::num_expr_cmp *cmp) = 0;
   virtual numeric_state *assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases) = 0;

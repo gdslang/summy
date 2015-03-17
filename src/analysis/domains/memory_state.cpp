@@ -116,6 +116,10 @@ std::tuple<id_shared_t, region_map_t, numeric_state*> analysis::memory_state::tr
   return make_tuple(f.num_id, regions, child_state);
 }
 
+bool analysis::memory_state::is_bottom() {
+  return child_state->is_bottom();
+}
+
 bool analysis::memory_state::operator >=(const domain_state &other) const {
   throw string("analysis::memory_state::box(domain_state)");
 }
