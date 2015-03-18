@@ -162,30 +162,29 @@ vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t curr
     return this->widen(other, current_node);
 }
 
-vsd_state *value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
-  elements_t elements_new = elements;
+void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
   vs_shared_t er = eval(rhs);
-  elements_new[lhs->get_id()] = er;
-  return new vsd_state(_is_bottom && *er == value_set::bottom, elements_new);
+  elements[lhs->get_id()] = er;
+  _is_bottom = _is_bottom && *er == value_set::bottom;
 }
 
-numeric_state *analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
+void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
   throw string("analysis::value_sets::vsd_state::assume(num_expr_cmp)");
 }
 
-numeric_state *analysis::value_sets::vsd_state::assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases) {
+void analysis::value_sets::vsd_state::assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases) {
   throw string("analysis::value_sets::vsd_state::assume(num_var, ptr_set_t)");
 }
 
-numeric_state *analysis::value_sets::vsd_state::kill(std::vector<api::num_var*> vars) {
+void analysis::value_sets::vsd_state::kill(std::vector<api::num_var*> vars) {
   throw string("analysis::value_sets::vsd_state::assume(std::vector<api::num_var*>)");
 }
 
-numeric_state *analysis::value_sets::vsd_state::equate_kill(num_var_pairs_t vars) {
+void analysis::value_sets::vsd_state::equate_kill(num_var_pairs_t vars) {
   throw string("analysis::value_sets::vsd_state::assume(num_var_pairs_t)");
 }
 
-numeric_state *analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {
+void analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {
   throw string("analysis::value_sets::vsd_state::assume(num_var_pairs_t)");
 }
 

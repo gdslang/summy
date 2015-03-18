@@ -31,7 +31,7 @@ typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> element
 class vsd_state: public numeric_state {
 private:
   bool _is_bottom;
-  const elements_t elements;
+  elements_t elements;
 protected:
   void put(std::ostream &out) const;
 public:
@@ -71,12 +71,12 @@ public:
   vsd_state *narrow(domain_state *other, size_t current_node);
   vsd_state *box(domain_state *other, size_t current_node);
 
-  vsd_state *assign(api::num_var *lhs, api::num_expr *rhs);
-  numeric_state *assume(api::num_expr_cmp *cmp);
-  numeric_state *assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases);
-  numeric_state *kill(std::vector<api::num_var*> vars);
-  numeric_state *equate_kill(num_var_pairs_t vars);
-  numeric_state *fold(num_var_pairs_t vars);
+  void assign(api::num_var *lhs, api::num_expr *rhs);
+  void assume(api::num_expr_cmp *cmp);
+  void assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases);
+  void kill(std::vector<api::num_var*> vars);
+  void equate_kill(num_var_pairs_t vars);
+  void fold(num_var_pairs_t vars);
 
   static vsd_state *bottom();
   static vsd_state *top();

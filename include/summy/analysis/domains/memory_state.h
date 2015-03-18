@@ -48,7 +48,7 @@ protected:
   void put(std::ostream &out) const;
   region_t &region(id_shared_t id);
 
-  std::tuple<id_shared_t, region_map_t, numeric_state*> transVar(id_shared_t var_id, size_t offset, size_t size);
+  id_shared_t transVar(id_shared_t var_id, size_t offset, size_t size);
 public:
   memory_state(numeric_state *child_state, region_map_t regions, deref_t deref) :
       child_state(child_state), regions(regions), deref(deref) {
@@ -72,7 +72,9 @@ public:
   memory_state *narrow(domain_state *other, size_t current_node);
   memory_state *box(domain_state *other, size_t current_node);
 
-  memory_state *update(gdsl::rreil::assign *assign);
+  void update(gdsl::rreil::assign *assign);
+
+  memory_state *copy();
 };
 
 }
