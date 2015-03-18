@@ -49,11 +49,11 @@ test:
 
 example: all
 	$(MAKE) -C examples/ example EXAMPLE=$(EXAMPLE)
-	./tardet -f examples/example.bin -g playground/output.dot
+	./summy -f examples/example.bin -g playground/output.dot
 	$(MAKE) -C playground/
 
 example_elf: all
-	./tardet -e examples/example.elf -g playground/output.dot
+	./summy -e examples/example.elf -g playground/output.dot
 	$(MAKE) -C playground/
 
 clean:

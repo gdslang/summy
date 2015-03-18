@@ -150,7 +150,7 @@ memory_state *analysis::memory_state::narrow(domain_state *other, size_t current
 }
 
 memory_state *analysis::memory_state::box(domain_state *other, size_t current_node) {
-  return new memory_state(*this);
+  return new memory_state(*dynamic_cast<memory_state*>(other));
 }
 
 memory_state *analysis::memory_state::update(gdsl::rreil::assign *assign) {
@@ -168,4 +168,3 @@ memory_state *analysis::memory_state::update(gdsl::rreil::assign *assign) {
   child_state_new = child_state->assign(n_var, n_expr);
   return new memory_state(child_state_new, regions_new, deref);
 }
-
