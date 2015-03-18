@@ -64,6 +64,7 @@ void analysis::dstack::init_state() {
 }
 
 analysis::dstack::dstack(cfg::cfg *cfg) : fp_analysis(cfg) {
+  init();
 }
 
 analysis::dstack::~dstack() {
@@ -91,5 +92,5 @@ dstack_result analysis::dstack::result() {
 
 void analysis::dstack::put(std::ostream &out) {
   for(size_t i = 0; i < state.size(); i++)
-    out << i << ": " << *state[i] << endl;
+    out << "Node " << i << ": " << endl << *state[i] << endl;
 }

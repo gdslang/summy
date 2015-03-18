@@ -70,7 +70,7 @@ void fixpoint::iterate() {
         process_constraint(constraint_it->first, constraint_it->second);
 
 //      cout << "Current: " << *current << endl;
-//      cout << "Evaluated: " << *evaluated << endl;
+//      cout << "Acc: " << *accumulator << endl;
 
       propagate = !(*current >= *accumulator);
     } else

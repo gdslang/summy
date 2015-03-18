@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
+#include <summy/analysis/domains/dstack.h>
 #include <iosfwd>
 #include <vector>
 #include <map>
@@ -52,7 +53,16 @@ int main(int argc, char **argv) {
   dt.register_();
 
   auto &cfg = dt.get_cfg();
+  cfg.commit_updates();
 
+  dstack ds(&cfg);
+  fixpoint fp(&ds);
+
+  fp.iterate();
+
+  cout << "++++++++++" << endl;
+  ds.put(cout);
+  cout << "++++++++++" << endl;
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);

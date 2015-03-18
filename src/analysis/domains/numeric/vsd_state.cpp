@@ -24,6 +24,10 @@ void value_sets::vsd_state::put(std::ostream &out) const {
 //  map<int, int*> a;
 //  out << print(a, stream<int>(), stream_ptr<int*>());
 //  out << print(elements, stream_ptr<singleton_key_t>(), stream_ptr<singleton_value_t>());
+  if(is_bottom()) {
+    cout << "⊥";
+    return;
+  }
   out << "{";
   bool first = true;
   for(auto &elem_it : elements) {
@@ -95,6 +99,8 @@ bool analysis::value_sets::vsd_state::operator >=(domain_state const &other) con
   vsd_state const &other_casted = dynamic_cast<vsd_state const&>(other);
   if(other_casted.is_bottom())
     return true;
+  else if(is_bottom())
+    return false;
   for(auto &mapping_mine : elements) {
     auto mapping_other = other_casted.elements.find(mapping_mine.first);
     if(mapping_other != other_casted.elements.end()) {
@@ -189,4 +195,8 @@ vsd_state *analysis::value_sets::vsd_state::bottom() {
 
 vsd_state* analysis::value_sets::vsd_state::top() {
   return new vsd_state();
+}
+
+numeric_state *analysis::value_sets::vsd_state::copy() {
+  return new vsd_state(*this);
 }

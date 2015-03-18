@@ -80,6 +80,8 @@ public:
 
   static vsd_state *bottom();
   static vsd_state *top();
+
+  numeric_state *copy();
 };
 
 }

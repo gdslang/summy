@@ -74,11 +74,11 @@ void analysis::memory_state::put(std::ostream &out) const {
 
     for(size_t i = 0; i < memory_id_str.length() + sep.length(); i++)
     out << ' ';
-    out << upper_boundary << endl;
-    out << memory_id_str << sep << field_line << endl;
+    out << upper_boundary.str() << endl;
+    out << memory_id_str << sep << field_line.str() << endl;
     for(size_t i = 0; i < memory_id_str.length() + sep.length(); i++)
     out << ' ';
-    out << offset_size_boundary;
+    out << offset_size_boundary.str();
     out << endl;
   };
 
@@ -89,7 +89,10 @@ void analysis::memory_state::put(std::ostream &out) const {
   out << "Deref: {" << endl;
   for(auto region_mapping : deref)
     print_fields(region_mapping.first, region_mapping.second);
-  out << "}";
+  out << "}" << endl;
+  out << "Child state: {" << endl;
+  out << *child_state;
+  out << endl << "}";
 }
 
 region_t &analysis::memory_state::region(id_shared_t id) {
@@ -166,5 +169,7 @@ memory_state *analysis::memory_state::update(gdsl::rreil::assign *assign) {
    */
   num_expr *n_expr = conv_expr(assign->get_rhs());
   child_state_new = child_state->assign(n_var, n_expr);
+  delete n_expr;
+  delete n_var;
   return new memory_state(child_state_new, regions_new, deref);
 }

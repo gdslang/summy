@@ -35,6 +35,8 @@ public:
 
   virtual numeric_state *join(domain_state *other, size_t current_node) = 0;
   virtual numeric_state *box(domain_state *other, size_t current_node) = 0;
+
+  virtual numeric_state *copy() = 0;
 };
 
 }
