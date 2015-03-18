@@ -1,5 +1,5 @@
 /*
- * analysis_id.h
+ * numeric_id.h
  *
  *  Created on: Mar 12, 2015
  *      Author: Julian Kranz
@@ -15,19 +15,19 @@
 namespace summy {
 namespace rreil {
 
-class analysis_id: public gdsl::rreil::id {
+class numeric_id: public gdsl::rreil::id {
 private:
-  size_t numeric_id;
+  size_t counter;
 
   void put(std::ostream &out);
 public:
-  analysis_id(size_t numeric_id) :
-      numeric_id(numeric_id) {
+  numeric_id(size_t counter) :
+    counter(counter) {
   }
-  ~analysis_id();
+  ~numeric_id();
 
-  size_t get_numeric_id() {
-    return numeric_id;
+  size_t get_counter() {
+    return counter;
   }
 
   bool operator== (gdsl::rreil::id &other);
