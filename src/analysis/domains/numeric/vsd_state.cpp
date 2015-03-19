@@ -177,7 +177,11 @@ void analysis::value_sets::vsd_state::assume(api::num_var *lhs, anaylsis::api::p
 }
 
 void analysis::value_sets::vsd_state::kill(std::vector<api::num_var*> vars) {
-  throw string("analysis::value_sets::vsd_state::assume(std::vector<api::num_var*>)");
+  for(auto var : vars) {
+    auto var_it = elements.find(var->get_id());
+    if(var_it != elements.end())
+      elements.erase(var_it);
+  }
 }
 
 void analysis::value_sets::vsd_state::equate_kill(num_var_pairs_t vars) {

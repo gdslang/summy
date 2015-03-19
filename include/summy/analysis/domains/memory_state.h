@@ -9,6 +9,7 @@
 
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/domains/numeric/numeric_state.h>
+#include <summy/analysis/domains/api/api.h>
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
 #include <cppgdsl/rreil/statement/assign.h>
@@ -49,6 +50,7 @@ protected:
   region_t &region(id_shared_t id);
 
   id_shared_t transVar(id_shared_t var_id, size_t offset, size_t size);
+  api::num_linear *transLE(id_shared_t var_id, size_t offset, size_t size);
 public:
   memory_state(numeric_state *child_state, region_map_t regions, deref_t deref) :
       child_state(child_state), regions(regions), deref(deref) {

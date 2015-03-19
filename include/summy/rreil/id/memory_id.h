@@ -17,17 +17,17 @@ namespace rreil {
 
 class memory_id: public gdsl::rreil::id {
 private:
-  size_t deref;
+  int_t deref;
   std::shared_ptr<gdsl::rreil::id> inner;
 
   void put(std::ostream &out);
 public:
-  memory_id(size_t deref, std::shared_ptr<gdsl::rreil::id> inner) :
+  memory_id(int_t deref, std::shared_ptr<gdsl::rreil::id> inner) :
       deref(deref), inner(inner) {
   }
   ~memory_id();
 
-  size_t get_deref() {
+  int_t get_deref() {
     return deref;
   }
 

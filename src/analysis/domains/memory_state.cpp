@@ -8,16 +8,21 @@
 #include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/api/numeric/converter.h>
 #include <summy/analysis/domains/memory_state.h>
+#include <summy/rreil/id/numeric_id.h>
 #include <summy/rreil/shared_copy.h>
+#include <summy/value_set/value_set.h>
 #include <algorithm>
 
 #include <cppgdsl/rreil/variable.h>
 #include <string>
 #include <sstream>
 #include <tuple>
+#include <vector>
 
 using namespace analysis::api;
+using namespace summy;
 using gdsl::rreil::variable;
+using summy::rreil::numeric_id;
 
 using namespace analysis;
 using namespace std;
@@ -105,19 +110,65 @@ region_t &analysis::memory_state::region(id_shared_t id) {
   }
 }
 
+static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) {
+  cout << "overlap(" << from_a << ", " << size_a << ", " << from_b << ", " << size_b << endl;
+
+  if(!size_a || !size_b)
+    return false;
+  size_t to_a = from_a + size_a - 1;
+  size_t to_b = from_b + size_b - 1;
+  if(from_a < from_b) {
+    return to_a >= from_b;
+  } else if(from_a == from_b)
+    return true;
+  else
+    return to_b >= from_a;
+}
+
 id_shared_t analysis::memory_state::transVar(id_shared_t var_id,
     size_t offset, size_t size) {
   auto &region = regions[var_id];
-  auto field_it = region.find(offset);
-  if(field_it == region.end()) {
-    /*
-     * Todo: this is broken ;-)
-     */
-    tie(field_it, ignore) = region.insert(make_pair(offset, field { size, var_id }));
+  bool found = false;
+  id_shared_t num_id;
+  vector<num_var*> dead_num_vars;
+  auto field_it = region.upper_bound(offset);
+  if(field_it != region.begin())
+    --field_it;
+  while(field_it != region.end()) {
+    size_t offset_next = field_it->first;
+    field &f_next = field_it->second;
+    cout << "Considering " << offset_next << " / " << f_next.size << endl;
+    if(offset_next == offset && f_next.size == size) {
+      found = true;
+      num_id = f_next.num_id;
+      break;
+    } else if(overlap(offset_next, f_next.size, offset, size)) {
+      dead_num_vars.push_back(new num_var(f_next.num_id));
+      region.erase(field_it);
+    }
+    if(offset_next >= offset + size)
+      break;
+    ++field_it;
   }
+  if(!found)
+    tie(field_it, ignore) = region.insert(make_pair(offset, field { size, numeric_id::generate() }));
   field &f = field_it->second;
-  if(f.size != size) throw string("analysis::memory_state::transVar(id_shared_t, size_t, size_t)");
+  child_state->kill(dead_num_vars);
+  for(auto var : dead_num_vars)
+    delete var;
   return f.num_id;
+}
+
+num_linear *analysis::memory_state::transLE(id_shared_t var_id,
+    size_t offset, size_t size) {
+  auto &region = regions[var_id];
+  auto field_it = region.find(offset);;
+  if(field_it != region.end()) {
+    field &f = field_it->second;
+    if(f.size == size)
+      return new num_linear_term(new num_var(f.num_id));
+  }
+  return new num_linear_vs(value_set::top);
 }
 
 bool analysis::memory_state::is_bottom() {
@@ -163,7 +214,10 @@ void analysis::memory_state::update(gdsl::rreil::assign *assign) {
   /*
    * Variables in rhs; converter needs transVar() as parameter
    */
-  num_expr *n_expr = conv_expr(assign->get_rhs());
+  converter cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
+    return transLE(id, offset, assign->get_size());
+  });
+  num_expr *n_expr = cv.conv_expr(assign->get_rhs());
   child_state->assign(n_var, n_expr);
   delete n_expr;
   delete n_var;

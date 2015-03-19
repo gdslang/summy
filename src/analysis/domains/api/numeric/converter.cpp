@@ -17,7 +17,8 @@ using namespace analysis::api;
 using namespace gdsl::rreil;
 using namespace summy;
 
-static num_var *conv_id(id *id) {
+
+num_var *converter::conv_id(id *id) {
   return new num_var(shared_copy(id));
 }
 
@@ -25,7 +26,7 @@ static num_var *conv_id(id *id) {
 //  return new num_linear_term(conv_id(id));
 //}
 
-static num_linear *add(num_linear *a, vs_shared_t vs) {
+num_linear *converter::add(num_linear *a, vs_shared_t vs) {
   num_linear *result = NULL;
   num_visitor nv;
   nv._([&](num_linear_term *v) {
@@ -39,7 +40,7 @@ static num_linear *add(num_linear *a, vs_shared_t vs) {
   return result;
 }
 
-static num_linear *add(num_linear *a, num_linear *b) {
+num_linear *converter::add(num_linear *a, num_linear *b) {
   num_linear *result = NULL;
   num_visitor nv;
   nv._([&](num_linear_term *v) {
@@ -53,7 +54,7 @@ static num_linear *add(num_linear *a, num_linear *b) {
   return result;
 }
 
-static num_linear *conv_linear(linear *lin, int64_t scale) {
+num_linear *converter::conv_linear(linear *lin, int64_t scale) {
   num_linear *result;
   linear_visitor lv;
   lv._([&](lin_binop *l) {
@@ -77,17 +78,17 @@ static num_linear *conv_linear(linear *lin, int64_t scale) {
     result = conv_linear(l->get_opnd(), scale*l->get_const());
   });
   lv._([&](lin_var *l) {
-    result = new num_linear_term(scale, conv_id(l->get_var()->get_id()));
+    result = transLE(shared_copy(l->get_var()->get_id()), l->get_var()->get_offset());
   });
   lin->accept(lv);
   return result;
 }
 
-static num_linear *conv_linear(linear *lin) {
+num_linear *converter::conv_linear(linear *lin) {
   return conv_linear(lin, 1);
 }
 
-static analysis::api::num_expr *conv_sexpr(sexpr *se) {
+analysis::api::num_expr *converter::conv_sexpr(sexpr *se) {
   num_expr *result = NULL;
   sexpr_visitor sv;
   sv._([&](arbitrary *x){
@@ -103,7 +104,7 @@ static analysis::api::num_expr *conv_sexpr(sexpr *se) {
   return result;
 }
 
-analysis::api::num_expr *conv_expr(gdsl::rreil::expr *expr) {
+analysis::api::num_expr *converter::conv_expr(gdsl::rreil::expr *expr) {
   num_expr *result = NULL;
   expr_visitor ev;
   ev._([&](expr_binop *e) {
