@@ -111,8 +111,7 @@ region_t &analysis::memory_state::region(id_shared_t id) {
 }
 
 static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) {
-  cout << "overlap(" << from_a << ", " << size_a << ", " << from_b << ", " << size_b << endl;
-
+//  cout << "overlap(" << from_a << ", " << size_a << ", " << from_b << ", " << size_b << endl;
   if(!size_a || !size_b)
     return false;
   size_t to_a = from_a + size_a - 1;
@@ -135,6 +134,7 @@ id_shared_t analysis::memory_state::transVar(id_shared_t var_id,
   if(field_it != region.begin())
     --field_it;
   while(field_it != region.end()) {
+    bool erase = false;
     size_t offset_next = field_it->first;
     field &f_next = field_it->second;
     cout << "Considering " << offset_next << " / " << f_next.size << endl;
@@ -144,11 +144,14 @@ id_shared_t analysis::memory_state::transVar(id_shared_t var_id,
       break;
     } else if(overlap(offset_next, f_next.size, offset, size)) {
       dead_num_vars.push_back(new num_var(f_next.num_id));
-      region.erase(field_it);
+      erase = true;
     }
     if(offset_next >= offset + size)
       break;
-    ++field_it;
+    if(erase)
+      region.erase(field_it++);
+    else
+      field_it++;
   }
   if(!found)
     tie(field_it, ignore) = region.insert(make_pair(offset, field { size, numeric_id::generate() }));

@@ -8,6 +8,7 @@
 #include <summy/analysis/domains/dstack.h>
 #include <summy/cfg/edge/edge_visitor.h>
 #include <cppgdsl/rreil/statement/statement.h>
+#include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/analysis/domains/numeric/vsd_state.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
@@ -73,11 +74,11 @@ analysis::dstack::~dstack() {
 }
 
 shared_ptr<domain_state> analysis::dstack::bottom() {
-  return make_shared<memory_state>(vsd_state::bottom());
+  return make_shared<memory_state>(new als_state(vsd_state::bottom()));
 }
 
 std::shared_ptr<domain_state> analysis::dstack::start_value() {
-  return make_shared<memory_state>(vsd_state::top());
+  return make_shared<memory_state>(new als_state(vsd_state::top()));
 }
 
 shared_ptr<domain_state> analysis::dstack::get(size_t node) {

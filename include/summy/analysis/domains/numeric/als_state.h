@@ -38,6 +38,13 @@ public:
   als_state(numeric_state *child_state, elements_t elements) :
     child_state(child_state), elements(elements) {
   }
+  als_state(numeric_state *child_state) :
+    child_state(child_state), elements(elements_t {}) {
+  }
+  als_state(als_state const&o) :
+    child_state(o.child_state->copy()), elements(o.elements) {
+  }
+  ~als_state();
 
   const elements_t &get_elements() const {
     return elements;
@@ -45,16 +52,9 @@ public:
 
   bool is_bottom() const;
 
-  summy::vs_shared_t eval(api::num_linear *lin);
-  summy::vs_shared_t eval(api::num_expr *exp);
-
-  summy::vs_shared_t lookup(id_shared_t id);
-
   bool operator>=(domain_state const &other) const;
 
-  als_state *join(domain_state *other, size_t current_node);
-  als_state *widen(domain_state *other, size_t current_node);
-  als_state *narrow(domain_state *other, size_t current_node);
+  als_state *join(domain_state *other, size_t current_node);;
   als_state *box(domain_state *other, size_t current_node);
 
   void assign(api::num_var *lhs, api::num_expr *rhs);

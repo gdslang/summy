@@ -25,55 +25,65 @@ void als_state::put(std::ostream &out) const {
     for(auto &alias : aliases)
       out << *alias;
   }
+  out << "}" << endl;
   out << "Child state: {" << endl;
   out << *child_state;
   out << endl << "}";
 }
 
+analysis::als_state::~als_state() {
+  delete child_state;
+}
+
 bool als_state::is_bottom() const {
+  return child_state->is_bottom();
 }
 
-summy::vs_shared_t als_state::eval(api::num_linear* lin) {
+bool als_state::operator >=(const domain_state &other) const {
+  als_state const &other_casted = dynamic_cast<als_state const&>(other);
+  return *child_state >= *other_casted.child_state;
 }
 
-summy::vs_shared_t als_state::eval(api::num_expr* exp) {
+als_state *als_state::join(domain_state *other, size_t current_node) {
+  als_state const *other_casted = dynamic_cast<als_state*>(other);
+  /*
+   * Broken, broken...
+   */
+  return new als_state(child_state->join(other_casted->child_state, 42), elements);
 }
 
-summy::vs_shared_t als_state::lookup(id_shared_t id) {
+als_state *als_state::box(domain_state *other, size_t current_node) {
+  als_state const *other_casted = dynamic_cast<als_state*>(other);
+  /*
+   * Broken, broken...
+   */
+  return new als_state(child_state->box(other_casted->child_state, 42), elements);
 }
 
-bool als_state::operator >=(const domain_state& other) const {
+void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
+  child_state->assign(lhs, rhs);
 }
 
-als_state* als_state::join(domain_state* other, size_t current_node) {
+void als_state::assume(api::num_expr_cmp *cmp) {
+  child_state->assume(cmp);
 }
 
-als_state* als_state::widen(domain_state* other, size_t current_node) {
-}
-
-als_state* als_state::narrow(domain_state* other, size_t current_node) {
-}
-
-als_state* als_state::box(domain_state* other, size_t current_node) {
-}
-
-void als_state::assign(api::num_var* lhs, api::num_expr* rhs) {
-}
-
-void als_state::assume(api::num_expr_cmp* cmp) {
-}
-
-void als_state::assume(api::num_var* lhs, anaylsis::api::ptr_set_t aliases) {
+void als_state::assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases) {
+  child_state->assume(lhs, aliases);
 }
 
 void als_state::kill(std::vector<api::num_var*> vars) {
+  child_state->kill(vars);
 }
 
 void als_state::equate_kill(num_var_pairs_t vars) {
+  child_state->equate_kill(vars);
 }
 
 void als_state::fold(num_var_pairs_t vars) {
+  child_state->fold(vars);
 }
 
-numeric_state* als_state::copy() {
+numeric_state *als_state::copy() {
+  return new als_state(*this);
 }
