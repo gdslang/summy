@@ -28,7 +28,7 @@ public:
 
   virtual void assign(api::num_var *lhs, api::num_expr *rhs) = 0;
   virtual void assume(api::num_expr_cmp *cmp) = 0;
-  virtual void assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases) = 0;
+  virtual void assume(api::num_var *lhs, api::ptr_set_t aliases) = 0;
   virtual void kill(std::vector<api::num_var*> vars) = 0;
   virtual void equate_kill(num_var_pairs_t vars) = 0;
   virtual void fold(num_var_pairs_t vars) = 0;

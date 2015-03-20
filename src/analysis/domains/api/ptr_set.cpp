@@ -9,10 +9,17 @@
 #include <summy/value_set/vs_compare.h>
 
 using namespace analysis;
+using namespace analysis::api;
 using namespace summy;
+using namespace std;
 
-bool anaylsis::api::ptr::operator <(struct ptr other) {
+bool ptr::operator <(const ptr &other) const {
   if(id_less_no_version()(id, other.id))
     return true;
   return vs_total_less()(offset, other.offset);
+}
+
+std::ostream& analysis::api::operator <<(std::ostream &out, const ptr &_this) {
+  out << "(" << _this.id << " + " << *_this.offset << ")" << endl;
+  return out;
 }

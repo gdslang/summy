@@ -55,9 +55,10 @@ public:
   memory_state(numeric_state *child_state, region_map_t regions, deref_t deref) :
       child_state(child_state), regions(regions), deref(deref) {
   }
-  memory_state(numeric_state *child_state) :
-      child_state(child_state) {
-  }
+  /**
+   * @param start_bottom: true => start value, false => bottom
+   */
+  memory_state(numeric_state *child_state, bool start_bottom);
   memory_state(memory_state const &o) :
       child_state(o.child_state->copy()), regions(o.regions), deref(o.deref) {
   }
@@ -77,6 +78,9 @@ public:
   void update(gdsl::rreil::assign *assign);
 
   memory_state *copy();
+
+  static memory_state *start_value(numeric_state *start_num);
+  static memory_state *bottom(numeric_state *bottom_num);
 };
 
 }

@@ -6,9 +6,10 @@
  */
 
 #include <summy/analysis/domains/numeric/als_state.h>
+#include <summy/analysis/domains/api/api.h>
 
 using namespace analysis;
-using namespace api;
+using namespace analysis::api;
 using namespace std;
 
 void als_state::put(std::ostream &out) const {
@@ -16,14 +17,14 @@ void als_state::put(std::ostream &out) const {
   out << "{";
   for(auto &elem : elements) {
     id_shared_t id = elem.first;
-    id_set_t const &aliases = elem.second;
+    ptr_set_t const &aliases = elem.second;
     if(!first)
       out << ' ';
     else
       first = false;
     out << "P(" << *id << ") -> ";
     for(auto &alias : aliases)
-      out << *alias;
+      out << alias;
   }
   out << "}" << endl;
   out << "Child state: {" << endl;
@@ -68,7 +69,8 @@ void als_state::assume(api::num_expr_cmp *cmp) {
   child_state->assume(cmp);
 }
 
-void als_state::assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases) {
+void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
+  elements[lhs->get_id()].insert(aliases.begin(), aliases.end());
   child_state->assume(lhs, aliases);
 }
 

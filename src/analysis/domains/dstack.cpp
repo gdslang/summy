@@ -32,13 +32,13 @@ void analysis::dstack::add_constraint(size_t from, size_t to, const ::cfg::edge 
     statement *stmt = edge->get_stmt();
     statement_visitor v;
     v._([&](assign *a) {
-      transfer_f = [=]() {
-        shared_ptr<memory_state> &state_c = this->state[from];
-        shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
-        state_new->update(a);
-        return state_new;
-      };
-    });
+          transfer_f = [=]() {
+            shared_ptr<memory_state> &state_c = this->state[from];
+            shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
+            state_new->update(a);
+            return state_new;
+          };
+        });
     stmt->accept(v);
   });
   ev._([&](const cond_edge *edge) {
@@ -60,13 +60,13 @@ void analysis::dstack::init_state() {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<memory_state>(
-        start_value());
+    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<memory_state>(start_value());
     else state[i] = dynamic_pointer_cast<memory_state>(bottom());
   }
 }
 
-analysis::dstack::dstack(cfg::cfg *cfg) : fp_analysis(cfg) {
+analysis::dstack::dstack(cfg::cfg *cfg) :
+    fp_analysis(cfg) {
   init();
 }
 
@@ -74,11 +74,11 @@ analysis::dstack::~dstack() {
 }
 
 shared_ptr<domain_state> analysis::dstack::bottom() {
-  return make_shared<memory_state>(new als_state(vsd_state::bottom()));
+  return shared_ptr<domain_state>(memory_state::bottom(new als_state(vsd_state::bottom())));
 }
 
 std::shared_ptr<domain_state> analysis::dstack::start_value() {
-  return make_shared<memory_state>(new als_state(vsd_state::top()));
+  return shared_ptr<domain_state>(memory_state::start_value(new als_state(vsd_state::top())));
 }
 
 shared_ptr<domain_state> analysis::dstack::get(size_t node) {

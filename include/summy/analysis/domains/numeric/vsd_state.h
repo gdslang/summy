@@ -73,7 +73,7 @@ public:
 
   void assign(api::num_var *lhs, api::num_expr *rhs);
   void assume(api::num_expr_cmp *cmp);
-  void assume(api::num_var *lhs, anaylsis::api::ptr_set_t aliases);
+  void assume(api::num_var *lhs, api::ptr_set_t aliases);
   void kill(std::vector<api::num_var*> vars);
   void equate_kill(num_var_pairs_t vars);
   void fold(num_var_pairs_t vars);
