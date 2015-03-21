@@ -6,6 +6,9 @@
  */
 
 #include <summy/analysis/domains/dstack.h>
+#include <gtest/gtest.h>
+#include <memory>
+
 
 /*
  * Tests für
@@ -25,3 +28,30 @@
  * mov $20, %eax
  * add $10, %rax
  */
+
+using namespace std;
+using namespace summy;
+
+class dstack_test: public ::testing::Test {
+protected:
+
+  dstack_test() {
+  }
+
+  virtual ~dstack_test() {
+  }
+
+  virtual void SetUp() {
+  }
+
+  virtual void TearDown() {
+  }
+};
+
+TEST_F(dstack_test, OneFieldReplacesTwoFields) {
+
+}
+
+TEST_F(dstack_test, TwoFieldsReplaceOneField) {
+
+}

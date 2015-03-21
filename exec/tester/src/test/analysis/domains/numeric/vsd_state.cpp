@@ -56,7 +56,7 @@ TEST_F(vsd_state_test, SimpleAssignments) {
   auto g = rreil_builder::temporary("g");
 
   auto assign_state = [&](auto &s, auto &a, auto &lin) {
-    s = gc(s->assign(n.var(a), n.expr(lin)));
+    s->assign(n.var(a), n.expr(lin));
   };
 
   vsd_state *s = gc(new vsd_state());
@@ -107,7 +107,7 @@ TEST_F(vsd_state_test, StateComparison) {
   auto i = rreil_builder::temporary("i");
 
   auto assign_state = [&](auto &s, auto &a, auto &lin) {
-    s = gc(s->assign(n.var(a), n.expr(lin)));
+    s->assign(n.var(a), n.expr(lin));
   };
 
   vsd_state *greater = gc(new vsd_state());
@@ -160,7 +160,7 @@ TEST_F(vsd_state_test, StateJoin) {
   auto i = rreil_builder::temporary("i");
 
   auto assign_state = [&](auto &s, auto &a, auto &lin) {
-    s = gc(s->assign(n.var(a), n.expr(lin)));
+    s->assign(n.var(a), n.expr(lin));
   };
 
   vsd_state *sa = gc(new vsd_state());
