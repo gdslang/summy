@@ -13,20 +13,20 @@ using namespace analysis::api;
 using namespace std;
 
 void als_state::put(std::ostream &out) const {
-  bool first = true;
-  out << "{";
-  for(auto &elem : elements) {
-    id_shared_t id = elem.first;
-    ptr_set_t const &aliases = elem.second;
-    if(!first)
-      out << ' ';
-    else
-      first = false;
-    out << "P(" << *id << ") -> ";
-    for(auto &alias : aliases)
-      out << alias;
-  }
-  out << "}" << endl;
+//  bool first = true;
+//  out << "{";
+//  for(auto &elem : elements) {
+//    id_shared_t id = elem.first;
+//    ptr_set_t const &aliases = elem.second;
+//    if(!first)
+//      out << ' ';
+//    else
+//      first = false;
+//    out << "P(" << *id << ") -> ";
+//    for(auto &alias : aliases)
+//      out << alias;
+//  }
+//  out << "}" << endl;
   out << "Child state: {" << endl;
   out << *child_state;
   out << endl << "}";

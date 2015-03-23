@@ -173,7 +173,7 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
 }
 
 void analysis::value_sets::vsd_state::assume(api::num_var *lhs, ptr_set_t aliases) {
-  throw string("analysis::value_sets::vsd_state::assume(num_var, ptr_set_t)");
+//  throw string("analysis::value_sets::vsd_state::assume(num_var, ptr_set_t)");
 }
 
 void analysis::value_sets::vsd_state::kill(std::vector<api::num_var*> vars) {

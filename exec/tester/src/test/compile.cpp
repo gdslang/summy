@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <iterator>
+#include <stdio.h>
 
 using namespace std;
 
@@ -33,15 +34,22 @@ std::vector<uint8_t> asm_compile(std::string _asm) {
 
      if(system("objcopy -O binary program.elf program.bin")) throw string("objcopy failed :-(");
      exit([&]() {
-       system("rm program.bin");
+//       system("rm program.bin");
      });
 
-     basic_ifstream<char> bin_file;
-     bin_file.open("program.bin", ios::binary);
+     FILE *f = fopen("program.bin", "r");
+     while(!feof(f)) {
+       char next;
+       fread(&next, 1, 1, f);
+       data.push_back(next);
+     }
 
+//     basic_ifstream<char> bin_file;
+//     bin_file.open("program.bin", ios::binary);
 //     data.insert(data.begin(), istreambuf_iterator<unsigned char>(bin_file), istreambuf_iterator<unsigned char>());
-     while(bin_file.good())
-       data.push_back(bin_file.get());
+//     while(bin_file.good()) {
+//       data.push_back(bin_file.get());
+//     }
   });
   return data;
 }
