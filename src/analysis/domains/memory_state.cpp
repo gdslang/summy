@@ -134,7 +134,7 @@ id_shared_t analysis::memory_state::transVar(id_shared_t var_id, size_t offset, 
     bool erase = false;
     size_t offset_next = field_it->first;
     field &f_next = field_it->second;
-    cout << "Considering " << offset_next << " / " << f_next.size << endl;
+//    cout << "Considering " << offset_next << " / " << f_next.size << endl;
     if(offset_next == offset && f_next.size == size) {
       found = true;
       num_id = f_next.num_id;

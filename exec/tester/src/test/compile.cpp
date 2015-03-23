@@ -34,13 +34,16 @@ std::vector<uint8_t> asm_compile(std::string _asm) {
 
      if(system("objcopy -O binary program.elf program.bin")) throw string("objcopy failed :-(");
      exit([&]() {
-//       system("rm program.bin");
+       system("rm program.bin");
      });
 
      FILE *f = fopen("program.bin", "r");
-     while(!feof(f)) {
-       char next;
-       fread(&next, 1, 1, f);
+     size_t read;
+     while(true) {
+       uint8_t next;
+       read = fread(&next, 1, 1, f);
+       if(!read)
+         break;
        data.push_back(next);
      }
 

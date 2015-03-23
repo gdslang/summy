@@ -58,11 +58,8 @@ protected:
   }
 };
 
-static void final_state_asm(shared_ptr<memory_state> &final_state, string _asm) {
+static void state_asm(dstack *&ds_analyzed, string _asm) {
   auto compiled = asm_compile(_asm);
-
-  for(auto byte : compiled)
-    printf("0x%x, ", byte);
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
@@ -76,21 +73,23 @@ static void final_state_asm(shared_ptr<memory_state> &final_state, string _asm) 
   auto &cfg = dt.get_cfg();
   cfg.commit_updates();
 
-//  dstack ds(&cfg);
-//  fixpoint fp(&ds);
-//
-//  fp.iterate();
-//
-//  dstack_result dr = ds.result();
-//  final_state = *(--dr.result.end());
+  ds_analyzed = new dstack(&cfg);
+  fixpoint fp(ds_analyzed);
+
+  fp.iterate();
 }
 
 TEST_F(dstack_test, OneFieldReplacesTwoFields) {
-  shared_ptr<memory_state> final_state;
-  ASSERT_NO_FATAL_FAILURE(final_state_asm(final_state,
+  dstack *ds_analyzed;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ds_analyzed,
   "mov $99, %rax\n\
    mov $20, %eax\n"));
 
+  /*
+   * Todo: Zunächst ein Feld, dann zwei
+   */
+
+  delete ds_analyzed;
 }
 
 TEST_F(dstack_test, TwoFieldsReplaceOneField) {
