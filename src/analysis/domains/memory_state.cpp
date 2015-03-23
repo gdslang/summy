@@ -271,6 +271,7 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
   });
   num_expr *addr_expr = addr_cv.conv_expr(load->get_address()->get_lin());
   child_state->assign(temp, addr_expr);
+  delete addr_expr;
 
   ptr_set_t aliases = child_state->queryAls(temp);
   for(auto &alias : aliases) {
@@ -290,7 +291,6 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
 
   child_state->kill({ temp });
   delete temp;
-  delete addr_expr;
 }
 
 void analysis::memory_state::update(gdsl::rreil::store *store) {
@@ -300,6 +300,7 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
   });
   num_expr *addr_expr = addr_cv.conv_expr(store->get_address()->get_lin());
   child_state->assign(temp, addr_expr);
+  delete addr_expr;
 
   ptr_set_t aliases = child_state->queryAls(temp);
   for(auto &alias : aliases) {
@@ -321,7 +322,6 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
 
   child_state->kill({ temp });
   delete temp;
-  delete addr_expr;
 }
 
 memory_state *analysis::memory_state::bottom(numeric_state *bottom_num) {

@@ -31,6 +31,13 @@ class als_state: public numeric_state {
 private:
   numeric_state *child_state;
   elements_t elements;
+
+  struct temp_s {
+    als_state &_this;
+    api::num_var *temp;
+    ~temp_s();
+  };
+
 protected:
   void put(std::ostream &out) const;
 public:

@@ -12,6 +12,12 @@ using namespace analysis;
 using namespace analysis::api;
 using namespace std;
 
+
+analysis::als_state::temp_s::~temp_s() {
+  _this.child_state->kill({ temp });
+  delete temp;
+}
+
 void als_state::put(std::ostream &out) const {
   bool first = true;
   out << "{";
