@@ -19,7 +19,7 @@ namespace api {
 class num_linear;
 }
 
-typedef std::tuple<id_shared_t, api::ptr_set_t> singleton_t;
+typedef std::tuple<id_shared_t, std::set<id_shared_t, id_less_no_version>> singleton_t;
 typedef std::tuple_element<0, singleton_t>::type singleton_key_t;
 typedef std::tuple_element<1, singleton_t>::type singleton_value_t;
 typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> elements_t;
@@ -62,6 +62,10 @@ public:
   void kill(std::vector<api::num_var*> vars);
   void equate_kill(num_var_pairs_t vars);
   void fold(num_var_pairs_t vars);
+
+  api::ptr_set_t queryAls(api::num_var *nv);
+  summy::vs_shared_t queryVal(api::num_linear *lin);
+  summy::vs_shared_t queryVal(api::num_var *nv);
 
   numeric_state *copy();
 };

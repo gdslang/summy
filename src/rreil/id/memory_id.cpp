@@ -9,9 +9,11 @@
 #include <summy/rreil/id/memory_id.h>
 
 void summy::rreil::memory_id::put(std::ostream &out) {
+  out << '<';
   for(size_t i = 0; i < deref; i++)
     out << "*";
   out << *inner;
+  out << '>';
 }
 
 summy::rreil::memory_id::~memory_id() {

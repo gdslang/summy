@@ -17,6 +17,7 @@ namespace analysis {
 namespace api {
 class num_var;
 class num_expr;
+class num_linear;
 class num_expr_cmp;
 }
 
@@ -35,6 +36,10 @@ public:
 
   virtual numeric_state *join(domain_state *other, size_t current_node) = 0;
   virtual numeric_state *box(domain_state *other, size_t current_node) = 0;
+
+  virtual api::ptr_set_t queryAls(api::num_var *nv) = 0;
+  virtual summy::vs_shared_t queryVal(api::num_linear *lin) = 0;
+  virtual summy::vs_shared_t queryVal(api::num_var *nv) = 0;
 
   virtual numeric_state *copy() = 0;
 };

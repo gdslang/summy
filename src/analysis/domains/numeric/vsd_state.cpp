@@ -31,10 +31,8 @@ void value_sets::vsd_state::put(std::ostream &out) const {
   out << "{";
   bool first = true;
   for(auto &elem_it : elements) {
-    if(first)
-      first = false;
-    else
-      out << ", ";
+    if(first) first = false;
+    else out << ", ";
     out << *elem_it.first << " -> " << *elem_it.second;
   }
   out << "}";
@@ -89,43 +87,34 @@ vs_shared_t value_sets::vsd_state::eval(num_expr *exp) {
 
 summy::vs_shared_t value_sets::vsd_state::lookup(id_shared_t id) {
   auto id_it = elements.find(id);
-  if(id_it != elements.end())
-    return id_it->second;
-  else
-    return value_set::top;
+  if(id_it != elements.end()) return id_it->second;
+  else return value_set::top;
 }
 
 bool analysis::value_sets::vsd_state::operator >=(domain_state const &other) const {
   vsd_state const &other_casted = dynamic_cast<vsd_state const&>(other);
-  if(other_casted.is_bottom())
-    return true;
-  else if(is_bottom())
-    return false;
+  if(other_casted.is_bottom()) return true;
+  else if(is_bottom()) return false;
   for(auto &mapping_mine : elements) {
     auto mapping_other = other_casted.elements.find(mapping_mine.first);
     if(mapping_other != other_casted.elements.end()) {
-      if(!(*mapping_other->second <= mapping_mine.second))
-        return false;
-    } else
-      if(!(*mapping_mine.second == value_set::top))
-        return false;
+      if(!(*mapping_other->second <= mapping_mine.second)) return false;
+    } else if(!(*mapping_mine.second == value_set::top)) return false;
   }
   return true;
 }
 
 vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t current_node) {
   vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
-  if(other_casted->is_bottom())
-    return new vsd_state(*this);
-  else if(is_bottom())
-    return new vsd_state(*other_casted);
+  if(other_casted->is_bottom()) return new vsd_state(*this);
+  else if(is_bottom()) return new vsd_state(*other_casted);
 
   elements_t elems_new;
   auto join = [&](elements_t const &from, elements_t const &to) {
     for(auto &mapping_first : from) {
       auto mapping_second = to.find(mapping_first.first);
       if(mapping_second != to.end())
-        elems_new[mapping_first.first] = value_set::join(mapping_first.second, mapping_second->second);
+      elems_new[mapping_first.first] = value_set::join(mapping_first.second, mapping_second->second);
 //        cout << "join(" << *mapping_first.second << ", " << *mapping_second->second << ") = " << *elems_new[mapping_first.first] << endl;
     }
   };
@@ -137,29 +126,25 @@ vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t cur
 
 vsd_state *analysis::value_sets::vsd_state::widen(domain_state *other, size_t current_node) {
   vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
-  if(other_casted->is_bottom())
-    return new vsd_state(*this);
+  if(other_casted->is_bottom()) return new vsd_state(*this);
   elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
-      elements_new[mapping_other.first] = value_set::widen(lookup(mapping_other.first), mapping_other.second);
+    elements_new[mapping_other.first] = value_set::widen(lookup(mapping_other.first), mapping_other.second);
   return new vsd_state(elements_new);
 }
 
 vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t current_node) {
   vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
-  if(other_casted->is_bottom())
-    return new vsd_state(*this);
+  if(other_casted->is_bottom()) return new vsd_state(*this);
   elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
-      elements_new[mapping_other.first] = value_set::narrow(lookup(mapping_other.first), mapping_other.second);
+    elements_new[mapping_other.first] = value_set::narrow(lookup(mapping_other.first), mapping_other.second);
   return new vsd_state(elements_new);
 }
 
 vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t current_node) {
-  if(*other <= *this)
-    return this->narrow(other, current_node);
-  else
-    return this->widen(other, current_node);
+  if(*other <= *this) return this->narrow(other, current_node);
+  else return this->widen(other, current_node);
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
@@ -179,8 +164,7 @@ void analysis::value_sets::vsd_state::assume(api::num_var *lhs, ptr_set_t aliase
 void analysis::value_sets::vsd_state::kill(std::vector<api::num_var*> vars) {
   for(auto var : vars) {
     auto var_it = elements.find(var->get_id());
-    if(var_it != elements.end())
-      elements.erase(var_it);
+    if(var_it != elements.end()) elements.erase(var_it);
   }
 }
 
@@ -198,6 +182,33 @@ vsd_state *analysis::value_sets::vsd_state::bottom() {
 
 vsd_state* analysis::value_sets::vsd_state::top() {
   return new vsd_state();
+}
+
+api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
+  return ptr_set_t { };
+}
+
+summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(num_linear *lin) {
+//  vs_shared_t result;
+//  num_visitor nv;
+//  nv._([&](num_linear_term *n) {
+//    vs_shared_t next = queryVal(n->get_next());
+//    result = *(*vs_finite::single(n->get_scale()) * queryVal(n->get_var())) + next;
+//  });
+//  nv._([&](num_linear_vs *n) {
+//    result = n->get_value_set();
+//  });
+//  lin->accept(nv);
+//  return result;
+  return eval(lin);
+}
+
+summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(api::num_var *nv) {
+//  auto id_it = elements.find(nv->get_id());
+//  if(id_it == elements.end()) throw string(
+//      "analysis::value_sets::vsd_state::queryVal(api::num_var*): unknown variable");
+//  return id_it->second;
+  return lookup(nv->get_id());
 }
 
 numeric_state *analysis::value_sets::vsd_state::copy() {

@@ -38,7 +38,23 @@ void analysis::dstack::add_constraint(size_t from, size_t to, const ::cfg::edge 
             state_new->update(a);
             return state_new;
           };
-        });
+    });
+    v._([&](load *l) {
+      transfer_f = [=]() {
+        shared_ptr<memory_state> &state_c = this->state[from];
+        shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
+        state_new->update(l);
+        return state_new;
+      };
+    });
+    v._([&](store *s) {
+      transfer_f = [=]() {
+        shared_ptr<memory_state> &state_c = this->state[from];
+        shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
+        state_new->update(s);
+        return state_new;
+      };
+    });
     stmt->accept(v);
   });
   ev._([&](const cond_edge *edge) {

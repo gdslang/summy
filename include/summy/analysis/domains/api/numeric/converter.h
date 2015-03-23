@@ -37,6 +37,7 @@ public:
   }
 
   analysis::api::num_expr *conv_expr(gdsl::rreil::expr *expr);
+  analysis::api::num_expr *conv_expr(gdsl::rreil::linear *lin);
 };
 
 

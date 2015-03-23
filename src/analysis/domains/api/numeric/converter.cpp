@@ -167,3 +167,7 @@ analysis::api::num_expr *converter::conv_expr(gdsl::rreil::expr *expr) {
   expr->accept(ev);
   return result;
 }
+
+analysis::api::num_expr *analysis::api::converter::conv_expr(gdsl::rreil::linear *lin) {
+  return new num_expr_lin(conv_linear(lin));
+}

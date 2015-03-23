@@ -11,10 +11,11 @@
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/rreil/shared_copy.h>
 #include <summy/value_set/value_set.h>
-#include <algorithm>
-
+#include <summy/value_set/vs_finite.h>
 #include <cppgdsl/rreil/variable.h>
 #include <cppgdsl/rreil/id/id.h>
+#include <summy/rreil/id/memory_id.h>
+#include <algorithm>
 #include <iosfwd>
 #include <string>
 #include <sstream>
@@ -24,13 +25,20 @@
 using namespace analysis::api;
 using namespace summy;
 using namespace gdsl::rreil;
+using summy::rreil::memory_id;
 using summy::rreil::numeric_id;
 
 using namespace analysis;
 using namespace std;
 
+region_t &analysis::memory_state::dereference(id_shared_t id) {
+  auto id_it = deref.find(id);
+  if(id_it == deref.end()) tie(id_it, ignore) = deref.insert(make_pair(id, region_t { }));
+  return id_it->second;
+}
+
 void analysis::memory_state::put(std::ostream &out) const {
-  auto print_fields = [&](id_shared_t mem_id, region_t region) {
+  auto print_fields = [&](bool deref, id_shared_t mem_id, region_t region) {
     stringstream upper_boundary;
     stringstream field_line;
     stringstream offset_size_boundary;
@@ -74,7 +82,7 @@ void analysis::memory_state::put(std::ostream &out) const {
     offset_size_boundary << '-';
 
     stringstream memory_id_ss;
-    memory_id_ss << *mem_id;
+    memory_id_ss << (deref ? "*" : "") << *mem_id;
     string memory_id_str = memory_id_ss.str();
 
     string sep = " -> ";
@@ -91,11 +99,11 @@ void analysis::memory_state::put(std::ostream &out) const {
 
   out << "Regions: {" << endl;
   for(auto region_mapping : regions)
-    print_fields(region_mapping.first, region_mapping.second);
+    print_fields(false, region_mapping.first, region_mapping.second);
   out << "}" << endl;
   out << "Deref: {" << endl;
   for(auto region_mapping : deref)
-    print_fields(region_mapping.first, region_mapping.second);
+    print_fields(true, region_mapping.first, region_mapping.second);
   out << "}" << endl;
   out << "Child state: {" << endl;
   out << *child_state;
@@ -158,11 +166,10 @@ id_shared_t analysis::memory_state::transVar(id_shared_t var_id, size_t offset, 
 num_linear *analysis::memory_state::transLE(id_shared_t var_id, size_t offset, size_t size) {
   auto &region = regions[var_id];
   auto field_it = region.find(offset);
-  ;
-  if(field_it != region.end()) {
-    field &f = field_it->second;
-    if(f.size == size) return new num_linear_term(new num_var(f.num_id));
-  }
+  if(field_it == region.end()) tie(field_it, ignore) = region.insert(
+      make_pair(0, field { size, numeric_id::generate() }));
+  field &f = field_it->second;
+  if(f.size == size) return new num_linear_term(new num_var(f.num_id));
   return new num_linear_vs(value_set::top);
 }
 
@@ -170,8 +177,15 @@ analysis::memory_state::memory_state(numeric_state *child_state, bool start_bott
     child_state(child_state) {
   auto arch_ptr = [&](string id_name) {
     num_var *nv = new num_var(shared_ptr<gdsl::rreil::id>(new arch_id(id_name)));
-    child_state->assume(nv, { ptr(nv->get_id(), 0) });
+
+    field f = field {64, numeric_id::generate()};
+    region_t r = region_t {make_pair(0, f)};
+    regions.insert(make_pair(nv->get_id(), r));
+
+    num_var *ptr_var = new num_var(f.num_id);
+    child_state->assume(ptr_var, {ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nv->get_id())), vs_finite::zero)});
     delete nv;
+    delete ptr_var;
   };
   if(start_bottom) {
     /*
@@ -248,6 +262,66 @@ memory_state *analysis::memory_state::copy() {
 
 memory_state *analysis::memory_state::start_value(numeric_state *start_num) {
   return new memory_state(start_num, true);
+}
+
+void analysis::memory_state::update(gdsl::rreil::load *load) {
+  num_var *temp = new num_var(numeric_id::generate());
+  converter addr_cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
+    return transLE(id, offset, load->get_address()->get_size());
+  });
+  num_expr *addr_expr = addr_cv.conv_expr(load->get_address()->get_lin());
+  child_state->assign(temp, addr_expr);
+
+  ptr_set_t aliases = child_state->queryAls(temp);
+  for(auto &alias : aliases) {
+    region_t &region = dereference(alias.id);
+    auto zero_it = region.find(0);
+    if(region.find(0) == region.end()) tie(zero_it, ignore) = region.insert(make_pair(0, field { 64,
+        numeric_id::generate() }));
+    num_var *rhs = new num_var(zero_it->second.num_id);
+    num_expr *rhs_expr =  new num_expr_lin(new num_linear_term(rhs));
+    num_var *lhs = new num_var(
+        transVar(shared_copy(load->get_lhs()->get_id()), load->get_lhs()->get_offset(), load->get_size()));
+    child_state->assign(lhs, rhs_expr);
+
+    delete rhs_expr;
+    delete lhs;
+  }
+
+  child_state->kill({ temp });
+  delete temp;
+  delete addr_expr;
+}
+
+void analysis::memory_state::update(gdsl::rreil::store *store) {
+  num_var *temp = new num_var(numeric_id::generate());
+  converter addr_cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
+    return transLE(id, offset, store->get_address()->get_size());
+  });
+  num_expr *addr_expr = addr_cv.conv_expr(store->get_address()->get_lin());
+  child_state->assign(temp, addr_expr);
+
+  ptr_set_t aliases = child_state->queryAls(temp);
+  for(auto &alias : aliases) {
+    region_t &region = dereference(alias.id);
+    auto zero_it = region.find(0);
+    if(region.find(0) == region.end()) tie(zero_it, ignore) = region.insert(make_pair(0, field { 64,
+        numeric_id::generate() }));
+    num_var *lhs = new num_var(zero_it->second.num_id);
+
+    converter rhs_cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
+      return transLE(id, offset, store->get_size());
+    });
+    num_expr *rhs = rhs_cv.conv_expr(store->get_rhs());
+    child_state->assign(lhs, rhs);
+
+    delete lhs;
+    delete rhs;
+  }
+
+  child_state->kill({ temp });
+  delete temp;
+  delete addr_expr;
 }
 
 memory_state *analysis::memory_state::bottom(numeric_state *bottom_num) {

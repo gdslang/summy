@@ -45,6 +45,8 @@ private:
   numeric_state *child_state;
   region_map_t regions;
   deref_t deref;
+
+  region_t &dereference(id_shared_t id);
 protected:
   void put(std::ostream &out) const;
   region_t &region(id_shared_t id);
@@ -76,6 +78,8 @@ public:
   memory_state *box(domain_state *other, size_t current_node);
 
   void update(gdsl::rreil::assign *assign);
+  void update(gdsl::rreil::load *load);
+  void update(gdsl::rreil::store *store);
 
   memory_state *copy();
 

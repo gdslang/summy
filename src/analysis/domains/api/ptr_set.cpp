@@ -20,6 +20,6 @@ bool ptr::operator <(const ptr &other) const {
 }
 
 std::ostream& analysis::api::operator <<(std::ostream &out, const ptr &_this) {
-  out << "(" << _this.id << " + " << *_this.offset << ")" << endl;
+  out << "(" << *_this.id << " + " << *_this.offset << ")";
   return out;
 }

@@ -14,3 +14,14 @@
 #include "numeric/converter.h"
 
 #include "ptr_set.h"
+
+#include <memory>
+#include <set>
+
+namespace analysis {
+namespace api {
+
+std::set<num_var*> vars(num_expr *expr);
+
+}
+}

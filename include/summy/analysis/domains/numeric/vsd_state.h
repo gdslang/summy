@@ -78,10 +78,14 @@ public:
   void equate_kill(num_var_pairs_t vars);
   void fold(num_var_pairs_t vars);
 
-  static vsd_state *bottom();
-  static vsd_state *top();
+  api::ptr_set_t queryAls(api::num_var *nv);
+  summy::vs_shared_t queryVal(api::num_linear *lin);
+  summy::vs_shared_t queryVal(api::num_var *nv);
 
   numeric_state *copy();
+
+  static vsd_state *bottom();
+  static vsd_state *top();
 };
 
 }
