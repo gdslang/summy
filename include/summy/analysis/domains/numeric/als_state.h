@@ -19,7 +19,8 @@ namespace api {
 class num_linear;
 }
 
-typedef std::tuple<id_shared_t, std::set<id_shared_t, id_less_no_version>> singleton_t;
+typedef std::set<id_shared_t, id_less_no_version> id_set_t;
+typedef std::tuple<id_shared_t, id_set_t> singleton_t;
 typedef std::tuple_element<0, singleton_t>::type singleton_key_t;
 typedef std::tuple_element<1, singleton_t>::type singleton_value_t;
 typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> elements_t;
@@ -31,24 +32,17 @@ class als_state: public numeric_state {
 private:
   numeric_state *child_state;
   elements_t elements;
-
-  struct temp_s {
-    als_state &_this;
-    api::num_var *temp;
-    ~temp_s();
-  };
-
 protected:
   void put(std::ostream &out) const;
 public:
   als_state(numeric_state *child_state, elements_t elements) :
-    child_state(child_state), elements(elements) {
+      child_state(child_state), elements(elements) {
   }
   als_state(numeric_state *child_state) :
-    child_state(child_state), elements(elements_t {}) {
+      child_state(child_state), elements(elements_t { }) {
   }
   als_state(als_state const&o) :
-    child_state(o.child_state->copy()), elements(o.elements) {
+      child_state(o.child_state->copy()), elements(o.elements) {
   }
   ~als_state();
 
@@ -60,7 +54,8 @@ public:
 
   bool operator>=(domain_state const &other) const;
 
-  als_state *join(domain_state *other, size_t current_node);;
+  als_state *join(domain_state *other, size_t current_node);
+  ;
   als_state *box(domain_state *other, size_t current_node);
 
   void assign(api::num_var *lhs, api::num_expr *rhs);
@@ -74,7 +69,9 @@ public:
   summy::vs_shared_t queryVal(api::num_linear *lin);
   summy::vs_shared_t queryVal(api::num_var *nv);
 
-  numeric_state *copy();
+  als_state *copy() const;
+
+  static std::tuple<elements_t, numeric_state*, numeric_state*> compat(als_state const *a, als_state const *b);
 };
 
 }

@@ -46,6 +46,13 @@ private:
   region_map_t regions;
   deref_t deref;
 
+  struct temp_s {
+    memory_state &_this;
+    api::num_var *var;
+    ~temp_s();
+  };
+  temp_s assign_address(gdsl::rreil::address *a);
+
   region_t &dereference(id_shared_t id);
 protected:
   void put(std::ostream &out) const;
@@ -81,7 +88,7 @@ public:
   void update(gdsl::rreil::load *load);
   void update(gdsl::rreil::store *store);
 
-  memory_state *copy();
+  memory_state *copy() const;
 
   static memory_state *start_value(numeric_state *start_num);
   static memory_state *bottom(numeric_state *bottom_num);

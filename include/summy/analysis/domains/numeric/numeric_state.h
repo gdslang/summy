@@ -41,7 +41,7 @@ public:
   virtual summy::vs_shared_t queryVal(api::num_linear *lin) = 0;
   virtual summy::vs_shared_t queryVal(api::num_var *nv) = 0;
 
-  virtual numeric_state *copy() = 0;
+  virtual numeric_state *copy() const = 0;
 };
 
 }

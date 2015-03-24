@@ -82,7 +82,7 @@ public:
   summy::vs_shared_t queryVal(api::num_linear *lin);
   summy::vs_shared_t queryVal(api::num_var *nv);
 
-  numeric_state *copy();
+  numeric_state *copy() const;
 
   static vsd_state *bottom();
   static vsd_state *top();

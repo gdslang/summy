@@ -211,6 +211,6 @@ summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(api::num_var *nv) {
   return lookup(nv->get_id());
 }
 
-numeric_state *analysis::value_sets::vsd_state::copy() {
+numeric_state *analysis::value_sets::vsd_state::copy() const {
   return new vsd_state(*this);
 }

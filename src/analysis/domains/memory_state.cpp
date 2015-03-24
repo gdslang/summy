@@ -31,6 +31,23 @@ using summy::rreil::numeric_id;
 using namespace analysis;
 using namespace std;
 
+analysis::memory_state::temp_s::~temp_s() {
+  _this.child_state->kill({ var });
+  delete var;
+}
+
+memory_state::temp_s analysis::memory_state::assign_address(address *a) {
+  num_var *var = new num_var(numeric_id::generate());
+  converter addr_cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
+    return transLE(id, offset, a->get_size());
+  });
+  num_expr *addr_expr = addr_cv.conv_expr(a->get_lin());
+  child_state->assign(var, addr_expr);
+  delete addr_expr;
+
+  return temp_s { *this, var };
+}
+
 region_t &analysis::memory_state::dereference(id_shared_t id) {
   auto id_it = deref.find(id);
   if(id_it == deref.end()) tie(id_it, ignore) = deref.insert(make_pair(id, region_t { }));
@@ -256,7 +273,7 @@ void analysis::memory_state::update(gdsl::rreil::assign *assign) {
   delete n_var;
 }
 
-memory_state *analysis::memory_state::copy() {
+memory_state *analysis::memory_state::copy() const {
   return new memory_state(*this);
 }
 
@@ -265,15 +282,9 @@ memory_state *analysis::memory_state::start_value(numeric_state *start_num) {
 }
 
 void analysis::memory_state::update(gdsl::rreil::load *load) {
-  num_var *temp = new num_var(numeric_id::generate());
-  converter addr_cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
-    return transLE(id, offset, load->get_address()->get_size());
-  });
-  num_expr *addr_expr = addr_cv.conv_expr(load->get_address()->get_lin());
-  child_state->assign(temp, addr_expr);
-  delete addr_expr;
+  auto temp = assign_address(load->get_address());
 
-  ptr_set_t aliases = child_state->queryAls(temp);
+  ptr_set_t aliases = child_state->queryAls(temp.var);
   for(auto &alias : aliases) {
     region_t &region = dereference(alias.id);
     auto zero_it = region.find(0);
@@ -288,21 +299,12 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
     delete rhs_expr;
     delete lhs;
   }
-
-  child_state->kill({ temp });
-  delete temp;
 }
 
 void analysis::memory_state::update(gdsl::rreil::store *store) {
-  num_var *temp = new num_var(numeric_id::generate());
-  converter addr_cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
-    return transLE(id, offset, store->get_address()->get_size());
-  });
-  num_expr *addr_expr = addr_cv.conv_expr(store->get_address()->get_lin());
-  child_state->assign(temp, addr_expr);
-  delete addr_expr;
+  auto temp = assign_address(store->get_address());;
 
-  ptr_set_t aliases = child_state->queryAls(temp);
+  ptr_set_t aliases = child_state->queryAls(temp.var);
   for(auto &alias : aliases) {
     region_t &region = dereference(alias.id);
     auto zero_it = region.find(0);
@@ -319,9 +321,6 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
     delete lhs;
     delete rhs;
   }
-
-  child_state->kill({ temp });
-  delete temp;
 }
 
 memory_state *analysis::memory_state::bottom(numeric_state *bottom_num) {

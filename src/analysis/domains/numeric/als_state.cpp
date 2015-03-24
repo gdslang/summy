@@ -7,16 +7,13 @@
 
 #include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/analysis/domains/api/api.h>
+#include <summy/value_set/value_set.h>
+#include <algorithm>
 
 using namespace analysis;
 using namespace analysis::api;
 using namespace std;
-
-
-analysis::als_state::temp_s::~temp_s() {
-  _this.child_state->kill({ temp });
-  delete temp;
-}
+using namespace summy;
 
 void als_state::put(std::ostream &out) const {
   bool first = true;
@@ -24,17 +21,13 @@ void als_state::put(std::ostream &out) const {
   for(auto &elem : elements) {
     id_shared_t id = elem.first;
     singleton_value_t const &aliases = elem.second;
-    if(!first)
-      out << ", ";
-    else
-      first = false;
+    if(!first) out << ", ";
+    else first = false;
     out << "P(" << *id << ") -> {";
     bool first = true;
     for(auto &alias : aliases) {
-      if(first)
-        first = false;
-      else
-        out << ", ";
+      if(first) first = false;
+      else out << ", ";
       out << *alias;
     }
     out << "}";
@@ -55,31 +48,36 @@ bool als_state::is_bottom() const {
 
 bool als_state::operator >=(const domain_state &other) const {
   als_state const &other_casted = dynamic_cast<als_state const&>(other);
-  return *child_state >= *other_casted.child_state;
+  numeric_state *me_compat;
+  numeric_state *other_compat;
+  tie(ignore, me_compat, other_compat) = compat(this, &other_casted);
+  bool result = *me_compat >= *other_compat;
+  delete me_compat;
+  delete other_compat;
+  return result;
 }
 
 als_state *als_state::join(domain_state *other, size_t current_node) {
   als_state const *other_casted = dynamic_cast<als_state*>(other);
-  /*
-   * Broken, broken...
-   */
-  return new als_state(child_state->join(other_casted->child_state, 42), elements);
+  numeric_state *me_compat;
+  numeric_state *other_compat;
+  elements_t elements_compat;
+  tie(elements_compat, me_compat, other_compat) = compat(this, other_casted);
+  return new als_state(me_compat->join(other_compat, current_node), elements_compat);
 }
 
 als_state *als_state::box(domain_state *other, size_t current_node) {
   als_state const *other_casted = dynamic_cast<als_state*>(other);
-  /*
-   * Broken, broken...
-   */
-  return new als_state(child_state->box(other_casted->child_state, 42), elements);
+  numeric_state *me_compat;
+  numeric_state *other_compat;
+  elements_t elements_compat;
+  tie(elements_compat, me_compat, other_compat) = compat(this, other_casted);
+  return new als_state(me_compat->box(other_compat, current_node), elements_compat);
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-  cout << "ALS assign" << endl;
   set<num_var*> _vars = vars(rhs);
   for(auto &var : _vars) {
-    cout << "lhs: " << *var->get_id() << endl;
-    cout <<  "rhs var: " << *var->get_id() << endl;
     elements[lhs->get_id()] = elements[var->get_id()];
   }
   child_state->assign(lhs, rhs);
@@ -119,8 +117,7 @@ void als_state::fold(num_var_pairs_t vars) {
 api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
-  if(id_it == elements.end())
-    return result;
+  if(id_it == elements.end()) return result;
   singleton_value_t &aliases = id_it->second;
   for(auto alias : aliases) {
     num_var *nv = new num_var(alias);
@@ -144,6 +141,36 @@ summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
   return child_state->queryVal(nv);
 }
 
-numeric_state *als_state::copy() {
+als_state *als_state::copy() const {
   return new als_state(*this);
 }
+
+std::tuple<elements_t, numeric_state*, numeric_state*> analysis::als_state::compat(const als_state *a,
+    const als_state *b) {
+  numeric_state *a_ = a->child_state->copy();
+  numeric_state *b_ = b->child_state->copy();
+  elements_t r;
+  auto single = [&](id_shared_t id, numeric_state *n) {
+    num_var *nv = new num_var(id);
+    num_expr *top_expr = new num_expr_lin(new num_linear_vs(value_set::top));
+    n->assign(nv, top_expr);
+    delete nv;
+    delete top_expr;
+  };
+  for(auto &x : a->elements) {
+    auto x_b_it = b->elements.find(x.first);
+    if(x_b_it == b->elements.end()) single(x.first, a_);
+    else {
+      id_set_t combined;
+      set_union(x.second.begin(), x.second.end(), x_b_it->second.begin(), x_b_it->second.end(),
+          inserter(combined, combined.begin()));
+      r.insert(make_pair(x.first, combined));
+    }
+  }
+  for(auto &x : b->elements) {
+    auto x_a_it = a->elements.find(x.first);
+    if(x_a_it == a->elements.end()) single(x.first, b_);
+  }
+  return make_tuple(r, a_, b_);
+}
+
