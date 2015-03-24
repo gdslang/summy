@@ -35,7 +35,7 @@ typedef std::map<id_shared_t, region_t, id_less_no_version> region_map_t;
 /*
  * deref: numeric id -> memory region
  */
-typedef std::map<id_shared_t, region_t, id_less_no_version> deref_t;
+typedef region_map_t deref_t;
 
 /**
  * Memory domain state
@@ -92,6 +92,12 @@ public:
 
   static memory_state *start_value(numeric_state *start_num);
   static memory_state *bottom(numeric_state *bottom_num);
+
+  struct memory_head {
+    region_map_t regions;
+    deref_t deref;
+  };
+  static std::tuple<memory_head, numeric_state*, numeric_state*> compat(memory_state const *a, memory_state const *b);
 };
 
 }

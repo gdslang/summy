@@ -32,7 +32,7 @@ using namespace analysis;
 using namespace std;
 
 analysis::memory_state::temp_s::~temp_s() {
-  _this.child_state->kill({ var });
+  _this.child_state->kill( { var });
   delete var;
 }
 
@@ -227,22 +227,23 @@ bool analysis::memory_state::is_bottom() {
 }
 
 bool analysis::memory_state::operator >=(const domain_state &other) const {
-  /*
-   * Todo: This is broken
-   */
   memory_state const &other_casted = dynamic_cast<memory_state const&>(other);
-  return *child_state >= *other_casted.child_state;
+  numeric_state *me_compat;
+  numeric_state *other_compat;
+  tie(ignore, me_compat, other_compat) = compat(this, &other_casted);
+  bool result = *me_compat >= *other_compat;
+  delete me_compat;
+  delete other_compat;
+  return result;
 }
 
 memory_state *analysis::memory_state::join(domain_state *other, size_t current_node) {
-  /*
-   * Todo: This is broken
-   */
   memory_state *other_casted = dynamic_cast<memory_state *>(other);
-  region_map_t regions_new = regions;
-  for(auto region : other_casted->regions)
-    regions_new[region.first] = region.second;
-  return new memory_state(child_state->join(other_casted->child_state, current_node), regions_new, deref);
+  numeric_state *me_compat;
+  numeric_state *other_compat;
+  memory_head head_compat;
+  tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
+  return new memory_state(me_compat->join(other_compat, current_node), head_compat.regions, head_compat.deref);
 }
 
 memory_state *analysis::memory_state::widen(domain_state *other, size_t current_node) {
@@ -254,7 +255,12 @@ memory_state *analysis::memory_state::narrow(domain_state *other, size_t current
 }
 
 memory_state *analysis::memory_state::box(domain_state *other, size_t current_node) {
-  return new memory_state(*dynamic_cast<memory_state*>(other));
+  memory_state *other_casted = dynamic_cast<memory_state *>(other);
+  numeric_state *me_compat;
+  numeric_state *other_compat;
+  memory_head head_compat;
+  tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
+  return new memory_state(me_compat->box(other_compat, current_node), head_compat.regions, head_compat.deref);
 }
 
 void analysis::memory_state::update(gdsl::rreil::assign *assign) {
@@ -291,7 +297,7 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
     if(region.find(0) == region.end()) tie(zero_it, ignore) = region.insert(make_pair(0, field { 64,
         numeric_id::generate() }));
     num_var *rhs = new num_var(zero_it->second.num_id);
-    num_expr *rhs_expr =  new num_expr_lin(new num_linear_term(rhs));
+    num_expr *rhs_expr = new num_expr_lin(new num_linear_term(rhs));
     num_var *lhs = new num_var(
         transVar(shared_copy(load->get_lhs()->get_id()), load->get_lhs()->get_offset(), load->get_size()));
     child_state->assign(lhs, rhs_expr);
@@ -302,7 +308,8 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
 }
 
 void analysis::memory_state::update(gdsl::rreil::store *store) {
-  auto temp = assign_address(store->get_address());;
+  auto temp = assign_address(store->get_address());
+  ;
 
   ptr_set_t aliases = child_state->queryAls(temp.var);
   for(auto &alias : aliases) {
@@ -325,4 +332,81 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
 
 memory_state *analysis::memory_state::bottom(numeric_state *bottom_num) {
   return new memory_state(bottom_num, false);
+}
+
+std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::memory_state::compat(
+    const memory_state *a, const memory_state *b) {
+  numeric_state *a_n = a->child_state->copy();
+  numeric_state *b_n = b->child_state->copy();
+
+  auto join_region_map = [&](region_map_t const &a_map, region_map_t const &b_map) {
+    region_map_t result_map;
+
+    auto handle_region = [&](id_shared_t id, region_t const &region_a, region_t const &region_b) {
+      num_var_pairs_t equate_kill_vars;
+      for(auto &field_it : region_a) {
+        auto field_b_it = region_b.find(field_it.first);
+        if(field_b_it != region_b.end()) {
+          field const &f = field_it.second;
+          field const &f_b = field_b_it->second;
+          if(!(*f.num_id == *f_b.num_id))
+            equate_kill_vars.push_back(make_tuple(new num_var(f.num_id), new num_var(f_b.num_id)));
+        }
+      }
+      b_n->equate_kill(equate_kill_vars);
+      for(auto pair : equate_kill_vars) {
+        num_var *a, *b;
+        tie(a, b) = pair;
+        delete a;
+        delete b;
+      }
+
+      region_map_t::iterator head_region_it;
+      tie(head_region_it, ignore) = result_map.insert(make_pair(id, region_t()));
+      region_t &region = head_region_it->second;
+
+      auto join = [&](numeric_state *n, region_t const &from, region_t const &to) {
+        auto kill = [&](id_shared_t id) {
+          num_var *nv = new num_var(id);
+          n->kill({nv});
+          delete nv;
+        };
+
+        for(auto &field_it : from) {
+          field const &f = field_it.second;
+          auto field_b_it = to.find(field_it.first);
+          if(field_b_it != to.end()) {
+            field const &f_b = field_b_it->second;
+            if(f.size == f_b.size)
+              region.insert(make_pair(field_it.first, field {f.size, f.num_id}));
+            else
+              kill(f.num_id);
+          } else
+            kill(f.num_id);
+        }
+      };
+
+      join(a_n, region_a, region_b);
+      join(b_n, region_b, region_a);
+    };
+    for(auto &region_it : a_map) {
+      auto region_b_it = b_map.find(region_it.first);
+      if(region_b_it != b_map.end())
+        handle_region(region_it.first, region_it.second, region_b_it->second);
+      else
+        handle_region(region_it.first, region_it.second, region_t());
+    }
+    for(auto &region_b_it : b_map) {
+      if(a_map.find(region_b_it.first) == a_map.end())
+        handle_region(region_b_it.first, region_b_it.second, region_t());
+    }
+
+    return result_map;
+  };
+
+  memory_head head;
+  head.regions = join_region_map(a->regions, b->regions);
+  head.deref = join_region_map(a->deref, b->deref);
+
+  return make_tuple(head, a_n, b_n);
 }
