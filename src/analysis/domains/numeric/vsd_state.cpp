@@ -109,6 +109,8 @@ vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t cur
   if(other_casted->is_bottom()) return new vsd_state(*this);
   else if(is_bottom()) return new vsd_state(*other_casted);
 
+  cout << *this << " ===JOIN=== " << *other_casted << endl;
+
   elements_t elems_new;
   auto join = [&](elements_t const &from, elements_t const &to) {
     for(auto &mapping_first : from) {

@@ -252,6 +252,9 @@ memory_state *analysis::memory_state::join(domain_state *other, size_t current_n
   numeric_state *other_compat;
   memory_head head_compat;
   tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
+
+  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
+
   memory_state *result = new memory_state(me_compat->join(other_compat, current_node), head_compat.regions, head_compat.deref);
   delete me_compat;
   delete other_compat;
@@ -355,15 +358,15 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();
 
-//  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "compat OF" << endl;
-//    cout << *a << endl;
-//    cout << "WITH" << endl;
-//    cout << *b << endl;
-//  }
+  if(!a_n->is_bottom() && !b_n->is_bottom()) {
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "compat OF" << endl;
+    cout << *a << endl;
+    cout << "WITH" << endl;
+    cout << *b << endl;
+  }
 
   auto join_region_map = [&](region_map_t const &a_map, region_map_t const &b_map) {
     region_map_t result_map;
@@ -445,16 +448,16 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
   head.regions = join_region_map(a->regions, b->regions);
   head.deref = join_region_map(a->deref, b->deref);
 
-//  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-//  cout << "Result #1" << endl;
-//  cout << memory_state(a_n->copy(), head.regions, head.deref) << endl << endl;
-//  cout << "Result #2" << endl;
-//  cout << memory_state(b_n->copy(), head.regions, head.deref) << endl << endl;
-//
-//
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//  }
+  if(!a_n->is_bottom() && !b_n->is_bottom()) {
+  cout << "Result #1" << endl;
+  cout << memory_state(a_n->copy(), head.regions, head.deref) << endl << endl;
+  cout << "Result #2" << endl;
+  cout << memory_state(b_n->copy(), head.regions, head.deref) << endl << endl;
+
+
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+  }
   return make_tuple(head, a_n, b_n);
 }

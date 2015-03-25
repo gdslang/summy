@@ -65,14 +65,14 @@ int main(int argc, char **argv) {
 
   fp.iterate();
 
-  cout << "++++++++++" << endl;
-  ds.put(cout);
-  cout << "++++++++++" << endl;
+//  cout << "++++++++++" << endl;
+//  ds.put(cout);
+//  cout << "++++++++++" << endl;
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
   cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-    out << n.get_id() << " [label=\"" << *ds.get(n.get_id()) << "\"]";
+    out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
   });
   dot_fs.close();
 
