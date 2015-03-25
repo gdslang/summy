@@ -16,9 +16,11 @@
 #include <cppgdsl/gdsl.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <iostream>
 
 using namespace analysis;
 using namespace std;
+using namespace gdsl::rreil;
 
 /*
  * Tests für
@@ -81,9 +83,16 @@ static void state_asm(dstack *&ds_analyzed, string _asm) {
 
 TEST_F(dstack_test, OneFieldReplacesTwoFields) {
   dstack *ds_analyzed;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ds_analyzed,
-  "mov $99, %rax\n\
-   mov $20, %eax\n"));
+//  ASSERT_NO_FATAL_FAILURE(state_asm(ds_analyzed,
+//  "mov $99, %rax\n\
+//   mov $20, %eax\n"));
+    ASSERT_NO_FATAL_FAILURE(state_asm(ds_analyzed,
+    "mov $99, %rax\n"));
+
+  cout << "FOOOOOOOOOOOO" << endl;
+
+  auto result = ds_analyzed->result();
+  cout << *result.result[4]->queryVal(new lin_var(new variable(new arch_id("A"), 0))) << endl;
 
   /*
    * Todo: Zunächst ein Feld, dann zwei
