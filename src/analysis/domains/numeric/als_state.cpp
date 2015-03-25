@@ -63,16 +63,15 @@ als_state *als_state::join(domain_state *other, size_t current_node) {
   numeric_state *other_compat;
   elements_t elements_compat;
   tie(elements_compat, me_compat, other_compat) = compat(this, other_casted);
-  return new als_state(me_compat->join(other_compat, current_node), elements_compat);
+  als_state *result = new als_state(me_compat->join(other_compat, current_node), elements_compat);
+  delete me_compat;
+  delete other_compat;
+  return result;
 }
 
 als_state *als_state::box(domain_state *other, size_t current_node) {
   als_state const *other_casted = dynamic_cast<als_state*>(other);
-  numeric_state *me_compat;
-  numeric_state *other_compat;
-  elements_t elements_compat;
-  tie(elements_compat, me_compat, other_compat) = compat(this, other_casted);
-  return new als_state(me_compat->box(other_compat, current_node), elements_compat);
+  return other_casted->copy();
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {

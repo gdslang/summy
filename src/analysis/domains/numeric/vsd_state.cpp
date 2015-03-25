@@ -169,7 +169,6 @@ void analysis::value_sets::vsd_state::kill(std::vector<api::num_var*> vars) {
 }
 
 void analysis::value_sets::vsd_state::equate_kill(num_var_pairs_t vars) {
-  throw string("analysis::value_sets::vsd_state::assume(num_var_pairs_t)");
 }
 
 void analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {

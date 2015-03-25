@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   dt.transduce();
   dt.register_();
 
-//  try {
+  try {
 
   auto &cfg = dt.get_cfg();
   cfg.commit_updates();
@@ -73,10 +73,10 @@ int main(int argc, char **argv) {
   dot_fs.open("output.dot", ios::out);
   cfg.dot(dot_fs);
   dot_fs.close();
-//
-//  } catch(string &s) {
-//    cout << s << endl;
-//  }
+
+  } catch(string &s) {
+    cout << s << endl;
+  }
 
 //  g.set_code(NULL, 0, 0);
 //  free(buffer);

@@ -243,7 +243,10 @@ memory_state *analysis::memory_state::join(domain_state *other, size_t current_n
   numeric_state *other_compat;
   memory_head head_compat;
   tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
-  return new memory_state(me_compat->join(other_compat, current_node), head_compat.regions, head_compat.deref);
+  memory_state *result = new memory_state(me_compat->join(other_compat, current_node), head_compat.regions, head_compat.deref);
+  delete me_compat;
+  delete other_compat;
+  return result;
 }
 
 memory_state *analysis::memory_state::widen(domain_state *other, size_t current_node) {
@@ -256,11 +259,7 @@ memory_state *analysis::memory_state::narrow(domain_state *other, size_t current
 
 memory_state *analysis::memory_state::box(domain_state *other, size_t current_node) {
   memory_state *other_casted = dynamic_cast<memory_state *>(other);
-  numeric_state *me_compat;
-  numeric_state *other_compat;
-  memory_head head_compat;
-  tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
-  return new memory_state(me_compat->box(other_compat, current_node), head_compat.regions, head_compat.deref);
+  return other_casted->copy();
 }
 
 void analysis::memory_state::update(gdsl::rreil::assign *assign) {
