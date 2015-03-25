@@ -51,6 +51,8 @@ void fixpoint::iterate() {
          */
         auto evaluated = constraint();
 
+//        cout << "Evaluated: " << *evaluated << endl;
+
         /*
          * Apply box operator if this edge is a 'back edge' with respect
          * to the given ordering
@@ -73,6 +75,8 @@ void fixpoint::iterate() {
 //      cout << "Acc: " << *accumulator << endl;
 
       propagate = !(*current >= *accumulator);
+
+//      cout << "prop: " << propagate << endl;
     } else
     /*
      * If the node has no incoming analysis dependency edges, we keep its default

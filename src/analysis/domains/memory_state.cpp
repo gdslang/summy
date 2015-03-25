@@ -238,7 +238,16 @@ bool analysis::memory_state::operator >=(const domain_state &other) const {
 }
 
 memory_state *analysis::memory_state::join(domain_state *other, size_t current_node) {
+//  cout << "JOIN OF" << endl;
+//  cout << *this << endl;
+//  cout << "WITH" << endl;
+//  cout << *other << endl;
   memory_state *other_casted = dynamic_cast<memory_state *>(other);
+  if(is_bottom())
+    return other_casted->copy();
+  else if(other_casted->is_bottom())
+    return copy();
+
   numeric_state *me_compat;
   numeric_state *other_compat;
   memory_head head_compat;
@@ -263,6 +272,9 @@ memory_state *analysis::memory_state::box(domain_state *other, size_t current_no
 }
 
 void analysis::memory_state::update(gdsl::rreil::assign *assign) {
+  if(is_bottom())
+    return;
+
   variable *var = assign->get_lhs();
   id_shared_t num_id = transVar(shared_copy(var->get_id()), var->get_offset(), assign->get_size());
   num_var *n_var = new num_var(num_id);
@@ -287,6 +299,9 @@ memory_state *analysis::memory_state::start_value(numeric_state *start_num) {
 }
 
 void analysis::memory_state::update(gdsl::rreil::load *load) {
+  if(is_bottom())
+    return;
+
   auto temp = assign_address(load->get_address());
 
   ptr_set_t aliases = child_state->queryAls(temp.var);
@@ -307,8 +322,10 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
 }
 
 void analysis::memory_state::update(gdsl::rreil::store *store) {
+  if(is_bottom())
+    return;
+
   auto temp = assign_address(store->get_address());
-  ;
 
   ptr_set_t aliases = child_state->queryAls(temp.var);
   for(auto &alias : aliases) {
@@ -338,6 +355,16 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();
 
+//  if(!a_n->is_bottom() && !b_n->is_bottom()) {
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "compat OF" << endl;
+//    cout << *a << endl;
+//    cout << "WITH" << endl;
+//    cout << *b << endl;
+//  }
+
   auto join_region_map = [&](region_map_t const &a_map, region_map_t const &b_map) {
     region_map_t result_map;
 
@@ -348,8 +375,11 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
         if(field_b_it != region_b.end()) {
           field const &f = field_it.second;
           field const &f_b = field_b_it->second;
-          if(!(*f.num_id == *f_b.num_id))
+          if(!(*f.num_id == *f_b.num_id)) {
             equate_kill_vars.push_back(make_tuple(new num_var(f.num_id), new num_var(f_b.num_id)));
+//            cout << "Some vars get equate-killed..." << *f.num_id << " / " << *f_b.num_id << endl;
+//            cout << "handle id..." << *id << endl;
+          }
         }
       }
       b_n->equate_kill(equate_kill_vars);
@@ -360,9 +390,10 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
         delete b;
       }
 
-      region_map_t::iterator head_region_it;
-      tie(head_region_it, ignore) = result_map.insert(make_pair(id, region_t()));
-      region_t &region = head_region_it->second;
+//      region_map_t::iterator head_region_it;
+//      tie(head_region_it, ignore) = result_map.insert(make_pair(id, region_t()));
+//      region_t &region = head_region_it->second;
+      region_t region;
 
       auto join = [&](numeric_state *n, region_t const &from, region_t const &to) {
         auto kill = [&](id_shared_t id) {
@@ -370,6 +401,8 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
           n->kill({nv});
           delete nv;
         };
+
+//        cout << "n equals " << (a_n == n ? "a" : "b") << endl;
 
         for(auto &field_it : from) {
           field const &f = field_it.second;
@@ -383,10 +416,15 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
           } else
             kill(f.num_id);
         }
+
       };
 
-      join(a_n, region_a, region_b);
-      join(b_n, region_b, region_a);
+      join(b_n, region_a, region_b);
+      join(a_n, region_b, region_a);
+
+      if(region.size() > 0)
+        result_map.insert(make_pair(id, region));
+
     };
     for(auto &region_it : a_map) {
       auto region_b_it = b_map.find(region_it.first);
@@ -407,5 +445,16 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
   head.regions = join_region_map(a->regions, b->regions);
   head.deref = join_region_map(a->deref, b->deref);
 
+//  if(!a_n->is_bottom() && !b_n->is_bottom()) {
+//  cout << "Result #1" << endl;
+//  cout << memory_state(a_n->copy(), head.regions, head.deref) << endl << endl;
+//  cout << "Result #2" << endl;
+//  cout << memory_state(b_n->copy(), head.regions, head.deref) << endl << endl;
+//
+//
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//  }
   return make_tuple(head, a_n, b_n);
 }

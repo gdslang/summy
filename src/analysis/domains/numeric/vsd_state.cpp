@@ -149,8 +149,10 @@ vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t curr
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
   vs_shared_t er = eval(rhs);
+  _is_bottom = _is_bottom || *er == value_set::bottom;
+  if(is_bottom())
+    return;
   elements[lhs->get_id()] = er;
-  _is_bottom = _is_bottom && *er == value_set::bottom;
 }
 
 void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
@@ -158,6 +160,8 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
 }
 
 void analysis::value_sets::vsd_state::assume(api::num_var *lhs, ptr_set_t aliases) {
+  if(is_bottom())
+    return;
 //  throw string("analysis::value_sets::vsd_state::assume(num_var, ptr_set_t)");
 }
 
@@ -169,6 +173,12 @@ void analysis::value_sets::vsd_state::kill(std::vector<api::num_var*> vars) {
 }
 
 void analysis::value_sets::vsd_state::equate_kill(num_var_pairs_t vars) {
+  for(auto var_pair : vars) {
+    num_var *a, *b;
+    tie(a, b) = var_pair;
+    elements[a->get_id()] = elements[b->get_id()];
+    elements.erase(b->get_id());
+  }
 }
 
 void analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {

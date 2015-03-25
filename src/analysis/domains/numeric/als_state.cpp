@@ -87,6 +87,8 @@ void als_state::assume(api::num_expr_cmp *cmp) {
 }
 
 void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
+  if(is_bottom())
+    return;
   for(auto &alias : aliases) {
     elements[lhs->get_id()].insert(alias.id);
     num_expr *e = new num_expr_lin(new num_linear_vs(alias.offset));
@@ -97,7 +99,7 @@ void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
 
 void als_state::kill(std::vector<api::num_var*> vars) {
   for(auto &var : vars) {
-    cout << "ALS removing " << *var << endl;
+//    cout << "ALS removing " << *var << endl;
 
     auto var_it = elements.find(var->get_id());
     if(var_it != elements.end()) elements.erase(var_it);
@@ -106,6 +108,12 @@ void als_state::kill(std::vector<api::num_var*> vars) {
 }
 
 void als_state::equate_kill(num_var_pairs_t vars) {
+  for(auto var_pair : vars) {
+    num_var *a, *b;
+    tie(a, b) = var_pair;
+    elements[a->get_id()] = elements[b->get_id()];
+    elements.erase(b->get_id());
+  }
   child_state->equate_kill(vars);
 }
 
