@@ -38,53 +38,6 @@ void value_sets::vsd_state::put(std::ostream &out) const {
   out << "}";
 }
 
-vs_shared_t value_sets::vsd_state::eval(num_linear *lin) {
-  num_visitor nv;
-  vs_shared_t result;
-  nv._([&](num_linear_term *lt) {
-    vs_shared_t scale = vs_finite::single(lt->get_scale());
-    vs_shared_t id = lookup(lt->get_var()->get_id());
-    vs_shared_t next = eval(lt->get_next());
-    result = *(*scale * id) + next;
-  });
-  nv._([&](num_linear_vs *lvs) {
-    result = lvs->get_value_set();
-  });
-  lin->accept(nv);
-  return result;
-}
-
-vs_shared_t value_sets::vsd_state::eval(num_expr *exp) {
-  num_visitor nv;
-  vs_shared_t result;
-  nv._([&](num_expr_cmp *cmp) {
-    throw string("value_sets::vsd_state::eval");
-  });
-  nv._([&](num_expr_lin *lin) {
-    result = eval(lin->get_inner());
-  });
-  nv._([&](num_expr_bin *bin) {
-    vs_shared_t opnd1 = eval(bin->get_opnd1());
-    vs_shared_t opnd2 = eval(bin->get_opnd2());
-    switch(bin->get_op()) {
-      case MUL: {
-        result = *opnd1 * opnd2;
-        break;
-      }
-      case DIV: {
-        result = *opnd1 / opnd2;
-        break;
-      }
-      default: {
-        result = value_set::top;
-        break;
-      }
-    }
-  });
-  exp->accept(nv);
-  return result;
-}
-
 summy::vs_shared_t value_sets::vsd_state::lookup(id_shared_t id) {
   auto id_it = elements.find(id);
   if(id_it != elements.end()) return id_it->second;
@@ -150,7 +103,7 @@ vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t curr
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
-  vs_shared_t er = eval(rhs);
+  vs_shared_t er = queryVal(rhs);
   _is_bottom = _is_bottom || *er == value_set::bottom;
   if(is_bottom())
     return;
@@ -200,25 +153,53 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
 }
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(num_linear *lin) {
-//  vs_shared_t result;
-//  num_visitor nv;
-//  nv._([&](num_linear_term *n) {
-//    vs_shared_t next = queryVal(n->get_next());
-//    result = *(*vs_finite::single(n->get_scale()) * queryVal(n->get_var())) + next;
-//  });
-//  nv._([&](num_linear_vs *n) {
-//    result = n->get_value_set();
-//  });
-//  lin->accept(nv);
-//  return result;
-  return eval(lin);
+  num_visitor nv;
+  vs_shared_t result;
+  nv._([&](num_linear_term *lt) {
+    vs_shared_t scale = vs_finite::single(lt->get_scale());
+    vs_shared_t id = lookup(lt->get_var()->get_id());
+    vs_shared_t next = queryVal(lt->get_next());
+    result = *(*scale * id) + next;
+  });
+  nv._([&](num_linear_vs *lvs) {
+    result = lvs->get_value_set();
+  });
+  lin->accept(nv);
+  return result;
+}
+
+vs_shared_t value_sets::vsd_state::queryVal(num_expr *exp) {
+  num_visitor nv;
+  vs_shared_t result;
+  nv._([&](num_expr_cmp *cmp) {
+    throw string("value_sets::vsd_state::eval");
+  });
+  nv._([&](num_expr_lin *lin) {
+    result = queryVal(lin->get_inner());
+  });
+  nv._([&](num_expr_bin *bin) {
+    vs_shared_t opnd1 = queryVal(bin->get_opnd1());
+    vs_shared_t opnd2 = queryVal(bin->get_opnd2());
+    switch(bin->get_op()) {
+      case MUL: {
+        result = *opnd1 * opnd2;
+        break;
+      }
+      case DIV: {
+        result = *opnd1 / opnd2;
+        break;
+      }
+      default: {
+        result = value_set::top;
+        break;
+      }
+    }
+  });
+  exp->accept(nv);
+  return result;
 }
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(api::num_var *nv) {
-//  auto id_it = elements.find(nv->get_id());
-//  if(id_it == elements.end()) throw string(
-//      "analysis::value_sets::vsd_state::queryVal(api::num_var*): unknown variable");
-//  return id_it->second;
   return lookup(nv->get_id());
 }
 

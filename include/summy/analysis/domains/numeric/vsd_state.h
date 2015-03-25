@@ -59,9 +59,6 @@ public:
     return _is_bottom;
   }
 
-  summy::vs_shared_t eval(api::num_linear *lin);
-  summy::vs_shared_t eval(api::num_expr *exp);
-
   summy::vs_shared_t lookup(id_shared_t id);
 
   bool operator>=(domain_state const &other) const;
@@ -80,6 +77,7 @@ public:
 
   api::ptr_set_t queryAls(api::num_var *nv);
   summy::vs_shared_t queryVal(api::num_linear *lin);
+  summy::vs_shared_t queryVal(api::num_expr *lin);
   summy::vs_shared_t queryVal(api::num_var *nv);
 
   numeric_state *copy() const;

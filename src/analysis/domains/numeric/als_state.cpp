@@ -105,7 +105,6 @@ void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
 void als_state::kill(std::vector<api::num_var*> vars) {
   for(auto &var : vars) {
 //    cout << "ALS removing " << *var << endl;
-
     auto var_it = elements.find(var->get_id());
     if(var_it != elements.end()) elements.erase(var_it);
   }
@@ -131,7 +130,7 @@ void als_state::fold(num_var_pairs_t vars) {
 api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
-  if(id_it == elements.end()) return result;
+  if(id_it == elements.end()) return child_state->queryAls(nv);
   singleton_value_t &aliases = id_it->second;
   for(auto alias : aliases) {
     num_var *nv = new num_var(alias);
@@ -143,16 +142,41 @@ api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_linear *lin) {
   /*
-   * Todo: broken
+   * Todo: merge with eval() of vsd_state
    */
-  return child_state->queryVal(lin);
+  num_visitor nv;
+  vs_shared_t result;
+  nv._([&](num_linear_term *lt) {
+    vs_shared_t scale = vs_finite::single(lt->get_scale());
+    vs_shared_t id = queryVal(lt->get_var());
+    vs_shared_t next = queryVal(lt->get_next());
+    result = *(*scale * id) + next;
+  });
+  nv._([&](num_linear_vs *lvs) {
+    result = lvs->get_value_set();
+  });
+  lin->accept(nv);
+  return result;
 }
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
-  /*
-   * Todo: broken
-   */
-  return child_state->queryVal(nv);
+  vs_shared_t child_value = child_state->queryVal(nv);
+  auto id_set_it = elements.find(nv->get_id());
+  if(id_set_it == elements.end() || id_set_it->second.size() == 0)
+    return child_value;
+  vs_shared_t acc;
+  bool first = true;
+  for(auto id : id_set_it->second) {
+    num_var *child_var = new num_var(id);
+    vs_shared_t offset = child_state->queryVal(child_var);
+    vs_shared_t next = *child_value + offset;
+    if(first) {
+      acc = next;
+      first = false;
+    } else
+      acc = value_set::join(next, acc);
+  }
+  return acc;
 }
 
 als_state *als_state::copy() const {

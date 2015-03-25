@@ -13,6 +13,9 @@
 #include "numeric/num_visitor.h"
 #include "numeric/converter.h"
 
+#include "memory/mem_expr.h"
+#include "memory/mem_visitor.h"
+
 #include "ptr_set.h"
 
 #include <memory>

@@ -12,9 +12,11 @@
 #include <summy/analysis/domains/api/api.h>
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
+#include <summy/analysis/domains/api/api.h>
 #include <cppgdsl/rreil/statement/assign.h>
 #include <memory>
 #include <map>
+#include <set>
 #include <tuple>
 
 namespace analysis {
@@ -37,21 +39,29 @@ typedef std::map<id_shared_t, region_t, id_less_no_version> region_map_t;
  */
 typedef region_map_t deref_t;
 
+class memory_state;
+class memory_address {
+private:
+  memory_state &_this;
+  api::num_var *var;
+public:
+  memory_address(memory_state &_this, api::num_var *var);
+  memory_address(memory_address const&) = delete;
+  ~memory_address();
+  api::num_var *get_var() {
+    return var;
+  }
+};
+
 /**
  * Memory domain state
  */
 class memory_state: public domain_state {
+  friend class memory_address;
 private:
   numeric_state *child_state;
   region_map_t regions;
   deref_t deref;
-
-  struct temp_s {
-    memory_state &_this;
-    api::num_var *var;
-    ~temp_s();
-  };
-  temp_s assign_address(gdsl::rreil::address *a);
 
   region_t &dereference(id_shared_t id);
 protected:
@@ -87,6 +97,10 @@ public:
   void update(gdsl::rreil::assign *assign);
   void update(gdsl::rreil::load *load);
   void update(gdsl::rreil::store *store);
+
+  std::unique_ptr<memory_address> to_memory_address(gdsl::rreil::address *a);
+  summy::vs_shared_t queryVal(gdsl::rreil::linear *l);
+  std::set<summy::vs_shared_t> queryPts(std::unique_ptr<memory_address> &address);
 
   memory_state *copy() const;
 
