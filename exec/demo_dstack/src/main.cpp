@@ -61,18 +61,29 @@ int main(int argc, char **argv) {
   vsd_state vsds;
 //  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(new num_var(numeric_id::generate()), new num_linear_vs(vs_finite::single(9))), EQ);
 
-//  vs_shared_t vs = make_shared<vs_finite>(vs_finite::elements_t {-3, 5});
-  vs_shared_t vs = make_shared<vs_open>(UPWARD, -20);
-  num_expr *ass_exp = new num_expr_lin(new num_linear_vs(vs));
+  vs_shared_t vs = make_shared<vs_finite>(vs_finite::elements_t {-3, 5});
+  vs_shared_t vs1 = make_shared<vs_finite>(vs_finite::elements_t { 1, 10});
+  vs_shared_t vs2 = make_shared<vs_finite>(vs_finite::elements_t {-2, -9});
+//  vs_shared_t vs = make_shared<vs_open>(UPWARD, -20);
+  num_expr *ass_exp = new num_expr_lin(new num_linear_vs(vs1));
+  num_expr *ass_exp2 = new num_expr_lin(new num_linear_vs(vs2));
   num_var *var = new num_var(numeric_id::generate());
+  num_var *var2 = new num_var(numeric_id::generate());
   vsds.assign(var, ass_exp);
+  vsds.assign(var2, ass_exp2);
 
   //v <= {3, -5}
   //v + {-3, 5} <= 0; v <= {-3, 5}
   // [-ue, 3]
 
+  //{1, 5} + {-2, -10} <= 0
+  //{1, 5} <= - {-2, -10} - [0, ue]
+  //{1, 5} <= {2, 10} - [0, ue]
+  //{1, 5} <= {2, 10} + [-ue, 0]
+  //{1, 5} <= [-ue, 10]
+
 //  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(new num_var(numeric_id::generate()), new num_linear_vs(vs)), LE);
-  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(var), LE);
+  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(var, new num_linear_term(var2)), LE);
   vsds.assume(cmp);
   cout << vsds << endl;
 

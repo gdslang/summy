@@ -118,8 +118,8 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
     fp_term_build = [&](num_linear *lin, size_t count) {
       num_visitor nv;
       nv._([&](num_linear_term *lt) {
-        fp_term_build(lt->get_next(), count + 1);
         fp_vars.push_back(lt->get_var());
+        fp_term_build(lt->get_next(), count + 1);
         for(size_t i = 0; i < fp_lins.size(); i++) {
           if(i == count)
             continue;
