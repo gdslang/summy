@@ -26,34 +26,6 @@ num_var *converter::conv_id(id *id) {
 //  return new num_linear_term(conv_id(id));
 //}
 
-num_linear *converter::add(num_linear *a, vs_shared_t vs) {
-  num_linear *result = NULL;
-  num_visitor nv;
-  nv._([&](num_linear_term *v) {
-    num_var *nv = new num_var(v->get_var()->get_id());
-    result = new num_linear_term(v->get_scale(), nv, add(v->get_next(), vs));
-  });
-  nv._([&](num_linear_vs *v) {
-    result = new num_linear_vs(*vs + v->get_value_set());
-  });
-  a->accept(nv);
-  return result;
-}
-
-num_linear *converter::add(num_linear *a, num_linear *b) {
-  num_linear *result = NULL;
-  num_visitor nv;
-  nv._([&](num_linear_term *v) {
-    num_var *nv = new num_var(v->get_var()->get_id());
-    result = new num_linear_term(v->get_scale(), nv, add(v->get_next(), b));
-  });
-  nv._([&](num_linear_vs *v) {
-    result = add(b, v->get_value_set());
-  });
-  a->accept(nv);
-  return result;
-}
-
 num_linear *converter::conv_linear(linear *lin, int64_t scale) {
   num_linear *result;
   linear_visitor lv;
@@ -170,4 +142,32 @@ analysis::api::num_expr *analysis::api::converter::conv_expr(gdsl::rreil::linear
 
 num_linear *converter::conv_linear(linear *lin) {
   return conv_linear(lin, 1);
+}
+
+num_linear *converter::add(num_linear *a, vs_shared_t vs) {
+  num_linear *result = NULL;
+  num_visitor nv;
+  nv._([&](num_linear_term *v) {
+    num_var *nv = new num_var(v->get_var()->get_id());
+    result = new num_linear_term(v->get_scale(), nv, add(v->get_next(), vs));
+  });
+  nv._([&](num_linear_vs *v) {
+    result = new num_linear_vs(*vs + v->get_value_set());
+  });
+  a->accept(nv);
+  return result;
+}
+
+num_linear *converter::add(num_linear *a, num_linear *b) {
+  num_linear *result = NULL;
+  num_visitor nv;
+  nv._([&](num_linear_term *v) {
+    num_var *nv = new num_var(v->get_var()->get_id());
+    result = new num_linear_term(v->get_scale(), nv, add(v->get_next(), b));
+  });
+  nv._([&](num_linear_vs *v) {
+    result = add(b, v->get_value_set());
+  });
+  a->accept(nv);
+  return result;
 }

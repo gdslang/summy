@@ -261,6 +261,49 @@ vs_shared_t summy::vs_open::join(const vs_open *vsf) const {
   }
 }
 
+vs_shared_t summy::vs_open::meet(const vs_finite *vsf) const {
+  return vsf->meet(this);
+}
+
+vs_shared_t summy::vs_open::meet(const vs_open *vsf) const {
+  switch(open_dir) {
+    case DOWNWARD: {
+      switch(vsf->open_dir) {
+        case DOWNWARD: {
+          return make_shared<vs_open>(DOWNWARD, min(limit, vsf->limit));
+        }
+        case UPWARD: {
+          if(limit < vsf->limit)
+            return value_set::bottom;
+          else if(limit - vsf->limit <= vs_finite::max_growth) {
+            vs_finite::elements_t elements;
+            for(int64_t i = vsf->limit; i <= limit; i++)
+              elements.insert(i);
+            return make_shared<vs_finite>(elements);
+          } else
+            throw string("summy::vs_open::meet()");
+        }
+      }
+      break;
+    }
+    case UPWARD: {
+      switch(vsf->open_dir) {
+        case DOWNWARD: {
+          return vsf->meet(this);
+        }
+        case UPWARD: {
+          return make_shared<vs_open>(UPWARD, max(limit, vsf->limit));
+        }
+      }
+    }
+  }
+}
+
+vs_shared_t summy::vs_open::meet(const vs_top *vsf) const {
+  return make_shared<vs_open>(*this);
+}
+
+
 void summy::vs_open::accept(value_set_visitor &v) {
   v.visit(this);
 }

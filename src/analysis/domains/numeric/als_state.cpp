@@ -89,6 +89,23 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
 }
 
 void als_state::assume(api::num_expr_cmp *cmp) {
+  /*
+   * Todo: Allow pointer comparisons; current implementation looses
+   * aliasing information...
+   *
+   * Todo: Update paper: Ignoring assumtions in case they contain pointers
+   * is not a viable option since now variables are pointers 'by default'
+   */
+  auto _vars = vars(cmp);
+  for(auto &var : _vars) {
+    auto var_it = elements.find(var->get_id());
+    if(var_it != elements.end()) {
+      num_expr *current_val_expr = new num_expr_lin(new num_linear_vs(queryVal(var)));
+      child_state->assign(var, current_val_expr);
+      delete current_val_expr;
+      elements.erase(var_it);
+    }
+  }
   child_state->assume(cmp);
 }
 

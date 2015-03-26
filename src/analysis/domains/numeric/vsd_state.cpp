@@ -111,7 +111,67 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
 }
 
 void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
-  throw string("analysis::value_sets::vsd_state::assume(num_expr_cmp)");
+  auto assume_zero = [&](num_linear *lin) {
+    vector<num_linear*> fp_lins;
+    vector<num_var*> fp_vars;
+    function<void(num_linear*, size_t)> fp_term_build;
+    fp_term_build = [&](num_linear *lin, size_t count) {
+      num_visitor nv;
+      nv._([&](num_linear_term *lt) {
+        fp_term_build(lt->get_next(), count + 1);
+        fp_vars.push_back(lt->get_var());
+        for(size_t i = 0; i < fp_lins.size(); i++) {
+          if(i == count)
+            continue;
+          fp_lins[i] = new num_linear_term(-lt->get_scale(), lt->get_var(), fp_lins[i]);
+        }
+      });
+      nv._([&](num_linear_vs *lvs) {
+        for(size_t i = 0; i < count; i++)
+          fp_lins.push_back(new num_linear_vs(-*lvs->get_value_set()));
+      });
+      lin->accept(nv);
+    };
+    fp_term_build(lin, 0);
+
+    vector<vs_shared_t> refined_vals = vector<vs_shared_t>(fp_vars.size());
+    for(size_t i = 0; i < refined_vals.size(); i++)
+      refined_vals[i] = value_set::top;
+    bool change;
+    do {
+      change = false;
+      for(size_t i = 0; i < fp_vars.size(); i++) {
+        vs_shared_t current = queryVal(fp_vars[i]);
+        vs_shared_t refinement = queryVal(fp_lins[i]);
+
+        cout << ">>> " << *current << " MEET " << *refinement;
+
+        vs_shared_t refined = value_set::meet(current, refinement);
+
+        cout << " = " << *refined << endl;
+
+        cout << *refined << endl;
+        if(!(*refined_vals[i] <= refined)) {
+          change = true;
+          refined_vals[i] = refined;
+          num_expr *expr = new num_expr_lin(new num_linear_vs(refined));
+          assign(fp_vars[i], expr);
+        }
+      }
+    } while(change);
+  };
+
+  switch(cmp->get_op()) {
+    case EQ: {
+      assume_zero(cmp->get_opnd());
+      break;
+    }
+    case LE: {
+      num_linear *restriced = converter::add(cmp->get_opnd(), make_shared<vs_open>(UPWARD, 0));
+      assume_zero(restriced);
+      delete restriced;
+    }
+  }
 }
 
 void analysis::value_sets::vsd_state::assume(api::num_var *lhs, ptr_set_t aliases) {

@@ -31,7 +31,8 @@ using summy::rreil::numeric_id;
 using namespace analysis;
 using namespace std;
 
-analysis::memory_address::memory_address(memory_state &_this, api::num_var *var) : _this(_this), var(var) {
+analysis::memory_address::memory_address(memory_state &_this, api::num_var *var) :
+    _this(_this), var(var) {
 }
 
 memory_address::~memory_address() {
@@ -402,67 +403,65 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
             equate_kill_vars.push_back(make_tuple(new num_var(f.num_id), new num_var(f_b.num_id)));
 //            cout << "Some vars get equate-killed..." << *f.num_id << " / " << *f_b.num_id << endl;
 //            cout << "handle id..." << *id << endl;
-    }
-  }
-}
-b_n->equate_kill(equate_kill_vars);
-for(auto pair : equate_kill_vars) {
-  num_var *a, *b;
-  tie(a, b) = pair;
-  delete a;
-  delete b;
-}
+          }
+        }
+      }
+      b_n->equate_kill(equate_kill_vars);
+      for(auto pair : equate_kill_vars) {
+        num_var *a, *b;
+        tie(a, b) = pair;
+        delete a;
+        delete b;
+      }
 
-//      region_map_t::iterator head_region_it;
-//      tie(head_region_it, ignore) = result_map.insert(make_pair(id, region_t()));
-//      region_t &region = head_region_it->second;
-region_t region;
+      //      region_map_t::iterator head_region_it;
+      //      tie(head_region_it, ignore) = result_map.insert(make_pair(id, region_t()));
+      //      region_t &region = head_region_it->second;
+      region_t region;
 
-auto join = [&](numeric_state *n, region_t const &from, region_t const &to) {
-  auto kill = [&](id_shared_t id) {
-    num_var *nv = new num_var(id);
-    n->kill( {nv});
-    delete nv;
-  };
+      auto join = [&](numeric_state *n, region_t const &from, region_t const &to) {
+        auto kill = [&](id_shared_t id) {
+          num_var *nv = new num_var(id);
+          n->kill( {nv});
+          delete nv;
+        };
 
-//        cout << "n equals " << (a_n == n ? "a" : "b") << endl;
+      //        cout << "n equals " << (a_n == n ? "a" : "b") << endl;
 
-  for(auto &field_it : from) {
-    field const &f = field_it.second;
-    auto field_b_it = to.find(field_it.first);
-    if(field_b_it != to.end()) {
-      field const &f_b = field_b_it->second;
-      if(f.size == f_b.size)
-      region.insert(make_pair(field_it.first, field {f.size, f.num_id}));
+        for(auto &field_it : from) {
+          field const &f = field_it.second;
+          auto field_b_it = to.find(field_it.first);
+          if(field_b_it != to.end()) {
+            field const &f_b = field_b_it->second;
+            if(f.size == f_b.size)
+            region.insert(make_pair(field_it.first, field {f.size, f.num_id}));
+            else
+            kill(f.num_id);
+          } else
+          kill(f.num_id);
+        }
+
+      };
+
+      join(b_n, region_a, region_b);
+      join(a_n, region_b, region_a);
+
+      if(region.size() > 0)
+        result_map.insert(make_pair(id, region));
+    };
+    for(auto &region_it : a_map) {
+      auto region_b_it = b_map.find(region_it.first);
+      if(region_b_it != b_map.end())
+        handle_region(region_it.first, region_it.second, region_b_it->second);
       else
-      kill(f.num_id);
-    } else
-    kill(f.num_id);
-  }
-
-};
-
-join(b_n, region_a, region_b);
-join(a_n, region_b, region_a);
-
-if(region.size() > 0)
-result_map.insert(make_pair(id, region));
-
-};
-for(auto &region_it : a_map) {
-auto region_b_it = b_map.find(region_it.first);
-if(region_b_it != b_map.end())
-handle_region(region_it.first, region_it.second, region_b_it->second);
-else
-handle_region(region_it.first, region_it.second, region_t());
-}
-for(auto &region_b_it : b_map) {
-if(a_map.find(region_b_it.first) == a_map.end())
-handle_region(region_b_it.first, region_b_it.second, region_t());
-}
-
-return result_map;
-} ;
+        handle_region(region_it.first, region_it.second, region_t());
+    }
+    for(auto &region_b_it : b_map) {
+      if(a_map.find(region_b_it.first) == a_map.end())
+        handle_region(region_b_it.first, region_b_it.second, region_t());
+    }
+    return result_map;
+  };
 
   memory_head head;
   head.regions = join_region_map(a->regions, b->regions);

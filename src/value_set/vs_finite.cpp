@@ -220,6 +220,13 @@ vs_shared_t summy::vs_finite::join(const vs_open *vsf) const {
   }
 }
 
+vs_shared_t summy::vs_finite::meet(const vs_finite *vsf) const {
+  elements_t elements_new;
+  set_intersection(elements.begin(), elements.end(), vsf->elements.begin(), vsf->elements.end(),
+      inserter(elements_new, elements_new.begin()));
+  return make_shared<vs_finite>(elements_new);
+}
+
 vs_shared_t summy::vs_finite::meet(const vs_open *vsf) const {
   elements_t elements_new;
   int64_t limit = vsf->get_limit();
@@ -244,6 +251,10 @@ vs_shared_t summy::vs_finite::meet(const vs_open *vsf) const {
     }
   }
   return make_shared<vs_finite>(elements_new);
+}
+
+vs_shared_t summy::vs_finite::meet(const vs_top *vsf) const {
+  return make_shared<vs_finite>(*this);
 }
 
 void summy::vs_finite::accept(value_set_visitor &v) {

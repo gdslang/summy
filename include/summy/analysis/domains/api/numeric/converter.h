@@ -27,8 +27,7 @@ private:
   transLE_t transLE;
 
   num_var *conv_id(gdsl::rreil::id *id);
-  num_linear *add(num_linear *a, summy::vs_shared_t vs);
-  num_linear *add(num_linear *a, num_linear *b);
+
   num_linear *conv_linear(gdsl::rreil::linear *lin, int64_t scale);
   num_expr *conv_sexpr(gdsl::rreil::sexpr *se);
 public:
@@ -38,6 +37,9 @@ public:
   analysis::api::num_expr *conv_expr(gdsl::rreil::expr *expr);
   analysis::api::num_expr *conv_expr(gdsl::rreil::linear *lin);
   num_linear *conv_linear(gdsl::rreil::linear *lin);
+
+  static num_linear *add(num_linear *a, summy::vs_shared_t vs);
+  static num_linear *add(num_linear *a, num_linear *b);
 };
 
 

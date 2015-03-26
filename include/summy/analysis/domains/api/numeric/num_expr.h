@@ -42,6 +42,14 @@ public:
   }
   ~num_expr_cmp();
 
+  num_linear *get_opnd() {
+    return opnd;
+  }
+
+  num_cmp_op get_op() {
+    return op;
+  }
+
   void accept(num_visitor &v);
 };
 

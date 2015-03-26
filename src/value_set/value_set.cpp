@@ -173,5 +173,21 @@ vs_shared_t value_set::join(vs_shared_t const a, vs_shared_t const b) {
   return result;
 }
 
+vs_shared_t summy::value_set::meet(const vs_shared_t a, const vs_shared_t b) {
+  value_set_visitor vs;
+  vs_shared_t result;
+  vs._([&] (vs_finite *v) {
+    result = a->meet(v);
+  });
+  vs._([&] (vs_open *v) {
+    result = a->meet(v);
+  });
+  vs._([&] (vs_top *v) {
+    result = a->meet(v);
+  });
+  ((vs_shared_t)b)->accept(vs);
+  return result;
+}
+
 vs_shared_t const value_set::top = make_shared<vs_top>();
 vs_shared_t const value_set::bottom = make_shared<vs_finite>();

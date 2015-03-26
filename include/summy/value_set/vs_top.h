@@ -41,6 +41,10 @@ public:
   vs_shared_t join(vs_finite const *vsf) const;
   vs_shared_t join(vs_open const *vsf) const;
 
+  vs_shared_t meet(vs_finite const *vsf) const;
+  vs_shared_t meet(vs_open const *vsf) const;
+  vs_shared_t meet(vs_top const *vsf) const;
+
   void accept(value_set_visitor &v);
 };
 

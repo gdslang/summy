@@ -10,7 +10,9 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
+#include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/dstack.h>
+#include <summy/analysis/domains/numeric/vsd_state.h>
 #include <iosfwd>
 #include <vector>
 #include <map>
@@ -20,6 +22,7 @@
 #include <functional>
 
 #include <summy/analysis/fixpoint.h>
+#include <summy/rreil/id/numeric_id.h>
 #include <summy/transformers/resolved_connector.h>
 
 #include <summy/value_set/value_set.h>
@@ -28,15 +31,19 @@
 #include <summy/value_set/vs_top.h>
 
 #include <cstdio>
+#include <memory>
 
 using analysis::fixpoint;
+using analysis::value_sets::vsd_state;
 using cfg::address_node;
 using cfg::edge;
+using summy::rreil::numeric_id;
 
 using namespace gdsl::rreil;
 using namespace std;
 using namespace analysis;
 using namespace summy;
+using namespace analysis::api;
 
 int main(int argc, char **argv) {
   gdsl::bare_frontend f("current");
@@ -49,6 +56,28 @@ int main(int argc, char **argv) {
 //  auto buffer = example(g, 0);
 //  bj_gdsl bjg = gdsl_init_binfile(&f, "example.bin", 0);
 //  bj_gdsl bjg = gdsl_init_immediate(&f, 0x00000000, 0);
+
+
+  vsd_state vsds;
+//  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(new num_var(numeric_id::generate()), new num_linear_vs(vs_finite::single(9))), EQ);
+
+//  vs_shared_t vs = make_shared<vs_finite>(vs_finite::elements_t {-3, 5});
+  vs_shared_t vs = make_shared<vs_open>(UPWARD, -20);
+  num_expr *ass_exp = new num_expr_lin(new num_linear_vs(vs));
+  num_var *var = new num_var(numeric_id::generate());
+  vsds.assign(var, ass_exp);
+
+  //v <= {3, -5}
+  //v + {-3, 5} <= 0; v <= {-3, 5}
+  // [-ue, 3]
+
+//  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(new num_var(numeric_id::generate()), new num_linear_vs(vs)), LE);
+  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(var), LE);
+  vsds.assume(cmp);
+  cout << vsds << endl;
+
+  exit(0);
+
   bj_gdsl bjg = gdsl_init_elf(&f, "a.out", ".text", "main", (size_t)1000);
   dectran dt(*bjg.gdsl, false);
 

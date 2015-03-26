@@ -86,6 +86,11 @@ public:
   vs_shared_t join(vs_top const *vsf) const;
   static vs_shared_t join(vs_shared_t const a, vs_shared_t const b);
 
+  virtual vs_shared_t meet(vs_finite const *vsf) const = 0;
+  virtual vs_shared_t meet(vs_open const *vsf) const = 0;
+  virtual vs_shared_t meet(vs_top const *vsf) const = 0;
+  static vs_shared_t meet(vs_shared_t const a, vs_shared_t const b);
+
   static vs_shared_t const top;
   static vs_shared_t const bottom;
 };
