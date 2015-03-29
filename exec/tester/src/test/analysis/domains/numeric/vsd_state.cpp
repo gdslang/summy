@@ -265,8 +265,6 @@ TEST_F(vsd_state_test, AssumptionLE3) {
   vsd_state *comp = gc(new vsd_state());
   comp->assign(n.var(a), n.expr(nab_lin(make_shared<vs_open>(DOWNWARD, 3))));
 
-  cout << *sa << endl;
-
   ASSERT_EQ(*sa, *comp);
 }
 

@@ -208,6 +208,8 @@ vs_shared_t summy::vs_finite::join(const vs_finite *vsf) const {
 }
 
 vs_shared_t summy::vs_finite::join(const vs_open *vsf) const {
+  if(is_bottom())
+    return make_shared<vs_open>(*vsf);
   switch(vsf->get_open_dir()) {
     case DOWNWARD: {
       return make_shared<vs_open>(DOWNWARD, std::max(vsf->get_limit(), max()));
