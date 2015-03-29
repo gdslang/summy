@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
   vsds.assign(var2, ass_exp2);
 
   //v <= {3, -5}
-  //v + {-3, 5} <= 0; v <= {-3, 5}
+  //v + {-3, 5} <= 0;
   // [-ue, 3]
 
   //{1, 5} + {-2, -10} <= 0

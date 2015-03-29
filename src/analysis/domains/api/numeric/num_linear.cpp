@@ -9,6 +9,8 @@
 #include <summy/value_set/vs_finite.h>
 
 using namespace summy;
+using namespace analysis::api;
+
 
 /*
  * num_linear
@@ -38,6 +40,10 @@ analysis::api::num_linear_term::~num_linear_term() {
   delete next;
 }
 
+num_linear_term *analysis::api::num_linear_term::negate() {
+  return new num_linear_term(-scale, var->copy(), next->negate());
+}
+
 void analysis::api::num_linear_term::accept(num_visitor &v) {
   v.visit(this);
 }
@@ -48,6 +54,10 @@ void analysis::api::num_linear_term::accept(num_visitor &v) {
 
 void analysis::api::num_linear_vs::put(std::ostream &out) {
   out << *value_set;
+}
+
+num_linear_vs *analysis::api::num_linear_vs::negate() {
+  return new num_linear_vs(-*value_set);
 }
 
 void analysis::api::num_linear_vs::accept(num_visitor &v) {

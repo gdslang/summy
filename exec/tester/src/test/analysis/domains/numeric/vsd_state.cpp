@@ -253,6 +253,23 @@ TEST_F(vsd_state_test, AssumptionLE2) {
   ASSERT_EQ(*sa, *comp);
 }
 
+TEST_F(vsd_state_test, AssumptionLE3) {
+  autogc gc;
+  nab n(gc);
+
+  auto a = rreil_builder::temporary("a");
+
+  vsd_state *sa = gc(new vsd_state());
+  sa->assume(n.expr(a + nab_lin(make_shared<vs_finite>(vs_finite::elements_t { -3, 5})), LE));
+
+  vsd_state *comp = gc(new vsd_state());
+  comp->assign(n.var(a), n.expr(nab_lin(make_shared<vs_open>(DOWNWARD, 3))));
+
+  cout << *sa << endl;
+
+  ASSERT_EQ(*sa, *comp);
+}
+
 TEST_F(vsd_state_test, AssumptionEQ) {
   autogc gc;
   nab n(gc);

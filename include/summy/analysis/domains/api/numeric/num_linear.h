@@ -26,7 +26,7 @@ public:
   virtual void accept(num_visitor &v) = 0;
   friend std::ostream &operator<< (std::ostream &out, num_linear &_this);
 
-//  virtual void negate() = 0;
+  virtual num_linear *negate() = 0;
 //  virtual void add(summy::vs_shared_t vs) = 0;
 //  virtual void scale(summy::vs_shared_t vs) = 0;
 };
@@ -63,6 +63,8 @@ public:
   }
   ~num_linear_term();
 
+  num_linear_term *negate();
+
   void accept(num_visitor &v);
 };
 
@@ -75,11 +77,13 @@ public:
   num_linear_vs(summy::vs_shared_t value_set) : value_set(value_set) {
   }
 
-  void accept(num_visitor &v);
-
   summy::vs_shared_t get_value_set() {
     return value_set;
   }
+
+  num_linear_vs *negate();
+
+  void accept(num_visitor &v);
 };
 
 }

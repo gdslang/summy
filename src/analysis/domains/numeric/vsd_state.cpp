@@ -123,7 +123,8 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
         for(size_t i = 0; i < fp_lins.size(); i++) {
           if(i == count)
             continue;
-          fp_lins[i] = new num_linear_term(-lt->get_scale(), lt->get_var(), fp_lins[i]);
+          fp_lins[i] = new num_linear_term(-lt->get_scale(),
+            new num_var(lt->get_var()->get_id()), fp_lins[i]);
         }
       });
       nv._([&](num_linear_vs *lvs) {
@@ -156,15 +157,22 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
           refined_vals[i] = refined;
           num_expr *expr = new num_expr_lin(new num_linear_vs(refined));
           assign(fp_vars[i], expr);
+          delete expr;
         }
       }
     } while(change);
+
+    for(num_linear *l : fp_lins)
+      delete l;
   };
 
   switch(cmp->get_op()) {
     case EQ: {
       assume_zero(cmp->get_opnd());
       break;
+    }
+    case NEQ: {
+
     }
     case LE: {
       num_linear *restriced = converter::add(cmp->get_opnd(), make_shared<vs_open>(UPWARD, 0));

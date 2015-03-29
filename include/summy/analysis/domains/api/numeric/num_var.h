@@ -20,6 +20,10 @@ public:
   num_var(id_shared_t id) : id(id) {
   }
 
+  num_var *copy() {
+    return new num_var(id);
+  }
+
   id_shared_t get_id() const {
     return id;
   }
