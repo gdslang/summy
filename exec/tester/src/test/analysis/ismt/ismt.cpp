@@ -472,7 +472,7 @@ int main(void) {
 }
 
 
-TEST_F(ismt_test, CMemory) {
+TEST_F(ismt_test, DISABLED_CMemory) {
   set<size_t> targets;
   ASSERT_NO_FATAL_FAILURE(targets_for_c(targets,R"(
 int main(int argc, char **argv) {

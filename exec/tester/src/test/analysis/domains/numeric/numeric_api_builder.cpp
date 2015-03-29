@@ -45,6 +45,10 @@ analysis::api::num_expr *nab::expr(nab_lin lin) {
   return gc(new num_expr_lin(lin.builder()));
 }
 
+analysis::api::num_expr_cmp *nab::expr(nab_lin lin, analysis::api::num_cmp_op op) {
+  return gc(new num_expr_cmp(lin.builder(), op));
+}
+
 analysis::api::num_linear *nab::lin(nab_lin lin) {
   return gc(lin.builder());
 }

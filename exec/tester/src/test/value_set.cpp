@@ -146,15 +146,3 @@ TEST_F(value_set_test, Widen) {
   ASSERT_EQ(*s4, value_set::widen(s1, s4));
   ASSERT_EQ(*value_set::top, value_set::widen(s1, s5));
 }
-
-
-
-
-
-
-
-
-
-
-
-

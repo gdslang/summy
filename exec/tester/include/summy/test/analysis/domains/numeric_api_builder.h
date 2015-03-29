@@ -43,6 +43,7 @@ public:
 
   analysis::api::num_var *var(id_shared_t id);
   analysis::api::num_expr *expr(nab_lin lin);
+  analysis::api::num_expr_cmp *expr(nab_lin lin, analysis::api::num_cmp_op op);
   analysis::api::num_linear *lin(nab_lin lin);
 };
 
