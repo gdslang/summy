@@ -62,7 +62,7 @@ vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t cur
   if(other_casted->is_bottom()) return new vsd_state(*this);
   else if(is_bottom()) return new vsd_state(*other_casted);
 
-  cout << *this << " ===JOIN=== " << *other_casted << endl;
+//  cout << *this << " ===JOIN=== " << *other_casted << endl;
 
   elements_t elems_new;
   auto join = [&](elements_t const &from, elements_t const &to) {
@@ -113,7 +113,11 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
 void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
   auto assume_zero = [&](vector<num_linear*> lins) {
     vector<vector<num_expr*>> fp_exprss;
-    auto fp_term_for_lins = [&](vector<num_linear*> &fp_lins, num_linear *lin) {
+    struct fp_lin {
+      int64_t var_scale;
+      num_linear *lin;
+    };
+    auto fp_term_for_lins = [&](vector<fp_lin> &fp_lins, num_linear *lin) {
       function<void(num_linear*, size_t)> fp_term_build;
       fp_term_build = [&](num_linear *lin, size_t count) {
         num_visitor nv;
@@ -122,24 +126,26 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
           for(size_t i = 0; i < fp_lins.size(); i++) {
             if(i == count)
               continue;
-            fp_lins[i] = new num_linear_term(-lt->get_scale(),
-              new num_var(lt->get_var()->get_id()), fp_lins[i]);
+            fp_lins[i].lin = new num_linear_term(-lt->get_scale(),
+              new num_var(lt->get_var()->get_id()), fp_lins[i].lin);
           }
+          fp_lins[count].var_scale = lt->get_scale();
         });
         nv._([&](num_linear_vs *lvs) {
           for(size_t i = 0; i < count; i++)
-            fp_lins.push_back(new num_linear_vs(-*lvs->get_value_set()));
+            fp_lins.push_back({0, new num_linear_vs(-*lvs->get_value_set())});
         });
         lin->accept(nv);
       };
       fp_term_build(lin, 0);
     };
     for(auto &lin : lins) {
-      vector<num_linear*> fp_lins;
+      vector<fp_lin> fp_lins;
       fp_term_for_lins(fp_lins, lin);
       vector<num_expr*> fp_exprs;
-      for(num_linear *l: fp_lins)
-        fp_exprs.push_back(new num_expr_bin(l, DIV, new num_linear_vs(vs_finite::single(1))));
+      for(fp_lin &fl: fp_lins)
+        fp_exprs.push_back(new num_expr_bin(fl.lin, DIV, new num_linear_vs(vs_finite::single(fl.var_scale))));
+//        fp_exprs.push_back(new num_expr_lin(l));
       fp_exprss.push_back(fp_exprs);
     }
 
@@ -161,19 +167,17 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
         vs_shared_t current = queryVal(fp_vars[i]);
 
         vector<vs_shared_t> refineds;
-        for(auto &fp_lins : fp_exprss) {
-          vs_shared_t refinement = queryVal(fp_lins[i]);
-          cout << ">>> " << *current << " MEET " << *refinement << endl;
+        for(auto &fp_exprs : fp_exprss) {
+          vs_shared_t refinement = queryVal(fp_exprs[i]);
+//          cout << ">>> " << *current << " MEET " << *refinement << endl;
           refineds.push_back(value_set::meet(current, refinement));
         }
         vs_shared_t refined = value_set::bottom;
         for(auto re_cur : refineds)
           refined = value_set::join(refined, re_cur);
 //        vs_shared_t refined = refineds[0];
-
-        cout << " = " << *refined << endl;
-
-        cout << *refined << endl;
+//        cout << " = " << *refined << endl;
+//        cout << *refined << endl;
         if(!(*refined_vals[i] <= refined)) {
           change = true;
           refined_vals[i] = refined;
@@ -196,8 +200,8 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
     }
     case NEQ: {
       num_linear *opnd_neg = cmp->get_opnd()->negate();
-      cout << "OPND: " << *cmp->get_opnd() << endl;
-      cout << "NEGATED: " << *opnd_neg << endl;
+//      cout << "OPND: " << *cmp->get_opnd() << endl;
+//      cout << "NEGATED: " << *opnd_neg << endl;
       num_linear *restriced_lower = converter::add(cmp->get_opnd(), make_shared<vs_open>(UPWARD, 1));
       num_linear *restriced_upper = converter::add(opnd_neg, make_shared<vs_open>(UPWARD, 1));
       assume_zero({restriced_lower, restriced_upper});
@@ -208,6 +212,12 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
     }
     case LE: {
       num_linear *restriced = converter::add(cmp->get_opnd(), make_shared<vs_open>(UPWARD, 0));
+      assume_zero({restriced});
+      delete restriced;
+      break;
+    }
+    case GE: {
+      num_linear *restriced = converter::add(cmp->get_opnd(), make_shared<vs_open>(DOWNWARD, 0));
       assume_zero({restriced});
       delete restriced;
       break;

@@ -61,10 +61,10 @@ int main(int argc, char **argv) {
   vsd_state vsds;
 //  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(new num_var(numeric_id::generate()), new num_linear_vs(vs_finite::single(9))), EQ);
 
-  vs_shared_t vs = make_shared<vs_finite>(vs_finite::elements_t {-3, 0, 5});
+//  vs_shared_t vs = make_shared<vs_finite>(vs_finite::elements_t {-3, 0, 5});
 //  vs_shared_t vs1 = make_shared<vs_finite>(vs_finite::elements_t { 1, 10});
 //  vs_shared_t vs2 = make_shared<vs_finite>(vs_finite::elements_t {-2, -9});
-//  vs_shared_t vs = make_shared<vs_open>(UPWARD, -20);
+  vs_shared_t vs = make_shared<vs_open>(UPWARD,0);
   num_expr *ass_exp = new num_expr_lin(new num_linear_vs(vs));
 //  num_expr *ass_exp2 = new num_expr_lin(new num_linear_vs(vs2));
   num_var *var = new num_var(numeric_id::generate());

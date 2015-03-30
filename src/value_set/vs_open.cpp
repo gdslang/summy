@@ -137,25 +137,27 @@ vs_shared_t summy::vs_open::mul(const vs_open *vs) const {
 }
 
 vs_shared_t summy::vs_open::div(const vs_finite *vs) const {
+  if(vs->is_bottom())
+    return value_set::bottom;
   if(sgn(vs->min()) != sgn(vs->max()))
     return top;
   int64_t sign = sgn(vs->min());
   switch(open_dir) {
     case DOWNWARD: {
       if(sign < 0) {
-        int64_t min_abs = -vs->min();
+        int64_t min_abs = vs->min();
         return make_shared<vs_open>(UPWARD, limit / min_abs);
       } else {
-        int64_t max = -vs->max();
+        int64_t max = vs->max();
         return make_shared<vs_open>(DOWNWARD, limit / max);
       }
     }
     case UPWARD: {
       if(sign < 0) {
-        int64_t min_abs = -vs->min();
+        int64_t min_abs = vs->min();
         return make_shared<vs_open>(DOWNWARD, limit / min_abs);
       } else {
-        int64_t max = -vs->max();
+        int64_t max = vs->max();
         return make_shared<vs_open>(UPWARD, limit / max);
       }
     }
