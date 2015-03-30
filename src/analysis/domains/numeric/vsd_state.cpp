@@ -216,8 +216,20 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
       delete restriced;
       break;
     }
+    case LT: {
+      num_linear *restriced = converter::add(cmp->get_opnd(), make_shared<vs_open>(UPWARD, 1));
+      assume_zero({restriced});
+      delete restriced;
+      break;
+    }
     case GE: {
       num_linear *restriced = converter::add(cmp->get_opnd(), make_shared<vs_open>(DOWNWARD, 0));
+      assume_zero({restriced});
+      delete restriced;
+      break;
+    }
+    case GT: {
+      num_linear *restriced = converter::add(cmp->get_opnd(), make_shared<vs_open>(DOWNWARD, -1));
       assume_zero({restriced});
       delete restriced;
       break;

@@ -271,8 +271,8 @@ void analysis::memory_state::update(gdsl::rreil::assign *assign) {
   variable *var = assign->get_lhs();
   id_shared_t num_id = transVar(shared_copy(var->get_id()), var->get_offset(), assign->get_size());
   num_var *n_var = new num_var(num_id);
-  converter cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
-    return transLE(id, offset, assign->get_size());
+  converter cv(assign->get_size(), [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
   });
   num_expr *n_expr = cv.conv_expr(assign->get_rhs());
   child_state->assign(n_var, n_expr);
@@ -323,8 +323,8 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
         numeric_id::generate() }));
     num_var *lhs = new num_var(zero_it->second.num_id);
 
-    converter rhs_cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
-      return transLE(id, offset, store->get_size());
+    converter rhs_cv(store->get_size(), [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+      return transLE(id, offset, size);
     });
     num_expr *rhs = rhs_cv.conv_expr(store->get_rhs());
     child_state->assign(lhs, rhs);
@@ -334,10 +334,19 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
   }
 }
 
+void analysis::memory_state::assume(gdsl::rreil::sexpr *cond) {
+  converter cv(0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
+  });
+  num_expr_cmp *ec = cv.conv_expr_cmp(cond);
+  child_state->assume(ec);
+  delete ec;
+}
+
 std::unique_ptr<memory_address> analysis::memory_state::to_memory_address(address *a) {
   num_var *var = new num_var(numeric_id::generate());
-  converter addr_cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
-    return transLE(id, offset, a->get_size());
+  converter addr_cv(a->get_size(), [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
   });
   num_expr *addr_expr = addr_cv.conv_expr(a->get_lin());
   child_state->assign(var, addr_expr);
@@ -347,8 +356,8 @@ std::unique_ptr<memory_address> analysis::memory_state::to_memory_address(addres
 }
 
 summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear *l) {
-  converter cv([&](shared_ptr<gdsl::rreil::id> id, size_t offset) {
-    return transLE(id, offset, 64);
+  converter cv(64, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
   });
   num_linear *nl = cv.conv_linear(l);
   return child_state->queryVal(nl);

@@ -27,8 +27,16 @@ void analysis::api::num_expr_cmp::put(std::ostream &out) {
       out << "<=";
       break;
     }
+    case LT: {
+      out << "<";
+      break;
+    }
     case GE: {
       out << ">=";
+      break;
+    }
+    case GT: {
+      out << ">";
       break;
     }
     case EQ: {

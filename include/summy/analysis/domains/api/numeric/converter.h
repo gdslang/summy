@@ -20,20 +20,23 @@
 namespace analysis {
 namespace api {
 
-typedef  std::function<num_linear*(std::shared_ptr<gdsl::rreil::id>, size_t)> transLE_t;
+typedef  std::function<num_linear*(std::shared_ptr<gdsl::rreil::id>, size_t, size_t)> transLE_t;
 
 class converter {
 private:
+  size_t size;
   transLE_t transLE;
 
   num_var *conv_id(gdsl::rreil::id *id);
 
   num_linear *conv_linear(gdsl::rreil::linear *lin, int64_t scale);
   num_expr *conv_sexpr(gdsl::rreil::sexpr *se);
+  num_expr_cmp *conv_expr_cmp(gdsl::rreil::sexpr_cmp *se);
 public:
-  converter(transLE_t transLE) : transLE(transLE) {
+  converter(size_t size, transLE_t transLE) : size(size), transLE(transLE) {
   }
 
+  analysis::api::num_expr_cmp *conv_expr_cmp(gdsl::rreil::sexpr *se);
   analysis::api::num_expr *conv_expr(gdsl::rreil::expr *expr);
   analysis::api::num_expr *conv_expr(gdsl::rreil::linear *lin);
   num_linear *conv_linear(gdsl::rreil::linear *lin);

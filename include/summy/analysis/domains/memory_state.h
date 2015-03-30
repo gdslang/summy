@@ -97,6 +97,7 @@ public:
   void update(gdsl::rreil::assign *assign);
   void update(gdsl::rreil::load *load);
   void update(gdsl::rreil::store *store);
+  void assume(gdsl::rreil::sexpr *cond);
 
   std::unique_ptr<memory_address> to_memory_address(gdsl::rreil::address *a);
   summy::vs_shared_t queryVal(gdsl::rreil::linear *l);

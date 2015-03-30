@@ -27,7 +27,7 @@ public:
 std::ostream &operator<<(std::ostream &out, num_expr &_this);
 
 enum num_cmp_op {
-  LE, GE, EQ, NEQ
+  LE, LT, GE, GT, EQ, NEQ
 };
 
 class num_expr_cmp: public num_expr {

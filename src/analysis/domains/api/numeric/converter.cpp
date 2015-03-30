@@ -50,23 +50,77 @@ num_linear *converter::conv_linear(linear *lin, int64_t scale) {
     result = conv_linear(l->get_opnd(), scale*l->get_const());
   });
   lv._([&](lin_var *l) {
-    result = transLE(shared_copy(l->get_var()->get_id()), l->get_var()->get_offset());
+    result = transLE(shared_copy(l->get_var()->get_id()), l->get_var()->get_offset(), size);
   });
   lin->accept(lv);
+  return result;
+}
+
+
+num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr_cmp *se) {
+  num_expr_cmp *result = NULL;
+  size_t sz_back = this->size;
+  this->size = se->get_size();
+  num_linear *opnd1 = conv_linear(se->get_inner()->get_opnd1());
+  num_linear *opnd2 = conv_linear(se->get_inner()->get_opnd2());
+  num_linear *opnd2_neg = opnd2->negate();
+  switch(se->get_inner()->get_op()) {
+    case CMP_EQ: {
+      result = new num_expr_cmp(add(opnd1, opnd2_neg), EQ);
+      break;
+    }
+    case CMP_NEQ: {
+      result = new num_expr_cmp(add(opnd1, opnd2_neg), NEQ);
+      break;
+    }
+    case CMP_LEU:
+    case CMP_LES: {
+      result = new num_expr_cmp(add(opnd1, opnd2_neg), LE);
+      break;
+    }
+    case CMP_LTU:
+    case CMP_LTS: {
+      result = new num_expr_cmp(add(opnd1, opnd2_neg), LT);
+      break;
+    }
+  }
+  this->size = sz_back;
+  delete opnd1;
+  delete opnd2;
+  delete opnd2_neg;
   return result;
 }
 
 analysis::api::num_expr *converter::conv_sexpr(sexpr *se) {
   num_expr *result = NULL;
   sexpr_visitor sv;
-  sv._([&](arbitrary *x){
+  sv._([&](arbitrary *x) {
     result = new num_expr_lin(new num_linear_vs(value_set::top));
   });
-  sv._([&](sexpr_cmp *x){
-    result = new num_expr_lin(new num_linear_vs(value_set::top));
+  sv._([&](sexpr_cmp *x) {
+    result = conv_expr_cmp(x);
   });
-  sv._([&](sexpr_lin *x){
+  sv._([&](sexpr_lin *x) {
     result = new num_expr_lin(conv_linear(x->get_lin()));
+  });
+  se->accept(sv);
+  return result;
+}
+
+analysis::api::num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr *se) {
+  num_expr_cmp *result = NULL;
+  sexpr_visitor sv;
+  sv._([&](arbitrary *x) {
+    result = new num_expr_cmp(new num_linear_vs(value_set::top), EQ);
+  });
+  sv._([&](sexpr_cmp *x) {
+    result = conv_expr_cmp(x);
+  });
+  sv._([&](sexpr_lin *x) {
+    size_t sz_back = this->size;
+    this->size = 1;
+    result = new num_expr_cmp(add(conv_linear(x->get_lin()), new num_linear_vs(vs_finite::single(-1))), EQ);
+    this->size = sz_back;
   });
   se->accept(sv);
   return result;
