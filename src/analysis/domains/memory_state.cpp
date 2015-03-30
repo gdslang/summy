@@ -143,6 +143,8 @@ static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) 
 
 region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_t offset,
     size_t size) {
+  cout << "retrieve_kill() " << offset << " / " << size << endl;
+
   bool found = false;
   id_shared_t num_id;
   vector<num_var*> dead_num_vars;
@@ -175,7 +177,10 @@ region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_
 
 id_shared_t analysis::memory_state::transReg(region_t &region, size_t offset, size_t size) {
   auto field_it = retrieve_kill(region, offset, size);
-  if(field_it == region.end()) tie(field_it, ignore) = region.insert(make_pair(offset, field { size, numeric_id::generate() }));
+  if(field_it == region.end()) {
+    cout << "Inserting new field at " << offset << endl;
+    tie(field_it, ignore) = region.insert(make_pair(offset, field { size, numeric_id::generate() }));
+  }
   field &f = field_it->second;
   return f.num_id;
 }

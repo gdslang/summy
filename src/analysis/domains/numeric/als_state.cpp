@@ -163,6 +163,7 @@ void als_state::fold(num_var_pairs_t vars) {
 
 api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   cout << "queryALS for " << *nv << endl;
+  cout << "offset: " << *child_state->queryVal(nv) << endl;
 
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
@@ -170,8 +171,8 @@ api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   singleton_value_t &aliases = id_it->second;
   for(auto alias : aliases) {
 //    num_var *nv = new num_var(alias);
-    result.insert(ptr(alias, queryVal(nv)));
-    delete nv;
+    result.insert(ptr(alias, child_state->queryVal(nv)));
+//    delete nv;
   }
   return result;
 }
