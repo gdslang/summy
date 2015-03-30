@@ -68,6 +68,8 @@ protected:
   void put(std::ostream &out) const;
   region_t &region(id_shared_t id);
 
+  region_t::iterator retrieve_kill(region_t &region, size_t offset, size_t size);
+  id_shared_t transReg(region_t &region, size_t offset, size_t size);
   id_shared_t transVar(id_shared_t var_id, size_t offset, size_t size);
   api::num_linear *transLE(id_shared_t var_id, size_t offset, size_t size);
 public:
@@ -98,6 +100,7 @@ public:
   void update(gdsl::rreil::load *load);
   void update(gdsl::rreil::store *store);
   void assume(gdsl::rreil::sexpr *cond);
+  void assume_not(gdsl::rreil::sexpr *cond);
 
   std::unique_ptr<memory_address> to_memory_address(gdsl::rreil::address *a);
   summy::vs_shared_t queryVal(gdsl::rreil::linear *l);

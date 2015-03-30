@@ -61,7 +61,10 @@ void analysis::dstack::add_constraint(size_t from, size_t to, const ::cfg::edge 
     transfer_f = [=]() {
       shared_ptr<memory_state> &state_c = this->state[from];
       shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
-      state_new->assume(edge->get_cond());
+      if(edge->is_positive())
+        state_new->assume(edge->get_cond());
+      else
+        state_new->assume_not(edge->get_cond());
       return state_new;
     };
   });

@@ -40,8 +40,12 @@ analysis::api::num_linear_term::~num_linear_term() {
   delete next;
 }
 
-num_linear_term *analysis::api::num_linear_term::negate() {
+num_linear_term *analysis::api::num_linear_term::negate() const {
   return new num_linear_term(-scale, var->copy(), next->negate());
+}
+
+num_linear_term *analysis::api::num_linear_term::copy() const {
+  return new num_linear_term(scale, var->copy(), next->copy());
 }
 
 void analysis::api::num_linear_term::accept(num_visitor &v) {
@@ -56,10 +60,14 @@ void analysis::api::num_linear_vs::put(std::ostream &out) {
   out << *value_set;
 }
 
-num_linear_vs *analysis::api::num_linear_vs::negate() {
+num_linear_vs *analysis::api::num_linear_vs::negate() const {
   return new num_linear_vs(-*value_set);
 }
 
 void analysis::api::num_linear_vs::accept(num_visitor &v) {
   v.visit(this);
+}
+
+num_linear_vs *analysis::api::num_linear_vs::copy() const {
+  return new num_linear_vs(value_set);
 }

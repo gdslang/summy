@@ -7,6 +7,8 @@
 
 #include <summy/analysis/domains/api/numeric/num_expr.h>
 
+using namespace analysis::api;
+
 /*
  * num_expr
  */
@@ -55,6 +57,23 @@ analysis::api::num_expr_cmp::~num_expr_cmp() {
   delete opnd;
 }
 
+num_expr_cmp *analysis::api::num_expr_cmp::negate() const {
+  switch(op) {
+    case EQ:
+      return new num_expr_cmp(opnd->copy(), NEQ);
+    case NEQ:
+      return new num_expr_cmp(opnd->copy(), EQ);
+    case LE:
+      return new num_expr_cmp(opnd->copy(), GT);
+    case LT:
+      return new num_expr_cmp(opnd->copy(), GE);
+    case GE:
+      return new num_expr_cmp(opnd->copy(), LT);
+    case GT:
+      return new num_expr_cmp(opnd->copy(), LE);
+  }
+}
+
 void analysis::api::num_expr_cmp::accept(num_visitor &v) {
   v.visit(this);
 }
@@ -64,7 +83,7 @@ void analysis::api::num_expr_cmp::accept(num_visitor &v) {
  */
 
 void analysis::api::num_expr_lin::put(std::ostream &out) {
-  out << inner;
+  out << *inner;
 }
 
 analysis::api::num_expr_lin::~num_expr_lin() {

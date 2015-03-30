@@ -295,7 +295,7 @@ vs_shared_t value_sets::vsd_state::queryVal(num_expr *exp) {
   num_visitor nv;
   vs_shared_t result;
   nv._([&](num_expr_cmp *cmp) {
-    throw string("value_sets::vsd_state::eval");
+    result = value_set::top;
   });
   nv._([&](num_expr_lin *lin) {
     result = queryVal(lin->get_inner());

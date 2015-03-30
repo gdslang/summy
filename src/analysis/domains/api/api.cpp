@@ -25,7 +25,7 @@ std::set<num_var*> analysis::api::vars(num_expr *expr) {
   set<num_var*> result;
   num_visitor nv;
   nv._([&](num_expr_cmp *n) {
-
+    _vars(result, n->get_opnd());
   });
   nv._([&](num_expr_lin *n) {
     _vars(result, n->get_inner());

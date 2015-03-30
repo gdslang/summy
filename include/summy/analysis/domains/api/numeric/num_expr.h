@@ -50,6 +50,8 @@ public:
     return op;
   }
 
+  num_expr_cmp *negate() const;
+
   void accept(num_visitor &v);
 };
 

@@ -58,36 +58,36 @@ int main(int argc, char **argv) {
 //  bj_gdsl bjg = gdsl_init_immediate(&f, 0x00000000, 0);
 
 
-  vsd_state vsds;
-//  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(new num_var(numeric_id::generate()), new num_linear_vs(vs_finite::single(9))), EQ);
-
-//  vs_shared_t vs = make_shared<vs_finite>(vs_finite::elements_t {-3, 0, 5});
-//  vs_shared_t vs1 = make_shared<vs_finite>(vs_finite::elements_t { 1, 10});
-//  vs_shared_t vs2 = make_shared<vs_finite>(vs_finite::elements_t {-2, -9});
-  vs_shared_t vs = make_shared<vs_open>(UPWARD,0);
-  num_expr *ass_exp = new num_expr_lin(new num_linear_vs(vs));
-//  num_expr *ass_exp2 = new num_expr_lin(new num_linear_vs(vs2));
-  num_var *var = new num_var(numeric_id::generate());
-//  num_var *var2 = new num_var(numeric_id::generate());
-  vsds.assign(var, ass_exp);
-//  vsds.assign(var2, ass_exp2);
-
-  //v <= {3, -5}
-  //v + {-3, 5} <= 0;
-  // [-ue, 3]
-
-  //{1, 5} + {-2, -10} <= 0
-  //{1, 5} <= - {-2, -10} - [0, ue]
-  //{1, 5} <= {2, 10} - [0, ue]
-  //{1, 5} <= {2, 10} + [-ue, 0]
-  //{1, 5} <= [-ue, 10]
-
-//  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(new num_var(numeric_id::generate()), new num_linear_vs(vs)), LE);
-  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(var), NEQ);
-  vsds.assume(cmp);
-  cout << vsds << endl;
-
-  exit(0);
+//  vsd_state vsds;
+////  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(new num_var(numeric_id::generate()), new num_linear_vs(vs_finite::single(9))), EQ);
+//
+////  vs_shared_t vs = make_shared<vs_finite>(vs_finite::elements_t {-3, 0, 5});
+////  vs_shared_t vs1 = make_shared<vs_finite>(vs_finite::elements_t { 1, 10});
+////  vs_shared_t vs2 = make_shared<vs_finite>(vs_finite::elements_t {-2, -9});
+//  vs_shared_t vs = make_shared<vs_open>(UPWARD,0);
+//  num_expr *ass_exp = new num_expr_lin(new num_linear_vs(vs));
+////  num_expr *ass_exp2 = new num_expr_lin(new num_linear_vs(vs2));
+//  num_var *var = new num_var(numeric_id::generate());
+////  num_var *var2 = new num_var(numeric_id::generate());
+//  vsds.assign(var, ass_exp);
+////  vsds.assign(var2, ass_exp2);
+//
+//  //v <= {3, -5}
+//  //v + {-3, 5} <= 0;
+//  // [-ue, 3]
+//
+//  //{1, 5} + {-2, -10} <= 0
+//  //{1, 5} <= - {-2, -10} - [0, ue]
+//  //{1, 5} <= {2, 10} - [0, ue]
+//  //{1, 5} <= {2, 10} + [-ue, 0]
+//  //{1, 5} <= [-ue, 10]
+//
+////  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(new num_var(numeric_id::generate()), new num_linear_vs(vs)), LE);
+//  num_expr_cmp *cmp = new num_expr_cmp(new num_linear_term(var), NEQ);
+//  vsds.assume(cmp);
+//  cout << vsds << endl;
+//
+//  exit(0);
 
   bj_gdsl bjg = gdsl_init_elf(&f, "a.out", ".text", "main", (size_t)1000);
   dectran dt(*bjg.gdsl, false);
@@ -95,15 +95,18 @@ int main(int argc, char **argv) {
   dt.transduce();
   dt.register_();
 
-  try {
-
   auto &cfg = dt.get_cfg();
   cfg.commit_updates();
 
   dstack ds(&cfg);
   fixpoint fp(&ds);
 
+  try {
   fp.iterate();
+  } catch(string &s) {
+    cout << "Exception: " << s << endl;
+    exit(1);
+  }
 
 //  cout << "++++++++++" << endl;
 //  ds.put(cout);
@@ -115,10 +118,6 @@ int main(int argc, char **argv) {
     out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
   });
   dot_fs.close();
-
-  } catch(string &s) {
-    cout << s << endl;
-  }
 
 //  g.set_code(NULL, 0, 0);
 //  free(buffer);

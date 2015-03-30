@@ -75,17 +75,31 @@ als_state *als_state::box(domain_state *other, size_t current_node) {
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-  set<num_var*> _vars = vars(rhs);
-  id_set_t ids_new;
-  for(auto &var : _vars) {
-    auto var_it = elements.find(var->get_id());
-    if(var_it != elements.end()) ids_new.insert(var_it->second.begin(), var_it->second.end());
-  }
-  if(ids_new.size() > 0)
-    elements[lhs->get_id()] = ids_new;
-  else
+  bool linear = false;
+  num_visitor nv(true);
+  nv._([&](num_expr_lin *le) {
+    linear = true;
+  });
+  rhs->accept(nv);
+  if(linear) {
+    cout << "Computing alias set for " << *rhs << endl;
+    set<num_var*> _vars = vars(rhs);
+    id_set_t ids_new;
+    for(auto &var : _vars) {
+      auto var_it = elements.find(var->get_id());
+      if(var_it != elements.end()) ids_new.insert(var_it->second.begin(), var_it->second.end());
+    }
+    if(ids_new.size() > 0) { elements[lhs->get_id()] = ids_new;
+    cout << "Resuling ALS set for "<< *lhs << ":" << endl;
+    for(auto ix : ids_new)
+      cout << *ix << " ::: ";
+    cout << endl; }
+    else elements.erase(lhs->get_id());
+  } else
     elements.erase(lhs->get_id());
   child_state->assign(lhs, rhs);
+
+  cout << "SFSDFSDFSDFSFS " << *this << endl;
 }
 
 void als_state::assume(api::num_expr_cmp *cmp) {
@@ -96,11 +110,14 @@ void als_state::assume(api::num_expr_cmp *cmp) {
    * Todo: Update paper: Ignoring assumtions in case they contain pointers
    * is not a viable option since now variables are pointers 'by default'
    */
+  cout << "Entering assume()..." << endl;
   auto _vars = vars(cmp);
   for(auto &var : _vars) {
+    cout << "Considering: " << *var << endl;
     auto var_it = elements.find(var->get_id());
     if(var_it != elements.end()) {
       num_expr *current_val_expr = new num_expr_lin(new num_linear_vs(queryVal(var)));
+      cout << "Assigning " << *current_val_expr << " to " << *var << endl;
       child_state->assign(var, current_val_expr);
       delete current_val_expr;
       elements.erase(var_it);
@@ -145,12 +162,14 @@ void als_state::fold(num_var_pairs_t vars) {
 }
 
 api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
+  cout << "queryALS for " << *nv << endl;
+
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
   if(id_it == elements.end()) return child_state->queryAls(nv);
   singleton_value_t &aliases = id_it->second;
   for(auto alias : aliases) {
-    num_var *nv = new num_var(alias);
+//    num_var *nv = new num_var(alias);
     result.insert(ptr(alias, queryVal(nv)));
     delete nv;
   }

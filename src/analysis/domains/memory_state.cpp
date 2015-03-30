@@ -12,6 +12,7 @@
 #include <summy/rreil/shared_copy.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
+#include <summy/value_set/value_set_visitor.h>
 #include <cppgdsl/rreil/variable.h>
 #include <cppgdsl/rreil/id/id.h>
 #include <summy/rreil/id/memory_id.h>
@@ -140,8 +141,8 @@ static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) 
   else return to_b >= from_a;
 }
 
-id_shared_t analysis::memory_state::transVar(id_shared_t var_id, size_t offset, size_t size) {
-  auto &region = regions[var_id];
+region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_t offset,
+    size_t size) {
   bool found = false;
   id_shared_t num_id;
   vector<num_var*> dead_num_vars;
@@ -164,12 +165,24 @@ id_shared_t analysis::memory_state::transVar(id_shared_t var_id, size_t offset, 
     if(erase) region.erase(field_it++);
     else field_it++;
   }
-  if(!found) tie(field_it, ignore) = region.insert(make_pair(offset, field { size, numeric_id::generate() }));
-  field &f = field_it->second;
   child_state->kill(dead_num_vars);
   for(auto var : dead_num_vars)
     delete var;
+  if(!found)
+    return region.end();
+  return field_it;
+}
+
+id_shared_t analysis::memory_state::transReg(region_t &region, size_t offset, size_t size) {
+  auto field_it = retrieve_kill(region, offset, size);
+  if(field_it == region.end()) tie(field_it, ignore) = region.insert(make_pair(offset, field { size, numeric_id::generate() }));
+  field &f = field_it->second;
   return f.num_id;
+}
+
+id_shared_t analysis::memory_state::transVar(id_shared_t var_id, size_t offset, size_t size) {
+  auto &region = regions[var_id];
+  return transReg(region, offset, size);
 }
 
 num_linear *analysis::memory_state::transLE(id_shared_t var_id, size_t offset, size_t size) {
@@ -318,6 +331,47 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
     region_t &region = dereference(alias.id);
+    vector<id_shared_t> ids;
+
+    cout << "Considering alias " << *alias.id << ":" << *alias.offset << endl;
+
+    bool _continue = false;
+    value_set_visitor vsv;
+    vsv._([&](vs_finite *v) {
+      set<int64_t> overlapping;
+      set<int64_t> non_overlapping;
+      int64_t last = 0;
+      size_t last_size = 0;
+      for(auto offset : v->get_elements())
+        if(overlap(last, last_size, offset, store->get_size())) {
+          overlapping.insert(offset);
+          if(offset + store->get_size() > last + last_size) {
+            last = offset;
+            last_size = store->get_size();
+          }
+        } else {
+          non_overlapping.insert(offset);
+          last = offset;
+          last_size = store->get_size();
+        }
+      for(auto oo : overlapping)
+        retrieve_kill(region, oo, store->get_size());
+      for(auto noo : non_overlapping)
+        ids.push_back(transReg(region, noo, store->get_size()));
+    });
+    vsv._([&](vs_top *t) {
+      _continue = true;
+    });
+    vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
+    offset_bits->accept(vsv);
+    if(region.size() == 0) {
+      deref.erase(alias.id);
+      continue;
+    }
+    if(_continue)
+      continue;
+
+
     auto zero_it = region.find(0);
     if(region.find(0) == region.end()) tie(zero_it, ignore) = region.insert(make_pair(0, field { 64,
         numeric_id::generate() }));
@@ -340,6 +394,17 @@ void analysis::memory_state::assume(gdsl::rreil::sexpr *cond) {
   });
   num_expr_cmp *ec = cv.conv_expr_cmp(cond);
   child_state->assume(ec);
+  delete ec;
+}
+
+void analysis::memory_state::assume_not(gdsl::rreil::sexpr *cond) {
+  converter cv(0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
+  });
+  num_expr_cmp *ec = cv.conv_expr_cmp(cond);
+  num_expr_cmp *ec_not = ec->negate();
+  child_state->assume(ec_not);
+  delete ec_not;
   delete ec;
 }
 
