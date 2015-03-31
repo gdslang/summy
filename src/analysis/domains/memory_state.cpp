@@ -32,6 +32,11 @@ using summy::rreil::numeric_id;
 using namespace analysis;
 using namespace std;
 
+std::ostream& analysis::operator <<(std::ostream &out, const field &_this) {
+  out << "{" << *_this.num_id << ":" << _this.size << "}";
+  return out;
+}
+
 analysis::memory_address::memory_address(memory_state &_this, api::num_var *var) :
     _this(_this), var(var) {
 }
@@ -149,6 +154,12 @@ region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_
   id_shared_t num_id;
   vector<num_var*> dead_num_vars;
   auto field_it = region.upper_bound(offset);
+
+  if(field_it == region.end())
+    cout << "Upper bound is region end" << endl;
+  else
+    cout << "Upper bound: " << field_it->second;
+
   if(field_it != region.begin()) --field_it;
   while(field_it != region.end()) {
     bool erase = false;

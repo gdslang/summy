@@ -26,6 +26,8 @@ struct field {
   id_shared_t num_id;
 };
 
+std::ostream &operator<<(std::ostream &out, field const &_this);
+
 /*
  * region: offset -> size, numeric id
  */
