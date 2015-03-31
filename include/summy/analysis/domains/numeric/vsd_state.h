@@ -69,11 +69,14 @@ public:
   vsd_state *box(domain_state *other, size_t current_node);
 
   void assign(api::num_var *lhs, api::num_expr *rhs);
+  void weak_assign(api::num_var *lhs, api::num_expr *rhs);
   void assume(api::num_expr_cmp *cmp);
   void assume(api::num_var *lhs, api::ptr_set_t aliases);
   void kill(std::vector<api::num_var*> vars);
   void equate_kill(num_var_pairs_t vars);
   void fold(num_var_pairs_t vars);
+
+  bool cleanup(api::num_var *var);
 
   api::ptr_set_t queryAls(api::num_var *nv);
   summy::vs_shared_t queryVal(api::num_linear *lin);

@@ -110,6 +110,17 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
   elements[lhs->get_id()] = er;
 }
 
+void value_sets::vsd_state::weak_assign(num_var *lhs, num_expr *rhs) {
+  vs_shared_t er = queryVal(rhs);
+  _is_bottom = _is_bottom || *er == value_set::bottom;
+  if(is_bottom())
+    return;
+  vs_shared_t current = queryVal(lhs);
+  cout << "Join of " << *current << " and " << *er << endl;
+  elements[lhs->get_id()] = value_set::join(current, er);
+  cout << "^^^^^ " << *this;
+}
+
 void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
   auto assume_zero = [&](vector<num_linear*> lins) {
     vector<vector<num_expr*>> fp_exprss;
@@ -261,6 +272,14 @@ void analysis::value_sets::vsd_state::equate_kill(num_var_pairs_t vars) {
 
 void analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {
   throw string("analysis::value_sets::vsd_state::assume(num_var_pairs_t)");
+}
+
+bool analysis::value_sets::vsd_state::cleanup(api::num_var *var) {
+  if(*queryVal(var) == value_set::top) {
+    elements.erase(var->get_id());
+    return false;
+  } else
+    return true;
 }
 
 vsd_state *analysis::value_sets::vsd_state::bottom() {

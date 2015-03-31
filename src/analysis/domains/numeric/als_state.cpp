@@ -98,8 +98,39 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   } else
     elements.erase(lhs->get_id());
   child_state->assign(lhs, rhs);
+}
 
-  cout << "SFSDFSDFSDFSFS " << *this << endl;
+void als_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
+  bool linear = false;
+  num_visitor nv(true);
+  nv._([&](num_expr_lin *le) {
+    linear = true;
+  });
+  rhs->accept(nv);
+
+  if(linear) {
+    set<num_var*> _vars = vars(rhs);
+    id_set_t ids_erase;
+
+    auto ids_mine_it = elements.find(lhs->get_id());
+    if(ids_mine_it != elements.end()) {
+      id_set_t &ids_mine = ids_mine_it->second;
+      id_set_t rest;
+
+      for(auto &var : _vars) {
+        auto var_it = elements.find(var->get_id());
+        id_set_t const &ids_var = var_it->second;
+        if(var_it != elements.end())
+          set_intersection(ids_mine.begin(), ids_mine.end(), ids_var.begin(), ids_var.end(), inserter(rest, rest.begin()));
+      }
+      if(rest.size() > 0)
+        ids_mine = rest;
+      else
+        elements.erase(ids_mine_it);
+    }
+  } else
+    elements.erase(lhs->get_id());
+  child_state->weak_assign(lhs, rhs);
 }
 
 void als_state::assume(api::num_expr_cmp *cmp) {
@@ -218,6 +249,19 @@ summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
 
 als_state *als_state::copy() const {
   return new als_state(*this);
+}
+
+bool analysis::als_state::cleanup(api::num_var *var) {
+  bool child_clean = child_state->cleanup(var);
+  if(elements.find(var->get_id()) != elements.end())
+    return true;
+  /*
+   * Todo: reverse map
+   */
+  for(auto &id_set_it : elements)
+    if(id_set_it.second.find(var->get_id()) != id_set_it.second.end())
+      return true;
+  return child_clean;
 }
 
 std::tuple<elements_t, numeric_state*, numeric_state*> analysis::als_state::compat(const als_state *a,

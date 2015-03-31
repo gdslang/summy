@@ -34,6 +34,10 @@ bool summy::vs_finite::is_bottom() const {
   return elements.empty();
 }
 
+bool summy::vs_finite::is_singleton() const {
+  return elements.size() == 1;
+}
+
 vs_shared_t summy::vs_finite::narrow(const vs_finite *vsf) const {
   return make_shared<vs_finite>(*vsf);
 }

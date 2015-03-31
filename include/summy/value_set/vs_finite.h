@@ -34,6 +34,7 @@ public:
   int64_t min() const;
   int64_t max() const;
   bool is_bottom() const;
+  bool is_singleton() const;
 
   const elements_t &get_elements() const {
     return elements;

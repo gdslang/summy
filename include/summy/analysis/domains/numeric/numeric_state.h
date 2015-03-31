@@ -28,11 +28,14 @@ public:
   virtual bool is_bottom() const = 0;
 
   virtual void assign(api::num_var *lhs, api::num_expr *rhs) = 0;
+  virtual void weak_assign(api::num_var *lhs, api::num_expr *rhs) = 0;
   virtual void assume(api::num_expr_cmp *cmp) = 0;
   virtual void assume(api::num_var *lhs, api::ptr_set_t aliases) = 0;
   virtual void kill(std::vector<api::num_var*> vars) = 0;
   virtual void equate_kill(num_var_pairs_t vars) = 0;
   virtual void fold(num_var_pairs_t vars) = 0;
+
+  virtual bool cleanup(api::num_var *var) = 0;
 
   virtual numeric_state *join(domain_state *other, size_t current_node) = 0;
   virtual numeric_state *box(domain_state *other, size_t current_node) = 0;
