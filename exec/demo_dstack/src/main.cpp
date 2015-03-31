@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
 //
 //  exit(0);
 
-  bj_gdsl bjg = gdsl_init_elf(&f, "a.out", ".text", "main", (size_t)1000);
+  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
   dectran dt(*bjg.gdsl, false);
 
   dt.transduce();

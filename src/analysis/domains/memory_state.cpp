@@ -136,7 +136,7 @@ region_t &analysis::memory_state::region(id_shared_t id) {
 }
 
 static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) {
-//  cout << "overlap(" << from_a << ", " << size_a << ", " << from_b << ", " << size_b << endl;
+  cout << "overlap(" << from_a << ", " << size_a << ", " << from_b << ", " << size_b << endl;
   if(!size_a || !size_b) return false;
   size_t to_a = from_a + size_a - 1;
   size_t to_b = from_b + size_b - 1;
@@ -181,6 +181,9 @@ region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_
   child_state->kill(dead_num_vars);
   for(auto var : dead_num_vars)
     delete var;
+
+  cout << "Found: " << found << endl;
+
   if(!found)
     return region.end();
   return field_it;
@@ -192,6 +195,11 @@ id_shared_t analysis::memory_state::transReg(region_t &region, size_t offset, si
     cout << "Inserting new field at " << offset << endl;
     tie(field_it, ignore) = region.insert(make_pair(offset, field { size, numeric_id::generate() }));
   }
+
+  for(auto &f : region)
+    cout << "Field " << f.second << " is in region at offset " << f.first << "..." << endl;
+  cout << *this << endl;
+
   field &f = field_it->second;
   return f.num_id;
 }
@@ -356,20 +364,71 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
     vsv._([&](vs_finite *v) {
       set<int64_t> overlapping;
       set<int64_t> non_overlapping;
+
+      if(v->is_bottom()) {
+        /*
+         * Todo: handle bottom
+         */
+        _continue = true;
+        return;
+      }
+      vs_finite::elements_t const &v_elems = v->get_elements();
       int64_t last = 0;
-      size_t last_size = 0;
-      for(auto offset : v->get_elements())
-        if(overlap(last, last_size, offset, store->get_size())) {
-          overlapping.insert(offset);
-          if(offset + store->get_size() > last + last_size) {
-            last = offset;
-            last_size = store->get_size();
+      for(auto o_it = v_elems.begin(); o_it != v_elems.end(); o_it++) {
+         int64_t next = *o_it;
+        if(o_it != v_elems.begin()) {
+          if(next >= last + 64)
+            non_overlapping.insert(last);
+          else {
+            overlapping.insert(last);
+            overlapping.insert(next);
           }
-        } else {
-          non_overlapping.insert(offset);
-          last = offset;
-          last_size = store->get_size();
         }
+        last = next;
+      }
+      if(overlapping.find(last) == overlapping.end())
+        non_overlapping.insert(last);
+
+
+//      for(auto o_it = v_elems.begin(), o_next = ++o_it; o_it != v_elems.end(); o_it = o_next, o_next++) {
+//        if(o_it == v_elems.begin()) {
+//          if(o_next == v_elems.end())
+//            non_overlapping.insert(*o_it);
+//          else {
+//            last = *o_it;
+//            continue;
+//          }
+//        } else if(o_next == v_elems.end()) {
+//          if(overlap(last, store->get_size(), *o_it, store->get_size())) {
+//            overlapping.insert(last);
+//            overlapping.insert(*o_it);
+//          } else {
+//            non_overlapping.insert(last);
+//            non_overlapping.insert(*o_it);
+//          }
+//        } else
+//          if(overlap(last, store->get_size(), *o_it, store->get_size()))
+//            overlapping.insert(last);
+//          else
+//            non_overlapping.insert(last);
+//        if(*o_it > last)
+//        last = *o_it;
+//      }
+
+//      size_t last_size = 0;
+//      for(auto offset : v->get_elements())
+//        if(overlap(last, last_size, offset, store->get_size())) {
+//          overlapping.insert(offset);
+//          if(offset + store->get_size() > last + last_size) {
+//            last = offset;
+//            last_size = store->get_size();
+//          }
+//        } else {
+//          if(last_size > 0)
+//            non_overlapping.insert(last);
+//          last = offset;
+//          last_size = store->get_size();
+//        }
       for(auto oo : overlapping)
         retrieve_kill(region, oo, store->get_size());
       for(auto noo : non_overlapping)
@@ -387,20 +446,18 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
     if(_continue)
       continue;
 
-
-    auto zero_it = region.find(0);
-    if(region.find(0) == region.end()) tie(zero_it, ignore) = region.insert(make_pair(0, field { 64,
-        numeric_id::generate() }));
-    num_var *lhs = new num_var(zero_it->second.num_id);
-
     converter rhs_cv(store->get_size(), [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
       return transLE(id, offset, size);
     });
-    num_expr *rhs = rhs_cv.conv_expr(store->get_rhs());
-    child_state->assign(lhs, rhs);
+    for(auto id : ids) {
+      num_var *lhs = new num_var(id);
+      num_expr *rhs = rhs_cv.conv_expr(store->get_rhs());
+      child_state->assign(lhs, rhs);
+      delete lhs;
+      delete rhs;
+    }
 
-    delete lhs;
-    delete rhs;
+
   }
 }
 
