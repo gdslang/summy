@@ -82,7 +82,6 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   });
   rhs->accept(nv);
   if(linear) {
-    cout << "Computing alias set for " << *rhs << endl;
     set<num_var*> _vars = vars(rhs);
     id_set_t ids_new;
     for(auto &var : _vars) {
@@ -90,7 +89,6 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
       if(var_it != elements.end()) ids_new.insert(var_it->second.begin(), var_it->second.end());
     }
     if(ids_new.size() > 0) { elements[lhs->get_id()] = ids_new;
-    cout << "Resuling ALS set for "<< *lhs << ":" << endl;
     for(auto ix : ids_new)
       cout << *ix << " ::: ";
     cout << endl; }
@@ -141,10 +139,8 @@ void als_state::assume(api::num_expr_cmp *cmp) {
    * Todo: Update paper: Ignoring assumtions in case they contain pointers
    * is not a viable option since now variables are pointers 'by default'
    */
-  cout << "Entering assume()..." << endl;
   auto _vars = vars(cmp);
   for(auto &var : _vars) {
-    cout << "Considering: " << *var << endl;
     auto var_it = elements.find(var->get_id());
     if(var_it != elements.end()) {
       num_expr *current_val_expr = new num_expr_lin(new num_linear_vs(queryVal(var)));

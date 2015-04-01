@@ -391,10 +391,6 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
       set<int64_t> non_overlapping;
       tie(overlapping, non_overlapping) = overlappings(v, load->get_size());
 
-      cout << "Number of overlappings: " << overlapping.size() << endl;
-      cout << "Number of non_overlappings: " << non_overlapping.size() << endl;
-
-
       if(overlapping.size() > 0)
         return;
 
@@ -407,8 +403,6 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
     });
     vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
     offset_bits->accept(vsv);
-
-    cout << "Number of lins: " << lins.size() << endl;
 
     num_var *lhs = new num_var(
         transVar(shared_copy(load->get_lhs()->get_id()), load->get_lhs()->get_offset(), load->get_size()));
@@ -451,8 +445,6 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
   for(auto &alias : aliases) {
     region_t &region = dereference(alias.id);
     vector<id_shared_t> ids;
-
-    cout << "Considering alias " << *alias.id << ":" << *alias.offset << endl;
 
     bool singleton = false;
     bool _continue = false;
@@ -607,15 +599,15 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();
 
-  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-    cout << "++++++++++++++++++++++++++++++" << endl;
-    cout << "++++++++++++++++++++++++++++++" << endl;
-    cout << "++++++++++++++++++++++++++++++" << endl;
-    cout << "compat OF" << endl;
-    cout << *a << endl;
-    cout << "WITH" << endl;
-    cout << *b << endl;
-  }
+//  if(!a_n->is_bottom() && !b_n->is_bottom()) {
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "compat OF" << endl;
+//    cout << *a << endl;
+//    cout << "WITH" << endl;
+//    cout << *b << endl;
+//  }
 
   auto join_region_map = [&](region_map_t const &a_map, region_map_t const &b_map) {
     region_map_t result_map;
@@ -695,15 +687,15 @@ std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::
   head.regions = join_region_map(a->regions, b->regions);
   head.deref = join_region_map(a->deref, b->deref);
 
-  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-    cout << "Result #1" << endl;
-    cout << memory_state(a_n->copy(), head.regions, head.deref) << endl << endl;
-    cout << "Result #2" << endl;
-    cout << memory_state(b_n->copy(), head.regions, head.deref) << endl << endl;
-
-    cout << "++++++++++++++++++++++++++++++" << endl;
-    cout << "++++++++++++++++++++++++++++++" << endl;
-    cout << "++++++++++++++++++++++++++++++" << endl;
-  }
+//  if(!a_n->is_bottom() && !b_n->is_bottom()) {
+//    cout << "Result #1" << endl;
+//    cout << memory_state(a_n->copy(), head.regions, head.deref) << endl << endl;
+//    cout << "Result #2" << endl;
+//    cout << memory_state(b_n->copy(), head.regions, head.deref) << endl << endl;
+//
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//  }
   return make_tuple(head, a_n, b_n);
 }
