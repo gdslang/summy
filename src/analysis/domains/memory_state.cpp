@@ -241,17 +241,60 @@ id_shared_t analysis::memory_state::transVarReg(region_t &region, size_t offset,
 }
 
 id_shared_t analysis::memory_state::transVar(id_shared_t var_id, size_t offset, size_t size) {
-  auto &region = regions[var_id];
-  return transVarReg(region, offset, size);
+  auto region_it = regions.find(var_id);
+  if(region_it == regions.end()) {
+    tie(region_it, ignore) = regions.insert(make_pair(var_id, region_t()));
+    cout << "Unable to find region for " << *var_id << endl;
+  }
+  return transVarReg(region_it->second, offset, size);
 }
 
 num_linear *analysis::memory_state::transLEReg(region_t &region, size_t offset, size_t size) {
-  auto field_it = region.find(offset);
-  if(field_it == region.end()) tie(field_it, ignore) = region.insert(
-      make_pair(0, field { size, numeric_id::generate() }));
-  field &f = field_it->second;
-  if(f.size == size) return new num_linear_term(new num_var(f.num_id));
-  return new num_linear_vs(value_set::top);
+  cout << "transLEReg "<< offset << ":" << size << endl;
+  if(offset == 8 && size == 8)
+    printf("Juhu\n");
+
+  vector<field> fields;
+  size_t consumed = 0;
+  while(true) {
+    auto field_it = region.find(offset + consumed);
+    if(field_it == region.end()) {
+      fields.clear();
+      break;
+    } else {
+      field &f = field_it->second;
+      if(f.size == 0) {
+        fields.clear();
+        break;
+      }
+      size_t size_rest = size - consumed;
+      if(size_rest < f.size) {
+        fields.clear();
+        break;
+      } else {
+        fields.push_back(f);
+        if(size_rest == f.size)
+          break;
+      }
+      consumed += f.size;
+    }
+  }
+
+  cout << "Number of fields: " << fields.size() << endl;
+
+  if(fields.size() == 0)
+    return new num_linear_vs(value_set::top);
+  else if(fields.size() == 1) {
+    return new num_linear_term(new num_var(fields[0].num_id));
+  } else {
+    num_linear *l = new num_linear_term(new num_var(fields[0].num_id));
+    size_t size_acc = fields[0].size;
+    for(size_t i = 1; i < fields.size(); i++) {
+      l = new num_linear_term(1 << size_acc, new num_var(fields[i].num_id), l);
+      size_acc += fields[i].size;
+    }
+    return l;
+  }
 }
 
 num_linear *analysis::memory_state::transLE(id_shared_t var_id, size_t offset, size_t size) {
@@ -415,6 +458,7 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
       child_state->assign(lhs, rhs_expr);
       delete rhs_expr;
     } else {
+      cout << "Weak assign after load" << endl;
       num_var *temp = new num_var(numeric_id::generate());
       num_expr *rhs_first = new num_expr_lin(lins[0]);
       child_state->assign(temp, rhs_first);
@@ -545,6 +589,7 @@ void analysis::memory_state::cleanup() {
         num_var *nv = new num_var(field_it.second.num_id);
         if(!child_state->cleanup(nv))
           region_it.second.erase(field_it.first);
+        delete nv;
       }
       if(region_it.second.size() == 0)
         regions.erase(region_it.first);
@@ -571,7 +616,9 @@ summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear *l) {
     return transLE(id, offset, size);
   });
   num_linear *nl = cv.conv_linear(l);
-  return child_state->queryVal(nl);
+  summy::vs_shared_t result = child_state->queryVal(nl);
+  delete nl;
+  return result;
 }
 
 std::set<summy::vs_shared_t> analysis::memory_state::queryPts(std::unique_ptr<memory_address> &address) {

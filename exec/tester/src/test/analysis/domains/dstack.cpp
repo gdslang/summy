@@ -92,7 +92,7 @@ TEST_F(dstack_test, OneFieldReplacesTwoFields) {
   cout << "FOOOOOOOOOOOO" << endl;
 
   auto result = ds_analyzed->result();
-  cout << *result.result[4]->queryVal(new lin_var(new variable(new arch_id("A"), 0))) << endl;
+//  cout << *result.result[4]->queryVal(new lin_var(new variable(new arch_id("A"), 0))) << endl;
 
   /*
    * Todo: Zunächst ein Feld, dann zwei

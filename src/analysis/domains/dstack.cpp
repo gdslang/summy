@@ -27,46 +27,41 @@ void analysis::dstack::add_constraint(size_t from, size_t to, const ::cfg::edge 
   function<shared_ptr<memory_state>()> transfer_f = [=]() {
     return state[from];
   };
+  auto for_mutable = [&](function<void(shared_ptr<memory_state>)> cb) {
+    transfer_f = [=]() {
+      shared_ptr<memory_state> &state_c = this->state[from];
+      shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
+      cb(state_new);
+      return state_new;
+    };
+  };
+  auto for_update = [&](auto *update) {
+    for_mutable([=](shared_ptr<memory_state> state_new) {
+      state_new->update(update);
+    });
+  };
   edge_visitor ev;
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
     statement_visitor v;
     v._([&](assign *a) {
-          transfer_f = [=]() {
-            shared_ptr<memory_state> &state_c = this->state[from];
-            shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
-            state_new->update(a);
-            return state_new;
-          };
+      for_update(a);
     });
     v._([&](load *l) {
-      transfer_f = [=]() {
-        shared_ptr<memory_state> &state_c = this->state[from];
-        shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
-        state_new->update(l);
-        return state_new;
-      };
+      for_update(l);
     });
     v._([&](store *s) {
-      transfer_f = [=]() {
-        shared_ptr<memory_state> &state_c = this->state[from];
-        shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
-        state_new->update(s);
-        return state_new;
-      };
+      for_update(s);
     });
     stmt->accept(v);
   });
   ev._([&](const cond_edge *edge) {
-    transfer_f = [=]() {
-      shared_ptr<memory_state> &state_c = this->state[from];
-      shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
+    for_mutable([=](shared_ptr<memory_state> state_new) {
       if(edge->is_positive())
         state_new->assume(edge->get_cond());
       else
         state_new->assume_not(edge->get_cond());
-      return state_new;
-    };
+    });
   });
   e->accept(ev);
   (constraints[to])[from] = transfer_f;

@@ -103,6 +103,8 @@ vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t curr
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
+  cout << "Assign " << *rhs << " to " << *lhs << endl;
+
   vs_shared_t er = queryVal(rhs);
   _is_bottom = _is_bottom || *er == value_set::bottom;
   if(is_bottom())
@@ -111,6 +113,8 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
 }
 
 void value_sets::vsd_state::weak_assign(num_var *lhs, num_expr *rhs) {
+  cout << "Weak Assign " << *rhs << " to " << *lhs << endl;
+
   vs_shared_t er = queryVal(rhs);
   _is_bottom = _is_bottom || *er == value_set::bottom;
   if(is_bottom())
