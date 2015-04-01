@@ -11,11 +11,12 @@
 #include <iostream>
 #include <fstream>
 #include <iterator>
+#include <string>
 #include <stdio.h>
 
 using namespace std;
 
-std::vector<uint8_t> asm_compile(std::string _asm) {
+static std::vector<uint8_t> asm_compile(std::string _asm, bool objcopy) {
   std::vector<uint8_t> data;
   scope_exit exit([&]() {
     ofstream asm_file;
@@ -32,12 +33,17 @@ std::vector<uint8_t> asm_compile(std::string _asm) {
        system("rm program.elf");
      });
 
-     if(system("objcopy -O binary program.elf program.bin")) throw string("objcopy failed :-(");
-     exit([&]() {
-       system("rm program.bin");
-     });
+     string file;
+     if(objcopy) {
+       if(system("objcopy -O binary program.elf program.bin")) throw string("objcopy failed :-(");
+         exit([&]() {
+           system("rm program.bin");
+       });
+       file = "program.bin";
+     } else
+       file = "program.elf";
 
-     FILE *f = fopen("program.bin", "r");
+     FILE *f = fopen(file.c_str(), "r");
      size_t read;
      while(true) {
        uint8_t next;
@@ -55,6 +61,18 @@ std::vector<uint8_t> asm_compile(std::string _asm) {
 //     }
   });
   return data;
+}
+
+std::vector<uint8_t> asm_compile(std::string _asm) {
+  return asm_compile(_asm, true);
+}
+
+elf_provider *asm_compile_elfp(std::string _asm) {
+  vector<uint8_t> data = asm_compile(_asm, false);
+  char *buffer = (char*)malloc(data.size());
+  for(size_t i = 0; i < data.size(); i++)
+    buffer[i] = data[i];
+  return new elf_provider(buffer, data.size());
 }
 
 std::string c_compile(std::string program) {

@@ -46,6 +46,16 @@ using namespace summy;
 using namespace analysis::api;
 
 int main(int argc, char **argv) {
+//  int foo = 42;
+//  FILE *fi = fmemopen(&foo, 4, "r");
+//  int fd = fileno(fi);
+//
+//  int abc;
+////  fread(&abc, 4, 1, fi);
+//  int r = read(fd, &abc, 4);
+//  cout << r << " /// " << abc << endl;
+//
+//  exit(0);
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
@@ -89,6 +99,7 @@ int main(int argc, char **argv) {
 //
 //  exit(0);
 
+  try {
   bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
   dectran dt(*bjg.gdsl, false);
 
@@ -101,12 +112,8 @@ int main(int argc, char **argv) {
   dstack ds(&cfg);
   fixpoint fp(&ds);
 
-  try {
   fp.iterate();
-  } catch(string &s) {
-    cout << "Exception: " << s << endl;
-    exit(1);
-  }
+
 
 //  cout << "++++++++++" << endl;
 //  ds.put(cout);
@@ -114,10 +121,16 @@ int main(int argc, char **argv) {
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
-  cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-    out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-  });
+//  cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
+//    out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+//  });
+  cfg.dot(dot_fs);
   dot_fs.close();
+
+  } catch(string *s) {
+    cout << "Exception: " << *s << endl;
+    exit(1);
+  }
 
 //  g.set_code(NULL, 0, 0);
 //  free(buffer);
