@@ -584,15 +584,21 @@ void analysis::memory_state::assume_not(gdsl::rreil::sexpr *cond) {
 
 void analysis::memory_state::cleanup() {
   auto _inner = [&](auto &regions) {
-    for(auto &region_it : regions) {
-      for(auto &field_it : region_it.second) {
-        num_var *nv = new num_var(field_it.second.num_id);
+    auto region_it = regions.begin();
+    while(region_it != regions.end()) {
+      auto field_it = region_it->second.begin();
+      while(field_it != region_it->second.end()) {
+        num_var *nv = new num_var(field_it->second.num_id);
         if(!child_state->cleanup(nv))
-          region_it.second.erase(field_it.first);
+        region_it->second.erase(field_it++);
+        else
+        field_it++;
         delete nv;
       }
-      if(region_it.second.size() == 0)
-        regions.erase(region_it.first);
+      if(region_it->second.size() == 0)
+      regions.erase(region_it++);
+      else
+      region_it++;
     }
   };
   _inner(regions);

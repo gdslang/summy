@@ -20,32 +20,32 @@ void analysis::equality_state::put(std::ostream &out) const {
   bool first = true;
   out << "{";
   for(auto &elem : elements) {
-    if(first)
-      first = false;
-    else
-      out << ", ";
-    out << "{";
+    id_shared_t id = elem.first;
+    singleton_value_t const &aliases = elem.second;
+    if(!first) out << ", ";
+    else first = false;
+    out << "Eq(" << *id << ") -> {";
     bool first = true;
-    for(auto &alias : *elem) {
+    for(auto &alias : aliases) {
       if(first) first = false;
       else out << ", ";
       out << *alias;
     }
     out << "}";
   }
+  out << " ### {";
+  first = true;
+  for(auto &elem : back_map) {
+    id_shared_t id = elem.first;
+    if(!first) out << ", ";
+    else first = false;
+    out << "back(" << *id << ") -> ";
+    out << *elem.second;
+  }
   out << "}" << endl;
   out << "Child state: {" << endl;
   out << *child_state;
   out << endl << "}";
-}
-
-analysis::equality_state::equality_state(const equality_state &o) :
-    child_state(o.child_state->copy()) {
-  for(auto &back_mapping : o.back_map) {
-    id_set_t *s = new id_set_t(*back_mapping.second);
-    back_map.insert(make_pair(back_mapping.first, s));
-    elements.insert(s);
-  }
 }
 
 analysis::equality_state::~equality_state() {
@@ -79,31 +79,50 @@ equality_state *analysis::equality_state::box(domain_state *other, size_t curren
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   auto assign_var = [&](api::num_var *rhs_var) {
-    cout << "assign_var" << endl;
+//    cout << "assign_var: " << *lhs << " <- " << *rhs_var << endl;
 
-    auto lhs_back_it = back_map.find(lhs->get_id());
-    if(lhs_back_it != back_map.end()) {
-      id_set_t *eqs = lhs_back_it->second;
-      eqs->erase(lhs->get_id());
-      if(eqs->size() == 0) {
-        elements.erase(eqs);
-        delete eqs;
+    auto remove = [&](id_shared_t id) {
+      auto id_back_it = back_map.find(id);
+      if(id_back_it != back_map.end()) {
+        auto lhs_elements_it = elements.find(id_back_it->second);
+        lhs_elements_it->second.erase(id);
+        if(*lhs->get_id() == *id_back_it->second) {
+          id_set_t lhs_elements = lhs_elements_it->second;
+          elements.erase(lhs_elements_it);
+          if(lhs_elements.size() > 0) {
+            // new repr.
+            id_shared_t rep = *lhs_elements.begin();
+            for(auto &elem : lhs_elements)
+              back_map[elem] = rep;
+            elements[rep] = lhs_elements;
+          }
+        }
+        back_map.erase(id_back_it);
       }
-    }
-    id_set_t *eqs_rhs;
+    };
+    auto insert = [&](id_shared_t id, id_shared_t rep) {
+//      cout << "Insert " << *id << " / rep: " << *rep << endl;
+      auto rep_it = elements.find(rep);
+      rep_it->second.insert(id);
+      if(**rep_it->second.begin() == *id) {
+        for(auto &elem : rep_it->second)
+          back_map[elem] = id;
+        elements[id] = rep_it->second;
+        elements.erase(rep_it);
+      } else
+        back_map[id] = rep;
+    };
+
+    remove(lhs->get_id());
+
     auto rhs_back_it = back_map.find(rhs_var->get_id());
     if(rhs_back_it == back_map.end()) {
-      eqs_rhs = new id_set_t({rhs_var->get_id()});
-      tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs_var->get_id(), eqs_rhs));
-      elements.insert(eqs_rhs);
-    } else
-      eqs_rhs = rhs_back_it->second;
+      tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs_var->get_id(), rhs_var->get_id()));
+      elements[rhs_back_it->second].insert(rhs_var->get_id());
+    }
+    back_map[lhs->get_id()] = rhs_back_it->second;
+    insert(lhs->get_id(), rhs_back_it->second);
 
-    rhs_back_it->second->insert(lhs->get_id());
-    if(lhs_back_it != back_map.end())
-      lhs_back_it->second = eqs_rhs;
-    else
-      back_map.insert(make_pair(lhs->get_id(), eqs_rhs));
   };
 
   function<void(num_linear*)> assign_lin;
@@ -147,7 +166,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
 
     gen(id_set_t ids, gen *rest, function<num_linear*(gen &_this)> _) :
       ids(ids), rest(rest), _(_) {
-      ids_it = ids.begin();
+      ids_it = this->ids.begin();
     }
 
     bool end() {
@@ -155,6 +174,8 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
     }
 
     void next() {
+      if(!rest)
+        return;
       rest->next();
       if(rest->end()) {
         if(ids_it == ids.end())
@@ -181,7 +202,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
       if(back_map_it == back_map.end())
         ids.insert(nt->get_var()->get_id());
       else
-        ids = *back_map_it->second;
+        ids = elements[back_map_it->second];
       g = new gen(
         ids,
         generate_gen(nt->get_next()),
@@ -208,6 +229,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
     child_state->assume(ec);
     delete ec;
   }
+//  child_state->assume(cmp);
 }
 
 void analysis::equality_state::assume(api::num_var *lhs, api::ptr_set_t aliases) {
