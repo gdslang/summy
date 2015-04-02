@@ -114,7 +114,7 @@ public:
   void cleanup();
 
   std::unique_ptr<memory_address> to_memory_address(gdsl::rreil::address *a);
-  summy::vs_shared_t queryVal(gdsl::rreil::linear *l);
+  summy::vs_shared_t queryVal(gdsl::rreil::linear *l, size_t size);
   std::set<summy::vs_shared_t> queryPts(std::unique_ptr<memory_address> &address);
 
   memory_state *copy() const;

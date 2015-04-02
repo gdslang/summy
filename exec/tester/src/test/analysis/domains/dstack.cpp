@@ -70,9 +70,16 @@ struct _analysis_result {
   dstack *ds_analyzed;
   map<size_t, size_t> addr_node_map;
   elf_provider *elfp;
+
+  ~_analysis_result() {
+    delete ds_analyzed;
+    delete elfp;
+  }
 };
 
 static void state_asm(_analysis_result &r, string _asm) {
+  SCOPED_TRACE("state_asm()");
+
   r.elfp = asm_compile_elfp(_asm);
 
 //  binary_provider::entry_t e;
@@ -100,8 +107,7 @@ static void state_asm(_analysis_result &r, string _asm) {
       r.addr_node_map[an->get_address()] = an->get_id();
     });
     node->accept(nv);
-    if(_break)
-      break;
+    if(_break) break;
   }
 
   r.ds_analyzed = new dstack(&cfg);
@@ -110,30 +116,46 @@ static void state_asm(_analysis_result &r, string _asm) {
   fp.iterate();
 }
 
-TEST_F(dstack_test, OneFieldReplacesTwoFields) {
+static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_name, size_t offset,
+    size_t size) {
+  SCOPED_TRACE("query_val()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->entry(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+  lin_var *lv = new lin_var(new variable(new arch_id(arch_id_name), offset));
+  r = analy_r.result[ar.addr_node_map[e.address]]->queryVal(lv, size);
+  delete lv;
+}
+
+TEST_F(dstack_test, Basics) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
-  "main: mov $99, %rax\n\
-   foo: mov $20, %rax\n\
-   end: nop\n"));
-//    ASSERT_NO_FATAL_FAILURE(state_asm(ds_analyzed,
-//        "mov $99, %rax\n"));
+   "mov $99, %rax\n\
+   first: mov $20, %rax\n\
+   second: nop\n"));
 
-  auto result = ar.ds_analyzed->result();
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(99));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(20));
+}
 
-  binary_provider::entry_t e_foo;
-  tie(ignore, e_foo) = ar.elfp->entry("foo");
-  binary_provider::entry_t e_end;
-  tie(ignore, e_end) = ar.elfp->entry("end");
-
-  cout << *result.result[ar.addr_node_map[e_foo.address]]->queryVal(new lin_var(new variable(new arch_id("A"), 0))) << endl;
-  cout << *result.result[ar.addr_node_map[e_end.address]]->queryVal(new lin_var(new variable(new arch_id("A"), 0))) << endl;
-
+TEST_F(dstack_test, OneFieldReplacesTwoFields) {
   /*
-   * Todo: Zunächst ein Feld, dann zwei
+   * query_region + == auf regions
    */
 
-//  delete ds_analyzed;
 }
 
 TEST_F(dstack_test, TwoFieldsReplaceOneField) {

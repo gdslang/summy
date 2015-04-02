@@ -611,8 +611,8 @@ std::unique_ptr<memory_address> analysis::memory_state::to_memory_address(addres
   return unique_ptr<memory_address>(new memory_address(*this, var));
 }
 
-summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear *l) {
-  converter cv(64, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear *l, size_t size) {
+  converter cv(size, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
     return transLE(id, offset, size);
   });
   num_linear *nl = cv.conv_linear(l);
