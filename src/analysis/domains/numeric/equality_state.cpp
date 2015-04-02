@@ -229,7 +229,6 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
     child_state->assume(ec);
     delete ec;
   }
-//  child_state->assume(cmp);
 }
 
 void analysis::equality_state::assume(api::num_var *lhs, api::ptr_set_t aliases) {

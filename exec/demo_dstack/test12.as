@@ -1,4 +1,5 @@
 mov %rax, %rbx
+mov %rbx, %rcx
 
 cmp $12, %rax
 jge else
