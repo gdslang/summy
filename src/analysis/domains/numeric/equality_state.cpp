@@ -17,26 +17,26 @@ using namespace gdsl::rreil;
 using namespace summy;
 
 void analysis::equality_state::put(std::ostream &out) const {
-//  bool first = true;
-//  out << "{";
-//  for(auto &elem : elements) {
-//    id_shared_t id = elem.first;
-//    singleton_value_t const &aliases = elem.second;
-//    if(!first) out << ", ";
-//    else first = false;
-//    out << "Eq(" << *id << ") -> {";
-//    bool first = true;
-//    for(auto &alias : aliases) {
-//      if(first) first = false;
-//      else out << ", ";
-//      out << *alias;
-//    }
-//    out << "}";
-//  }
-//  out << "}" << endl;
-//  out << "Child state: {" << endl;
-//  out << *child_state;
-//  out << endl << "}";
+  bool first = true;
+  out << "{";
+  for(auto &elem : elements) {
+    if(first)
+      first = false;
+    else
+      out << ", ";
+    out << "{";
+    bool first = true;
+    for(auto &alias : *elem) {
+      if(first) first = false;
+      else out << ", ";
+      out << *alias;
+    }
+    out << "}";
+  }
+  out << "}" << endl;
+  out << "Child state: {" << endl;
+  out << *child_state;
+  out << endl << "}";
 }
 
 analysis::equality_state::equality_state(const equality_state &o) :
@@ -57,7 +57,8 @@ bool analysis::equality_state::is_bottom() const {
 }
 
 bool analysis::equality_state::operator >=(const domain_state &other) const {
-  if(*child_state >= other) {
+  equality_state const &other_casted = dynamic_cast<equality_state const&>(other);
+  if(*child_state >= *other_casted.child_state) {
     /*
      * Todo: broken
      */
@@ -68,7 +69,7 @@ bool analysis::equality_state::operator >=(const domain_state &other) const {
 
 equality_state *analysis::equality_state::join(domain_state *other, size_t current_node) {
   equality_state const *other_casted = dynamic_cast<equality_state*>(other);
-  return new equality_state(child_state->join(other_casted->child_state, current_node), elements_t {}, back_map_t {});
+  return new equality_state(child_state->join(other_casted->child_state, current_node), eq_elements_t {}, back_map_t {});
 }
 
 equality_state *analysis::equality_state::box(domain_state *other, size_t current_node) {
@@ -78,6 +79,8 @@ equality_state *analysis::equality_state::box(domain_state *other, size_t curren
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   auto assign_var = [&](api::num_var *rhs_var) {
+    cout << "assign_var" << endl;
+
     auto lhs_back_it = back_map.find(lhs->get_id());
     if(lhs_back_it != back_map.end()) {
       id_set_t *eqs = lhs_back_it->second;
@@ -87,10 +90,15 @@ void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
         delete eqs;
       }
     }
+    id_set_t *eqs_rhs;
     auto rhs_back_it = back_map.find(rhs_var->get_id());
-    if(rhs_back_it == back_map.end())
-      tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs_var->get_id(), new id_set_t()));
-    id_set_t *eqs_rhs = rhs_back_it->second;
+    if(rhs_back_it == back_map.end()) {
+      eqs_rhs = new id_set_t({rhs_var->get_id()});
+      tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs_var->get_id(), eqs_rhs));
+      elements.insert(eqs_rhs);
+    } else
+      eqs_rhs = rhs_back_it->second;
+
     rhs_back_it->second->insert(lhs->get_id());
     if(lhs_back_it != back_map.end())
       lhs_back_it->second = eqs_rhs;
@@ -118,6 +126,8 @@ void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
     assign_lin(e->get_inner());
   });
   rhs->accept(nv);
+
+  child_state->assign(lhs, rhs);
 }
 
 void analysis::equality_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
@@ -128,6 +138,76 @@ void analysis::equality_state::weak_assign(api::num_var *lhs, api::num_expr *rhs
 }
 
 void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
+  struct gen {
+    id_set_t ids;
+    gen *rest;
+    function<num_linear*(gen &_this)> _;
+
+    id_set_t::iterator ids_it;
+
+    gen(id_set_t ids, gen *rest, function<num_linear*(gen &_this)> _) :
+      ids(ids), rest(rest), _(_) {
+      ids_it = ids.begin();
+    }
+
+    bool end() {
+      return ids_it == ids.end();
+    }
+
+    void next() {
+      rest->next();
+      if(rest->end()) {
+        if(ids_it == ids.end())
+          ids_it = ids.begin();
+        ids_it++;
+        rest->next();
+      }
+    }
+
+    num_linear *generate() {
+      num_linear *r = _(*this);
+      next();
+      return r;
+    }
+  };
+
+  function<gen*(num_linear *lin)> generate_gen;
+  generate_gen = [&](num_linear *lin) {
+    gen *g;
+    num_visitor nv;
+    nv._([&](num_linear_term *nt) {
+      id_set_t ids;
+      auto back_map_it = back_map.find(nt->get_var()->get_id());
+      if(back_map_it == back_map.end())
+        ids.insert(nt->get_var()->get_id());
+      else
+        ids = *back_map_it->second;
+      g = new gen(
+        ids,
+        generate_gen(nt->get_next()),
+        [=](gen &_this) {
+          return new num_linear_term(nt->get_scale(), new num_var(*_this.ids_it), _this.rest->generate());
+      });
+    });
+    nv._([&](num_linear_vs *ns) {
+      g = new gen(
+        id_set_t(),
+        NULL,
+        [=](gen &_this) {
+          return new num_linear_vs(ns->get_value_set());
+      });
+    });
+    lin->accept(nv);
+    return g;
+  };
+
+  gen *g = generate_gen(cmp->get_opnd());
+
+  while(!g->end()) {
+    num_expr_cmp *ec = new num_expr_cmp(g->generate(), cmp->get_op());
+    child_state->assume(ec);
+    delete ec;
+  }
 }
 
 void analysis::equality_state::assume(api::num_var *lhs, api::ptr_set_t aliases) {

@@ -20,7 +20,7 @@ class num_linear;
 }
 
 typedef std::set<id_shared_t, id_less_no_version> id_set_t;
-typedef std::set<id_set_t*> elements_t;
+typedef std::set<id_set_t*> eq_elements_t;
 typedef std::map<id_shared_t, id_set_t*, id_less_no_version> back_map_t;
 
 /**
@@ -29,21 +29,21 @@ typedef std::map<id_shared_t, id_set_t*, id_less_no_version> back_map_t;
 class equality_state: public numeric_state {
 private:
   numeric_state *child_state;
-  elements_t elements;
+  eq_elements_t elements;
   back_map_t back_map;
 protected:
   void put(std::ostream &out) const;
 public:
-  equality_state(numeric_state *child_state, elements_t elements, back_map_t back_map) :
+  equality_state(numeric_state *child_state, eq_elements_t elements, back_map_t back_map) :
       child_state(child_state), elements(elements), back_map(back_map) {
   }
   equality_state(numeric_state *child_state) :
-      child_state(child_state), elements(elements_t { }), back_map(back_map_t()) {
+      child_state(child_state), elements(eq_elements_t { }), back_map(back_map_t()) {
   }
   equality_state(equality_state const&o);
   ~equality_state();
 
-  const elements_t &get_elements() const {
+  const eq_elements_t &get_elements() const {
     return elements;
   }
 
