@@ -16,6 +16,7 @@
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/gdsl.h>
 #include <summy/cfg/node/node_visitor.h>
+#include <summy/rreil/id/numeric_id.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <gtest/gtest.h>
 #include <summy/cfg/node/address_node.h>
@@ -27,6 +28,8 @@ using namespace analysis;
 using namespace std;
 using namespace gdsl::rreil;
 using namespace cfg;
+using namespace summy::rreil;
+
 
 /*
  * Tests für
@@ -137,6 +140,38 @@ static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string
   delete lv;
 }
 
+static void equal_structure(region_t const& a, region_t const& b) {
+  SCOPED_TRACE("equal_structure()");
+  ASSERT_EQ(a.size(), b.size());
+  for(auto &a_it : a) {
+    auto b_it = b.find(a_it.first);
+    ASSERT_NE(b_it, b.end());
+    ASSERT_EQ(a_it.second.size, b_it->second.size);
+  }
+}
+
+static void equal_structure(region_t const& cmp, _analysis_result &ar, string label, string arch_id_name) {
+  SCOPED_TRACE("equal_structure()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->entry(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+  id_shared_t id = shared_ptr<gdsl::rreil::id>(new arch_id(arch_id_name));
+  region_t const& rr = analy_r.result[ar.addr_node_map[e.address]]->query_region(id);
+
+  equal_structure(cmp, rr);
+}
+
+
 TEST_F(dstack_test, Basics) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
@@ -152,12 +187,70 @@ TEST_F(dstack_test, Basics) {
 }
 
 TEST_F(dstack_test, OneFieldReplacesTwoFields) {
-  /*
-   * query_region + == auf regions
-   */
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $99, %eax\n\
+   first: mov $20, %rax\n\
+   second: nop\n"));
 
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(99));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(20));
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 32, numeric_id::generate() }));
+    cmp.insert(make_pair(32, field { 32, numeric_id::generate() }));
+    equal_structure(cmp, ar, "first", "A");
+  }
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 64, numeric_id::generate() }));
+    equal_structure(cmp, ar, "second", "A");
+  }
 }
 
 TEST_F(dstack_test, TwoFieldsReplaceOneField) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $99, %rax\n\
+   first: mov $20, %eax\n\
+   second: nop\n"));
 
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(99));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(20));
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 64, numeric_id::generate() }));
+    equal_structure(cmp, ar, "first", "A");
+  }
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 32, numeric_id::generate() }));
+    cmp.insert(make_pair(32, field { 32, numeric_id::generate() }));
+    equal_structure(cmp, ar, "second", "A");
+  }
 }
+
+TEST_F(dstack_test, MemorySimpleAddition) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "movq $144, (%rax)\n\
+   movq (%rax), %rbx\n\
+   add $10, %rbx\n\
+   end: nop\n"));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "B", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(154));
+}
+
+/*
+ * <= test2.as
+ */

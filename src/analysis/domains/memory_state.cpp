@@ -643,6 +643,10 @@ std::set<summy::vs_shared_t> analysis::memory_state::queryPts(std::unique_ptr<me
   return result;
 }
 
+const region_t &analysis::memory_state::query_region(id_shared_t id) {
+  return regions[id];
+}
+
 memory_state *analysis::memory_state::bottom(numeric_state *bottom_num) {
   return new memory_state(bottom_num, false);
 }
