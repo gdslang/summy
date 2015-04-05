@@ -80,7 +80,7 @@ struct _analysis_result {
   }
 };
 
-static void state_asm(_analysis_result &r, string _asm) {
+static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = false) {
   SCOPED_TRACE("state_asm()");
 
   r.elfp = asm_compile_elfp(_asm);
@@ -96,7 +96,7 @@ static void state_asm(_analysis_result &r, string _asm) {
 
   g.set_code(compiled.data(), compiled.size(), 0);
 
-  dectran dt(g, false);
+  dectran dt(g, gdsl_optimize);
   dt.transduce();
   dt.register_();
 
@@ -250,6 +250,112 @@ TEST_F(dstack_test, MemorySimpleAddition) {
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "B", 0, 64));
   ASSERT_EQ(*r, vs_finite::single(154));
 }
+
+TEST_F(dstack_test, IfThenElseMemory) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $99, %rbx\n\
+    jne else\n\
+    movq $10, (%rcx)\n\
+    mov $40, %rax\n\
+    add %rax, (%rcx)\n\
+    jmp eite\n\
+    else:\n\
+    movq $0, (%rcx)\n\
+    mov $10, %rax\n\
+    add %rbx, %rax\n\
+    eite:\n\
+    mov (%rcx), %rbx\n\
+    end: nop"));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "A", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 40, 109 })));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "B", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 50, 0 })));
+}
+
+TEST_F(dstack_test, IfThenElseAssumptions) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "cmp $10, %rax\n\
+    jge else\n\
+    less:\n\
+    cmp $5, %rax\n\
+    jle else\n\
+    less_greater:\n\
+    mov $40, %rbx\n\
+    jmp eite\n\
+    else:\n\
+    mov $10, %rbx\n\
+    eite:\n\
+    jmp end\n\
+    end:\n\
+    ret", true));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "less", "A", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_open(DOWNWARD, 9)));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "less_greater", "A", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 6, 7, 8, 9 })));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "A", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "B", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 40, 10 })));
+
+  /*
+   * Todo: Another test that checks for bottom if the value of rax is known
+   */
+}
+
+TEST_F(dstack_test, IfThenElseMemoryUndefWeakUpdate) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "jne else\n\
+    mov %rbx, %rax\n\
+    jmp eite\n\
+    else:\n\
+    mov %rcx, %rax\n\
+    eite:\n\
+    movq $42, (%rax)\n\
+    movq (%rbx), %rdx\n\
+    addq (%rcx), %rdx\n\
+    end: nop", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "D", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+}
+
+TEST_F(dstack_test, IfThenElseMemorDefWeakUpdate) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "movq $1, (%rbx)\n\
+    movq $2, (%rcx)\n\
+    jne else\n\
+    mov %rbx, %rax\n\
+    jmp eite\n\
+    else:\n\
+    mov %rcx, %rax\n\
+    eite:\n\
+    movq $42, (%rax)\n\
+    movq (%rbx), %rdx\n\
+    first:\n\
+    movq (%rcx), %rdx\n\
+    end: nop", false));
+
+  /*
+   * Todo: Segfault if asm does not compile?
+   */
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "D", 0, 64));
+//  cout << *r << endl;
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 1, 42 })));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "D", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 2, 42 })));
+}
+
 
 /*
  * <= test2.as
