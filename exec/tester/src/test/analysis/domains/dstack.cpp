@@ -481,7 +481,37 @@ TEST_F(dstack_test, IfThenElseMemoryOffsetWeakUpdatePredefOverlap) {
   ASSERT_EQ(*r, value_set::top);;
 }
 
+TEST_F(dstack_test, PointerArithmetic) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "movb $99, (%rbx)\n\
+    movb $100, 1(%rbx)\n\
+    jne else\n\
+    mov %rbx, %rax\n\
+    jmp eite\n\
+    else:\n\
+    mov %rbx, %rax\n\
+    add $1, %rax\n\
+    eite:\n\
+    movb (%rax), %cl\n\
+    first: addb $42, (%rax)\n\
+    movb (%rax), %cl\n\
+    second: movb (%rbx), %cl\n\
+    third: movb 1(%rbx), %cl\n\
+    end: nop", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "C", 0, 8));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 99, 100 })));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "C", 0, 8));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 99, 100, 141, 142 })));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "third", "C", 0, 8));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 99, 141, 142 })));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "C", 0, 8));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 100, 141, 142 })));
+}
+
 
 /*
- * <= test2.as
+ * <= including test9.as
  */
