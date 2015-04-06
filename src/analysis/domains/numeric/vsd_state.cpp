@@ -103,7 +103,7 @@ vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t curr
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
-  cout << "Assign " << *rhs << " to " << *lhs << endl;
+//  cout << "Assign " << *rhs << " to " << *lhs << endl;
 
   vs_shared_t er = queryVal(rhs);
   _is_bottom = _is_bottom || *er == value_set::bottom;
@@ -113,16 +113,16 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
 }
 
 void value_sets::vsd_state::weak_assign(num_var *lhs, num_expr *rhs) {
-  cout << "Weak Assign " << *rhs << " to " << *lhs << endl;
+//  cout << "Weak Assign " << *rhs << " to " << *lhs << endl;
 
   vs_shared_t er = queryVal(rhs);
   _is_bottom = _is_bottom || *er == value_set::bottom;
   if(is_bottom())
     return;
   vs_shared_t current = queryVal(lhs);
-  cout << "Join of " << *current << " and " << *er << endl;
+//  cout << "Join of " << *current << " and " << *er << endl;
   elements[lhs->get_id()] = value_set::join(current, er);
-  cout << "^^^^^ " << *this;
+//  cout << "^^^^^ " << *this;
 }
 
 void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {

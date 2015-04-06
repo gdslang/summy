@@ -48,13 +48,14 @@ bool als_state::is_bottom() const {
 
 bool als_state::operator >=(const domain_state &other) const {
   als_state const &other_casted = dynamic_cast<als_state const&>(other);
+  bool als_a_ge_b;
   numeric_state *me_compat;
   numeric_state *other_compat;
-  tie(ignore, me_compat, other_compat) = compat(this, &other_casted);
-  bool result = *me_compat >= *other_compat;
+  tie(als_a_ge_b, ignore, me_compat, other_compat) = compat(this, &other_casted);
+  bool child_ge = *me_compat >= *other_compat;
   delete me_compat;
   delete other_compat;
-  return result;
+  return als_a_ge_b && child_ge;
 }
 
 als_state *als_state::join(domain_state *other, size_t current_node) {
@@ -62,7 +63,7 @@ als_state *als_state::join(domain_state *other, size_t current_node) {
   numeric_state *me_compat;
   numeric_state *other_compat;
   elements_t elements_compat;
-  tie(elements_compat, me_compat, other_compat) = compat(this, other_casted);
+  tie(ignore, elements_compat, me_compat, other_compat) = compat(this, other_casted);
   als_state *result = new als_state(me_compat->join(other_compat, current_node), elements_compat);
   delete me_compat;
   delete other_compat;
@@ -88,10 +89,7 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
       auto var_it = elements.find(var->get_id());
       if(var_it != elements.end()) ids_new.insert(var_it->second.begin(), var_it->second.end());
     }
-    if(ids_new.size() > 0) { elements[lhs->get_id()] = ids_new;
-    for(auto ix : ids_new)
-      cout << *ix << " ::: ";
-    cout << endl; }
+    if(ids_new.size() > 0) elements[lhs->get_id()] = ids_new;
     else elements.erase(lhs->get_id());
   } else
     elements.erase(lhs->get_id());
@@ -144,7 +142,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
     auto var_it = elements.find(var->get_id());
     if(var_it != elements.end()) {
       num_expr *current_val_expr = new num_expr_lin(new num_linear_vs(queryVal(var)));
-      cout << "Assigning " << *current_val_expr << " to " << *var << endl;
+//      cout << "Assigning " << *current_val_expr << " to " << *var << endl;
       child_state->assign(var, current_val_expr);
       delete current_val_expr;
       elements.erase(var_it);
@@ -189,8 +187,8 @@ void als_state::fold(num_var_pairs_t vars) {
 }
 
 api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
-  cout << "queryALS for " << *nv << endl;
-  cout << "offset: " << *child_state->queryVal(nv) << endl;
+//  cout << "queryALS for " << *nv << endl;
+//  cout << "offset: " << *child_state->queryVal(nv) << endl;
 
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
@@ -233,6 +231,7 @@ summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
   for(auto id : id_set_it->second) {
     num_var *child_var = new num_var(id);
     vs_shared_t offset = child_state->queryVal(child_var);
+    delete child_var;
     vs_shared_t next = *child_value + offset;
     if(first) {
       acc = next;
@@ -260,32 +259,54 @@ bool analysis::als_state::cleanup(api::num_var *var) {
   return child_clean;
 }
 
-std::tuple<elements_t, numeric_state*, numeric_state*> analysis::als_state::compat(const als_state *a,
+std::tuple<bool, elements_t, numeric_state*, numeric_state*> analysis::als_state::compat(const als_state *a,
     const als_state *b) {
+  bool als_a_ge_b = true;
   numeric_state *a_ = a->child_state->copy();
   numeric_state *b_ = b->child_state->copy();
   elements_t r;
   auto single = [&](id_shared_t id, numeric_state *n) {
     num_var *nv = new num_var(id);
     num_expr *top_expr = new num_expr_lin(new num_linear_vs(value_set::top));
+    /*
+     * Todo: more precision
+     */
     n->assign(nv, top_expr);
     delete nv;
     delete top_expr;
   };
   for(auto &x : a->elements) {
+    if(x.second.size() == 0)
+      continue;
     auto x_b_it = b->elements.find(x.first);
-    if(x_b_it == b->elements.end()) single(x.first, a_);
-    else {
-      id_set_t combined;
+    if(x_b_it == b->elements.end() || x_b_it->second.size() == 0) {
+      single(x.first, a_);
+      als_a_ge_b = false;
+    } else {
+//      cout << "Join of" << endl;
+//      for(auto &u : x.second)
+//        cout << *u << " ";
+//      cout << endl << "and" << endl;
+//      for(auto &u : x_b_it->second)
+//        cout << *u << " ";
+//      cout << endl << "is" << endl;
+      id_set_t joined;
       set_union(x.second.begin(), x.second.end(), x_b_it->second.begin(), x_b_it->second.end(),
-          inserter(combined, combined.begin()));
-      r.insert(make_pair(x.first, combined));
+          inserter(joined, joined.begin()));
+//      for(auto &u : joined)
+//        cout << *u << " ";
+//      cout << endl;
+      r.insert(make_pair(x.first, joined));
+      if(joined.size() > x.second.size())
+        als_a_ge_b = false;
     }
   }
   for(auto &x : b->elements) {
+    if(x.second.size() == 0)
+      continue;
     auto x_a_it = a->elements.find(x.first);
-    if(x_a_it == a->elements.end()) single(x.first, b_);
+    if(x_a_it == a->elements.end() || x_a_it->second.size() == 0) single(x.first, b_);
   }
-  return make_tuple(r, a_, b_);
+  return make_tuple(als_a_ge_b, r, a_, b_);
 }
 

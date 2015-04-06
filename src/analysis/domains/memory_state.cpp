@@ -162,7 +162,7 @@ std::tuple<std::set<int64_t>, std::set<int64_t> > analysis::memory_state::overla
 }
 
 static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) {
-  cout << "overlap(" << from_a << ", " << size_a << ", " << from_b << ", " << size_b << endl;
+//  cout << "overlap(" << from_a << ", " << size_a << ", " << from_b << ", " << size_b << endl;
   if(!size_a || !size_b) return false;
   size_t to_a = from_a + size_a - 1;
   size_t to_b = from_b + size_b - 1;
@@ -174,17 +174,17 @@ static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) 
 
 region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_t offset,
     size_t size) {
-  cout << "retrieve_kill() " << offset << " / " << size << endl;
+//  cout << "retrieve_kill() " << offset << " / " << size << endl;
 
   bool found = false;
   id_shared_t num_id;
   vector<num_var*> dead_num_vars;
   auto field_it = region.upper_bound(offset);
 
-  if(field_it == region.end())
-    cout << "Upper bound is region end" << endl;
-  else
-    cout << "Upper bound: " << field_it->second;
+//  if(field_it == region.end())
+//    cout << "Upper bound is region end" << endl;
+//  else
+//    cout << "Upper bound: " << field_it->second;
 
   if(field_it != region.begin()) --field_it;
   while(field_it != region.end()) {
@@ -208,7 +208,7 @@ region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_
   for(auto var : dead_num_vars)
     delete var;
 
-  cout << "Found: " << found << endl;
+//  cout << "Found: " << found << endl;
 
   if(!found)
     return region.end();
@@ -228,13 +228,13 @@ void analysis::memory_state::topify(region_t &region, size_t offset,
 id_shared_t analysis::memory_state::transVarReg(region_t &region, size_t offset, size_t size) {
   auto field_it = retrieve_kill(region, offset, size);
   if(field_it == region.end()) {
-    cout << "Inserting new field at " << offset << endl;
+//    cout << "Inserting new field at " << offset << endl;
     tie(field_it, ignore) = region.insert(make_pair(offset, field { size, numeric_id::generate() }));
   }
 
-  for(auto &f : region)
-    cout << "Field " << f.second << " is in region at offset " << f.first << "..." << endl;
-  cout << *this << endl;
+//  for(auto &f : region)
+//    cout << "Field " << f.second << " is in region at offset " << f.first << "..." << endl;
+//  cout << *this << endl;
 
   field &f = field_it->second;
   return f.num_id;
@@ -244,15 +244,15 @@ id_shared_t analysis::memory_state::transVar(id_shared_t var_id, size_t offset, 
   auto region_it = regions.find(var_id);
   if(region_it == regions.end()) {
     tie(region_it, ignore) = regions.insert(make_pair(var_id, region_t()));
-    cout << "Unable to find region for " << *var_id << endl;
+//    cout << "Unable to find region for " << *var_id << endl;
   }
   return transVarReg(region_it->second, offset, size);
 }
 
 num_linear *analysis::memory_state::transLEReg(region_t &region, size_t offset, size_t size) {
-  cout << "transLEReg "<< offset << ":" << size << endl;
-  if(offset == 8 && size == 8)
-    printf("Juhu\n");
+//  cout << "transLEReg "<< offset << ":" << size << endl;
+//  if(offset == 8 && size == 8)
+//    printf("Juhu\n");
 
   vector<field> fields;
   size_t consumed = 0;
@@ -280,7 +280,7 @@ num_linear *analysis::memory_state::transLEReg(region_t &region, size_t offset, 
     }
   }
 
-  cout << "Number of fields: " << fields.size() << endl;
+//  cout << "Number of fields: " << fields.size() << endl;
 
   if(fields.size() == 0)
     return new num_linear_vs(value_set::top);
@@ -363,7 +363,7 @@ memory_state *analysis::memory_state::join(domain_state *other, size_t current_n
   memory_head head_compat;
   tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
 
-  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
+//  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
 
   memory_state *result = new memory_state(me_compat->join(other_compat, current_node), head_compat.regions,
       head_compat.deref);
@@ -415,11 +415,10 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
   if(is_bottom()) return;
 
   auto temp = to_memory_address(load->get_address());
-
+  vector<num_linear*> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
     region_t &region = dereference(alias.id);
-    vector<num_linear*> lins;
 
     value_set_visitor vsv;
     vsv._([&](vs_finite *v) {
@@ -429,7 +428,6 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
          */
         return;
       }
-
       set<int64_t> overlapping;
       set<int64_t> non_overlapping;
       tie(overlapping, non_overlapping) = overlappings(v, load->get_size());
@@ -446,36 +444,36 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
     });
     vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
     offset_bits->accept(vsv);
-
-    num_var *lhs = new num_var(
-        transVar(shared_copy(load->get_lhs()->get_id()), load->get_lhs()->get_offset(), load->get_size()));
-    if(lins.size() == 0) {
-      num_expr *rhs_expr = new num_expr_lin(new num_linear_vs(value_set::top));
-      child_state->assign(lhs, rhs_expr);
-      delete rhs_expr;
-    } else if(lins.size() == 1) {
-      num_expr *rhs_expr = new num_expr_lin(lins[0]);
-      child_state->assign(lhs, rhs_expr);
-      delete rhs_expr;
-    } else {
-      cout << "Weak assign after load" << endl;
-      num_var *temp = new num_var(numeric_id::generate());
-      num_expr *rhs_first = new num_expr_lin(lins[0]);
-      child_state->assign(temp, rhs_first);
-      delete rhs_first;
-      for(size_t i = 1; i < lins.size(); i++) {
-        num_expr *rhs_next = new num_expr_lin(lins[i]);
-        child_state->weak_assign(temp, rhs_next);
-        delete rhs_next;
-      }
-      num_expr *rhs_copy = new num_expr_lin(new num_linear_term(temp->copy()));
-      child_state->assign(lhs, rhs_copy);
-      delete rhs_copy;
-      child_state->kill({temp});
-      delete temp;
-    }
-    delete lhs;
   }
+
+  num_var *lhs = new num_var(
+      transVar(shared_copy(load->get_lhs()->get_id()), load->get_lhs()->get_offset(), load->get_size()));
+  if(lins.size() == 0) {
+    num_expr *rhs_expr = new num_expr_lin(new num_linear_vs(value_set::top));
+    child_state->assign(lhs, rhs_expr);
+    delete rhs_expr;
+  } else if(lins.size() == 1) {
+    num_expr *rhs_expr = new num_expr_lin(lins[0]);
+    child_state->assign(lhs, rhs_expr);
+    delete rhs_expr;
+  } else {
+//      cout << "Weak assign after load" << endl;
+    num_var *temp = new num_var(numeric_id::generate());
+    num_expr *rhs_first = new num_expr_lin(lins[0]);
+    child_state->assign(temp, rhs_first);
+    delete rhs_first;
+    for(size_t i = 1; i < lins.size(); i++) {
+      num_expr *rhs_next = new num_expr_lin(lins[i]);
+      child_state->weak_assign(temp, rhs_next);
+      delete rhs_next;
+    }
+    num_expr *rhs_copy = new num_expr_lin(new num_linear_term(temp->copy()));
+    child_state->assign(lhs, rhs_copy);
+    delete rhs_copy;
+    child_state->kill({temp});
+    delete temp;
+  }
+  delete lhs;
 
   cleanup();
 }
@@ -490,10 +488,11 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
     region_t &region = dereference(alias.id);
     vector<id_shared_t> ids;
 
-    bool singleton = false;
+    bool singleton = aliases.size() == 1;
     bool _continue = false;
     value_set_visitor vsv;
     vsv._([&](vs_finite *v) {
+      singleton = singleton && v->is_singleton();
       if(v->is_bottom()) {
         /*
          * Todo: handle bottom
@@ -501,7 +500,6 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
         _continue = true;
         return;
       }
-      singleton = v->is_singleton();
 
       set<int64_t> overlapping;
       set<int64_t> non_overlapping;
@@ -513,6 +511,7 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
         ids.push_back(transVarReg(region, noo, store->get_size()));
     });
     vsv._([&](vs_open *o) {
+      singleton = false;
       switch(o->get_open_dir()) {
         case UPWARD: {
           for(auto field_it = region.begin(); field_it != region.end(); field_it++)
@@ -534,6 +533,7 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
     });
     vsv._([&](vs_top *t) {
       _continue = true;
+      singleton = false;
     });
     vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
     offset_bits->accept(vsv);
@@ -641,6 +641,13 @@ std::set<summy::vs_shared_t> analysis::memory_state::queryPts(std::unique_ptr<me
     delete lin;
   }
   return result;
+}
+
+api::ptr_set_t analysis::memory_state::queryAls(gdsl::rreil::address *a) {
+  if(is_bottom()) return ptr_set_t {};
+  auto temp = to_memory_address(a);
+  ptr_set_t aliases = child_state->queryAls(temp->get_var());
+  return aliases;
 }
 
 const region_t &analysis::memory_state::query_region(id_shared_t id) {

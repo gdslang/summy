@@ -37,7 +37,7 @@ void fixpoint::iterate() {
   while(!worklist.empty()) {
     size_t node_id = worklist.pop();
 
-    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<domain_state> accumulator;
@@ -51,7 +51,7 @@ void fixpoint::iterate() {
          */
         auto evaluated = constraint();
 
-        cout << "Evaluated: " << *evaluated << endl;
+//        cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -72,11 +72,11 @@ void fixpoint::iterate() {
         process_constraint(constraint_it->first, constraint_it->second);
 
 //      cout << "Current: " << *current << endl;
-      cout << "Acc: " << *accumulator << endl;
+//      cout << "Acc: " << *accumulator << endl;
 
       propagate = !(*current >= *accumulator);
 
-      cout << "prop: " << propagate << endl;
+//      cout << "prop: " << propagate << endl;
     } else
     /*
      * If the node has no incoming analysis dependency edges, we keep its default

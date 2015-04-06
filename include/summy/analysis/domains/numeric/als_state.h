@@ -73,7 +73,7 @@ public:
 
   als_state *copy() const;
 
-  static std::tuple<elements_t, numeric_state*, numeric_state*> compat(als_state const *a, als_state const *b);
+  static std::tuple<bool, elements_t, numeric_state*, numeric_state*> compat(als_state const *a, als_state const *b);
 };
 
 }

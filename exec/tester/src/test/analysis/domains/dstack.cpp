@@ -25,10 +25,12 @@
 #include <map>
 
 using namespace analysis;
+using namespace analysis::api;
 using namespace std;
 using namespace gdsl::rreil;
 using namespace cfg;
 using namespace summy::rreil;
+
 
 
 /*
@@ -73,6 +75,11 @@ struct _analysis_result {
   dstack *ds_analyzed;
   map<size_t, size_t> addr_node_map;
   elf_provider *elfp;
+
+  _analysis_result() {
+    ds_analyzed = NULL;
+    elfp = NULL;
+  }
 
   ~_analysis_result() {
     delete ds_analyzed;
@@ -169,6 +176,26 @@ static void equal_structure(region_t const& cmp, _analysis_result &ar, string la
   region_t const& rr = analy_r.result[ar.addr_node_map[e.address]]->query_region(id);
 
   equal_structure(cmp, rr);
+}
+
+static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
+  SCOPED_TRACE("query_als()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->entry(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
+  aliases = analy_r.result[ar.addr_node_map[e.address]]->queryAls(a);
+  delete a;
 }
 
 
@@ -308,7 +335,7 @@ TEST_F(dstack_test, IfThenElseAssumptions) {
    */
 }
 
-TEST_F(dstack_test, IfThenElseMemoryUndefWeakUpdate) {
+TEST_F(dstack_test, IfThenElseMemoryUndefDoubleAlias) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
    "jne else\n\
@@ -320,10 +347,17 @@ TEST_F(dstack_test, IfThenElseMemoryUndefWeakUpdate) {
     movq $42, (%rax)\n\
     movq (%rbx), %rdx\n\
     addq (%rcx), %rdx\n\
+    movq (%rax), %r11\n\
     end: nop", false));
+
+  ptr_set_t aliases;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases, ar, "eite", "A"));
+  ASSERT_EQ(aliases.size(), 2);
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "D", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
   ASSERT_EQ(*r, value_set::top);
 }
 
@@ -342,7 +376,13 @@ TEST_F(dstack_test, IfThenElseMemorDefWeakUpdate) {
     movq (%rbx), %rdx\n\
     first:\n\
     movq (%rcx), %rdx\n\
+    second:\n\
+    movq (%rax), %rdx\n\
     end: nop", false));
+
+  ptr_set_t aliases;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases, ar, "eite", "A"));
+  ASSERT_EQ(aliases.size(), 2);
 
   /*
    * Todo: Segfault if asm does not compile?
@@ -350,10 +390,11 @@ TEST_F(dstack_test, IfThenElseMemorDefWeakUpdate) {
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "D", 0, 64));
-//  cout << *r << endl;
   ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 1, 42 })));
-  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "D", 0, 64));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "D", 0, 64));
   ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 2, 42 })));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "D", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 1, 2, 42 })));
 }
 
 

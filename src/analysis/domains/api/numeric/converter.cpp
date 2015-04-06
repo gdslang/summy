@@ -119,7 +119,13 @@ analysis::api::num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil
   sv._([&](sexpr_lin *x) {
     size_t sz_back = this->size;
     this->size = 1;
-    result = new num_expr_cmp(add(conv_linear(x->get_lin()), new num_linear_vs(vs_finite::single(-1))), EQ);
+
+    num_linear *x_lin = conv_linear(x->get_lin());
+    num_linear *minus_one = new num_linear_vs(vs_finite::single(-1));
+    result = new num_expr_cmp(add(x_lin, minus_one), EQ);
+    delete x_lin;
+    delete minus_one;
+
     this->size = sz_back;
   });
   se->accept(sv);
