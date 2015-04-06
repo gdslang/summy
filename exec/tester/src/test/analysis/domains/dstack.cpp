@@ -335,7 +335,7 @@ TEST_F(dstack_test, IfThenElseAssumptions) {
    */
 }
 
-TEST_F(dstack_test, IfThenElseMemoryUndefDoubleAlias) {
+TEST_F(dstack_test, IfThenElseMemoryUndefWeakUpdate) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
    "jne else\n\
@@ -361,7 +361,7 @@ TEST_F(dstack_test, IfThenElseMemoryUndefDoubleAlias) {
   ASSERT_EQ(*r, value_set::top);
 }
 
-TEST_F(dstack_test, IfThenElseMemorDefWeakUpdate) {
+TEST_F(dstack_test, IfThenElseMemoryDefWeakUpdate) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
    "movq $1, (%rbx)\n\
@@ -384,10 +384,6 @@ TEST_F(dstack_test, IfThenElseMemorDefWeakUpdate) {
   ASSERT_NO_FATAL_FAILURE(query_als(aliases, ar, "eite", "A"));
   ASSERT_EQ(aliases.size(), 2);
 
-  /*
-   * Todo: Segfault if asm does not compile?
-   */
-
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "D", 0, 64));
   ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 1, 42 })));
@@ -395,6 +391,94 @@ TEST_F(dstack_test, IfThenElseMemorDefWeakUpdate) {
   ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 2, 42 })));
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "D", 0, 64));
   ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 1, 2, 42 })));
+}
+
+TEST_F(dstack_test, IfThenElseMemoryOffsetWeakUpdate) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "jne else\n\
+    mov $8, %rax\n\
+    jmp eite\n\
+    else:\n\
+    mov $15, %rax\n\
+    eite:\n\
+    movq $42, (%rbx,%rax)\n\
+    movq 8(%rbx), %r11\n\
+    movq 15(%rbx), %r12\n\
+    end: nop", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R12", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+}
+
+TEST_F(dstack_test, IfThenElseMemoryOffsetStrongUpdate) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "jne else\n\
+    mov $16, %rax\n\
+    jmp eite\n\
+    else:\n\
+    mov $16, %rax\n\
+    eite:\n\
+    movq $42, (%rbx,%rax)\n\
+    movq 8(%rbx), %r11\n\
+    movq 16(%rbx), %r12\n\
+    end: nop", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R12", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 42 })));
+}
+
+TEST_F(dstack_test, IfThenElseMemoryOffsetWeakUpdatePredef) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "movq $0, 8(%rbx)\n\
+    movq $1, 16(%rbx)\n\
+    jne else\n\
+    mov $8, %rax\n\
+    jmp eite\n\
+    else:\n\
+    mov $16, %rax\n\
+    eite:\n\
+    movq $42, (%rbx,%rax)\n\
+    movq 8(%rbx), %r11\n\
+    movq 16(%rbx), %r12\n\
+    end: nop", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 0, 42 })));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R12", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 1, 42 })));
+}
+
+TEST_F(dstack_test, IfThenElseMemoryOffsetWeakUpdatePredefOverlap) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "movq $0, 8(%rbx)\n\
+    movq $1, 16(%rbx)\n\
+    jne else\n\
+    mov $8, %rax\n\
+    jmp eite\n\
+    else:\n\
+    mov $15, %rax\n\
+    eite:\n\
+    movq $42, (%rbx,%rax)\n\
+    movq 8(%rbx), %r11\n\
+    movq 16(%rbx), %r12\n\
+    end: nop", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R12", 0, 64));
+  ASSERT_EQ(*r, value_set::top);;
 }
 
 

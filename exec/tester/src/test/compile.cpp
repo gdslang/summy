@@ -52,6 +52,7 @@ static std::vector<uint8_t> asm_compile(std::string _asm, bool objcopy) {
          break;
        data.push_back(next);
      }
+     fclose(f);
 
 //     basic_ifstream<char> bin_file;
 //     bin_file.open("program.bin", ios::binary);
