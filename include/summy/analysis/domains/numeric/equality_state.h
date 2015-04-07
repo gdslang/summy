@@ -35,8 +35,14 @@ private:
   eq_elements_t elements;
   back_map_t back_map;
 
+//  id_set_t const& lookup(api::num_var *v);
   void remove(api::num_var *v);
-  void assign(api::num_var *lhs, api::num_var *rhs);
+  void assign_var(api::num_var *lhs, api::num_var *rhs);
+  void weak_assign_var(api::num_var *lhs, api::num_var *rhs);
+  void assign_lin(api::num_var *lhs, api::num_linear *lin,
+      void (equality_state::*assigner)(api::num_var*, api::num_var*));
+  void assign_expr(api::num_var *lhs, api::num_expr *rhs,
+      void (equality_state::*assigner)(api::num_var*, api::num_var*));
 protected:
   void put(std::ostream &out) const;
 public:

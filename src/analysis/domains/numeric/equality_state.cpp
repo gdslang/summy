@@ -37,7 +37,7 @@ void analysis::equality_state::remove(api::num_var *v) {
   }
 }
 
-void analysis::equality_state::assign(api::num_var *lhs, api::num_var *rhs) {
+void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs) {
 //    cout << "assign in equality_state: " << *lhs << " <- " << *rhs << endl;
 
   auto insert = [&](id_shared_t id, id_shared_t rep) {
@@ -53,16 +53,76 @@ void analysis::equality_state::assign(api::num_var *lhs, api::num_var *rhs) {
       back_map[id] = rep;
     };
 
+  /*
+   * Remove equality set of lhs
+   */
   remove(lhs);
 
+  /*
+   * Lookup equlity set of rhs
+   */
   auto rhs_back_it = back_map.find(rhs->get_id());
   if(rhs_back_it == back_map.end()) {
     tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs->get_id(), rhs->get_id()));
     elements[rhs_back_it->second].insert(rhs->get_id());
   }
+
+  /*
+   * Assign equlity set of lhs to lhs
+   */
   back_map[lhs->get_id()] = rhs_back_it->second;
+
+  /*
+   * Insert lhs into the equality set of rhs
+   */
   insert(lhs->get_id(), rhs_back_it->second);
 }
+
+void analysis::equality_state::weak_assign_var(api::num_var *lhs, api::num_var *rhs) {
+//    cout << "assign in equality_state: " << *lhs << " <- " << *rhs << endl;
+  auto lhs_back_it = back_map.find(lhs->get_id());
+  if(lhs_back_it != back_map.end()) {
+    auto rhs_back_it = back_map.find(rhs->get_id());
+    if(rhs_back_it == back_map.end() || !(*lhs_back_it->second == *rhs_back_it->second))
+      remove(lhs);
+  }
+}
+
+void analysis::equality_state::assign_lin(api::num_var *lhs, api::num_linear *lin,
+    void (equality_state::*assigner)(api::num_var*, api::num_var*)) {
+  num_visitor nv;
+  nv._([&](num_linear_term *nt) {
+    if(nt->get_scale() == 0)
+    assign_lin(lhs, nt->get_next(), assigner);
+    else if(nt->get_scale() == 1) {
+      vs_shared_t rest_vs = queryVal(nt->get_next());
+      if(*rest_vs == vs_finite::single(0))
+      (this->*assigner)(lhs, nt->get_var());
+    }
+  });
+  nv._default([&]() {
+    remove(lhs);
+  });
+  lin->accept(nv);
+}
+
+void analysis::equality_state::assign_expr(api::num_var *lhs, api::num_expr *rhs,
+    void (equality_state::*assigner)(api::num_var*, api::num_var*)) {
+  num_visitor nv;
+  nv._([&](num_expr_lin *e) {
+    assign_lin(lhs, e->get_inner(), assigner);
+  });
+  nv._default([&]() {
+    remove(lhs);
+  });
+  rhs->accept(nv);
+
+  /*
+   * Todo: broken
+   */
+  child_state->weak_assign(lhs, rhs);
+}
+
 
 void analysis::equality_state::put(std::ostream &out) const {
   bool first = true;
@@ -154,35 +214,12 @@ equality_state *analysis::equality_state::box(domain_state *other, size_t curren
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
 //  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
-
-  function<void(num_linear*)> assign_lin;
-  assign_lin = [&](num_linear *lin) {
-    num_visitor nv(true);
-    nv._([&](num_linear_term *nt) {
-      if(nt->get_scale() == 0)
-        assign_lin(nt->get_next());
-      else if(nt->get_scale() == 1) {
-        vs_shared_t rest_vs = queryVal(nt->get_next());
-        if(*rest_vs == vs_finite::single(0))
-          assign(lhs, nt->get_var());
-      }
-    });
-    lin->accept(nv);
-  };
-
-  num_visitor nv(true);
-  nv._([&](num_expr_lin *e) {
-    assign_lin(e->get_inner());
-  });
-  rhs->accept(nv);
-
+  assign_expr(lhs, rhs, &equality_state::assign_var);
   child_state->assign(lhs, rhs);
 }
 
 void analysis::equality_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
-  /*
-   * Todo: broken
-   */
+  assign_expr(lhs, rhs, &equality_state::weak_assign_var);
   child_state->weak_assign(lhs, rhs);
 }
 
@@ -281,7 +318,7 @@ void analysis::equality_state::equate_kill(num_var_pairs_t vars) {
     num_var *lhs;
     num_var *rhs;
     tie(lhs, rhs) = vp;
-    assign(lhs, rhs);
+    assign_var(lhs, rhs);
     remove(rhs);
   }
   child_state->equate_kill(vars);
