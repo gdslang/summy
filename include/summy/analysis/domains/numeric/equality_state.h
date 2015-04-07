@@ -34,6 +34,9 @@ private:
   numeric_state *child_state;
   eq_elements_t elements;
   back_map_t back_map;
+
+  void remove(api::num_var *v);
+  void assign(api::num_var *lhs, api::num_var *rhs);
 protected:
   void put(std::ostream &out) const;
 public:
@@ -74,8 +77,6 @@ public:
   summy::vs_shared_t queryVal(api::num_var *nv);
 
   equality_state *copy() const;
-
-//  static std::tuple<elements_t, numeric_state*, numeric_state*> compat(als_state const *a, als_state const *b);
 };
 
 }

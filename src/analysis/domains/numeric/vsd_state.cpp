@@ -269,8 +269,11 @@ void analysis::value_sets::vsd_state::equate_kill(num_var_pairs_t vars) {
   for(auto var_pair : vars) {
     num_var *a, *b;
     tie(a, b) = var_pair;
-    elements[a->get_id()] = elements[b->get_id()];
-    elements.erase(b->get_id());
+    auto elements_it = elements.find(b->get_id());
+    if(elements_it != elements.end()) {
+      elements[a->get_id()] = elements[b->get_id()];
+      elements.erase(b->get_id());
+    }
   }
 }
 

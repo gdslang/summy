@@ -9,12 +9,60 @@
 #include <summy/analysis/domains/api/api.h>
 #include <iostream>
 #include <functional>
+#include <algorithm>
 
 using namespace std;
 using namespace analysis;
 using namespace analysis::api;
 using namespace gdsl::rreil;
 using namespace summy;
+
+void analysis::equality_state::remove(api::num_var *v) {
+  auto id_back_it = back_map.find(v->get_id());
+  if(id_back_it != back_map.end()) {
+    auto id_elements_it = elements.find(id_back_it->second);
+    id_elements_it->second.erase(v->get_id());
+    if(*v->get_id() == *id_back_it->second) {
+      id_set_t id_elements = id_elements_it->second;
+      elements.erase(id_elements_it);
+      if(id_elements.size() > 0) {
+        // new repr.
+        id_shared_t rep = *id_elements.begin();
+        for(auto &elem : id_elements)
+          back_map[elem] = rep;
+        elements[rep] = id_elements;
+      }
+    }
+    back_map.erase(id_back_it);
+  }
+}
+
+void analysis::equality_state::assign(api::num_var *lhs, api::num_var *rhs) {
+//    cout << "assign in equality_state: " << *lhs << " <- " << *rhs << endl;
+
+  auto insert = [&](id_shared_t id, id_shared_t rep) {
+    //      cout << "Insert " << *id << " / rep: " << *rep << endl;
+      auto rep_it = elements.find(rep);
+      rep_it->second.insert(id);
+      if(**rep_it->second.begin() == *id) {
+        for(auto &elem : rep_it->second)
+        back_map[elem] = id;
+        elements[id] = rep_it->second;
+        elements.erase(rep_it);
+      } else
+      back_map[id] = rep;
+    };
+
+  remove(lhs);
+
+  auto rhs_back_it = back_map.find(rhs->get_id());
+  if(rhs_back_it == back_map.end()) {
+    tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs->get_id(), rhs->get_id()));
+    elements[rhs_back_it->second].insert(rhs->get_id());
+  }
+  back_map[lhs->get_id()] = rhs_back_it->second;
+  insert(lhs->get_id(), rhs_back_it->second);
+}
 
 void analysis::equality_state::put(std::ostream &out) const {
   bool first = true;
@@ -59,9 +107,17 @@ bool analysis::equality_state::is_bottom() const {
 bool analysis::equality_state::operator >=(const domain_state &other) const {
   equality_state const &other_casted = dynamic_cast<equality_state const&>(other);
   if(*child_state >= *other_casted.child_state) {
-    /*
-     * Todo: broken
-     */
+    for(auto &back_mapping : back_map) {
+      id_set_t const &ids = elements.at(back_mapping.second);
+      if(ids.size() > 1) {
+        auto other_back_mapping = other_casted.back_map.find(back_mapping.first);
+        if(other_back_mapping == other_casted.back_map.end())
+          return false;
+        id_set_t const &ids_other = other_casted.elements.at(other_back_mapping->second);
+        if(!includes(ids_other.begin(), ids_other.end(), ids.begin(), ids.end()))
+          return false;
+      }
+    }
     return true;
   } else
     return false;
@@ -69,7 +125,26 @@ bool analysis::equality_state::operator >=(const domain_state &other) const {
 
 equality_state *analysis::equality_state::join(domain_state *other, size_t current_node) {
   equality_state const *other_casted = dynamic_cast<equality_state*>(other);
-  return new equality_state(child_state->join(other_casted->child_state, current_node), eq_elements_t {}, back_map_t {});
+  back_map_t back_map_joined;
+  eq_elements_t eq_elements_joined;
+  for(auto &back_mapping : back_map) {
+    id_set_t const &ids = elements.at(back_mapping.second);
+    auto other_back_mapping = other_casted->back_map.find(back_mapping.first);
+    if(other_back_mapping == other_casted->back_map.end())
+      continue;
+    id_set_t const &ids_other = other_casted->elements.at(other_back_mapping->second);
+
+    id_set_t ids_joined;
+    set_intersection(ids.begin(), ids.end(), ids_other.begin(), ids_other.end(), inserter(ids_joined, ids_joined.begin()));
+    if(ids_joined.size() > 1) {
+      id_shared_t rep = *ids_joined.begin();
+      for(auto &id_joined : ids_joined)
+        back_map_joined[id_joined] = rep;
+      eq_elements_joined[rep] = ids_joined;
+    }
+  }
+
+  return new equality_state(child_state->join(other_casted->child_state, current_node), eq_elements_joined, back_map_joined);
 }
 
 equality_state *analysis::equality_state::box(domain_state *other, size_t current_node) {
@@ -78,52 +153,7 @@ equality_state *analysis::equality_state::box(domain_state *other, size_t curren
 }
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-  auto assign_var = [&](api::num_var *rhs_var) {
-//    cout << "assign_var: " << *lhs << " <- " << *rhs_var << endl;
-
-    auto remove = [&](id_shared_t id) {
-      auto id_back_it = back_map.find(id);
-      if(id_back_it != back_map.end()) {
-        auto lhs_elements_it = elements.find(id_back_it->second);
-        lhs_elements_it->second.erase(id);
-        if(*lhs->get_id() == *id_back_it->second) {
-          id_set_t lhs_elements = lhs_elements_it->second;
-          elements.erase(lhs_elements_it);
-          if(lhs_elements.size() > 0) {
-            // new repr.
-            id_shared_t rep = *lhs_elements.begin();
-            for(auto &elem : lhs_elements)
-              back_map[elem] = rep;
-            elements[rep] = lhs_elements;
-          }
-        }
-        back_map.erase(id_back_it);
-      }
-    };
-    auto insert = [&](id_shared_t id, id_shared_t rep) {
-//      cout << "Insert " << *id << " / rep: " << *rep << endl;
-      auto rep_it = elements.find(rep);
-      rep_it->second.insert(id);
-      if(**rep_it->second.begin() == *id) {
-        for(auto &elem : rep_it->second)
-          back_map[elem] = id;
-        elements[id] = rep_it->second;
-        elements.erase(rep_it);
-      } else
-        back_map[id] = rep;
-    };
-
-    remove(lhs->get_id());
-
-    auto rhs_back_it = back_map.find(rhs_var->get_id());
-    if(rhs_back_it == back_map.end()) {
-      tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs_var->get_id(), rhs_var->get_id()));
-      elements[rhs_back_it->second].insert(rhs_var->get_id());
-    }
-    back_map[lhs->get_id()] = rhs_back_it->second;
-    insert(lhs->get_id(), rhs_back_it->second);
-
-  };
+//  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
 
   function<void(num_linear*)> assign_lin;
   assign_lin = [&](num_linear *lin) {
@@ -134,7 +164,7 @@ void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
       else if(nt->get_scale() == 1) {
         vs_shared_t rest_vs = queryVal(nt->get_next());
         if(*rest_vs == vs_finite::single(0))
-          assign_var(nt->get_var());
+          assign(lhs, nt->get_var());
       }
     });
     lin->accept(nv);
@@ -167,6 +197,9 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
     gen(id_set_t ids, gen *rest, function<num_linear*(gen &_this)> _) :
       ids(ids), rest(rest), _(_) {
       ids_it = this->ids.begin();
+    }
+    ~gen() {
+      delete rest;
     }
 
     bool end() {
@@ -229,26 +262,28 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
     child_state->assume(ec);
     delete ec;
   }
+
+  delete g;
 }
 
 void analysis::equality_state::assume(api::num_var *lhs, api::ptr_set_t aliases) {
-  /*
-   * Todo: broken
-   */
   child_state->assume(lhs, aliases);
 }
 
 void analysis::equality_state::kill(std::vector<api::num_var*> vars) {
-  /*
-   * Todo: broken
-   */
+  for(num_var *v : vars)
+    remove(v);
   child_state->kill(vars);
 }
 
 void analysis::equality_state::equate_kill(num_var_pairs_t vars) {
-  /*
-   * Todo: broken
-   */
+  for(auto &vp : vars) {
+    num_var *lhs;
+    num_var *rhs;
+    tie(lhs, rhs) = vp;
+    assign(lhs, rhs);
+    remove(rhs);
+  }
   child_state->equate_kill(vars);
 }
 
@@ -257,10 +292,15 @@ void analysis::equality_state::fold(num_var_pairs_t vars) {
 }
 
 bool analysis::equality_state::cleanup(api::num_var *var) {
-  /*
-   * broken
-   */
-  return child_state->cleanup(var);
+  bool var_required = true;
+  auto var_it = back_map.find(var->get_id());
+  if(var_it != back_map.end())
+    if(elements[var_it->second].size() < 2) {
+      remove(var);
+      var_required = false;
+    }
+  bool child_required = child_state->cleanup(var);
+  return var_required || child_required;
 }
 
 api::ptr_set_t analysis::equality_state::queryAls(api::num_var *nv) {
@@ -278,7 +318,3 @@ summy::vs_shared_t analysis::equality_state::queryVal(api::num_var *nv) {
 equality_state *analysis::equality_state::copy() const {
   return new equality_state(*this);
 }
-
-//std::tuple<elements_t, numeric_state*, numeric_state*> analysis::equality_state::compat(const als_state* a,
-//    const als_state* b) {
-//}

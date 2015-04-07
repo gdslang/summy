@@ -94,13 +94,13 @@ analysis::dstack::~dstack() {
 }
 
 shared_ptr<domain_state> analysis::dstack::bottom() {
-//  return shared_ptr<domain_state>(memory_state::bottom(new equality_state(new als_state(vsd_state::bottom()))));
-  return shared_ptr<domain_state>(memory_state::bottom(new als_state(vsd_state::bottom())));
+  return shared_ptr<domain_state>(memory_state::bottom(new equality_state(new als_state(vsd_state::bottom()))));
+//  return shared_ptr<domain_state>(memory_state::bottom(new als_state(vsd_state::bottom())));
 }
 
 std::shared_ptr<domain_state> analysis::dstack::start_value() {
-//  return shared_ptr<domain_state>(memory_state::start_value(new equality_state(new als_state(vsd_state::top()))));
-  return shared_ptr<domain_state>(memory_state::start_value(new als_state(vsd_state::top())));
+  return shared_ptr<domain_state>(memory_state::start_value(new equality_state(new als_state(vsd_state::top()))));
+//  return shared_ptr<domain_state>(memory_state::start_value(new als_state(vsd_state::top())));
 }
 
 shared_ptr<domain_state> analysis::dstack::get(size_t node) {

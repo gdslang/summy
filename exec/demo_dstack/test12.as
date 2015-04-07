@@ -9,4 +9,4 @@ else:
 nop
 end:
 nop
-jmp %r13
+jmp *%r13

@@ -172,6 +172,26 @@ static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) 
   else return to_b >= from_a;
 }
 
+bool analysis::memory_state::overlap_region(region_t& region, size_t offset, size_t size) {
+  /*
+   * Todo: uncopy from retrieve_kill()?
+   */
+  bool _overlap = false;
+
+  auto field_it = region.upper_bound(offset);
+  if(field_it != region.begin()) --field_it;
+  while(field_it != region.end()) {
+    size_t offset_next = field_it->first;
+    field &f_next = field_it->second;
+    if(overlap(offset_next, f_next.size, offset, size))
+      _overlap = true;
+    if(offset_next >= offset + size) break;
+    else field_it++;
+  }
+
+  return _overlap;
+}
+
 region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_t offset,
     size_t size) {
 //  cout << "retrieve_kill() " << offset << " / " << size << endl;
@@ -282,9 +302,16 @@ num_linear *analysis::memory_state::transLEReg(region_t &region, size_t offset, 
 
 //  cout << "Number of fields: " << fields.size() << endl;
 
-  if(fields.size() == 0)
-    return new num_linear_vs(value_set::top);
-  else if(fields.size() == 1) {
+  if(fields.size() == 0) {
+    if(overlap_region(region, offset, size))
+      return new num_linear_vs(value_set::top);
+    else {
+      field f { size, numeric_id::generate() };
+      fields.push_back(f);
+      region.insert(make_pair(offset, f));
+    }
+  }
+  if(fields.size() == 1) {
     return new num_linear_term(new num_var(fields[0].num_id));
   } else {
     num_linear *l = new num_linear_term(new num_var(fields[0].num_id));
