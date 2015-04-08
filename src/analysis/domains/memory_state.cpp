@@ -37,13 +37,26 @@ std::ostream& analysis::operator <<(std::ostream &out, const field &_this) {
   return out;
 }
 
-analysis::memory_address::memory_address(memory_state &_this, api::num_var *var) :
+analysis::managed_temporary::managed_temporary(memory_state &_this, api::num_var *var) :
     _this(_this), var(var) {
 }
 
-memory_address::~memory_address() {
+managed_temporary::~managed_temporary() {
   _this.child_state->kill( { var });
   delete var;
+}
+
+std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(int_t size,
+    std::function<num_expr*(analysis::api::converter&)> cvc) {
+  num_var *var = new num_var(numeric_id::generate());
+  converter addr_cv(size, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
+  });
+  num_expr *addr_expr = cvc(addr_cv);
+  child_state->assign(var, addr_expr);
+  delete addr_expr;
+
+  return unique_ptr<managed_temporary>(new managed_temporary(*this, var));
 }
 
 void analysis::memory_state::bottomify() {
@@ -447,7 +460,8 @@ memory_state *analysis::memory_state::start_value(numeric_state *start_num) {
 void analysis::memory_state::update(gdsl::rreil::load *load) {
   if(is_bottom()) return;
 
-  auto temp = to_memory_address(load->get_address());
+  address *addr = load->get_address();
+  auto temp = assign_temporary(addr->get_lin(), addr->get_size());
   vector<num_linear*> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
@@ -514,7 +528,8 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
 void analysis::memory_state::update(gdsl::rreil::store *store) {
   if(is_bottom()) return;
 
-  auto temp = to_memory_address(store->get_address());
+  address *addr = store->get_address();
+  auto temp = assign_temporary(addr->get_lin(), addr->get_size());
 
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
@@ -601,10 +616,13 @@ void analysis::memory_state::assume(gdsl::rreil::sexpr *cond) {
   });
   num_expr_cmp *ec = cv.conv_expr_cmp(cond);
   child_state->assume(ec);
-  vs_shared_t value = child_state->queryVal(ec);
+  delete ec;
+  unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
+  cout << *cond << endl;
+  vs_shared_t value = child_state->queryVal(temp->get_var());
+  cout << "the value: " << *value << endl;
   if(*value == vs_finite::_false)
     bottomify();
-  delete ec;
 }
 
 void analysis::memory_state::assume_not(gdsl::rreil::sexpr *cond) {
@@ -614,11 +632,12 @@ void analysis::memory_state::assume_not(gdsl::rreil::sexpr *cond) {
   num_expr_cmp *ec = cv.conv_expr_cmp(cond);
   num_expr_cmp *ec_not = ec->negate();
   child_state->assume(ec_not);
-  vs_shared_t value = child_state->queryVal(ec_not);
-  if(*value == vs_finite::_false)
-    bottomify();
   delete ec_not;
   delete ec;
+  unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
+  vs_shared_t value = child_state->queryVal(temp->get_var());
+  if(*value == vs_finite::_true)
+    bottomify();
 }
 
 void analysis::memory_state::cleanup() {
@@ -644,16 +663,22 @@ void analysis::memory_state::cleanup() {
   _inner(deref);
 }
 
-std::unique_ptr<memory_address> analysis::memory_state::to_memory_address(address *a) {
-  num_var *var = new num_var(numeric_id::generate());
-  converter addr_cv(a->get_size(), [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
-    return transLE(id, offset, size);
+std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(gdsl::rreil::expr *e, int_t size) {
+  return assign_temporary(size, [&](converter &cv) {
+    return cv.conv_expr(e);
   });
-  num_expr *addr_expr = addr_cv.conv_expr(a->get_lin());
-  child_state->assign(var, addr_expr);
-  delete addr_expr;
+}
 
-  return unique_ptr<memory_address>(new memory_address(*this, var));
+std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(gdsl::rreil::linear *l, int_t size) {
+  return assign_temporary(size, [&](converter &cv) {
+    return cv.conv_expr(l);
+  });
+}
+
+std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(gdsl::rreil::sexpr *se, int_t size) {
+  return assign_temporary(size, [&](converter &cv) {
+    return cv.conv_expr(se);
+  });
 }
 
 summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear *l, size_t size) {
@@ -666,7 +691,7 @@ summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear *l, size
   return result;
 }
 
-std::set<summy::vs_shared_t> analysis::memory_state::queryPts(std::unique_ptr<memory_address> &address) {
+std::set<summy::vs_shared_t> analysis::memory_state::queryPts(std::unique_ptr<managed_temporary> &address) {
   std::set<summy::vs_shared_t> result;
   ptr_set_t aliases = child_state->queryAls(address->get_var());
   for(auto &alias : aliases) {
@@ -684,7 +709,7 @@ std::set<summy::vs_shared_t> analysis::memory_state::queryPts(std::unique_ptr<me
 
 api::ptr_set_t analysis::memory_state::queryAls(gdsl::rreil::address *a) {
   if(is_bottom()) return ptr_set_t {};
-  auto temp = to_memory_address(a);
+  auto temp = assign_temporary(a->get_lin(), a->get_size());
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   return aliases;
 }

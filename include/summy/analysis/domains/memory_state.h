@@ -18,6 +18,7 @@
 #include <map>
 #include <set>
 #include <tuple>
+#include <functional>
 
 namespace analysis {
 
@@ -45,14 +46,14 @@ class memory_state;
 /*
  * Todo: Rename and also use in load
  */
-class memory_address {
+class managed_temporary {
 private:
   memory_state &_this;
   api::num_var *var;
 public:
-  memory_address(memory_state &_this, api::num_var *var);
-  memory_address(memory_address const&) = delete;
-  ~memory_address();
+  managed_temporary(memory_state &_this, api::num_var *var);
+  managed_temporary(managed_temporary const&) = delete;
+  ~managed_temporary();
   api::num_var *get_var() {
     return var;
   }
@@ -62,11 +63,13 @@ public:
  * Memory domain state
  */
 class memory_state: public domain_state {
-  friend class memory_address;
+  friend class managed_temporary;
 private:
   numeric_state *child_state;
   region_map_t regions;
   deref_t deref;
+
+  std::unique_ptr<managed_temporary> assign_temporary(int_t size, std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
 
   void bottomify();
   region_t &dereference(id_shared_t id);
@@ -115,9 +118,11 @@ public:
 
   void cleanup();
 
-  std::unique_ptr<memory_address> to_memory_address(gdsl::rreil::address *a);
+  std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::linear *l, int_t size);
+  std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::expr *e, int_t size);
+  std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::sexpr *se, int_t size);
   summy::vs_shared_t queryVal(gdsl::rreil::linear *l, size_t size);
-  std::set<summy::vs_shared_t> queryPts(std::unique_ptr<memory_address> &address);
+  std::set<summy::vs_shared_t> queryPts(std::unique_ptr<managed_temporary> &address);
   api::ptr_set_t queryAls(gdsl::rreil::address *a);
   region_t const& query_region(id_shared_t id);
 

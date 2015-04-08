@@ -43,7 +43,6 @@ public:
 
   virtual api::ptr_set_t queryAls(api::num_var *nv) = 0;
   virtual summy::vs_shared_t queryVal(api::num_linear *lin) = 0;
-  virtual summy::vs_shared_t queryVal(api::num_expr *expr) = 0;
   virtual summy::vs_shared_t queryVal(api::num_var *nv) = 0;
 
   virtual numeric_state *copy() const = 0;

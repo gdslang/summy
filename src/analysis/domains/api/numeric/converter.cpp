@@ -91,22 +91,6 @@ num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr_cmp *se
   return result;
 }
 
-analysis::api::num_expr *converter::conv_sexpr(sexpr *se) {
-  num_expr *result = NULL;
-  sexpr_visitor sv;
-  sv._([&](arbitrary *x) {
-    result = new num_expr_lin(new num_linear_vs(value_set::top));
-  });
-  sv._([&](sexpr_cmp *x) {
-    result = conv_expr_cmp(x);
-  });
-  sv._([&](sexpr_lin *x) {
-    result = new num_expr_lin(conv_linear(x->get_lin()));
-  });
-  se->accept(sv);
-  return result;
-}
-
 analysis::api::num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr *se) {
   num_expr_cmp *result = NULL;
   sexpr_visitor sv;
@@ -127,6 +111,22 @@ analysis::api::num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil
     delete minus_one;
 
     this->size = sz_back;
+  });
+  se->accept(sv);
+  return result;
+}
+
+analysis::api::num_expr *converter::conv_expr(sexpr *se) {
+  num_expr *result = NULL;
+  sexpr_visitor sv;
+  sv._([&](arbitrary *x) {
+    result = new num_expr_lin(new num_linear_vs(value_set::top));
+  });
+  sv._([&](sexpr_cmp *x) {
+    result = conv_expr_cmp(x);
+  });
+  sv._([&](sexpr_lin *x) {
+    result = new num_expr_lin(conv_linear(x->get_lin()));
   });
   se->accept(sv);
   return result;
@@ -190,7 +190,7 @@ analysis::api::num_expr *converter::conv_expr(gdsl::rreil::expr *expr) {
     result = new num_expr_lin(nl_opnd);
   });
   ev._([&](expr_sexpr *e) {
-    result = conv_sexpr(e->get_inner());
+    result = conv_expr(e->get_inner());
   });
   expr->accept(ev);
   return result;
