@@ -42,6 +42,11 @@ analysis::als_state::~als_state() {
   delete child_state;
 }
 
+void analysis::als_state::bottomify() {
+  elements.clear();
+  child_state->bottomify();
+}
+
 bool als_state::is_bottom() const {
   return child_state->is_bottom();
 }

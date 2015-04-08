@@ -55,6 +55,8 @@ public:
     return elements;
   }
 
+  void bottomify();
+
   bool is_bottom() const {
     return _is_bottom;
   }

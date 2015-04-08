@@ -1,3 +1,4 @@
+//eq domain: strong updates, join
 mov %rax, %rbx
 mov %rbx, %rcx
 

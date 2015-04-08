@@ -11,6 +11,7 @@
 #include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/analysis/domains/numeric/equality_state.h>
 #include <summy/analysis/domains/numeric/vsd_state.h>
+#include <summy/value_set/vs_finite.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
 #include <functional>

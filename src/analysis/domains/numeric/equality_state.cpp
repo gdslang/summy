@@ -10,6 +10,7 @@
 #include <iostream>
 #include <functional>
 #include <algorithm>
+#include <assert.h>
 
 using namespace std;
 using namespace analysis;
@@ -21,17 +22,20 @@ void analysis::equality_state::remove(api::num_var *v) {
   auto id_back_it = back_map.find(v->get_id());
   if(id_back_it != back_map.end()) {
     auto id_elements_it = elements.find(id_back_it->second);
-    id_elements_it->second.erase(v->get_id());
-    if(*v->get_id() == *id_back_it->second) {
-      id_set_t id_elements = id_elements_it->second;
+    assert(id_elements_it != elements.end());
+    id_set_t &id_elements = id_elements_it->second;
+    id_elements.erase(v->get_id());
+    if(id_elements.size() <= 1) {
+      if(id_elements.size() == 1)
+        back_map.erase(*id_elements.begin());
       elements.erase(id_elements_it);
-      if(id_elements.size() > 0) {
-        // new repr.
-        id_shared_t rep = *id_elements.begin();
-        for(auto &elem : id_elements)
-          back_map[elem] = rep;
-        elements[rep] = id_elements;
-      }
+    } else if(*v->get_id() == *id_back_it->second) {
+      // new repr.
+      id_shared_t rep = *id_elements.begin();
+      for(auto &elem : id_elements)
+        back_map[elem] = rep;
+      elements[rep] = id_elements;
+      elements.erase(id_elements_it);
     }
     back_map.erase(id_back_it);
   }
@@ -158,6 +162,12 @@ void analysis::equality_state::put(std::ostream &out) const {
 
 analysis::equality_state::~equality_state() {
   delete child_state;
+}
+
+void analysis::equality_state::bottomify() {
+  elements.clear();
+  back_map.clear();
+  child_state->bottomify();
 }
 
 bool analysis::equality_state::is_bottom() const {

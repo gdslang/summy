@@ -38,6 +38,11 @@ void value_sets::vsd_state::put(std::ostream &out) const {
   out << "}";
 }
 
+void analysis::value_sets::vsd_state::bottomify() {
+  elements.clear();
+  _is_bottom = true;
+}
+
 summy::vs_shared_t value_sets::vsd_state::lookup(id_shared_t id) {
   auto id_it = elements.find(id);
   if(id_it != elements.end()) return id_it->second;
@@ -106,7 +111,8 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
 //  cout << "Assign " << *rhs << " to " << *lhs << endl;
 
   vs_shared_t er = queryVal(rhs);
-  _is_bottom = _is_bottom || *er == value_set::bottom;
+  if(*er == value_set::bottom)
+    bottomify();
   if(is_bottom())
     return;
   elements[lhs->get_id()] = er;

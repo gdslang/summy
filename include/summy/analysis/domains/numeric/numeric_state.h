@@ -25,6 +25,7 @@ typedef std::vector<std::tuple<api::num_var*, api::num_var*>> num_var_pairs_t;
 
 class numeric_state : public domain_state {
 public:
+  virtual void bottomify() = 0;
   virtual bool is_bottom() const = 0;
 
   virtual void assign(api::num_var *lhs, api::num_expr *rhs) = 0;
@@ -42,6 +43,7 @@ public:
 
   virtual api::ptr_set_t queryAls(api::num_var *nv) = 0;
   virtual summy::vs_shared_t queryVal(api::num_linear *lin) = 0;
+  virtual summy::vs_shared_t queryVal(api::num_expr *expr) = 0;
   virtual summy::vs_shared_t queryVal(api::num_var *nv) = 0;
 
   virtual numeric_state *copy() const = 0;

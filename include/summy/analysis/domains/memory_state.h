@@ -68,6 +68,7 @@ private:
   region_map_t regions;
   deref_t deref;
 
+  void bottomify();
   region_t &dereference(id_shared_t id);
 protected:
   void put(std::ostream &out) const;

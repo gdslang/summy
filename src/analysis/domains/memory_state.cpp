@@ -46,6 +46,12 @@ memory_address::~memory_address() {
   delete var;
 }
 
+void analysis::memory_state::bottomify() {
+  child_state->bottomify();
+  regions.clear();
+  deref.clear();
+}
+
 region_t &analysis::memory_state::dereference(id_shared_t id) {
   auto id_it = deref.find(id);
   if(id_it == deref.end()) tie(id_it, ignore) = deref.insert(make_pair(id, region_t { }));
@@ -595,6 +601,9 @@ void analysis::memory_state::assume(gdsl::rreil::sexpr *cond) {
   });
   num_expr_cmp *ec = cv.conv_expr_cmp(cond);
   child_state->assume(ec);
+  vs_shared_t value = child_state->queryVal(ec);
+  if(*value == vs_finite::_false)
+    bottomify();
   delete ec;
 }
 
@@ -605,6 +614,9 @@ void analysis::memory_state::assume_not(gdsl::rreil::sexpr *cond) {
   num_expr_cmp *ec = cv.conv_expr_cmp(cond);
   num_expr_cmp *ec_not = ec->negate();
   child_state->assume(ec_not);
+  vs_shared_t value = child_state->queryVal(ec_not);
+  if(*value == vs_finite::_false)
+    bottomify();
   delete ec_not;
   delete ec;
 }

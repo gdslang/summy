@@ -61,6 +61,7 @@ public:
     return elements;
   }
 
+  void bottomify();
   bool is_bottom() const;
 
   bool operator>=(domain_state const &other) const;
