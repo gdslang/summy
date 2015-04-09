@@ -65,6 +65,18 @@ vs_shared_t summy::vs_top::div(const vs_top *vs) const {
   return value_set::top;
 }
 
+vs_shared_t summy::vs_top::operator <=(int64_t v) const {
+  return vs_finite::_true_false;
+}
+
+vs_shared_t summy::vs_top::operator <(int64_t v) const {
+  return vs_finite::_true_false;
+}
+
+vs_shared_t summy::vs_top::operator ==(int64_t v) const {
+  return vs_finite::_true_false;
+}
+
 bool summy::vs_top::smaller_equals(const vs_finite *vsf) const {
   return false;
 }

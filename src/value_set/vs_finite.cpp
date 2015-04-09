@@ -181,6 +181,39 @@ vs_shared_t summy::vs_finite::div(const vs_top *vs) const {
   return make_shared<vs_finite>(er);
 }
 
+vs_shared_t summy::vs_finite::operator <=(int64_t v) const {
+  if(is_bottom())
+    return value_set::bottom;
+  if(max() <= v)
+    return _true;
+  else if(min() > v)
+    return _false;
+  else
+    return _true_false;
+}
+
+vs_shared_t summy::vs_finite::operator <(int64_t v) const {
+  if(is_bottom())
+    return value_set::bottom;
+  if(max() < v)
+    return _true;
+  else if(min() >= v)
+    return _false;
+  else
+    return _true_false;
+}
+
+vs_shared_t summy::vs_finite::operator ==(int64_t v) const {
+  if(is_bottom())
+    return value_set::bottom;;
+  if((min() == max()) && (min() == v))
+    return _true;
+  else if(elements.find(v) == elements.end())
+    return _false;
+  else
+    return _true_false;
+}
+
 bool summy::vs_finite::smaller_equals(const vs_finite *vsf) const {
   if(elements.empty())
     return true;
@@ -273,6 +306,7 @@ vs_shared_t summy::vs_finite::single(int64_t value) {
 
 vs_shared_t const vs_finite::_true = single(1);
 vs_shared_t const vs_finite::_false = single(0);
+vs_shared_t const vs_finite::_true_false = value_set::join(_true, _false);
 
 vs_shared_t const vs_finite::zero = make_shared<vs_finite>(elements_t { 0 });
 size_t const vs_finite::max_growth = 100;

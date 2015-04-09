@@ -59,6 +59,7 @@ public:
 
   virtual vs_shared_t neg() const = 0;
   vs_shared_t operator-() const;
+  vs_shared_t operator!() const;
 
   virtual vs_shared_t mul(vs_finite const *vs) const = 0;
   virtual vs_shared_t mul(vs_open const *vs) const = 0;
@@ -69,6 +70,17 @@ public:
   virtual vs_shared_t div(vs_open const *vs) const = 0;
   virtual vs_shared_t div(vs_top const *vs) const = 0;
   vs_shared_t operator/(vs_shared_t b);
+
+  /*
+   * Comparisons
+   */
+  virtual vs_shared_t operator<=(int64_t v) const = 0;
+  virtual vs_shared_t operator<(int64_t v) const = 0;
+  virtual vs_shared_t operator==(int64_t v) const = 0;
+  vs_shared_t operator>=(int64_t v) const;
+  vs_shared_t operator>(int64_t v) const;
+  vs_shared_t operator!=(int64_t v) const;
+
 
   /*
    * Lattice operations

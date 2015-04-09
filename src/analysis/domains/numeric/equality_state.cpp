@@ -256,7 +256,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
     void next() {
       if(!rest)
         return;
-      rest->next();
+//      rest->next();
       if(rest->end()) {
         if(ids_it == ids.end())
           ids_it = ids.begin();

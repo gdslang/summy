@@ -66,6 +66,10 @@ public:
   vs_shared_t div(vs_open const *vs) const;
   vs_shared_t div(vs_top const *vs) const;
 
+  vs_shared_t operator<=(int64_t v) const;
+  vs_shared_t operator<(int64_t v) const;
+  vs_shared_t operator==(int64_t v) const;
+
   bool smaller_equals(vs_finite const *vsf) const;
   bool smaller_equals(vs_open const *vsf) const;
 

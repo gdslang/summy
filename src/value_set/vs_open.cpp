@@ -202,6 +202,62 @@ vs_shared_t summy::vs_open::div(const vs_top *vs) const {
   return top;
 }
 
+vs_shared_t summy::vs_open::operator <=(int64_t v) const {
+  switch(open_dir) {
+    case DOWNWARD: {
+      if(limit <= v)
+        return vs_finite::_true;
+      else
+        return vs_finite::_true_false;
+      break;
+    }
+    case UPWARD: {
+      if(limit > v)
+        return vs_finite::_false;
+      else
+        return vs_finite::_true_false;
+      break;
+    }
+  }
+}
+
+vs_shared_t summy::vs_open::operator <(int64_t v) const {
+  switch(open_dir) {
+    case DOWNWARD: {
+      if(limit < v)
+        return vs_finite::_true;
+      else
+        return vs_finite::_true_false;
+      break;
+    }
+    case UPWARD: {
+      if(limit >= v)
+        return vs_finite::_false;
+      else
+        return vs_finite::_true_false;
+      break;
+    }
+  }
+}
+
+vs_shared_t summy::vs_open::operator ==(int64_t v) const {
+  switch(open_dir) {
+    case DOWNWARD: {
+      if(limit < v)
+        return vs_finite::_false;
+      else
+        return vs_finite::_true_false;
+      break;
+    }
+    case UPWARD: {
+      if(limit > v)
+        return vs_finite::_false;
+      else
+        return vs_finite::_true_false;
+      break;
+    }
+  }
+}
 
 bool summy::vs_open::smaller_equals(const vs_finite *vsf) const {
   return false;

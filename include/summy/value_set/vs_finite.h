@@ -58,6 +58,10 @@ public:
   vs_shared_t div(vs_open const *vs) const;
   vs_shared_t div(vs_top const *vs) const;
 
+  vs_shared_t operator<=(int64_t v) const;
+  vs_shared_t operator<(int64_t v) const;
+  vs_shared_t operator==(int64_t v) const;
+
   bool smaller_equals(vs_finite const *vsf) const;
   bool smaller_equals(vs_open const *vsf) const;
 
@@ -73,6 +77,7 @@ public:
   static vs_shared_t single(int64_t value);
   static vs_shared_t const _true;
   static vs_shared_t const _false;
+  static vs_shared_t const _true_false;
 
   static vs_shared_t const zero;
   static size_t const max_growth;

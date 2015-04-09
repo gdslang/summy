@@ -89,6 +89,15 @@ vs_shared_t summy::value_set::operator -() const {
   return neg();
 }
 
+vs_shared_t summy::value_set::operator !() const {
+  if(*this == vs_finite::_true)
+    return vs_finite::_false;
+  else if(*this == vs_finite::_false)
+    return vs_finite::_true;
+  else
+    return vs_finite::_true_false;
+}
+
 vs_shared_t summy::value_set::mul(const vs_top *vs) const {
   return top;
 }
@@ -123,6 +132,18 @@ vs_shared_t summy::value_set::operator /(vs_shared_t b) {
   });
   b->accept(vs);
   return result;
+}
+
+vs_shared_t summy::value_set::operator >=(int64_t v) const {
+  return !*(*this < v);
+}
+
+vs_shared_t summy::value_set::operator >(int64_t v) const {
+  return !*(*this <= v);
+}
+
+vs_shared_t summy::value_set::operator !=(int64_t v) const {
+  return !*(*this == v);
 }
 
 bool summy::value_set::smaller_equals(const vs_top *vsf) const {

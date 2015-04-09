@@ -190,8 +190,9 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
         vector<vs_shared_t> refineds;
         for(auto &fp_exprs : fp_exprss) {
           vs_shared_t refinement = queryVal(fp_exprs[i]);
-//          cout << ">>> " << *current << " MEET " << *refinement << endl;
+//          cout << ">>> " << *current << " MEET " << *refinement;
           refineds.push_back(value_set::meet(current, refinement));
+//          cout << " = " << *refineds[refineds.size() - 1] << endl;
         }
         vs_shared_t refined = value_set::bottom;
         for(auto re_cur : refineds)
@@ -199,6 +200,8 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
 //        vs_shared_t refined = refineds[0];
 //        cout << " = " << *refined << endl;
 //        cout << *refined << endl;
+//        cout << "refined_vals[i]: " << *refined_vals[i] << endl;
+//        cout << "refined: " << *refined << endl;
         if(!(*refined_vals[i] <= refined)) {
           change = true;
           refined_vals[i] = refined;
@@ -327,7 +330,33 @@ vs_shared_t value_sets::vsd_state::queryVal(num_expr *exp) {
   num_visitor nv;
   vs_shared_t result;
   nv._([&](num_expr_cmp *cmp) {
-    result = value_set::top;
+    vs_shared_t opnd = queryVal(cmp->get_opnd());
+    switch(cmp->get_op()) {
+      case LE: {
+        result = *opnd <= (int64_t)0;
+        break;
+      }
+      case LT: {
+        result = *opnd < (int64_t)0;
+        break;
+      }
+      case GE: {
+        result = *opnd >= (int64_t)0;
+        break;
+      }
+      case GT: {
+        result = *opnd > (int64_t)0;
+        break;
+      }
+      case EQ: {
+        result = *opnd == (int64_t)0;
+        break;
+      }
+      case NEQ: {
+        result = *opnd != (int64_t)0;
+        break;
+      }
+    }
   });
   nv._([&](num_expr_lin *lin) {
     result = queryVal(lin->get_inner());

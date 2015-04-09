@@ -1,9 +1,9 @@
-//bottomification
-mov $10, %rax
-cmp $0, %rax
+//bottomification and aliasing
+mov %rbx, (%rcx)
+mov (%rcx), %rax
+cmp %rbx, %rax
 
-//jg else
-jle else
+je else
 mov $10, %rbx
 add $1, %rbx
 jmp eite
