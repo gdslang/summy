@@ -69,6 +69,9 @@ private:
   region_map_t regions;
   deref_t deref;
 
+  typedef numeric_state*(numeric_state::*domopper_t) (domain_state *other, size_t current_node);
+  memory_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
+
   std::unique_ptr<managed_temporary> assign_temporary(int_t size, std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
 
   void bottomify();
@@ -106,8 +109,6 @@ public:
   bool operator>=(domain_state const &other) const;
 
   memory_state *join(domain_state *other, size_t current_node);
-  memory_state *widen(domain_state *other, size_t current_node);
-  memory_state *narrow(domain_state *other, size_t current_node);
   memory_state *box(domain_state *other, size_t current_node);
 
   void update(gdsl::rreil::assign *assign);

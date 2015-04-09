@@ -35,6 +35,9 @@ private:
   eq_elements_t elements;
   back_map_t back_map;
 
+  typedef numeric_state*(numeric_state::*domopper_t) (domain_state *other, size_t current_node);
+  equality_state *join_widen(domain_state *other, size_t current_node, domopper_t domopper);
+
   api::num_linear *simplify(api::num_linear *l);
   api::num_expr *simplify(api::num_expr *e);
 
@@ -70,7 +73,8 @@ public:
   bool operator>=(domain_state const &other) const;
 
   equality_state *join(domain_state *other, size_t current_node);
-  equality_state *box(domain_state *other, size_t current_node);
+  equality_state *widen(domain_state *other, size_t current_node);
+  equality_state *narrow(domain_state *other, size_t current_node);
 
   void assign(api::num_var *lhs, api::num_expr *rhs);
   void weak_assign(api::num_var *lhs, api::num_expr *rhs);

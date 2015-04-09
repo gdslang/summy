@@ -18,6 +18,30 @@ using namespace analysis::api;
 using namespace gdsl::rreil;
 using namespace summy;
 
+equality_state *analysis::equality_state::join_widen(domain_state *other, size_t current_node, domopper_t domopper) {
+  equality_state const *other_casted = dynamic_cast<equality_state*>(other);
+  back_map_t back_map_joined;
+  eq_elements_t eq_elements_joined;
+  for(auto &back_mapping : back_map) {
+    id_set_t const &ids = elements.at(back_mapping.second);
+    auto other_back_mapping = other_casted->back_map.find(back_mapping.first);
+    if(other_back_mapping == other_casted->back_map.end())
+      continue;
+    id_set_t const &ids_other = other_casted->elements.at(other_back_mapping->second);
+
+    id_set_t ids_joined;
+    set_intersection(ids.begin(), ids.end(), ids_other.begin(), ids_other.end(), inserter(ids_joined, ids_joined.begin()));
+    if(ids_joined.size() > 1) {
+      id_shared_t rep = *ids_joined.begin();
+      for(auto &id_joined : ids_joined)
+        back_map_joined[id_joined] = rep;
+      eq_elements_joined[rep] = ids_joined;
+    }
+  }
+
+  return new equality_state((child_state->*domopper)(other_casted->child_state, current_node), eq_elements_joined, back_map_joined);
+}
+
 api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
   map<id_shared_t, int64_t, id_less_no_version> id_scales;
   num_linear *lin_simplified;
@@ -236,32 +260,39 @@ bool analysis::equality_state::operator >=(const domain_state &other) const {
 }
 
 equality_state *analysis::equality_state::join(domain_state *other, size_t current_node) {
-  equality_state const *other_casted = dynamic_cast<equality_state*>(other);
-  back_map_t back_map_joined;
-  eq_elements_t eq_elements_joined;
-  for(auto &back_mapping : back_map) {
-    id_set_t const &ids = elements.at(back_mapping.second);
-    auto other_back_mapping = other_casted->back_map.find(back_mapping.first);
-    if(other_back_mapping == other_casted->back_map.end())
-      continue;
-    id_set_t const &ids_other = other_casted->elements.at(other_back_mapping->second);
-
-    id_set_t ids_joined;
-    set_intersection(ids.begin(), ids.end(), ids_other.begin(), ids_other.end(), inserter(ids_joined, ids_joined.begin()));
-    if(ids_joined.size() > 1) {
-      id_shared_t rep = *ids_joined.begin();
-      for(auto &id_joined : ids_joined)
-        back_map_joined[id_joined] = rep;
-      eq_elements_joined[rep] = ids_joined;
-    }
-  }
-
-  return new equality_state(child_state->join(other_casted->child_state, current_node), eq_elements_joined, back_map_joined);
+  return join_widen(other, current_node, &numeric_state::join);
 }
 
-equality_state *analysis::equality_state::box(domain_state *other, size_t current_node) {
+equality_state *analysis::equality_state::widen(domain_state *other, size_t current_node) {
+  return join_widen(other, current_node, &numeric_state::widen);
+}
+
+equality_state *analysis::equality_state::narrow(domain_state *other, size_t current_node) {
   equality_state const *other_casted = dynamic_cast<equality_state*>(other);
-  return other_casted->copy();
+
+//  back_map_t back_map_narrowed;
+//  eq_elements_t eq_elements_narrowed;
+//  for(auto &back_mapping_other : other_casted->back_map) {
+//    id_set_t const &ids_other = other_casted->elements.at(back_mapping_other.second);
+//
+//    auto back_mapping = back_map.find(back_mapping_other.first);
+//    if(back_mapping == back_map.end()) {
+//
+//    }
+//
+//    id_set_t const &ids_other = other_casted->elements.at(other_back_mapping->second);
+//
+//    id_set_t ids_joined;
+//    set_intersection(ids.begin(), ids.end(), ids_other.begin(), ids_other.end(), inserter(ids_joined, ids_joined.begin()));
+//    if(ids_joined.size() > 1) {
+//      id_shared_t rep = *ids_joined.begin();
+//      for(auto &id_joined : ids_joined)
+//        back_map_joined[id_joined] = rep;
+//      eq_elements_joined[rep] = ids_joined;
+//    }
+//  }
+
+  return new equality_state(child_state->narrow(other_casted->child_state, current_node), other_casted->elements, other_casted->back_map);
 }
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {

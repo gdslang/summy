@@ -15,6 +15,18 @@ using namespace analysis::api;
 using namespace std;
 using namespace summy;
 
+als_state *analysis::als_state::domop(domain_state *other, size_t current_node, domopper_t domopper) {
+  als_state const *other_casted = dynamic_cast<als_state*>(other);
+  numeric_state *me_compat;
+  numeric_state *other_compat;
+  elements_t elements_compat;
+  tie(ignore, elements_compat, me_compat, other_compat) = compat(this, other_casted);
+  als_state *result = new als_state((me_compat->*domopper)(other_compat, current_node), elements_compat);
+  delete me_compat;
+  delete other_compat;
+  return result;
+}
+
 void als_state::put(std::ostream &out) const {
   bool first = true;
   out << "{";
@@ -64,20 +76,15 @@ bool als_state::operator >=(const domain_state &other) const {
 }
 
 als_state *als_state::join(domain_state *other, size_t current_node) {
-  als_state const *other_casted = dynamic_cast<als_state*>(other);
-  numeric_state *me_compat;
-  numeric_state *other_compat;
-  elements_t elements_compat;
-  tie(ignore, elements_compat, me_compat, other_compat) = compat(this, other_casted);
-  als_state *result = new als_state(me_compat->join(other_compat, current_node), elements_compat);
-  delete me_compat;
-  delete other_compat;
-  return result;
+  return domop(other, current_node, &numeric_state::join);
 }
 
-als_state *als_state::box(domain_state *other, size_t current_node) {
-  als_state const *other_casted = dynamic_cast<als_state*>(other);
-  return other_casted->copy();
+als_state *als_state::widen(domain_state *other, size_t current_node) {
+  return domop(other, current_node, &numeric_state::widen);
+}
+
+als_state *als_state::narrow(domain_state *other, size_t current_node) {
+  return domop(other, current_node, &numeric_state::narrow);
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {

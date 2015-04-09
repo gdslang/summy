@@ -85,11 +85,15 @@ vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t cur
 }
 
 vsd_state *analysis::value_sets::vsd_state::widen(domain_state *other, size_t current_node) {
+  cout << "Widening of" << endl << *this << endl;
+
   vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
   if(other_casted->is_bottom()) return new vsd_state(*this);
   elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
     elements_new[mapping_other.first] = value_set::widen(lookup(mapping_other.first), mapping_other.second);
+
+  cout << "yields" << endl << vsd_state(elements_new) << endl;
   return new vsd_state(elements_new);
 }
 
@@ -100,11 +104,6 @@ vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t c
   for(auto &mapping_other : other_casted->elements)
     elements_new[mapping_other.first] = value_set::narrow(lookup(mapping_other.first), mapping_other.second);
   return new vsd_state(elements_new);
-}
-
-vsd_state *analysis::value_sets::vsd_state::box(domain_state *other, size_t current_node) {
-  if(*other <= *this) return this->narrow(other, current_node);
-  else return this->widen(other, current_node);
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {

@@ -68,7 +68,6 @@ public:
   vsd_state *join(domain_state *other, size_t current_node);
   vsd_state *widen(domain_state *other, size_t current_node);
   vsd_state *narrow(domain_state *other, size_t current_node);
-  vsd_state *box(domain_state *other, size_t current_node);
 
   void assign(api::num_var *lhs, api::num_expr *rhs);
   void weak_assign(api::num_var *lhs, api::num_expr *rhs);

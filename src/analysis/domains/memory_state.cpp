@@ -46,6 +46,30 @@ managed_temporary::~managed_temporary() {
   delete var;
 }
 
+memory_state *analysis::memory_state::domop(domain_state *other, size_t current_node, domopper_t domopper) {
+  //  cout << "JOIN OF" << endl;
+  //  cout << *this << endl;
+  //  cout << "WITH" << endl;
+  //  cout << *other << endl;
+    memory_state *other_casted = dynamic_cast<memory_state *>(other);
+    if(is_bottom()) return other_casted->copy();
+    else if(other_casted->is_bottom()) return copy();
+
+    numeric_state *me_compat;
+    numeric_state *other_compat;
+    memory_head head_compat;
+    tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
+
+  //  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
+
+    memory_state *result = new memory_state((me_compat->*domopper)(other_compat, current_node), head_compat.regions,
+        head_compat.deref);
+    delete me_compat;
+    delete other_compat;
+    result->cleanup();
+    return result;
+}
+
 std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(int_t size,
     std::function<num_expr*(analysis::api::converter&)> cvc) {
   num_var *var = new num_var(numeric_id::generate());
@@ -396,40 +420,12 @@ bool analysis::memory_state::operator >=(const domain_state &other) const {
 }
 
 memory_state *analysis::memory_state::join(domain_state *other, size_t current_node) {
-//  cout << "JOIN OF" << endl;
-//  cout << *this << endl;
-//  cout << "WITH" << endl;
-//  cout << *other << endl;
-  memory_state *other_casted = dynamic_cast<memory_state *>(other);
-  if(is_bottom()) return other_casted->copy();
-  else if(other_casted->is_bottom()) return copy();
-
-  numeric_state *me_compat;
-  numeric_state *other_compat;
-  memory_head head_compat;
-  tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
-
-//  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
-
-  memory_state *result = new memory_state(me_compat->join(other_compat, current_node), head_compat.regions,
-      head_compat.deref);
-  delete me_compat;
-  delete other_compat;
-  result->cleanup();
-  return result;
-}
-
-memory_state *analysis::memory_state::widen(domain_state *other, size_t current_node) {
-  throw string("analysis::memory_state::box(domain_state,current_node)");
-}
-
-memory_state *analysis::memory_state::narrow(domain_state *other, size_t current_node) {
-  throw string("analysis::memory_state::box(domain_state,current_node)");
+  return domop(other, current_node, &numeric_state::join);
 }
 
 memory_state *analysis::memory_state::box(domain_state *other, size_t current_node) {
-  memory_state *other_casted = dynamic_cast<memory_state *>(other);
-  return other_casted->copy();
+  if(*other <= *this) return domop(other, current_node, &numeric_state::narrow);
+  else return domop(other, current_node, &numeric_state::widen);
 }
 
 void analysis::memory_state::update(gdsl::rreil::assign *assign) {

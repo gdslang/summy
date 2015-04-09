@@ -33,6 +33,8 @@ class als_state: public numeric_state {
 private:
   numeric_state *child_state;
   elements_t elements;
+  typedef numeric_state*(numeric_state::*domopper_t) (domain_state *other, size_t current_node);
+  als_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
 protected:
   void put(std::ostream &out) const;
 public:
@@ -57,7 +59,8 @@ public:
   bool operator>=(domain_state const &other) const;
 
   als_state *join(domain_state *other, size_t current_node);
-  als_state *box(domain_state *other, size_t current_node);
+  als_state *widen(domain_state *other, size_t current_node);
+  als_state *narrow(domain_state *other, size_t current_node);
 
   void assign(api::num_var *lhs, api::num_expr *rhs);
   void weak_assign(api::num_var *lhs, api::num_expr *rhs);
