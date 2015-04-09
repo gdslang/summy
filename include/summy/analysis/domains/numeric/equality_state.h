@@ -35,6 +35,9 @@ private:
   eq_elements_t elements;
   back_map_t back_map;
 
+  api::num_linear *simplify(api::num_linear *l);
+  api::num_expr *simplify(api::num_expr *e);
+
 //  id_set_t const& lookup(api::num_var *v);
   void remove(api::num_var *v);
   void assign_var(api::num_var *lhs, api::num_var *rhs);

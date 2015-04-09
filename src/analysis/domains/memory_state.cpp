@@ -618,9 +618,7 @@ void analysis::memory_state::assume(gdsl::rreil::sexpr *cond) {
   child_state->assume(ec);
   delete ec;
   unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
-  cout << *cond << endl;
   vs_shared_t value = child_state->queryVal(temp->get_var());
-  cout << "the value: " << *value << endl;
   if(*value == vs_finite::_false)
     bottomify();
 }

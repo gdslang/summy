@@ -18,6 +18,51 @@ using namespace analysis::api;
 using namespace gdsl::rreil;
 using namespace summy;
 
+api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
+  map<id_shared_t, int64_t, id_less_no_version> id_scales;
+  num_linear *lin_simplified;
+  num_visitor nv;
+  nv._([&](num_linear_term *nt) {
+    id_shared_t id = nt->get_var()->get_id();
+    auto id_back_it = back_map.find(id);
+    if(id_back_it != back_map.end())
+      id = id_back_it->second;
+    auto id_scales_it = id_scales.find(id);
+    if(id_scales_it == id_scales.end())
+      id_scales.insert(make_pair(id, nt->get_scale()));
+    else
+      id_scales_it->second += nt->get_scale();
+    nt->get_next()->accept(nv);
+  });
+  nv._([&](num_linear_vs *ns) {
+    lin_simplified = ns->copy();
+    for(auto id_scales_mapping : id_scales) {
+      int64_t scale = id_scales_mapping.second;
+      if(scale == 0)
+        continue;
+      lin_simplified = new num_linear_term(scale, new num_var(id_scales_mapping.first), lin_simplified);
+    }
+  });
+  l->accept(nv);
+  return lin_simplified;
+}
+
+api::num_expr *analysis::equality_state::simplify(api::num_expr *e) {
+  num_expr *e_simplified;
+  num_visitor nv;
+  nv._([&](num_expr_cmp *nec) {
+    e_simplified = new num_expr_cmp(simplify(nec->get_opnd()), nec->get_op());
+  });
+  nv._([&](num_expr_lin *nel) {
+    e_simplified = new num_expr_lin(simplify(nel->get_inner()));
+  });
+  nv._([&](num_expr_bin *neb) {
+    e_simplified = new num_expr_bin(simplify(neb->get_opnd1()), neb->get_op(), simplify(neb->get_opnd2()));
+  });
+  e->accept(nv);
+  return e_simplified;
+}
+
 void analysis::equality_state::remove(api::num_var *v) {
   auto id_back_it = back_map.find(v->get_id());
   if(id_back_it != back_map.end()) {
@@ -101,8 +146,11 @@ void analysis::equality_state::assign_lin(api::num_var *lhs, api::num_linear *li
     else if(nt->get_scale() == 1) {
       vs_shared_t rest_vs = queryVal(nt->get_next());
       if(*rest_vs == vs_finite::single(0))
-      (this->*assigner)(lhs, nt->get_var());
-    }
+        (this->*assigner)(lhs, nt->get_var());
+      else
+        remove(lhs);
+    } else
+      remove(lhs);
   });
   nv._default([&]() {
     remove(lhs);
@@ -120,13 +168,7 @@ void analysis::equality_state::assign_expr(api::num_var *lhs, api::num_expr *rhs
     remove(lhs);
   });
   rhs->accept(nv);
-
-  /*
-   * Todo: broken
-   */
-  child_state->weak_assign(lhs, rhs);
 }
-
 
 void analysis::equality_state::put(std::ostream &out) const {
   bool first = true;
@@ -224,16 +266,25 @@ equality_state *analysis::equality_state::box(domain_state *other, size_t curren
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
 //  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
-  assign_expr(lhs, rhs, &equality_state::assign_var);
-  child_state->assign(lhs, rhs);
+  num_expr *rhs_simplified = simplify(rhs);
+  assign_expr(lhs, rhs_simplified, &equality_state::assign_var);
+  child_state->assign(lhs, rhs_simplified);
+  delete rhs_simplified;
 }
 
 void analysis::equality_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
-  assign_expr(lhs, rhs, &equality_state::weak_assign_var);
-  child_state->weak_assign(lhs, rhs);
+  num_expr *rhs_simplified = simplify(rhs);
+  assign_expr(lhs, rhs_simplified, &equality_state::weak_assign_var);
+  child_state->weak_assign(lhs, rhs_simplified);
+  delete rhs_simplified;
 }
 
 void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
+  /*
+   * Besser: Statt quadratisch alle Kombinationen zu testen,
+   * sollte man besser zunächst die Reps begrenzen und alle
+   * anderen Variablen dann lediglich noch gegen diese begrenzen...
+   */
   struct gen {
     id_set_t ids;
     gen *rest;
@@ -355,7 +406,10 @@ api::ptr_set_t analysis::equality_state::queryAls(api::num_var *nv) {
 }
 
 summy::vs_shared_t analysis::equality_state::queryVal(api::num_linear *lin) {
-  return child_state->queryVal(lin);
+  num_linear *lin_simplified = simplify(lin);
+  vs_shared_t result = child_state->queryVal(lin_simplified);
+  delete lin_simplified;
+  return result;
 }
 
 summy::vs_shared_t analysis::equality_state::queryVal(api::num_var *nv) {

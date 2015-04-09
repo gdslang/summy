@@ -25,7 +25,7 @@ void value_sets::vsd_state::put(std::ostream &out) const {
 //  out << print(a, stream<int>(), stream_ptr<int*>());
 //  out << print(elements, stream_ptr<singleton_key_t>(), stream_ptr<singleton_value_t>());
   if(is_bottom()) {
-    cout << "⊥";
+    out << "⊥";
     return;
   }
   out << "{";
