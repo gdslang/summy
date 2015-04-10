@@ -43,6 +43,8 @@ equality_state *analysis::equality_state::join_widen(domain_state *other, size_t
 }
 
 api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
+  cout << "simp " << *l << endl;
+
   map<id_shared_t, int64_t, id_less_no_version> id_scales;
   num_linear *lin_simplified;
   num_visitor nv;
@@ -68,6 +70,7 @@ api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
     }
   });
   l->accept(nv);
+  cout << "simplified: " << *lin_simplified << endl;
   return lin_simplified;
 }
 
@@ -296,7 +299,7 @@ equality_state *analysis::equality_state::narrow(domain_state *other, size_t cur
 }
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-//  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
+  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
   num_expr *rhs_simplified = simplify(rhs);
   assign_expr(lhs, rhs_simplified, &equality_state::assign_var);
   child_state->assign(lhs, rhs_simplified);

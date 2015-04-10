@@ -93,6 +93,9 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   nv._([&](num_expr_lin *le) {
     linear = true;
   });
+  /*
+   * Todo / broken: If no linear... ... kill something...
+   */
   rhs->accept(nv);
   if(linear) {
     set<num_var*> _vars = vars(rhs);

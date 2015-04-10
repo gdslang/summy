@@ -103,7 +103,7 @@ vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t c
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
-//  cout << "Assign " << *rhs << " to " << *lhs << endl;
+  cout << "Assign " << *rhs << " to " << *lhs << endl;
 
   vs_shared_t er = queryVal(rhs);
   if(*er == value_set::bottom)
@@ -326,6 +326,7 @@ vs_shared_t value_sets::vsd_state::queryVal(num_expr *exp) {
   vs_shared_t result;
   nv._([&](num_expr_cmp *cmp) {
     vs_shared_t opnd = queryVal(cmp->get_opnd());
+    cout << "opnd: " << *opnd << endl;
     switch(cmp->get_op()) {
       case LE: {
         result = *opnd <= (int64_t)0;
@@ -375,6 +376,7 @@ vs_shared_t value_sets::vsd_state::queryVal(num_expr *exp) {
     }
   });
   exp->accept(nv);
+  cout << "queryVal result: " << *result << endl;
   return result;
 }
 

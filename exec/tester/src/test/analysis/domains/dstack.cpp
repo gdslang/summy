@@ -149,6 +149,28 @@ static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string
   delete lv;
 }
 
+static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_first, string arch_id_second) {
+  SCOPED_TRACE("query_eq()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->entry(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+  lin_var *lv_first = new lin_var(new variable(new arch_id(arch_id_first), 0));
+  lin_var *lv_second = new lin_var(new variable(new arch_id(arch_id_second), 0));
+  expr *ec = new expr_sexpr(new sexpr_cmp(64, new expr_cmp(CMP_EQ, lv_first, lv_second)));
+  r = analy_r.result[ar.addr_node_map[e.address]]->queryVal(ec, 64);
+  delete ec;
+}
+
 static void equal_structure(region_t const& a, region_t const& b) {
   SCOPED_TRACE("equal_structure()");
   ASSERT_EQ(a.size(), b.size());
@@ -511,6 +533,50 @@ TEST_F(dstack_test, PointerArithmetic) {
   ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 99, 141, 142 })));
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "C", 0, 8));
   ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 100, 141, 142 })));
+}
+
+TEST_F(dstack_test, MultiFieldReads) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $99, %eax\n\
+    mov %rax, %rbx\n\
+    mov $22, %ah\n\
+    mov $37, %al\n\
+    mov %rax, %rdx\n\
+    mov %ax, %cx\n\
+    end: nop", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "B", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 99 })));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "D", 0, 16));
+  ASSERT_EQ(*r, value_set::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "C", 0, 16));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({ 5669 })));
+}
+
+TEST_F(dstack_test, Equalities) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov %rax, %rbx\n\
+    mov %rbx, %rcx\n\
+    mov %rdx, %r11\n\
+    first: nop", false));
+//    mov %r11, %rax\n\
+    second: mov %rdx, %rax\n\
+    end: nop", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "first", "A", "B"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "first", "B", "C"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "first", "A", "R11"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+//  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "second", "A", "B"));
+//  ASSERT_EQ(*r, vs_finite::_true);
+//  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "A", "B"));
+//  ASSERT_EQ(*r, vs_finite::_true_false);
 }
 
 
