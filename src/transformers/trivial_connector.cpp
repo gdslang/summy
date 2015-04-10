@@ -34,7 +34,6 @@ void trivial_connector::update_address_node_map() {
   }
 }
 
-
 std::set<size_t> trivial_connector::transform_ur() {
   std::set<size_t> unresolved;
 

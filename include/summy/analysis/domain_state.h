@@ -8,6 +8,7 @@
 #pragma once
 #include <memory>
 #include <iostream>
+#include <tuple>
 #include <cppgdsl/rreil/id/id.h>
 
 using std::shared_ptr;
@@ -29,7 +30,9 @@ public:
   }
 
   virtual domain_state *join(domain_state *other, size_t current_node) = 0;
-  virtual domain_state *box(domain_state *other, size_t current_node) = 0;
+  virtual domain_state *widen(domain_state *other, size_t current_node) = 0;
+  virtual domain_state *narrow(domain_state *other, size_t current_node) = 0;
+  std::tuple<domain_state*, bool> box(domain_state *other, size_t current_node);
 
   virtual bool operator>=(domain_state const &other) const = 0;
   bool operator<=(domain_state const &other) const;
@@ -37,6 +40,8 @@ public:
 
   friend std::ostream &operator<< (std::ostream &out, domain_state const &_this);
 };
+
+
 
 inline std::ostream &operator<<(std::ostream &out, domain_state const &_this) {
   _this.put(out);

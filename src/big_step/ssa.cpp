@@ -18,7 +18,7 @@ using namespace liveness;
 using namespace adaptive_rd;
 
 ssa::ssa(cfg::cfg &cfg) :
-    big_step(cfg), l(&cfg), fpl(&l), r(&cfg, l.result()), fpr(&r), pi(&cfg, r.result()), ren(&cfg, r.result()) {
+   big_step(cfg), jd_man(&cfg), l(&cfg), fpl(&l, jd_man), r(&cfg, l.result()), fpr(&r, jd_man), pi(&cfg, r.result()), ren(&cfg, r.result()) {
 }
 
 void ssa::transduce() {

@@ -22,6 +22,7 @@
 #include <functional>
 
 #include <summy/analysis/fixpoint.h>
+#include <summy/cfg/jd_manager.h>
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/transformers/resolved_connector.h>
 
@@ -110,10 +111,10 @@ int main(int argc, char **argv) {
   cfg.commit_updates();
 
   dstack ds(&cfg);
-  fixpoint fp(&ds);
+  jd_manager jd_man(&cfg);
+  fixpoint fp(&ds, jd_man);
 
   fp.iterate();
-
 
 //  cout << "++++++++++" << endl;
 //  ds.put(cout);
@@ -127,8 +128,8 @@ int main(int argc, char **argv) {
 //  cfg.dot(dot_fs);
   dot_fs.close();
 
-  } catch(string *s) {
-    cout << "Exception: " << *s << endl;
+  } catch(string s) {
+    cout << "Exception: " << s << endl;
     exit(1);
   }
 

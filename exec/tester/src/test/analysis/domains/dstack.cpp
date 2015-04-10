@@ -19,6 +19,7 @@
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <gtest/gtest.h>
+#include <summy/cfg/jd_manager.h>
 #include <summy/cfg/node/address_node.h>
 #include <memory>
 #include <iostream>
@@ -121,7 +122,8 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
   }
 
   r.ds_analyzed = new dstack(&cfg);
-  fixpoint fp(r.ds_analyzed);
+  jd_manager jd_man(&cfg);
+  fixpoint fp(r.ds_analyzed, jd_man);
 
   fp.iterate();
 }

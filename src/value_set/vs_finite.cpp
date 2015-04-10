@@ -85,6 +85,8 @@ vs_shared_t summy::vs_finite::add(const vs_finite *vs) const {
 }
 
 vs_shared_t summy::vs_finite::add(const vs_open *vs) const {
+  if(is_bottom())
+    return value_set::bottom;
   switch(vs->get_open_dir()) {
     case DOWNWARD: {
       return make_shared<vs_open>(DOWNWARD, max() + vs->get_limit());
@@ -111,6 +113,8 @@ vs_shared_t summy::vs_finite::mul(const vs_finite *vs) const {
 }
 
 vs_shared_t summy::vs_finite::mul(const vs_open *vs) const {
+  if(is_bottom())
+    return value_set::bottom;
   if(min() == 0 && max() == 0)
     return zero;
   if(sgn(max())*sgn(min()) < 0)
@@ -146,6 +150,8 @@ vs_shared_t summy::vs_finite::div(const vs_finite *vs) const {
 }
 
 vs_shared_t summy::vs_finite::div(const vs_open *vs) const {
+  if(is_bottom())
+    return value_set::bottom;
   if(min() < -max_growth && max() > max_growth)
     return top;
   int64_t sign;
@@ -166,6 +172,8 @@ vs_shared_t summy::vs_finite::div(const vs_open *vs) const {
 }
 
 vs_shared_t summy::vs_finite::div(const vs_top *vs) const {
+  if(is_bottom())
+    return value_set::bottom;
   if(min() < -max_growth && max() > max_growth)
     return top;
   elements_t er;
@@ -215,9 +223,9 @@ vs_shared_t summy::vs_finite::operator ==(int64_t v) const {
 }
 
 bool summy::vs_finite::smaller_equals(const vs_finite *vsf) const {
-  if(elements.empty())
+  if(is_bottom())
     return true;
-  if(vsf->elements.empty())
+  if(vsf->is_bottom())
     return false;
   bool smallest_ge = min() >= vsf->min();
   bool greates_le = max() <= vsf->max();
@@ -225,6 +233,8 @@ bool summy::vs_finite::smaller_equals(const vs_finite *vsf) const {
 }
 
 bool summy::vs_finite::smaller_equals(const vs_open *vsf) const {
+  if(is_bottom())
+    return true;
   switch(vsf->get_open_dir()) {
     case DOWNWARD: {
       bool greatest_le = max() <= vsf->get_limit();

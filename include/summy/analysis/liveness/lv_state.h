@@ -34,7 +34,8 @@ public:
   }
 
   virtual lv_state *join(::analysis::domain_state *other, size_t current_node);
-  virtual lv_state *box(::analysis::domain_state *other, size_t current_node);
+  virtual lv_state *narrow(::analysis::domain_state *other, size_t current_node);
+  virtual lv_state *widen(::analysis::domain_state *other, size_t current_node);
   virtual lv_state *add(std::vector<singleton_t> elements);
   virtual lv_state *remove(std::vector<singleton_t> elements);
 

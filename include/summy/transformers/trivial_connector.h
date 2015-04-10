@@ -17,6 +17,9 @@ class trivial_connector : public transformer {
 public:
   typedef std::map<int_t, size_t> address_node_map_t;
 private:
+  /*
+   * Map addresses to their respective address nodes
+   */
   trivial_connector::address_node_map_t address_node_map;
 
   void update_address_node_map();

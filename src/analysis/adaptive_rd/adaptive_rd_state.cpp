@@ -62,7 +62,12 @@ adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::join(:
   return new adaptive_rd_state(contains_undef || other_casted->contains_undef, lubbed, memory_rev);
 }
 
-adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::box(::analysis::domain_state *other,
+adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::narrow(::analysis::domain_state *other,
+    size_t current_node) {
+  return new adaptive_rd::adaptive_rd_state(*dynamic_cast<adaptive_rd::adaptive_rd_state*>(other));
+}
+
+adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::widen(::analysis::domain_state *other,
     size_t current_node) {
   return new adaptive_rd::adaptive_rd_state(*dynamic_cast<adaptive_rd::adaptive_rd_state*>(other));
 }

@@ -41,7 +41,6 @@ public:
   virtual numeric_state *join(domain_state *other, size_t current_node) = 0;
   virtual numeric_state *widen(domain_state *other, size_t current_node) = 0;
   virtual numeric_state *narrow(domain_state *other, size_t current_node) = 0;
-  numeric_state *box(domain_state *other, size_t current_node);
 
   virtual api::ptr_set_t queryAls(api::num_var *nv) = 0;
   virtual summy::vs_shared_t queryVal(api::num_linear *lin) = 0;

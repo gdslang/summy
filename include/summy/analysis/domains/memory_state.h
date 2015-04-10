@@ -109,7 +109,8 @@ public:
   bool operator>=(domain_state const &other) const;
 
   memory_state *join(domain_state *other, size_t current_node);
-  memory_state *box(domain_state *other, size_t current_node);
+  memory_state *widen(domain_state *other, size_t current_node);
+  memory_state *narrow(domain_state *other, size_t current_node);
 
   void update(gdsl::rreil::assign *assign);
   void update(gdsl::rreil::load *load);

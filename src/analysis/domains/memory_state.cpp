@@ -423,9 +423,12 @@ memory_state *analysis::memory_state::join(domain_state *other, size_t current_n
   return domop(other, current_node, &numeric_state::join);
 }
 
-memory_state *analysis::memory_state::box(domain_state *other, size_t current_node) {
-  if(*other <= *this) return domop(other, current_node, &numeric_state::narrow);
-  else return domop(other, current_node, &numeric_state::widen);
+memory_state *analysis::memory_state::narrow(domain_state *other, size_t current_node) {
+  return domop(other, current_node, &numeric_state::narrow);
+}
+
+memory_state *analysis::memory_state::widen(domain_state *other, size_t current_node) {
+  return domop(other, current_node, &numeric_state::widen);
 }
 
 void analysis::memory_state::update(gdsl::rreil::assign *assign) {

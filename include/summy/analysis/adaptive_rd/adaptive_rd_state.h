@@ -72,7 +72,8 @@ public:
 
 
   virtual adaptive_rd_state *join(::analysis::domain_state *other, size_t current_node);
-  virtual adaptive_rd_state *box(::analysis::domain_state *other, size_t current_node);
+  virtual adaptive_rd_state *narrow(::analysis::domain_state *other, size_t current_node);
+  virtual adaptive_rd_state *widen(::analysis::domain_state *other, size_t current_node);
   virtual adaptive_rd_state *add(std::vector<singleton_t> elements);
   virtual adaptive_rd_state *remove(id_set_t elements);
   virtual adaptive_rd_state *remove(std::function<bool(singleton_key_t, singleton_value_t)> pred);

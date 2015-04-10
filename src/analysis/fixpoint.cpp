@@ -8,9 +8,11 @@
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/fp_analysis.h>
+#include <summy/cfg/jd_manager.h>
 #include <queue>
 #include <iostream>
 
+using namespace cfg;
 using namespace std;
 using namespace analysis;
 
@@ -30,14 +32,31 @@ bool analysis::fp_priority_queue::empty() {
   return inner.empty();
 }
 
+void analysis::fp_priority_queue::clear() {
+  inner.clear();
+}
+
 void fixpoint::iterate() {
   updated.clear();
   fp_priority_queue worklist = analysis->pending();
+  fp_priority_queue postprocess_worklist;
 
-  while(!worklist.empty()) {
+  auto end = [&]() {
+    if(worklist.empty()) {
+      if(postprocess_worklist.empty())
+        return true;
+      else {
+        worklist = postprocess_worklist;
+        postprocess_worklist.clear();
+        return false;
+      }
+    } else return false;
+  };
+
+  while(!end()) {
     size_t node_id = worklist.pop();
 
-    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<domain_state> accumulator;
@@ -46,23 +65,33 @@ void fixpoint::iterate() {
     if(constraints.size() > 0) {
       shared_ptr<domain_state> current = analysis->get(node_id);
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
-        cout << "Constraint from " << node_other << " to " << node_id << endl;
+//        cout << "Constraint from " << node_other << " to " << node_id << endl;
 
         /*
          * Evaluate constraint
          */
         auto evaluated = constraint();
 
-        cout << "Evaluated: " << *evaluated << endl;
+//        cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
-         * to the given ordering
+         * to the given ordering => too many strange widening points
+         *
+         * Now: Use jd_manager to find edges to smaller addresses
          */
-        if(node_other > node_id) {
-          cout << "Current: " << *current << endl;
-          evaluated = shared_ptr<domain_state>(current->box(evaluated.get(), node_id));
-          cout << "Boxed: " << *evaluated << endl;
+        /*
+         * Todo: Backward analysis?
+         */
+//        cout << "Current: " << *current << endl;
+        if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
+          domain_state *boxed;
+          bool needs_postprocessing;
+          tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
+          evaluated = shared_ptr<domain_state>(boxed);
+          if(needs_postprocessing)
+            postprocess_worklist.push(node_id);
+//          cout << "Boxed: " << *evaluated << endl;
         }
 
         if(accumulator_set)
@@ -79,9 +108,13 @@ void fixpoint::iterate() {
 //      cout << "Current: " << *current << endl;
 //      cout << "Acc: " << *accumulator << endl;
 
-      propagate = !(*current >= *accumulator);
+//      propagate = !(*current >= *accumulator);
+      /*
+       * No monotonicity because of the box operator
+       */
+      propagate = !(*current == *accumulator);
 
-      cout << "prop: " << propagate << endl;
+//      cout << "prop: " << propagate << endl;
     } else
     /*
      * If the node has no incoming analysis dependency edges, we keep its default

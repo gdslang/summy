@@ -39,7 +39,11 @@ lv_state *analysis::liveness::lv_state::join(::analysis::domain_state *other, si
   return new lv_state(result);
 }
 
-lv_state *analysis::liveness::lv_state::box(::analysis::domain_state *other, size_t current_node) {
+lv_state *analysis::liveness::lv_state::narrow(::analysis::domain_state *other, size_t current_node) {
+  return new lv_state(*dynamic_cast<lv_state*>(other));
+}
+
+lv_state *analysis::liveness::lv_state::widen(::analysis::domain_state *other, size_t current_node) {
   return new lv_state(*dynamic_cast<lv_state*>(other));
 }
 

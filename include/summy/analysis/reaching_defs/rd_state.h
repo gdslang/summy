@@ -56,7 +56,8 @@ public:
   }
 
   virtual rd_state *join(::analysis::domain_state *other, size_t current_node);
-  virtual rd_state *box(::analysis::domain_state *other, size_t current_node);
+  virtual rd_state *narrow(::analysis::domain_state *other, size_t current_node);
+  virtual rd_state *widen(::analysis::domain_state *other, size_t current_node);
   virtual rd_state *add(elements_t elements);
   virtual rd_state *remove(elements_t elements);
   virtual rd_state *remove(std::function<bool(size_t, std::shared_ptr<gdsl::rreil::id>)> pred);

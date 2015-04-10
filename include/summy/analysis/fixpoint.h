@@ -7,9 +7,12 @@
 
 #pragma once
 #include <summy/cfg/cfg.h>
+#include <summy/cfg/jd_manager.h>
 #include <summy/cfg/observer.h>
 #include <set>
 #include <vector>
+
+using cfg::jd_manager;
 
 namespace analysis {
 
@@ -26,6 +29,7 @@ public:
   void push(size_t value);
   size_t pop();
   bool empty();
+  void clear();
 };
 
 class fp_analysis;
@@ -35,12 +39,13 @@ private:
   fp_analysis *analysis;
   std::set<size_t> seen;
   std::set<size_t> updated;
+  jd_manager &jd_man;
 public:
   virtual ~fixpoint() {
   }
 
-  fixpoint(class fp_analysis *analysis) :
-      analysis(analysis) {
+  fixpoint(class fp_analysis *analysis, jd_manager &jd_man) :
+      analysis(analysis), jd_man(jd_man) {
   }
 
   void iterate();

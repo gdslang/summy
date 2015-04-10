@@ -11,17 +11,21 @@
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/analysis/adaptive_rd/adaptive_rd.h>
 #include <summy/analysis/fixpoint.h>
+#include <summy/cfg/jd_manager.h>
 #include <summy/transformers/ssa/phi_inserter.h>
 #include <summy/transformers/ssa/renamer.h>
 #include <vector>
 
 class ssa : public big_step {
 private:
+  cfg::jd_manager jd_man;
+
   analysis::liveness::liveness l;
   analysis::fixpoint fpl;
 
   analysis::adaptive_rd::adaptive_rd r;
   analysis::fixpoint fpr;
+
 
   phi_inserter pi;
   renamer ren;
