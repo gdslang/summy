@@ -15,6 +15,16 @@ using namespace analysis::api;
 using namespace std;
 using namespace summy;
 
+/*
+ * Saubere Implementierung des Alias-Domain sollte eine spezielle, neue Variable
+ * für den Offset verwenden und nicht diejenige, die schon für den Wert der Pointervariablen
+ * verwendet wird.
+ *
+ * => So wie es aktuell ist, ist die Alias-Domain instransparent, bei Assumptions auf
+ * Pointern muss man die Aliasing-Beziehung verlieren oder auf die Einschränkung der
+ * Variablen verzichten...
+ */
+
 als_state *analysis::als_state::domop(domain_state *other, size_t current_node, domopper_t domopper) {
   als_state const *other_casted = dynamic_cast<als_state*>(other);
   numeric_state *me_compat;
@@ -48,6 +58,19 @@ void als_state::put(std::ostream &out) const {
   out << "Child state: {" << endl;
   out << *child_state;
   out << endl << "}";
+}
+
+/*
+ * Todo: Remove dummy
+ */
+summy::vs_shared_t analysis::als_state::foe(num_var *nv) {
+  return child_state->queryVal(nv);
+}
+
+analysis::als_state::als_state(numeric_state *child_state, elements_t elements) :
+    child_state(child_state), elements(elements), num_ev([&](num_var *nv) {
+  return queryVal(nv);
+  }) {
 }
 
 analysis::als_state::~als_state() {
@@ -93,9 +116,6 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   nv._([&](num_expr_lin *le) {
     linear = true;
   });
-  /*
-   * Todo / broken: If no linear... ... kill something...
-   */
   rhs->accept(nv);
   if(linear) {
     set<num_var*> _vars = vars(rhs);
@@ -108,7 +128,12 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
     else elements.erase(lhs->get_id());
   } else
     elements.erase(lhs->get_id());
-  child_state->assign(lhs, rhs);
+  /*
+   * Uncool: The expression should be handed down transparently... (Lösung siehe oben)
+   */
+  num_expr *assignee = new num_expr_lin(new num_linear_vs(num_ev.queryVal(rhs)));
+  child_state->assign(lhs, assignee);
+  delete assignee;
 }
 
 void als_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
@@ -141,7 +166,12 @@ void als_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
     }
   } else
     elements.erase(lhs->get_id());
-  child_state->weak_assign(lhs, rhs);
+  /*
+   * Uncool: The expression should be handed down transparently... (Lösung siehe oben)
+   */
+  num_expr *assignee = new num_expr_lin(new num_linear_vs(num_ev.queryVal(rhs)));
+  child_state->weak_assign(lhs, assignee);
+  delete assignee;;
 }
 
 void als_state::assume(api::num_expr_cmp *cmp) {
@@ -218,22 +248,7 @@ api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
 }
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_linear *lin) {
-  /*
-   * Todo: merge with eval() of vsd_state
-   */
-  num_visitor nv;
-  vs_shared_t result;
-  nv._([&](num_linear_term *lt) {
-    vs_shared_t scale = vs_finite::single(lt->get_scale());
-    vs_shared_t id = queryVal(lt->get_var());
-    vs_shared_t next = queryVal(lt->get_next());
-    result = *(*scale * id) + next;
-  });
-  nv._([&](num_linear_vs *lvs) {
-    result = lvs->get_value_set();
-  });
-  lin->accept(nv);
-  return result;
+  return num_ev.queryVal(lin);
 }
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {

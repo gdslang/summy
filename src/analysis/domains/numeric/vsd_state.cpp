@@ -38,6 +38,12 @@ void value_sets::vsd_state::put(std::ostream &out) const {
   out << "}";
 }
 
+analysis::value_sets::vsd_state::vsd_state(bool is_bottom, elements_t elements)
+  : _is_bottom(is_bottom), elements(elements), num_ev([&](num_var *nv) {
+    return queryVal(nv);
+  }) {
+}
+
 void analysis::value_sets::vsd_state::bottomify() {
   elements.clear();
   _is_bottom = true;
@@ -103,9 +109,9 @@ vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t c
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
-  cout << "Assign " << *rhs << " to " << *lhs << endl;
+//  cout << "Assign " << *rhs << " to " << *lhs << endl;
 
-  vs_shared_t er = queryVal(rhs);
+  vs_shared_t er = num_ev.queryVal(rhs);
   if(*er == value_set::bottom)
     bottomify();
   if(is_bottom())
@@ -116,7 +122,7 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
 void value_sets::vsd_state::weak_assign(num_var *lhs, num_expr *rhs) {
 //  cout << "Weak Assign " << *rhs << " to " << *lhs << endl;
 
-  vs_shared_t er = queryVal(rhs);
+  vs_shared_t er = num_ev.queryVal(rhs);
   _is_bottom = _is_bottom || *er == value_set::bottom;
   if(is_bottom())
     return;
@@ -184,7 +190,7 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
 
         vector<vs_shared_t> refineds;
         for(auto &fp_exprs : fp_exprss) {
-          vs_shared_t refinement = queryVal(fp_exprs[i]);
+          vs_shared_t refinement = num_ev.queryVal(fp_exprs[i]);
 //          cout << ">>> " << *current << " MEET " << *refinement;
           refineds.push_back(value_set::meet(current, refinement));
 //          cout << " = " << *refineds[refineds.size() - 1] << endl;
@@ -306,79 +312,65 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
 }
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(num_linear *lin) {
-  num_visitor nv;
-  vs_shared_t result;
-  nv._([&](num_linear_term *lt) {
-    vs_shared_t scale = vs_finite::single(lt->get_scale());
-    vs_shared_t id = lookup(lt->get_var()->get_id());
-    vs_shared_t next = queryVal(lt->get_next());
-    result = *(*scale * id) + next;
-  });
-  nv._([&](num_linear_vs *lvs) {
-    result = lvs->get_value_set();
-  });
-  lin->accept(nv);
-  return result;
+  return num_ev.queryVal(lin);
 }
 
-vs_shared_t value_sets::vsd_state::queryVal(num_expr *exp) {
-  num_visitor nv;
-  vs_shared_t result;
-  nv._([&](num_expr_cmp *cmp) {
-    vs_shared_t opnd = queryVal(cmp->get_opnd());
-    cout << "opnd: " << *opnd << endl;
-    switch(cmp->get_op()) {
-      case LE: {
-        result = *opnd <= (int64_t)0;
-        break;
-      }
-      case LT: {
-        result = *opnd < (int64_t)0;
-        break;
-      }
-      case GE: {
-        result = *opnd >= (int64_t)0;
-        break;
-      }
-      case GT: {
-        result = *opnd > (int64_t)0;
-        break;
-      }
-      case EQ: {
-        result = *opnd == (int64_t)0;
-        break;
-      }
-      case NEQ: {
-        result = *opnd != (int64_t)0;
-        break;
-      }
-    }
-  });
-  nv._([&](num_expr_lin *lin) {
-    result = queryVal(lin->get_inner());
-  });
-  nv._([&](num_expr_bin *bin) {
-    vs_shared_t opnd1 = queryVal(bin->get_opnd1());
-    vs_shared_t opnd2 = queryVal(bin->get_opnd2());
-    switch(bin->get_op()) {
-      case MUL: {
-        result = *opnd1 * opnd2;
-        break;
-      }
-      case DIV: {
-        result = *opnd1 / opnd2;
-        break;
-      }
-      default: {
-        result = value_set::top;
-        break;
-      }
-    }
-  });
-  exp->accept(nv);
-  cout << "queryVal result: " << *result << endl;
-  return result;
-}
+//vs_shared_t value_sets::vsd_state::queryVal(num_expr *exp) {
+//  num_visitor nv;
+//  vs_shared_t result;
+//  nv._([&](num_expr_cmp *cmp) {
+//    vs_shared_t opnd = queryVal(cmp->get_opnd());
+//    switch(cmp->get_op()) {
+//      case LE: {
+//        result = *opnd <= (int64_t)0;
+//        break;
+//      }
+//      case LT: {
+//        result = *opnd < (int64_t)0;
+//        break;
+//      }
+//      case GE: {
+//        result = *opnd >= (int64_t)0;
+//        break;
+//      }
+//      case GT: {
+//        result = *opnd > (int64_t)0;
+//        break;
+//      }
+//      case EQ: {
+//        result = *opnd == (int64_t)0;
+//        break;
+//      }
+//      case NEQ: {
+//        result = *opnd != (int64_t)0;
+//        break;
+//      }
+//    }
+//  });
+//  nv._([&](num_expr_lin *lin) {
+//    result = queryVal(lin->get_inner());
+//  });
+//  nv._([&](num_expr_bin *bin) {
+//    vs_shared_t opnd1 = queryVal(bin->get_opnd1());
+//    vs_shared_t opnd2 = queryVal(bin->get_opnd2());
+//    switch(bin->get_op()) {
+//      case MUL: {
+//        result = *opnd1 * opnd2;
+//        break;
+//      }
+//      case DIV: {
+//        result = *opnd1 / opnd2;
+//        break;
+//      }
+//      default: {
+//        result = value_set::top;
+//        break;
+//      }
+//    }
+//  });
+//  exp->accept(nv);
+//  return result;
+//}
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(api::num_var *nv) {
   return lookup(nv->get_id());

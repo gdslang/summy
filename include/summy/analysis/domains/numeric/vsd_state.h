@@ -11,6 +11,7 @@
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
 #include <cppgdsl/rreil/id/id.h>
+#include <summy/analysis/domains/numeric/num_evaluator.h>
 #include <map>
 
 namespace analysis {
@@ -32,14 +33,13 @@ class vsd_state: public numeric_state {
 private:
   bool _is_bottom;
   elements_t elements;
+  num_evaluator num_ev;
 protected:
   void put(std::ostream &out) const;
 public:
-  vsd_state(bool is_bottom, elements_t elements) :
-      _is_bottom(is_bottom), elements(elements) {
-  }
+  vsd_state(bool is_bottom, elements_t elements);
   vsd_state(elements_t elements) :
-      _is_bottom(false), elements(elements) {
+      vsd_state(false, elements) {
   }
   vsd_state() :
       vsd_state(elements_t { }) {
@@ -81,7 +81,7 @@ public:
 
   api::ptr_set_t queryAls(api::num_var *nv);
   summy::vs_shared_t queryVal(api::num_linear *lin);
-  summy::vs_shared_t queryVal(api::num_expr *lin);
+//  summy::vs_shared_t queryVal(api::num_expr *e);
   summy::vs_shared_t queryVal(api::num_var *nv);
 
   numeric_state *copy() const;

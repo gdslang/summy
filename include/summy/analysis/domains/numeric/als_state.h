@@ -9,6 +9,7 @@
 #include <summy/analysis/domains/numeric/numeric_state.h>
 #include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/api/ptr_set.h>
+#include <summy/analysis/domains/numeric/num_evaluator.h>
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
 #include <cppgdsl/rreil/id/id.h>
@@ -33,19 +34,22 @@ class als_state: public numeric_state {
 private:
   numeric_state *child_state;
   elements_t elements;
-  typedef numeric_state*(numeric_state::*domopper_t) (domain_state *other, size_t current_node);
+  /*
+   * Todo: Remove (siehe als_state.cpp oben)
+   */
+  num_evaluator num_ev;
+  summy::vs_shared_t foe(api::num_var *nv);
+  typedef numeric_state*(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
   als_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
 protected:
   void put(std::ostream &out) const;
 public:
-  als_state(numeric_state *child_state, elements_t elements) :
-      child_state(child_state), elements(elements) {
-  }
+  als_state(numeric_state *child_state, elements_t elements);
   als_state(numeric_state *child_state) :
-      child_state(child_state), elements(elements_t { }) {
+      als_state(child_state, elements_t { }) {
   }
   als_state(als_state const&o) :
-      child_state(o.child_state->copy()), elements(o.elements) {
+      als_state(o.child_state->copy(), o.elements) {
   }
   ~als_state();
 
