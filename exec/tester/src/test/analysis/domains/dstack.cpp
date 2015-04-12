@@ -600,6 +600,114 @@ TEST_F(dstack_test, Equalities) {
   ASSERT_EQ(*r, vs_finite::_true);
 }
 
+TEST_F(dstack_test, EqualitiesInAction) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov %rax, %rbx\n\
+    mov %rbx, %rcx\n\
+    cmp $12, %rax\n\
+    jge else\n\
+    then: nop\n\
+    jmp eite\n\
+    else:\n\
+    nop\n\
+    eite:\n\
+    jmp end\n\
+    end:\n\
+    jmp *%r13", true));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "then", "A", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_open(DOWNWARD, 11)));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "else", "A", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_open(UPWARD, 12)));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "A", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "then", "B", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_open(DOWNWARD, 11)));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "else", "B", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_open(UPWARD, 12)));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "B", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "then", "C", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_open(DOWNWARD, 11)));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "else", "C", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_open(UPWARD, 12)));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "C", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+}
+
+TEST_F(dstack_test, EqualitiesStrongUpdatesJoin) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov %rax, %rbx\n\
+    mov %rbx, %rcx\n\
+    jmp head; head:\n\
+    cmp $12, %rax\n\
+    jge else\n\
+    jmp then; then:\n\
+    mov %rbx, %rdx\n\
+    mov %r11, %r12\n\
+    jmp then_end; then_end:\n\
+    jmp eite\n\
+    else:\n\
+    mov %r11, %r12\n\
+    mov %r12, %r13\n\
+    jmp else_end; else_end:\n\
+    eite:\n\
+    jmp end\n\
+    end:\n\
+    jmp *%r13", true));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "head", "A", "B"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "head", "A", "C"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "head", "A", "D"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "head", "R11", "R12"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "head", "R11", "R13"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "head", "B", "R12"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "then", "A", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_open(DOWNWARD, 11)));
+
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "then_end", "A", "B"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "then_end", "A", "C"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "then_end", "A", "D"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "then_end", "R11", "R12"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "then_end", "R11", "R13"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "then_end", "B", "R12"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "else", "A", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_open(UPWARD, 12)));
+
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "else_end", "A", "B"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "else_end", "A", "C"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "else_end", "A", "D"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "else_end", "R11", "R12"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "else_end", "R11", "R13"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "else_end", "B", "R12"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+}
+
 
 /*
  * <= including test9.as
