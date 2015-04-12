@@ -561,8 +561,7 @@ TEST_F(dstack_test, Equalities) {
    "mov %rax, %rbx\n\
     mov %rbx, %rcx\n\
     mov %rdx, %r11\n\
-    first: nop", false));
-//    mov %r11, %rax\n\
+    first: mov %r11, %rax\n\
     second: mov %rdx, %rax\n\
     end: nop", false));
 
@@ -571,12 +570,34 @@ TEST_F(dstack_test, Equalities) {
   ASSERT_EQ(*r, vs_finite::_true);
   ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "first", "B", "C"));
   ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "first", "D", "R11"));
+  ASSERT_EQ(*r, vs_finite::_true);
   ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "first", "A", "R11"));
   ASSERT_EQ(*r, vs_finite::_true_false);
-//  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "second", "A", "B"));
-//  ASSERT_EQ(*r, vs_finite::_true);
-//  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "A", "B"));
-//  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "first", "D", "A"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "second", "A", "B"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "second", "B", "C"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "second", "D", "R11"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "second", "A", "R11"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "second", "D", "A"));
+  ASSERT_EQ(*r, vs_finite::_true);
+
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "A", "B"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "B", "C"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "D", "R11"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "A", "R11"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "D", "A"));
+  ASSERT_EQ(*r, vs_finite::_true);
 }
 
 

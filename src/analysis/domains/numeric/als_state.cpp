@@ -111,7 +111,7 @@ als_state *als_state::narrow(domain_state *other, size_t current_node) {
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-  cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
+//  cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
   bool linear = false;
   num_visitor nv(true);
   nv._([&](num_expr_lin *le) {
@@ -134,7 +134,7 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
      * Uncool: The expression should be handed down transparently... (Lösung siehe oben)
      */
     num_expr *assignee = new num_expr_lin(new num_linear_vs(num_ev.queryVal(rhs)));
-    cout << "assign expression in als_state after queryVal: " << *lhs << " <- " << *assignee << endl;
+//    cout << "assign expression in als_state after queryVal: " << *lhs << " <- " << *assignee << endl;
     child_state->assign(lhs, assignee);
     delete assignee;
   }
@@ -178,7 +178,6 @@ void als_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
     child_state->weak_assign(lhs, assignee);
     delete assignee;
   }
-
 }
 
 void als_state::assume(api::num_expr_cmp *cmp) {

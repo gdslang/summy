@@ -689,9 +689,7 @@ summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear *l, size
 }
 
 summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::expr *e, size_t size) {
-  cout << *e << endl;
   unique_ptr<managed_temporary> temp = assign_temporary(e, size);
-  cout << *this << endl;
   summy::vs_shared_t result = child_state->queryVal(temp->get_var());
   return result;
 }

@@ -43,7 +43,7 @@ equality_state *analysis::equality_state::join_widen(domain_state *other, size_t
 }
 
 api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
-  cout << "simp " << *l << endl;
+//  cout << "simp " << *l << endl;
 
   map<id_shared_t, int64_t, id_less_no_version> id_scales;
   num_linear *lin_simplified;
@@ -70,7 +70,7 @@ api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
     }
   });
   l->accept(nv);
-  cout << "simplified: " << *lin_simplified << endl;
+//  cout << "simplified: " << *lin_simplified << endl;
   return lin_simplified;
 }
 
@@ -114,8 +114,7 @@ void analysis::equality_state::remove(api::num_var *v) {
 }
 
 void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs) {
-//    cout << "assign in equality_state: " << *lhs << " <- " << *rhs << endl;
-
+//    cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << endl;
   auto insert = [&](id_shared_t id, id_shared_t rep) {
     //      cout << "Insert " << *id << " / rep: " << *rep << endl;
       auto rep_it = elements.find(rep);
@@ -128,6 +127,9 @@ void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs) 
       } else
       back_map[id] = rep;
     };
+
+  if(*lhs->get_id() == *rhs->get_id())
+    return;
 
   /*
    * Remove equality set of lhs
@@ -166,10 +168,11 @@ void analysis::equality_state::weak_assign_var(api::num_var *lhs, api::num_var *
 
 void analysis::equality_state::assign_lin(api::num_var *lhs, api::num_linear *lin,
     void (equality_state::*assigner)(api::num_var*, api::num_var*)) {
+//  cout << "assign_lin in equality_state " << *lhs << " <- " << *lin << endl;
   num_visitor nv;
   nv._([&](num_linear_term *nt) {
     if(nt->get_scale() == 0)
-    assign_lin(lhs, nt->get_next(), assigner);
+      assign_lin(lhs, nt->get_next(), assigner);
     else if(nt->get_scale() == 1) {
       vs_shared_t rest_vs = queryVal(nt->get_next());
       if(*rest_vs == vs_finite::single(0))
@@ -299,7 +302,7 @@ equality_state *analysis::equality_state::narrow(domain_state *other, size_t cur
 }
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
+//  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
   num_expr *rhs_simplified = simplify(rhs);
   assign_expr(lhs, rhs_simplified, &equality_state::assign_var);
   child_state->assign(lhs, rhs_simplified);

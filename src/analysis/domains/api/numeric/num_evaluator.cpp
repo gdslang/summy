@@ -41,7 +41,6 @@ summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_expr *exp) {
   vs_shared_t result;
   nv._([&](num_expr_cmp *cmp) {
     vs_shared_t opnd = queryVal(cmp->get_opnd());
-    cout << "opnd: " << *opnd << endl;
     switch(cmp->get_op()) {
       case LE: {
         result = *opnd <= (int64_t)0;
@@ -91,7 +90,6 @@ summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_expr *exp) {
     }
   });
   exp->accept(nv);
-  cout << "queryVal result: " << *result << endl;
   return result;
 
 }
