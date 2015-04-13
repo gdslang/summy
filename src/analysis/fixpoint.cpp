@@ -72,7 +72,7 @@ void fixpoint::iterate() {
          */
         auto evaluated = constraint();
 
-        cout << "Evaluated: " << *evaluated << endl;
+//        cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect

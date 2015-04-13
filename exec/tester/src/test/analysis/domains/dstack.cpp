@@ -32,8 +32,6 @@ using namespace gdsl::rreil;
 using namespace cfg;
 using namespace summy::rreil;
 
-
-
 /*
  * Tests für
  *
@@ -655,7 +653,7 @@ TEST_F(dstack_test, EqualitiesStrongUpdatesJoin) {
     else:\n\
     mov %r11, %r12\n\
     mov %r12, %r13\n\
-    jmp else_end; else_end:\n\
+    jmp else_end; else_end: nop\n\
     eite:\n\
     jmp end\n\
     end:\n\
@@ -706,9 +704,22 @@ TEST_F(dstack_test, EqualitiesStrongUpdatesJoin) {
   ASSERT_EQ(*r, vs_finite::_true);
   ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "else_end", "B", "R12"));
   ASSERT_EQ(*r, vs_finite::_true_false);
+
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "A", "B"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "A", "C"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "A", "D"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "R11", "R12"));
+  ASSERT_EQ(*r, vs_finite::_true);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "R11", "R13"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
+  ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "end", "B", "R12"));
+  ASSERT_EQ(*r, vs_finite::_true_false);
 }
 
 
 /*
- * <= including test9.as
+ * <= including test13.as
  */
