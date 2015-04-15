@@ -35,6 +35,7 @@ private:
   numeric_state *child_state;
   elements_t elements;
 
+  void kill(id_shared_t id);
   api::num_expr *replace_pointers(api::num_expr *e);
   api::num_linear *replace_pointers(api::num_linear *l);
   /*

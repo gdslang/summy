@@ -27,6 +27,25 @@ using namespace summy::rreil;
  * Variablen verzichten...
  */
 
+void analysis::als_state::kill(id_shared_t id) {
+  num_var *id_var = new num_var(id);
+  auto id_it = elements.find(id);
+  if(id_it != elements.end()) {
+    id_shared_t id_repl;
+    id_set_t &aliases = id_it->second;
+    if(aliases.size() == 1)
+      id_repl = *aliases.begin();
+    else
+      id_repl = numeric_id::generate();
+    num_expr *kill_expr = new num_expr_lin(new num_linear_term(new num_var(id_repl)));
+//      cout << "Assigning " << *current_val_expr << " to " << *var << endl;
+    child_state->assign(id_var, kill_expr);
+    delete kill_expr;
+    elements.erase(id_it);
+  }
+  delete id_var;
+}
+
 api::num_expr *analysis::als_state::replace_pointers(api::num_expr *e) {
   num_expr *result;
   num_visitor nv;
@@ -51,9 +70,9 @@ api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
     lt->get_next()->accept(nv);
     auto e_it = elements.find(lt->get_var()->get_id());
     if(e_it != elements.end()) {
-      id_set_t &ids = e_it->second;
-      if(ids.size() == 1) {
-        terms[*ids.begin()] += lt->get_scale();
+      id_set_t &aliases = e_it->second;
+      if(aliases.size() == 1) {
+        terms[*aliases.begin()] += lt->get_scale();
         terms[lt->get_var()->get_id()] += lt->get_scale();
       } else
         terms[numeric_id::generate()] += lt->get_scale();
@@ -224,16 +243,8 @@ void als_state::assume(api::num_expr_cmp *cmp) {
    * is not a viable option since now variables are pointers 'by default'
    */
   auto _vars = vars(cmp);
-  for(auto &var : _vars) {
-    auto var_it = elements.find(var->get_id());
-    if(var_it != elements.end()) {
-      num_expr *current_val_expr = new num_expr_lin(new num_linear_vs(queryVal(var)));
-//      cout << "Assigning " << *current_val_expr << " to " << *var << endl;
-      child_state->assign(var, current_val_expr);
-      delete current_val_expr;
-      elements.erase(var_it);
-    }
-  }
+  for(auto &var : _vars)
+    kill(var->get_id());
   child_state->assume(cmp);
 }
 
@@ -289,7 +300,10 @@ api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
 }
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_linear *lin) {
-  return child_state->queryVal(replace_pointers(lin));
+  num_linear *replaced = replace_pointers(lin);
+  vs_shared_t result = child_state->queryVal(replaced);
+  delete replaced;
+  return result;
 }
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
