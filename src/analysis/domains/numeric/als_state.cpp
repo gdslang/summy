@@ -7,6 +7,7 @@
 
 #include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/analysis/domains/api/api.h>
+#include <summy/rreil/id/numeric_id.h>
 #include <summy/value_set/value_set.h>
 #include <algorithm>
 
@@ -14,6 +15,7 @@ using namespace analysis;
 using namespace analysis::api;
 using namespace std;
 using namespace summy;
+using namespace summy::rreil;
 
 /*
  * Saubere Implementierung des Alias-Domain sollte eine spezielle, neue Variable
@@ -24,6 +26,48 @@ using namespace summy;
  * Pointern muss man die Aliasing-Beziehung verlieren oder auf die Einschränkung der
  * Variablen verzichten...
  */
+
+api::num_expr *analysis::als_state::replace_pointers(api::num_expr *e) {
+  num_expr *result;
+  num_visitor nv;
+  nv._([&](num_expr_cmp *ec) {
+    result = new num_expr_cmp(replace_pointers(ec->get_opnd()), ec->get_op());
+  });
+  nv._([&](num_expr_lin *el) {
+    result = new num_expr_lin(replace_pointers(el->get_inner()));
+  });
+  nv._([&](num_expr_bin *el) {
+    result = new num_expr_bin(replace_pointers(el->get_opnd1()), el->get_op(), replace_pointers(el->get_opnd2()));
+  });
+  e->accept(nv);
+  return result;
+}
+
+api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
+  map<id_shared_t, int64_t, id_less_no_version> terms;
+  num_linear *result;
+  num_visitor nv;
+  nv._([&](num_linear_term *lt) {
+    lt->get_next()->accept(nv);
+    auto e_it = elements.find(lt->get_var()->get_id());
+    if(e_it != elements.end()) {
+      id_set_t &ids = e_it->second;
+      if(ids.size() == 1) {
+        terms[*ids.begin()] += lt->get_scale();
+        terms[lt->get_var()->get_id()] += lt->get_scale();
+      } else
+        terms[numeric_id::generate()] += lt->get_scale();
+    } else
+      terms[lt->get_var()->get_id()] = lt->get_scale();
+  });
+  nv._([&](num_linear_vs *lvs) {
+    result = lvs->copy();
+  });
+  l->accept(nv);
+  for(auto term_mapping : terms)
+    result = new num_linear_term(term_mapping.second, new num_var(term_mapping.first), result);
+  return result;
+}
 
 als_state *analysis::als_state::domop(domain_state *other, size_t current_node, domopper_t domopper) {
   als_state const *other_casted = dynamic_cast<als_state*>(other);
@@ -60,17 +104,8 @@ void als_state::put(std::ostream &out) const {
   out << endl << "}";
 }
 
-/*
- * Todo: Remove dummy
- */
-summy::vs_shared_t analysis::als_state::foe(num_var *nv) {
-  return child_state->queryVal(nv);
-}
-
 analysis::als_state::als_state(numeric_state *child_state, elements_t elements) :
-    child_state(child_state), elements(elements), num_ev([&](num_var *nv) {
-  return queryVal(nv);
-  }) {
+    child_state(child_state), elements(elements) {
 }
 
 analysis::als_state::~als_state() {
@@ -133,7 +168,7 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
     /*
      * Uncool: The expression should be handed down transparently... (Lösung siehe oben)
      */
-    num_expr *assignee = new num_expr_lin(new num_linear_vs(num_ev.queryVal(rhs)));
+    num_expr *assignee = replace_pointers(rhs);
 //    cout << "assign expression in als_state after queryVal: " << *lhs << " <- " << *assignee << endl;
     child_state->assign(lhs, assignee);
     delete assignee;
@@ -174,7 +209,7 @@ void als_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
     /*
      * Uncool: The expression should be handed down transparently... (Lösung siehe oben)
      */
-    num_expr *assignee = new num_expr_lin(new num_linear_vs(num_ev.queryVal(rhs)));
+    num_expr *assignee = replace_pointers(rhs);
     child_state->weak_assign(lhs, assignee);
     delete assignee;
   }
@@ -254,7 +289,7 @@ api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
 }
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_linear *lin) {
-  return num_ev.queryVal(lin);
+  return child_state->queryVal(replace_pointers(lin));
 }
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {

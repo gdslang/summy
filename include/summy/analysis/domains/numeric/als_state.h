@@ -34,11 +34,12 @@ class als_state: public numeric_state {
 private:
   numeric_state *child_state;
   elements_t elements;
+
+  api::num_expr *replace_pointers(api::num_expr *e);
+  api::num_linear *replace_pointers(api::num_linear *l);
   /*
    * Todo: Remove (siehe als_state.cpp oben)
    */
-  num_evaluator num_ev;
-  summy::vs_shared_t foe(api::num_var *nv);
   typedef numeric_state*(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
   als_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
 protected:
