@@ -8,6 +8,7 @@
 #pragma once
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/domains/api/ptr_set.h>
+#include <summy/analysis/static_memory.h>
 #include <cppgdsl/rreil/id/id.h>
 #include <memory>
 #include <vector>
@@ -24,7 +25,13 @@ class num_expr_cmp;
 typedef std::vector<std::tuple<api::num_var*, api::num_var*>> num_var_pairs_t;
 
 class numeric_state : public domain_state {
+private:
+  shared_ptr<static_memory> sm;
 public:
+  numeric_state(shared_ptr<static_memory> sm) : sm(sm) {
+  }
+  numeric_state();
+
   virtual void bottomify() = 0;
   virtual bool is_bottom() const = 0;
 

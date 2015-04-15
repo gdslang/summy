@@ -10,3 +10,7 @@
 
 using namespace analysis;
 using namespace std;
+
+numeric_state::numeric_state() {
+  this->sm = make_shared<static_dummy>();
+}
