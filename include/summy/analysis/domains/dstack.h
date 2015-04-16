@@ -30,6 +30,7 @@ struct dstack_result : public ::analysis::analysis_result<state_t> {
 
 class dstack : public fp_analysis {
 private:
+  std::shared_ptr<static_memory> sm;
   state_t state;
 
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
@@ -37,6 +38,7 @@ private:
   dependency gen_dependency(size_t from, size_t to);
   void init_state();
 public:
+  dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm);
   dstack(cfg::cfg *cfg);
   ~dstack();
 

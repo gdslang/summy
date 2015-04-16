@@ -38,8 +38,8 @@ void value_sets::vsd_state::put(std::ostream &out) const {
   out << "}";
 }
 
-analysis::value_sets::vsd_state::vsd_state(bool is_bottom, elements_t elements)
-  : _is_bottom(is_bottom), elements(elements), num_ev([&](num_var *nv) {
+analysis::value_sets::vsd_state::vsd_state(std::shared_ptr<static_memory> sm, bool is_bottom, elements_t elements)
+  : numeric_state(sm), _is_bottom(is_bottom), elements(elements), num_ev([&](num_var *nv) {
     return queryVal(nv);
   }) {
 }
@@ -87,7 +87,7 @@ vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t cur
   join(elements, other_casted->elements);
   join(other_casted->elements, elements);
 
-  return new vsd_state(elems_new);
+  return new vsd_state(sm, elems_new);
 }
 
 vsd_state *analysis::value_sets::vsd_state::widen(domain_state *other, size_t current_node) {
@@ -96,7 +96,7 @@ vsd_state *analysis::value_sets::vsd_state::widen(domain_state *other, size_t cu
   elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
     elements_new[mapping_other.first] = value_set::widen(lookup(mapping_other.first), mapping_other.second);
-  return new vsd_state(elements_new);
+  return new vsd_state(sm,elements_new);
 }
 
 vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t current_node) {
@@ -105,7 +105,7 @@ vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t c
   elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
     elements_new[mapping_other.first] = value_set::narrow(lookup(mapping_other.first), mapping_other.second);
-  return new vsd_state(elements_new);
+  return new vsd_state(sm, elements_new);
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
@@ -299,12 +299,12 @@ bool analysis::value_sets::vsd_state::cleanup(api::num_var *var) {
     return true;
 }
 
-vsd_state *analysis::value_sets::vsd_state::bottom() {
-  return new vsd_state(true);
+vsd_state *analysis::value_sets::vsd_state::bottom(std::shared_ptr<static_memory> sm) {
+  return new vsd_state(sm, true);
 }
 
-vsd_state* analysis::value_sets::vsd_state::top() {
-  return new vsd_state();
+vsd_state* analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> sm) {
+  return new vsd_state(sm);
 }
 
 api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {

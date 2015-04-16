@@ -25,7 +25,7 @@ class num_expr_cmp;
 typedef std::vector<std::tuple<api::num_var*, api::num_var*>> num_var_pairs_t;
 
 class numeric_state : public domain_state {
-private:
+protected:
   shared_ptr<static_memory> sm;
 public:
   numeric_state(shared_ptr<static_memory> sm) : sm(sm) {

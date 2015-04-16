@@ -12,7 +12,9 @@
 #include <summy/analysis/util.h>
 #include <cppgdsl/rreil/id/id.h>
 #include <summy/analysis/domains/numeric/num_evaluator.h>
+#include <summy/analysis/static_memory.h>
 #include <map>
+#include <memory>
 
 namespace analysis {
 namespace api {
@@ -37,18 +39,18 @@ private:
 protected:
   void put(std::ostream &out) const;
 public:
-  vsd_state(bool is_bottom, elements_t elements);
-  vsd_state(elements_t elements) :
-      vsd_state(false, elements) {
+  vsd_state(std::shared_ptr<static_memory> sm, bool is_bottom, elements_t elements);
+  vsd_state(std::shared_ptr<static_memory> sm, elements_t elements) :
+      vsd_state(sm, false, elements) {
   }
-  vsd_state() :
-      vsd_state(elements_t { }) {
+  vsd_state(std::shared_ptr<static_memory> sm) :
+      vsd_state(sm, elements_t { }) {
   }
-  vsd_state(bool is_bottom) :
-      vsd_state(is_bottom, elements_t { }) {
+  vsd_state(std::shared_ptr<static_memory> sm, bool is_bottom) :
+      vsd_state(sm, is_bottom, elements_t { }) {
   }
   vsd_state(vsd_state const &o) :
-      vsd_state(o._is_bottom, o.elements) {
+      vsd_state(o.sm, o._is_bottom, o.elements) {
   }
 
   const elements_t &get_elements() const {
@@ -86,8 +88,8 @@ public:
 
   numeric_state *copy() const;
 
-  static vsd_state *bottom();
-  static vsd_state *top();
+  static vsd_state *bottom(std::shared_ptr<static_memory> sm);
+  static vsd_state *top(std::shared_ptr<static_memory> sm);
 };
 
 }

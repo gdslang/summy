@@ -6,14 +6,16 @@
  */
 
 #include <gtest/gtest.h>
-#include <iostream>
 #include <summy/analysis/domains/numeric/vsd_state.h>
 #include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/static_memory.h>
 #include <summy/test/analysis/domains/numeric_api_builder.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
 #include <bjutil/autogc.h>
+#include <iostream>
+#include <memory>
 
 using namespace summy;
 using namespace analysis::api;
@@ -59,7 +61,7 @@ TEST_F(vsd_state_test, SimpleAssignments) {
     s->assign(n.var(a), n.expr(lin));
   };
 
-  vsd_state *s = gc(new vsd_state());
+  vsd_state *s = gc(new vsd_state(make_shared<static_dummy>()));
   {
     auto assign = [&](auto a, auto lin) {
       assign_state(s, a, lin);
@@ -74,7 +76,7 @@ TEST_F(vsd_state_test, SimpleAssignments) {
     assign(g, a + (-c));
   }
 
-  vsd_state *comp = gc(new vsd_state());
+  vsd_state *comp = gc(new vsd_state(make_shared<static_dummy>()));
   {
     auto assign = [&](auto a, auto lin) {
       assign_state(comp, a, lin);
@@ -110,7 +112,7 @@ TEST_F(vsd_state_test, StateComparison) {
     s->assign(n.var(a), n.expr(lin));
   };
 
-  vsd_state *greater = gc(new vsd_state());
+  vsd_state *greater = gc(new vsd_state(make_shared<static_dummy>()));
   {
     auto assign = [&](auto a, auto lin) {
       assign_state(greater, a, lin);
@@ -125,7 +127,7 @@ TEST_F(vsd_state_test, StateComparison) {
     assign(i, value_set::top);
   }
 
-  vsd_state *smaller = gc(new vsd_state());
+  vsd_state *smaller = gc(new vsd_state(make_shared<static_dummy>()));
   {
     auto assign = [&](auto a, auto lin) {
       assign_state(smaller, a, lin);
@@ -163,7 +165,7 @@ TEST_F(vsd_state_test, StateJoin) {
     s->assign(n.var(a), n.expr(lin));
   };
 
-  vsd_state *sa = gc(new vsd_state());
+  vsd_state *sa = gc(new vsd_state(make_shared<static_dummy>()));
   {
     auto assign = [&](auto a, auto lin) {
       assign_state(sa, a, lin);
@@ -178,7 +180,7 @@ TEST_F(vsd_state_test, StateJoin) {
     assign(i, value_set::top);
   }
 
-  vsd_state *sb = gc(new vsd_state());
+  vsd_state *sb = gc(new vsd_state(make_shared<static_dummy>()));
   {
     auto assign = [&](auto a, auto lin) {
       assign_state(sb, a, lin);
@@ -194,7 +196,7 @@ TEST_F(vsd_state_test, StateJoin) {
     assign(h, value_set::top);
   }
 
-  vsd_state *joined_comp = gc(new vsd_state());
+  vsd_state *joined_comp = gc(new vsd_state(make_shared<static_dummy>()));
   {
     auto assign = [&](auto a, auto lin) {
       assign_state(joined_comp, a, lin);
@@ -222,12 +224,12 @@ TEST_F(vsd_state_test, AssumptionLE1) {
   auto a = rreil_builder::temporary("a");
   auto b = rreil_builder::temporary("b");
 
-  vsd_state *sa = gc(new vsd_state());
+  vsd_state *sa = gc(new vsd_state(make_shared<static_dummy>()));
   sa->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { 1, 10}))));
   sa->assign(n.var(b), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { 2, -9}))));
   sa->assume(n.expr(a + b, LE));
 
-  vsd_state *comp = gc(new vsd_state());
+  vsd_state *comp = gc(new vsd_state(make_shared<static_dummy>()));
   comp->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { 1 }))));
   comp->assign(n.var(b), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { -9 }))));
 
@@ -241,12 +243,12 @@ TEST_F(vsd_state_test, AssumptionLE2) {
   auto a = rreil_builder::temporary("a");
   auto b = rreil_builder::temporary("b");
 
-  vsd_state *sa = gc(new vsd_state());
+  vsd_state *sa = gc(new vsd_state(make_shared<static_dummy>()));
   sa->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { 1, 10}))));
   sa->assign(n.var(b), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { -2, -9}))));
   sa->assume(n.expr(a + b, LE));
 
-  vsd_state *comp = gc(new vsd_state());
+  vsd_state *comp = gc(new vsd_state(make_shared<static_dummy>()));
   comp->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { 1 }))));
   comp->assign(n.var(b), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { -9, -2 }))));
 
@@ -259,10 +261,10 @@ TEST_F(vsd_state_test, AssumptionLE3) {
 
   auto a = rreil_builder::temporary("a");
 
-  vsd_state *sa = gc(new vsd_state());
+  vsd_state *sa = gc(new vsd_state(make_shared<static_dummy>()));
   sa->assume(n.expr(a + nab_lin(make_shared<vs_finite>(vs_finite::elements_t { -3, 5 })), LE));
 
-  vsd_state *comp = gc(new vsd_state());
+  vsd_state *comp = gc(new vsd_state(make_shared<static_dummy>()));
   comp->assign(n.var(a), n.expr(nab_lin(make_shared<vs_open>(DOWNWARD, 3))));
 
   ASSERT_EQ(*sa, *comp);
@@ -274,11 +276,11 @@ TEST_F(vsd_state_test, AssumptionEQ) {
 
   auto a = rreil_builder::temporary("a");
 
-  vsd_state *sa = gc(new vsd_state());
+  vsd_state *sa = gc(new vsd_state(make_shared<static_dummy>()));
   sa->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { 1, 10 }))));
   sa->assume(n.expr(a + nab_lin(-10), EQ));
 
-  vsd_state *comp = gc(new vsd_state());
+  vsd_state *comp = gc(new vsd_state(make_shared<static_dummy>()));
   comp->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { 10 }))));
 
   ASSERT_EQ(*sa, *comp);
@@ -290,11 +292,11 @@ TEST_F(vsd_state_test, AssumptionNEQ1) {
 
   auto a = rreil_builder::temporary("a");
 
-  vsd_state *sa = gc(new vsd_state());
+  vsd_state *sa = gc(new vsd_state(make_shared<static_dummy>()));
   sa->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { -3, 0, 5 }))));
   sa->assume(n.expr(a, NEQ));
 
-  vsd_state *comp = gc(new vsd_state());
+  vsd_state *comp = gc(new vsd_state(make_shared<static_dummy>()));
   comp->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { -3, 5 }))));
 
   ASSERT_EQ(*sa, *comp);
@@ -306,11 +308,11 @@ TEST_F(vsd_state_test, AssumptionNEQ2) {
 
   auto a = rreil_builder::temporary("a");
 
-  vsd_state *sa = gc(new vsd_state());
+  vsd_state *sa = gc(new vsd_state(make_shared<static_dummy>()));
   sa->assign(n.var(a), n.expr(nab_lin(make_shared<vs_open>(UPWARD, 0))));
   sa->assume(n.expr(a, NEQ));
 
-  vsd_state *comp = gc(new vsd_state());
+  vsd_state *comp = gc(new vsd_state(make_shared<static_dummy>()));
   comp->assign(n.var(a), n.expr(nab_lin(make_shared<vs_open>(UPWARD, 1))));
 
   ASSERT_EQ(*sa, *comp);
@@ -323,12 +325,12 @@ TEST_F(vsd_state_test, AssumptionGE) {
   auto a = rreil_builder::temporary("a");
   auto b = rreil_builder::temporary("b");
 
-  vsd_state *sa = gc(new vsd_state());
+  vsd_state *sa = gc(new vsd_state(make_shared<static_dummy>()));
   sa->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { 1, 10}))));
   sa->assign(n.var(b), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { -2, -90}))));
   sa->assume(n.expr(a + b, GE));
 
-  vsd_state *comp = gc(new vsd_state());
+  vsd_state *comp = gc(new vsd_state(make_shared<static_dummy>()));
   comp->assign(n.var(a), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { 10 }))));
   comp->assign(n.var(b), n.expr(nab_lin(make_shared<vs_finite>(vs_finite::elements_t { -2 }))));
 

@@ -62,7 +62,7 @@ memory_state *analysis::memory_state::domop(domain_state *other, size_t current_
 
   //  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
 
-    memory_state *result = new memory_state((me_compat->*domopper)(other_compat, current_node), head_compat.regions,
+    memory_state *result = new memory_state(sm, (me_compat->*domopper)(other_compat, current_node), head_compat.regions,
         head_compat.deref);
     delete me_compat;
     delete other_compat;
@@ -372,8 +372,8 @@ num_linear *analysis::memory_state::transLE(id_shared_t var_id, size_t offset, s
   return transLEReg(region, offset, size);
 }
 
-analysis::memory_state::memory_state(numeric_state *child_state, bool start_bottom) :
-    child_state(child_state) {
+analysis::memory_state::memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom) :
+    sm(sm), child_state(child_state) {
   auto arch_ptr = [&](string id_name) {
     num_var *nv = new num_var(shared_ptr<gdsl::rreil::id>(new arch_id(id_name)));
 
@@ -452,8 +452,12 @@ memory_state *analysis::memory_state::copy() const {
   return new memory_state(*this);
 }
 
-memory_state *analysis::memory_state::start_value(numeric_state *start_num) {
-  return new memory_state(start_num, true);
+memory_state *analysis::memory_state::start_value(shared_ptr<static_memory> sm, numeric_state *start_num) {
+  return new memory_state(sm, start_num, true);
+}
+
+memory_state *analysis::memory_state::bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num) {
+  return new memory_state(sm, bottom_num, false);
 }
 
 void analysis::memory_state::update(gdsl::rreil::load *load) {
@@ -719,10 +723,6 @@ api::ptr_set_t analysis::memory_state::queryAls(gdsl::rreil::address *a) {
 
 const region_t &analysis::memory_state::query_region(id_shared_t id) {
   return regions[id];
-}
-
-memory_state *analysis::memory_state::bottom(numeric_state *bottom_num) {
-  return new memory_state(bottom_num, false);
 }
 
 std::tuple<memory_state::memory_head, numeric_state*, numeric_state*> analysis::memory_state::compat(

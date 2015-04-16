@@ -13,6 +13,8 @@
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
 #include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/static_memory.h>
+
 #include <cppgdsl/rreil/statement/assign.h>
 #include <memory>
 #include <map>
@@ -65,6 +67,8 @@ public:
 class memory_state: public domain_state {
   friend class managed_temporary;
 private:
+  shared_ptr<static_memory> sm;
+
   numeric_state *child_state;
   region_map_t regions;
   deref_t deref;
@@ -90,15 +94,15 @@ protected:
   api::num_linear *transLEReg(region_t &region, size_t offset, size_t size);
   api::num_linear *transLE(id_shared_t var_id, size_t offset, size_t size);
 public:
-  memory_state(numeric_state *child_state, region_map_t regions, deref_t deref) :
-      child_state(child_state), regions(regions), deref(deref) {
+  memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, region_map_t regions, deref_t deref) :
+      sm(sm), child_state(child_state), regions(regions), deref(deref) {
   }
   /**
    * @param start_bottom: true => start value, false => bottom
    */
-  memory_state(numeric_state *child_state, bool start_bottom);
+  memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom);
   memory_state(memory_state const &o) :
-      child_state(o.child_state->copy()), regions(o.regions), deref(o.deref) {
+      sm(o.sm), child_state(o.child_state->copy()), regions(o.regions), deref(o.deref) {
   }
   ~memory_state() {
     delete child_state;
@@ -131,8 +135,8 @@ public:
 
   memory_state *copy() const;
 
-  static memory_state *start_value(numeric_state *start_num);
-  static memory_state *bottom(numeric_state *bottom_num);
+  static memory_state *start_value(shared_ptr<static_memory> sm, numeric_state *start_num);
+  static memory_state *bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num);
 
   struct memory_head {
     region_map_t regions;
