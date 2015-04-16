@@ -56,6 +56,7 @@ public:
   virtual vs_shared_t add(vs_open const *vs) const = 0;
   vs_shared_t add(vs_top const *vs) const;
   vs_shared_t operator+(vs_shared_t b);
+  vs_shared_t operator-(vs_shared_t b);
 
   virtual vs_shared_t neg() const = 0;
   vs_shared_t operator-() const;

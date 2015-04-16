@@ -85,6 +85,10 @@ vs_shared_t summy::value_set::operator +(vs_shared_t b) {
   return result;
 }
 
+vs_shared_t summy::value_set::operator -(vs_shared_t b) {
+  return *this + (-*b);
+}
+
 vs_shared_t summy::value_set::operator -() const {
   return neg();
 }

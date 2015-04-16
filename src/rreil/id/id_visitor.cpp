@@ -9,6 +9,7 @@
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/ssa_id.h>
+#include <summy/rreil/id/sm_id.h>
 
 namespace sr = summy::rreil;
 
@@ -24,5 +25,10 @@ void sr::id_visitor::visit(sr::numeric_id *a) {
 
 void sr::id_visitor::visit(sr::memory_id *a) {
   if(memory_id_callback != NULL) memory_id_callback(a);
+  else _default(a);
+}
+
+void sr::id_visitor::visit(sr::sm_id *a) {
+  if(sm_id_callback != NULL) sm_id_callback(a);
   else _default(a);
 }

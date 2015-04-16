@@ -468,6 +468,8 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
   vector<num_linear*> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
+    cout << "Alias: " << *alias.id << "@" << *alias.offset << endl;
+
     region_t &region = dereference(alias.id);
 
     value_set_visitor vsv;

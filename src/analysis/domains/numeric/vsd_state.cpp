@@ -10,8 +10,11 @@
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <bjutil/printer.h>
+#include <summy/rreil/id/sm_id.h>
 #include <string>
 #include <memory>
+
+using summy::rreil::sm_id;
 
 using namespace summy;
 using namespace analysis;
@@ -308,7 +311,25 @@ vsd_state* analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> s
 }
 
 api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
-  return ptr_set_t { };
+//  cout << "queryAls() in vsd_state" << endl;
+
+  bool success = false;
+  void *address;
+  vs_shared_t nv_val = queryVal(nv);
+  value_set_visitor vsv;
+  vsv._([&](vs_finite *vf) {
+    success = true;
+    address = (void*)*vf->get_elements().begin();
+  });
+  nv_val->accept(vsv);
+  if(!success)
+    return ptr_set_t { };
+  symbol symb;
+  tie(success, symb) = sm->lookup(address);
+  if(!success)
+    return ptr_set_t { };
+//  cout << "Returing alias..." << endl;
+  return ptr_set_t { ptr(sm_id::from_symbol(symb.symbol_name), *nv_val - vs_finite::single((int64_t)symb.address) ) };
 }
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(num_linear *lin) {
