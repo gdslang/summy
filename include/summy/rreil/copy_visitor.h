@@ -22,7 +22,7 @@ public:
   typedef std::function<gdsl::rreil::id*(gdsl::rreil::id*, int_t)> ssa_id_ctor_t;
   typedef std::function<gdsl::rreil::id*(int_t)> numeric_id_ctor_t;
   typedef std::function<gdsl::rreil::id*(int_t, std::shared_ptr<gdsl::rreil::id>)> memory_id_ctor_t;
-  typedef std::function<gdsl::rreil::id*(std::string)> sm_id_ctor_t;
+  typedef std::function<gdsl::rreil::id*(std::string, void*)> sm_id_ctor_t;
 private:
   ssa_id_ctor_t ssa_id_ctor = NULL;
   numeric_id_ctor_t numeric_id_ctor = NULL;

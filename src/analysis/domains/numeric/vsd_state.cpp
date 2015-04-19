@@ -329,7 +329,7 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
   if(!success)
     return ptr_set_t { };
 //  cout << "Returing alias..." << endl;
-  return ptr_set_t { ptr(sm_id::from_symbol(symb.symbol_name), *nv_val - vs_finite::single((int64_t)symb.address) ) };
+  return ptr_set_t { ptr(sm_id::from_symbol(symb), *nv_val - vs_finite::single((int64_t)symb.address) ) };
 }
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(num_linear *lin) {

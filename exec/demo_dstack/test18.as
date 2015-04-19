@@ -1,9 +1,10 @@
 .globl foo
-.size	foo, 2
+.size	foo, 3
 lea .foo(%rip), %rbx
 add $1, %rbx
-movb (%rbx), %al
+movw (%rbx), %ax
 nop
 .foo:
 foo:
 nop
+add %rax, %rbx

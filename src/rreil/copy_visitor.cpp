@@ -34,6 +34,6 @@ void summy::rreil::copy_visitor::visit(memory_id *a) {
 }
 
 void summy::rreil::copy_visitor::visit(sm_id *a) {
-  if(sm_id_ctor != NULL) _id = sm_id_ctor(a->get_symbol());
-  else _id = new sm_id(a->get_symbol());
+  if(sm_id_ctor != NULL) _id = sm_id_ctor(a->get_symbol(), a->get_address());
+  else _id = new sm_id(a->get_symbol(), a->get_address());
 }

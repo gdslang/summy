@@ -9,12 +9,14 @@
 #include <summy/analysis/domains/api/numeric/converter.h>
 #include <summy/analysis/domains/memory_state.h>
 #include <summy/rreil/id/numeric_id.h>
+#include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/shared_copy.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/value_set_visitor.h>
 #include <cppgdsl/rreil/variable.h>
 #include <cppgdsl/rreil/id/id.h>
+#include <include/summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/memory_id.h>
 #include <algorithm>
 #include <iosfwd>
@@ -26,8 +28,8 @@
 using namespace analysis::api;
 using namespace summy;
 using namespace gdsl::rreil;
-using summy::rreil::memory_id;
-using summy::rreil::numeric_id;
+using namespace summy::rreil;
+
 
 using namespace analysis;
 using namespace std;
@@ -233,6 +235,25 @@ bool analysis::memory_state::overlap_region(region_t& region, size_t offset, siz
   }
 
   return _overlap;
+}
+
+void analysis::memory_state::initialize_static(region_t &region, void *address, size_t offset, size_t size) {
+  id_shared_t mem_id = transVarReg(region, offset, size);
+  if(size > 64)
+    throw string("analysis::memory_state::initialize_static(region_t,void*,size_t): size > 64");
+
+  int64_t sv = 0;
+  bool success = sm->read((char*)address + (offset/8), size/8, (uint8_t*)&sv);
+//  cout << "read " << (size_t)address << "/" << + (offset/8) << " " << size/8 << " " << sv << " " << success << endl;
+  if(success) {
+    vs_shared_t sv_vs = vs_finite::single(sv);
+    num_var *v_mem_id = new num_var(mem_id);
+    num_expr *e_sv_vs = new num_expr_lin(new num_linear_vs(sv_vs));
+    child_state->assign(v_mem_id, e_sv_vs);
+    delete e_sv_vs;
+    delete v_mem_id;
+
+  }
 }
 
 region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_t offset,
@@ -468,9 +489,18 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
   vector<num_linear*> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
-    cout << "Alias: " << *alias.id << "@" << *alias.offset << endl;
+//    cout << "Alias: " << *alias.id << "@" << *alias.offset << endl;
 
     region_t &region = dereference(alias.id);
+
+    bool is_static = false;
+    void *symbol_address;
+    summy::rreil::id_visitor idv;
+    idv._([&](sm_id *sid) {
+      is_static = true;
+      symbol_address = sid->get_address();
+    });
+    alias.id->accept(idv);
 
     value_set_visitor vsv;
     vsv._([&](vs_finite *v) {
@@ -487,8 +517,11 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
       if(overlapping.size() > 0)
         return;
 
-      for(auto noo : non_overlapping)
+      for(auto noo : non_overlapping) {
+        if(is_static)
+          initialize_static(region, symbol_address, noo, load->get_size());
         lins.push_back(transLEReg(region, noo, load->get_size()));
+      }
     });
     vsv._([&](vs_open *o) {
     });
