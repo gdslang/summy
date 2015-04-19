@@ -87,7 +87,7 @@ protected:
   std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
 
   bool overlap_region(region_t &region, size_t offset, size_t size);
-  void initialize_static(region_t &region, void *base, size_t offset, size_t size);
+  void initialize_static(region_t &region, void *address, size_t offset, size_t size);
   region_t::iterator retrieve_kill(region_t &region, size_t offset, size_t size);
   void topify(region_t &region, size_t offset, size_t size);
   id_shared_t transVarReg(region_t &region, size_t offset, size_t size);
