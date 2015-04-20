@@ -52,10 +52,14 @@ int main(int argc, char **argv) {
   gdsl::gdsl g(&f);
 
   elf_provider elfp = elf_provider(argv[1]);
-  binary_provider::entry_t section = elfp.section(".text");
+  binary_provider::entry_t section;
+  bool success;
+  tie(success, section) = elfp.section(".text");
+  if(!success)
+    throw string("Invalid section .text");
 
   binary_provider::entry_t function;
-  tie(ignore, function) = elfp.entry("main");
+  tie(ignore, function) = elfp.symbol("main");
 
   unsigned char *buffer = (unsigned char*)malloc(section.size);
   memcpy(buffer, elfp.get_data().data + section.offset, section.size);
@@ -71,7 +75,7 @@ int main(int argc, char **argv) {
 
   try {
 //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-  dectran dt(g, false);
+  dectran dt(g, true);
 
   dt.transduce();
   dt.register_();

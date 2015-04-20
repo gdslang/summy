@@ -113,7 +113,6 @@ vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t c
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
 //  cout << "Assign " << *rhs << " to " << *lhs << endl;
-
   vs_shared_t er = num_ev.queryVal(rhs);
   if(*er == value_set::bottom)
     bottomify();
@@ -124,7 +123,6 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
 
 void value_sets::vsd_state::weak_assign(num_var *lhs, num_expr *rhs) {
 //  cout << "Weak Assign " << *rhs << " to " << *lhs << endl;
-
   vs_shared_t er = num_ev.queryVal(rhs);
   _is_bottom = _is_bottom || *er == value_set::bottom;
   if(is_bottom())
@@ -311,12 +309,12 @@ vsd_state* analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> s
 }
 
 api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
-//  cout << "queryAls() in vsd_state" << endl;
+//  cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
 
   bool success = false;
   void *address;
   vs_shared_t nv_val = queryVal(nv);
-  value_set_visitor vsv;
+  value_set_visitor vsv(true);
   vsv._([&](vs_finite *vf) {
     success = true;
     address = (void*)*vf->get_elements().begin();

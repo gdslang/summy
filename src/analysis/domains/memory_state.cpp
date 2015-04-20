@@ -180,6 +180,37 @@ region_t &analysis::memory_state::region(id_shared_t id) {
   }
 }
 
+tuple<bool, void*> analysis::memory_state::static_address(id_shared_t id) {
+  bool is_static = false;
+  void *symbol_address;
+  summy::rreil::id_visitor idv;
+  idv._([&](sm_id *sid) {
+    is_static = true;
+    symbol_address = sid->get_address();
+  });
+  id->accept(idv);
+  return make_tuple(is_static, symbol_address);
+}
+
+void analysis::memory_state::initialize_static(region_t &region, void *address, size_t offset, size_t size) {
+  id_shared_t mem_id = transVarReg(region, offset, size);
+  if(size > 64)
+    throw string("analysis::memory_state::initialize_static(region_t,void*,size_t): size > 64");
+
+  int64_t sv = 0;
+  bool success = sm->read((char*)address + (offset/8), size/8, (uint8_t*)&sv);
+//  cout << "read " << (size_t)address << "/" << + (offset/8) << " " << size/8 << " " << sv << " " << success << endl;
+  if(success) {
+    vs_shared_t sv_vs = vs_finite::single(sv);
+    num_var *v_mem_id = new num_var(mem_id);
+    num_expr *e_sv_vs = new num_expr_lin(new num_linear_vs(sv_vs));
+    child_state->assign(v_mem_id, e_sv_vs);
+    delete e_sv_vs;
+    delete v_mem_id;
+
+  }
+}
+
 std::tuple<std::set<int64_t>, std::set<int64_t> > analysis::memory_state::overlappings(summy::vs_finite *vs,
     int_t store_size) {
   set<int64_t> overlapping;
@@ -235,25 +266,6 @@ bool analysis::memory_state::overlap_region(region_t& region, size_t offset, siz
   }
 
   return _overlap;
-}
-
-void analysis::memory_state::initialize_static(region_t &region, void *address, size_t offset, size_t size) {
-  id_shared_t mem_id = transVarReg(region, offset, size);
-  if(size > 64)
-    throw string("analysis::memory_state::initialize_static(region_t,void*,size_t): size > 64");
-
-  int64_t sv = 0;
-  bool success = sm->read((char*)address + (offset/8), size/8, (uint8_t*)&sv);
-//  cout << "read " << (size_t)address << "/" << + (offset/8) << " " << size/8 << " " << sv << " " << success << endl;
-  if(success) {
-    vs_shared_t sv_vs = vs_finite::single(sv);
-    num_var *v_mem_id = new num_var(mem_id);
-    num_expr *e_sv_vs = new num_expr_lin(new num_linear_vs(sv_vs));
-    child_state->assign(v_mem_id, e_sv_vs);
-    delete e_sv_vs;
-    delete v_mem_id;
-
-  }
 }
 
 region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_t offset,
@@ -381,7 +393,7 @@ num_linear *analysis::memory_state::transLEReg(region_t &region, size_t offset, 
     num_linear *l = new num_linear_term(new num_var(fields[0].num_id));
     size_t size_acc = fields[0].size;
     for(size_t i = 1; i < fields.size(); i++) {
-      l = new num_linear_term(1 << size_acc, new num_var(fields[i].num_id), l);
+      l = new num_linear_term((size_t)1 << size_acc, new num_var(fields[i].num_id), l);
       size_acc += fields[i].size;
     }
     return l;
@@ -490,17 +502,11 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
 //    cout << "Alias: " << *alias.id << "@" << *alias.offset << endl;
-
     region_t &region = dereference(alias.id);
 
     bool is_static = false;
     void *symbol_address;
-    summy::rreil::id_visitor idv;
-    idv._([&](sm_id *sid) {
-      is_static = true;
-      symbol_address = sid->get_address();
-    });
-    alias.id->accept(idv);
+    tie(is_static, symbol_address) = static_address(alias.id);
 
     value_set_visitor vsv;
     vsv._([&](vs_finite *v) {
@@ -572,6 +578,14 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
     region_t &region = dereference(alias.id);
+
+    bool is_static = false;
+    tie(is_static, ignore) = static_address(alias.id);
+    if(is_static) {
+      cout << "Warning: Ignoring possible store to static memory" << endl;
+      continue;
+    }
+
     vector<id_shared_t> ids;
 
     bool singleton = aliases.size() == 1;
@@ -652,9 +666,10 @@ void analysis::memory_state::assume(gdsl::rreil::sexpr *cond) {
   converter cv(0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
     return transLE(id, offset, size);
   });
-  num_expr_cmp *ec = cv.conv_expr_cmp(cond);
-  child_state->assume(ec);
-  delete ec;
+  expr_cmp_result_t ecr = cv.conv_expr_cmp(cond);
+  child_state->assume(ecr.primary);
+  for(auto add : ecr.additional)
+    child_state->assume(add);
   unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
   vs_shared_t value = child_state->queryVal(temp->get_var());
   if(*value == vs_finite::_false)
@@ -665,11 +680,15 @@ void analysis::memory_state::assume_not(gdsl::rreil::sexpr *cond) {
   converter cv(0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
     return transLE(id, offset, size);
   });
-  num_expr_cmp *ec = cv.conv_expr_cmp(cond);
-  num_expr_cmp *ec_not = ec->negate();
-  child_state->assume(ec_not);
-  delete ec_not;
-  delete ec;
+  expr_cmp_result_t ecr = cv.conv_expr_cmp(cond);
+  num_expr_cmp *ec_primary_not = ecr.primary->negate();
+  child_state->assume(ec_primary_not);
+  delete ec_primary_not;
+  for(auto add : ecr.additional)
+    /*
+     * Additional constraints must not be negated!
+     */
+    child_state->assume(add);
   unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
   vs_shared_t value = child_state->queryVal(temp->get_var());
   if(*value == vs_finite::_true)

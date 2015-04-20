@@ -16,7 +16,7 @@
 using namespace analysis::api;
 using namespace gdsl::rreil;
 using namespace summy;
-
+using namespace std;
 
 num_var *converter::conv_id(id *id) {
   return new num_var(shared_copy(id));
@@ -50,15 +50,17 @@ num_linear *converter::conv_linear(linear *lin, int64_t scale) {
     result = conv_linear(l->get_opnd(), scale*l->get_const());
   });
   lv._([&](lin_var *l) {
-    result = transLE(shared_copy(l->get_var()->get_id()), l->get_var()->get_offset(), size);
+    num_linear *transLE_lin = transLE(shared_copy(l->get_var()->get_id()), l->get_var()->get_offset(), size);
+    result = mul(scale, transLE_lin);
+    delete transLE_lin;
   });
   lin->accept(lv);
   return result;
 }
 
 
-num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr_cmp *se) {
-  num_expr_cmp *result = NULL;
+expr_cmp_result_t analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr_cmp *se) {
+  expr_cmp_result_t result;
   size_t sz_back = this->size;
   this->size = se->get_size();
   num_linear *opnd1 = conv_linear(se->get_inner()->get_opnd1());
@@ -66,21 +68,27 @@ num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr_cmp *se
   num_linear *opnd2_neg = opnd2->negate();
   switch(se->get_inner()->get_op()) {
     case CMP_EQ: {
-      result = new num_expr_cmp(add(opnd1, opnd2_neg), EQ);
+      result.primary = new num_expr_cmp(add(opnd1, opnd2_neg), EQ);
       break;
     }
     case CMP_NEQ: {
-      result = new num_expr_cmp(add(opnd1, opnd2_neg), NEQ);
+      result.primary = new num_expr_cmp(add(opnd1, opnd2_neg), NEQ);
       break;
     }
-    case CMP_LEU:
+    case CMP_LEU: {
+      result.additional.push_back(new num_expr_cmp(opnd1->copy(), GE));
+      result.additional.push_back(new num_expr_cmp(opnd2->copy(), GE));
+    }
     case CMP_LES: {
-      result = new num_expr_cmp(add(opnd1, opnd2_neg), LE);
+      result.primary = new num_expr_cmp(add(opnd1, opnd2_neg), LE);
       break;
     }
-    case CMP_LTU:
+    case CMP_LTU: {
+      result.additional.push_back(new num_expr_cmp(opnd1->copy(), GE));
+      result.additional.push_back(new num_expr_cmp(opnd2->copy(), GE));
+    }
     case CMP_LTS: {
-      result = new num_expr_cmp(add(opnd1, opnd2_neg), LT);
+      result.primary = new num_expr_cmp(add(opnd1, opnd2_neg), LT);
       break;
     }
   }
@@ -91,11 +99,11 @@ num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr_cmp *se
   return result;
 }
 
-analysis::api::num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr *se) {
-  num_expr_cmp *result = NULL;
+expr_cmp_result_t analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr *se) {
+  expr_cmp_result_t result;
   sexpr_visitor sv;
   sv._([&](arbitrary *x) {
-    result = new num_expr_cmp(new num_linear_vs(value_set::top), EQ);
+    result.primary = new num_expr_cmp(new num_linear_vs(value_set::top), EQ);
   });
   sv._([&](sexpr_cmp *x) {
     result = conv_expr_cmp(x);
@@ -106,7 +114,7 @@ analysis::api::num_expr_cmp *analysis::api::converter::conv_expr_cmp(gdsl::rreil
 
     num_linear *x_lin = conv_linear(x->get_lin());
     num_linear *minus_one = new num_linear_vs(vs_finite::single(-1));
-    result = new num_expr_cmp(add(x_lin, minus_one), EQ);
+    result.primary = new num_expr_cmp(add(x_lin, minus_one), EQ);
     delete x_lin;
     delete minus_one;
 
@@ -123,7 +131,7 @@ analysis::api::num_expr *converter::conv_expr(sexpr *se) {
     result = new num_expr_lin(new num_linear_vs(value_set::top));
   });
   sv._([&](sexpr_cmp *x) {
-    result = conv_expr_cmp(x);
+    result = conv_expr_cmp(x).primary;
   });
   sv._([&](sexpr_lin *x) {
     result = new num_expr_lin(conv_linear(x->get_lin()));
@@ -202,6 +210,19 @@ analysis::api::num_expr *analysis::api::converter::conv_expr(gdsl::rreil::linear
 
 num_linear *converter::conv_linear(linear *lin) {
   return conv_linear(lin, 1);
+}
+
+num_linear *analysis::api::converter::mul(int64_t scale, num_linear *a) {
+  num_linear *result = NULL;
+  num_visitor nv;
+  nv._([&](num_linear_term *v) {
+    result = new num_linear_term(scale*v->get_scale(), v->get_var()->copy(), mul(scale, v->get_next()));
+  });
+  nv._([&](num_linear_vs *v) {
+    result = new num_linear_vs(*v->get_value_set() * vs_finite::single(scale));
+  });
+  a->accept(nv);
+  return result;
 }
 
 num_linear *converter::add(num_linear *a, vs_shared_t vs) {
