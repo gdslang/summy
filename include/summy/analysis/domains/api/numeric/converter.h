@@ -27,9 +27,7 @@ struct expr_cmp_result_t {
   analysis::api::num_expr_cmp *primary;
   std::vector<analysis::api::num_expr_cmp*> additional;
 
-  /*
-   * dtor...
-   */
+  void free();
 };
 
 class converter {

@@ -44,7 +44,6 @@ equality_state *analysis::equality_state::join_widen(domain_state *other, size_t
 
 api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
 //  cout << "simp " << *l << endl;
-
   map<id_shared_t, int64_t, id_less_no_version> id_scales;
   num_linear *lin_simplified;
   num_visitor nv;

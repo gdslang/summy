@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-//  g.set_code(NULL, 0, 0);
-//  free(buffer);
+  g.set_code(NULL, 0, 0);
+  free(buffer);
   return 0;
 }

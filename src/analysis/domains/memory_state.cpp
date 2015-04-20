@@ -103,7 +103,7 @@ void analysis::memory_state::put(std::ostream &out) const {
     stringstream field_line;
     stringstream offset_size_boundary;
     for(auto field_mapping : region) {
-      size_t offset = field_mapping.first;
+      int64_t offset = field_mapping.first;
       size_t size = field_mapping.second.size;
       id_shared_t num_id = field_mapping.second.num_id;
 
@@ -112,7 +112,7 @@ void analysis::memory_state::put(std::ostream &out) const {
       string field_str = field_ss.str();
 
       stringstream pos_ss;
-      pos_ss << offset << ":" << size;
+      pos_ss << (offset < 0 ? "(" : "") << offset << (offset < 0 ? ")" : "") << ":" << size;
       string pos_str = pos_ss.str();
 
       size_t field_size = std::max(field_str.length(), pos_str.length());
@@ -218,9 +218,9 @@ std::tuple<std::set<int64_t>, std::set<int64_t> > analysis::memory_state::overla
 
   vs_finite::elements_t const &v_elems = vs->get_elements();
 
-  int64_t last = 0;
+  int64_t last;
   for(auto o_it = v_elems.begin(); o_it != v_elems.end(); o_it++) {
-     int64_t next = *o_it;
+    int64_t next = *o_it;
     if(o_it != v_elems.begin()) {
       if(next >= last + store_size)
         non_overlapping.insert(last);
@@ -248,7 +248,7 @@ static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) 
   else return to_b >= from_a;
 }
 
-bool analysis::memory_state::overlap_region(region_t& region, size_t offset, size_t size) {
+bool analysis::memory_state::overlap_region(region_t& region, int64_t offset, size_t size) {
   /*
    * Todo: uncopy from retrieve_kill()?
    */
@@ -257,7 +257,7 @@ bool analysis::memory_state::overlap_region(region_t& region, size_t offset, siz
   auto field_it = region.upper_bound(offset);
   if(field_it != region.begin()) --field_it;
   while(field_it != region.end()) {
-    size_t offset_next = field_it->first;
+    int64_t offset_next = field_it->first;
     field &f_next = field_it->second;
     if(overlap(offset_next, f_next.size, offset, size))
       _overlap = true;
@@ -268,7 +268,7 @@ bool analysis::memory_state::overlap_region(region_t& region, size_t offset, siz
   return _overlap;
 }
 
-region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_t offset,
+region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, int64_t offset,
     size_t size) {
 //  cout << "retrieve_kill() " << offset << " / " << size << endl;
 
@@ -285,7 +285,7 @@ region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_
   if(field_it != region.begin()) --field_it;
   while(field_it != region.end()) {
     bool erase = false;
-    size_t offset_next = field_it->first;
+    int64_t offset_next = field_it->first;
     field &f_next = field_it->second;
 //    cout << "Considering " << offset_next << " / " << f_next.size << endl;
     if(offset_next == offset && f_next.size == size) {
@@ -311,7 +311,7 @@ region_t::iterator analysis::memory_state::retrieve_kill(region_t &region, size_
   return field_it;
 }
 
-void analysis::memory_state::topify(region_t &region, size_t offset,
+void analysis::memory_state::topify(region_t &region, int64_t offset,
     size_t size) {
   auto field_it = retrieve_kill(region, offset, size);
   if(field_it != region.end()) {
@@ -321,7 +321,7 @@ void analysis::memory_state::topify(region_t &region, size_t offset,
   }
 }
 
-id_shared_t analysis::memory_state::transVarReg(region_t &region, size_t offset, size_t size) {
+id_shared_t analysis::memory_state::transVarReg(region_t &region, int64_t offset, size_t size) {
   auto field_it = retrieve_kill(region, offset, size);
   if(field_it == region.end()) {
 //    cout << "Inserting new field at " << offset << endl;
@@ -336,7 +336,7 @@ id_shared_t analysis::memory_state::transVarReg(region_t &region, size_t offset,
   return f.num_id;
 }
 
-id_shared_t analysis::memory_state::transVar(id_shared_t var_id, size_t offset, size_t size) {
+id_shared_t analysis::memory_state::transVar(id_shared_t var_id, int64_t offset, size_t size) {
   auto region_it = regions.find(var_id);
   if(region_it == regions.end()) {
     tie(region_it, ignore) = regions.insert(make_pair(var_id, region_t()));
@@ -345,13 +345,13 @@ id_shared_t analysis::memory_state::transVar(id_shared_t var_id, size_t offset, 
   return transVarReg(region_it->second, offset, size);
 }
 
-num_linear *analysis::memory_state::transLEReg(region_t &region, size_t offset, size_t size) {
+num_linear *analysis::memory_state::transLEReg(region_t &region, int64_t offset, size_t size) {
 //  cout << "transLEReg "<< offset << ":" << size << endl;
 //  if(offset == 8 && size == 8)
 //    printf("Juhu\n");
 
   vector<field> fields;
-  size_t consumed = 0;
+  int64_t consumed = 0;
   while(true) {
     auto field_it = region.find(offset + consumed);
     if(field_it == region.end()) {
@@ -400,7 +400,7 @@ num_linear *analysis::memory_state::transLEReg(region_t &region, size_t offset, 
   }
 }
 
-num_linear *analysis::memory_state::transLE(id_shared_t var_id, size_t offset, size_t size) {
+num_linear *analysis::memory_state::transLE(id_shared_t var_id, int64_t offset, size_t size) {
   auto &region = regions[var_id];
   return transLEReg(region, offset, size);
 }
@@ -670,6 +670,7 @@ void analysis::memory_state::assume(gdsl::rreil::sexpr *cond) {
   child_state->assume(ecr.primary);
   for(auto add : ecr.additional)
     child_state->assume(add);
+  ecr.free();
   unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
   vs_shared_t value = child_state->queryVal(temp->get_var());
   if(*value == vs_finite::_false)
@@ -689,6 +690,7 @@ void analysis::memory_state::assume_not(gdsl::rreil::sexpr *cond) {
      * Additional constraints must not be negated!
      */
     child_state->assume(add);
+  ecr.free();
   unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
   vs_shared_t value = child_state->queryVal(temp->get_var());
   if(*value == vs_finite::_true)

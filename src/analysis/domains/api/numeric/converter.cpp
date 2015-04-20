@@ -18,6 +18,12 @@ using namespace gdsl::rreil;
 using namespace summy;
 using namespace std;
 
+void analysis::api::expr_cmp_result_t::free() {
+  delete primary;
+  for(auto add : additional)
+    delete add;
+}
+
 num_var *converter::conv_id(id *id) {
   return new num_var(shared_copy(id));
 }
@@ -27,16 +33,17 @@ num_var *converter::conv_id(id *id) {
 //}
 
 num_linear *converter::conv_linear(linear *lin, int64_t scale) {
+//  cout << "lin: " << *lin << ", scale: " << scale << endl;
   num_linear *result;
   linear_visitor lv;
   lv._([&](lin_binop *l) {
-    num_linear *opnd1 = conv_linear(l->get_opnd2(), scale);
+    num_linear *opnd1 = conv_linear(l->get_opnd1(), scale);
     int64_t scale_opnd2;
     if(l->get_op() == BIN_LIN_ADD)
       scale_opnd2 = scale;
     else
       scale_opnd2 = -scale;
-    num_linear *opnd2 = conv_linear(l->get_opnd1(), scale_opnd2);
+    num_linear *opnd2 = conv_linear(l->get_opnd2(), scale_opnd2);
     result = add(opnd1, opnd2);
     delete opnd1;
     delete opnd2;
@@ -131,7 +138,9 @@ analysis::api::num_expr *converter::conv_expr(sexpr *se) {
     result = new num_expr_lin(new num_linear_vs(value_set::top));
   });
   sv._([&](sexpr_cmp *x) {
-    result = conv_expr_cmp(x).primary;
+    expr_cmp_result_t r_x = conv_expr_cmp(x);
+    result = r_x.primary->copy();
+    r_x.free();
   });
   sv._([&](sexpr_lin *x) {
     result = new num_expr_lin(conv_linear(x->get_lin()));

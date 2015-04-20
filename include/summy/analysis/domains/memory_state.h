@@ -34,7 +34,7 @@ std::ostream &operator<<(std::ostream &out, field const &_this);
 /*
  * region: offset -> size, numeric id
  */
-typedef std::map<size_t, field> region_t;
+typedef std::map<int64_t, field> region_t;
 /*
  * region_map: memory id -> memory region
  */
@@ -92,14 +92,14 @@ protected:
   void initialize_static(region_t &region, void *address, size_t offset, size_t size);
 
   std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
-  bool overlap_region(region_t &region, size_t offset, size_t size);
+  bool overlap_region(region_t &region, int64_t offset, size_t size);
 
-  region_t::iterator retrieve_kill(region_t &region, size_t offset, size_t size);
-  void topify(region_t &region, size_t offset, size_t size);
-  id_shared_t transVarReg(region_t &region, size_t offset, size_t size);
-  id_shared_t transVar(id_shared_t var_id, size_t offset, size_t size);
-  api::num_linear *transLEReg(region_t &region, size_t offset, size_t size);
-  api::num_linear *transLE(id_shared_t var_id, size_t offset, size_t size);
+  region_t::iterator retrieve_kill(region_t &region, int64_t offset, size_t size);
+  void topify(region_t &region, int64_t offset, size_t size);
+  id_shared_t transVarReg(region_t &region, int64_t offset, size_t size);
+  id_shared_t transVar(id_shared_t var_id, int64_t offset, size_t size);
+  api::num_linear *transLEReg(region_t &region, int64_t offset, size_t size);
+  api::num_linear *transLE(id_shared_t var_id, int64_t offset, size_t size);
 public:
   memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, region_map_t regions, deref_t deref) :
       sm(sm), child_state(child_state), regions(regions), deref(deref) {

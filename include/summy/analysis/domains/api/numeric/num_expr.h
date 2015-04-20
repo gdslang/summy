@@ -51,6 +51,7 @@ public:
   }
 
   num_expr_cmp *negate() const;
+  num_expr_cmp *copy() const;
 
   void accept(num_visitor &v);
 };

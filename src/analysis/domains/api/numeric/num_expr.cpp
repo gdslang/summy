@@ -74,6 +74,11 @@ num_expr_cmp *analysis::api::num_expr_cmp::negate() const {
   }
 }
 
+num_expr_cmp *analysis::api::num_expr_cmp::copy() const {
+  return new num_expr_cmp(opnd->copy(), op);
+}
+
+
 void analysis::api::num_expr_cmp::accept(num_visitor &v) {
   v.visit(this);
 }
