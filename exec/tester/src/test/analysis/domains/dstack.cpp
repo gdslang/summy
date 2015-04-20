@@ -134,7 +134,7 @@ static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string
 
   bool found;
   binary_provider::entry_t e;
-  tie(found, e) = ar.elfp->entry(label);
+  tie(found, e) = ar.elfp->symbol(label);
   ASSERT_TRUE(found);
 
   auto addr_it = ar.addr_node_map.find(e.address);
@@ -154,7 +154,7 @@ static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string 
 
   bool found;
   binary_provider::entry_t e;
-  tie(found, e) = ar.elfp->entry(label);
+  tie(found, e) = ar.elfp->symbol(label);
   ASSERT_TRUE(found);
 
   auto addr_it = ar.addr_node_map.find(e.address);
@@ -186,7 +186,7 @@ static void equal_structure(region_t const& cmp, _analysis_result &ar, string la
 
   bool found;
   binary_provider::entry_t e;
-  tie(found, e) = ar.elfp->entry(label);
+  tie(found, e) = ar.elfp->symbol(label);
   ASSERT_TRUE(found);
 
   auto addr_it = ar.addr_node_map.find(e.address);
@@ -207,7 +207,7 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
 
   bool found;
   binary_provider::entry_t e;
-  tie(found, e) = ar.elfp->entry(label);
+  tie(found, e) = ar.elfp->symbol(label);
   ASSERT_TRUE(found);
 
   auto addr_it = ar.addr_node_map.find(e.address);

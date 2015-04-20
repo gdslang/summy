@@ -34,7 +34,7 @@ public:
 
 class fp_analysis;
 
-class fixpoint: cfg::observer {
+class fixpoint : cfg::observer {
 private:
   fp_analysis *analysis;
   std::set<size_t> seen;
