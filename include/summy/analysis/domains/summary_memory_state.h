@@ -1,11 +1,15 @@
 /*
- * memory_state.h
+ * summary_memory_state.h
  *
- *  Created on: Mar 12, 2015
+ *  Created on: Apr 21, 2015
  *      Author: Julian Kranz
  */
 
 #pragma once
+
+/*
+ * Todo: Combine with memory state
+ */
 
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/domains/numeric/numeric_state.h>
@@ -44,13 +48,13 @@ typedef std::map<id_shared_t, region_t, id_less_no_version> region_map_t;
  */
 typedef region_map_t deref_t;
 
-class memory_state;
+class summary_memory_state;
 class managed_temporary {
 private:
-  memory_state &_this;
+  summary_memory_state &_this;
   api::num_var *var;
 public:
-  managed_temporary(memory_state &_this, api::num_var *var);
+  managed_temporary(summary_memory_state &_this, api::num_var *var);
   managed_temporary(managed_temporary const&) = delete;
   ~managed_temporary();
   api::num_var *get_var() {
@@ -61,7 +65,7 @@ public:
 /**
  * Memory domain state
  */
-class memory_state: public domain_state {
+class summary_memory_state: public domain_state {
   friend class managed_temporary;
 private:
   shared_ptr<static_memory> sm;
@@ -71,7 +75,7 @@ private:
   deref_t deref;
 
   typedef numeric_state*(numeric_state::*domopper_t) (domain_state *other, size_t current_node);
-  memory_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
+  summary_memory_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
 
   std::unique_ptr<managed_temporary> assign_temporary(int_t size, std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
 
@@ -98,17 +102,17 @@ protected:
   api::num_linear *transLEReg(region_t &region, int64_t offset, size_t size);
   api::num_linear *transLE(id_shared_t var_id, int64_t offset, size_t size);
 public:
-  memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, region_map_t regions, deref_t deref) :
+  summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, region_map_t regions, deref_t deref) :
       sm(sm), child_state(child_state), regions(regions), deref(deref) {
   }
   /**
    * @param start_bottom: true => start value, false => bottom
    */
-  memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom);
-  memory_state(memory_state const &o) :
+  summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom);
+  summary_memory_state(summary_memory_state const &o) :
       sm(o.sm), child_state(o.child_state->copy()), regions(o.regions), deref(o.deref) {
   }
-  ~memory_state() {
+  ~summary_memory_state() {
     delete child_state;
   }
 
@@ -116,9 +120,9 @@ public:
 
   bool operator>=(domain_state const &other) const;
 
-  memory_state *join(domain_state *other, size_t current_node);
-  memory_state *widen(domain_state *other, size_t current_node);
-  memory_state *narrow(domain_state *other, size_t current_node);
+  summary_memory_state *join(domain_state *other, size_t current_node);
+  summary_memory_state *widen(domain_state *other, size_t current_node);
+  summary_memory_state *narrow(domain_state *other, size_t current_node);
 
   void update(gdsl::rreil::assign *assign);
   void update(gdsl::rreil::load *load);
@@ -137,16 +141,16 @@ public:
   api::ptr_set_t queryAls(gdsl::rreil::address *a);
   region_t const& query_region(id_shared_t id);
 
-  memory_state *copy() const;
+  summary_memory_state *copy() const;
 
-  static memory_state *start_value(shared_ptr<static_memory> sm, numeric_state *start_num);
-  static memory_state *bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num);
+  static summary_memory_state *start_value(shared_ptr<static_memory> sm, numeric_state *start_num);
+  static summary_memory_state *bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num);
 
   struct memory_head {
     region_map_t regions;
     deref_t deref;
   };
-  static std::tuple<memory_head, numeric_state*, numeric_state*> compat(memory_state const *a, memory_state const *b);
+  static std::tuple<memory_head, numeric_state*, numeric_state*> compat(summary_memory_state const *a, summary_memory_state const *b);
 };
 
 }
