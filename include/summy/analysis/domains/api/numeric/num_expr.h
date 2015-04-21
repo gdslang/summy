@@ -54,6 +54,8 @@ public:
   num_expr_cmp *copy() const;
 
   void accept(num_visitor &v);
+
+  static num_expr_cmp *equals(num_var *a, num_var *b);
 };
 
 class num_expr_lin: public num_expr {

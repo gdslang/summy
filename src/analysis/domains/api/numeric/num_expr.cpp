@@ -83,6 +83,11 @@ void analysis::api::num_expr_cmp::accept(num_visitor &v) {
   v.visit(this);
 }
 
+num_expr_cmp *analysis::api::num_expr_cmp::equals(num_var *a, num_var *b) {
+  num_linear *lin = new num_linear_term(1, a, new num_linear_term(-1, b));
+  return new num_expr_cmp(lin, EQ);
+}
+
 /*
  * num_expr_lin
  */

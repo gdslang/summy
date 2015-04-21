@@ -24,6 +24,7 @@
 #include <sstream>
 #include <tuple>
 #include <vector>
+#include <assert.h>
 
 using namespace analysis::api;
 using namespace summy;
@@ -103,20 +104,15 @@ std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_tempor
   return unique_ptr<managed_temporary>(new managed_temporary(*this, var));
 }
 
-region_t &analysis::summary_memory_state::region_by_id(region_map_t (relation::*getter)(), id_shared_t id, bool write) {
+region_t &analysis::summary_memory_state::region_by_id(region_map_t (relation::*getter)(), id_shared_t id) {
   region_map_t &input_rmap =  input.*getter();
   region_map_t &output_rmap =  output.*getter();
-  auto id_it = input_rmap.find(id);
-  if(id_it == input_rmap.end())
-    tie(id_it, ignore) = input_rmap.insert(make_pair(id, region_t { }));
+  if(input_rmap.find(id) == input_rmap.end())
+    input_rmap.insert(make_pair(id, region_t { }));
   auto id_out_it = output_rmap.find(id);
-  if(id_out_it == output_rmap.end()) {
-    if(write)
-      tie(id_it, ignore) = input_rmap.insert(make_pair(id, region_t { }));
-  } else {
-    id_it = id_out_it;
-  }
-  return id_it->second;
+  if(id_out_it == output_rmap.end())
+      tie(id_out_it, ignore) = input_rmap.insert(make_pair(id, region_t { }));
+  return id_out_it->second;
 }
 
 void analysis::summary_memory_state::bottomify() {
@@ -125,8 +121,8 @@ void analysis::summary_memory_state::bottomify() {
   output.clear();
 }
 
-region_t &analysis::summary_memory_state::dereference(id_shared_t id, bool write) {
-  return region_by_id(&relation::get_deref, id, write);
+region_t &analysis::summary_memory_state::dereference(id_shared_t id) {
+  return region_by_id(&relation::get_deref, id);
 }
 
 void analysis::summary_memory_state::put(std::ostream &out) const {
@@ -309,6 +305,11 @@ bool analysis::summary_memory_state::overlap_region(region_t& region, int64_t of
   return _overlap;
 }
 
+/*
+ * Todo: If a variable is replaced by smaller one, the resuling free space of the region must be filled
+ * with one or two variables containing the value top; this is important for the output relation since it
+ * must know about possibly overwritten parts of regions
+ */
 region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &region, int64_t offset,
     size_t size) {
 //  cout << "retrieve_kill() " << offset << " / " << size << endl;
@@ -362,16 +363,21 @@ void analysis::summary_memory_state::topify(region_t &region, int64_t offset,
   }
 }
 
-id_shared_t analysis::summary_memory_state::transVarReg(region_t &region, int64_t offset, size_t size) {
-  auto field_it = retrieve_kill(region, offset, size);
-  if(field_it == region.end()) {
-//    cout << "Inserting new field at " << offset << endl;
-    tie(field_it, ignore) = region.insert(make_pair(offset, field { size, numeric_id::generate() }));
-  }
+id_shared_t analysis::summary_memory_state::transVarReg(region_t &r_in, region_t &r_out, int64_t offset, size_t size) {
+  auto field_in_it = retrieve_kill(r_in, offset, size);
+  auto field_out_it = retrieve_kill(r_out, offset, size);
+  if(field_in_it == r_in.end()) {
+    assert(field_out_it == r_out.end());
+    id_shared_t nid_in = numeric_id::generate();
+    id_shared_t nid_out = numeric_id::generate();
 
-//  for(auto &f : region)
-//    cout << "Field " << f.second << " is in region at offset " << f.first << "..." << endl;
-//  cout << *this << endl;
+    num_var *n_in = new num_var(nid_in);
+    num_var *n_out = new num_var(nid_out);
+    num_expr_cmp *in_out_eq = num_expr_cmp::equals(n_in, n_out);
+
+    tie(field_in_it, ignore) = r_in.insert(make_pair(offset, field { size, numeric_id::generate() }));
+  } else
+    assert(field_out_it != r_out.end());
 
   field &f = field_it->second;
   return f.num_id;

@@ -95,10 +95,10 @@ private:
 
   std::unique_ptr<managed_temporary> assign_temporary(int_t size, std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
 
-  region_t &region_by_id(region_map_t(relation::*getter)(), id_shared_t id, bool write);
+  region_t &region_by_id(region_map_t(relation::*getter)(), id_shared_t id);
 
   void bottomify();
-  region_t &dereference(id_shared_t id, bool write);
+  region_t &dereference(id_shared_t id);
 protected:
   void put(std::ostream &out) const;
 //  region_t &region(id_shared_t id);
@@ -115,7 +115,7 @@ protected:
 
   region_t::iterator retrieve_kill(region_t &region, int64_t offset, size_t size);
   void topify(region_t &region, int64_t offset, size_t size);
-  id_shared_t transVarReg(region_t &region, int64_t offset, size_t size);
+  id_shared_t transVarReg(region_t &r_in, region_t &r_out, int64_t offset, size_t size);
   id_shared_t transVar(id_shared_t var_id, int64_t offset, size_t size);
   api::num_linear *transLEReg(region_t &region, int64_t offset, size_t size);
   api::num_linear *transLE(id_shared_t var_id, int64_t offset, size_t size);
