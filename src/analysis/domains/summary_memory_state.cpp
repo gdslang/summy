@@ -34,10 +34,9 @@ using namespace summy::rreil;
 using namespace analysis;
 using namespace std;
 
-std::ostream& analysis::operator <<(std::ostream &out, const field &_this) {
-  out << "{" << *_this.num_id << ":" << _this.size << "}";
-  return out;
-}
+/*
+ * managed temporary
+ */
 
 analysis::managed_temporary::managed_temporary(summary_memory_state &_this, api::num_var *var) :
     _this(_this), var(var) {
@@ -47,6 +46,25 @@ managed_temporary::~managed_temporary() {
   _this.child_state->kill( { var });
   delete var;
 }
+
+/*
+ * field & relation
+ */
+
+std::ostream& analysis::operator <<(std::ostream &out, const field &_this) {
+  out << "{" << *_this.num_id << ":" << _this.size << "}";
+  return out;
+}
+
+
+void analysis::relation::clear() {
+  regions.clear();
+  deref.clear();
+}
+
+/*
+ * summary memory state
+ */
 
 summary_memory_state *analysis::summary_memory_state::domop(domain_state *other, size_t current_node, domopper_t domopper) {
   //  cout << "JOIN OF" << endl;
@@ -85,16 +103,30 @@ std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_tempor
   return unique_ptr<managed_temporary>(new managed_temporary(*this, var));
 }
 
-void analysis::summary_memory_state::bottomify() {
-  child_state->bottomify();
-  regions.clear();
-  deref.clear();
+region_t &analysis::summary_memory_state::region_by_id(region_map_t (relation::*getter)(), id_shared_t id, bool write) {
+  region_map_t &input_rmap =  input.*getter();
+  region_map_t &output_rmap =  output.*getter();
+  auto id_it = input_rmap.find(id);
+  if(id_it == input_rmap.end())
+    tie(id_it, ignore) = input_rmap.insert(make_pair(id, region_t { }));
+  auto id_out_it = output_rmap.find(id);
+  if(id_out_it == output_rmap.end()) {
+    if(write)
+      tie(id_it, ignore) = input_rmap.insert(make_pair(id, region_t { }));
+  } else {
+    id_it = id_out_it;
+  }
+  return id_it->second;
 }
 
-region_t &analysis::summary_memory_state::dereference(id_shared_t id) {
-  auto id_it = deref.find(id);
-  if(id_it == deref.end()) tie(id_it, ignore) = deref.insert(make_pair(id, region_t { }));
-  return id_it->second;
+void analysis::summary_memory_state::bottomify() {
+  child_state->bottomify();
+  input.clear();
+  output.clear();
+}
+
+region_t &analysis::summary_memory_state::dereference(id_shared_t id, bool write) {
+  return region_by_id(&relation::get_deref, id, write);
 }
 
 void analysis::summary_memory_state::put(std::ostream &out) const {
@@ -157,28 +189,38 @@ void analysis::summary_memory_state::put(std::ostream &out) const {
     out << endl;
   };
 
-  out << "Regions: {" << endl;
-  for(auto region_mapping : regions)
+  out << "Regions input: {" << endl;
+  for(auto region_mapping : input.regions)
     print_fields(false, region_mapping.first, region_mapping.second);
   out << "}" << endl;
-  out << "Deref: {" << endl;
-  for(auto region_mapping : deref)
+  out << "Deref input: {" << endl;
+  for(auto region_mapping : input.deref)
     print_fields(true, region_mapping.first, region_mapping.second);
   out << "}" << endl;
+
+  out << "Regions ouptut: {" << endl;
+  for(auto region_mapping : output.regions)
+    print_fields(false, region_mapping.first, region_mapping.second);
+  out << "}" << endl;
+  out << "Deref output: {" << endl;
+  for(auto region_mapping : output.deref)
+    print_fields(true, region_mapping.first, region_mapping.second);
+  out << "}" << endl;
+
   out << "Child state: {" << endl;
   out << *child_state;
   out << endl << "}";
 }
 
-region_t &analysis::summary_memory_state::region(id_shared_t id) {
-  auto mapping_it = regions.find(id);
-  if(mapping_it != regions.end()) return mapping_it->second;
-  else {
-    region_map_t::iterator ins_it;
-    tie(ins_it, ignore) = regions.insert(std::make_pair(id, region_t()));
-    return ins_it->second;
-  }
-}
+//region_t &analysis::summary_memory_state::region(id_shared_t id) {
+//  auto mapping_it = regions.find(id);
+//  if(mapping_it != regions.end()) return mapping_it->second;
+//  else {
+//    region_map_t::iterator ins_it;
+//    tie(ins_it, ignore) = regions.insert(std::make_pair(id, region_t()));
+//    return ins_it->second;
+//  }
+//}
 
 tuple<bool, void*> analysis::summary_memory_state::static_address(id_shared_t id) {
   bool is_static = false;
@@ -207,7 +249,6 @@ void analysis::summary_memory_state::initialize_static(region_t &region, void *a
     child_state->assign(v_mem_id, e_sv_vs);
     delete e_sv_vs;
     delete v_mem_id;
-
   }
 }
 

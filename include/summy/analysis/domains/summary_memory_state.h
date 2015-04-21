@@ -28,12 +28,6 @@
 
 namespace analysis {
 
-struct field {
-  size_t size;
-  id_shared_t num_id;
-};
-
-std::ostream &operator<<(std::ostream &out, field const &_this);
 
 /*
  * region: offset -> size, numeric id
@@ -62,8 +56,30 @@ public:
   }
 };
 
+struct field {
+  size_t size;
+  id_shared_t num_id;
+};
+
+std::ostream &operator<<(std::ostream &out, field const &_this);
+
+struct relation {
+  region_map_t regions;
+  deref_t deref;
+
+  region_map_t &get_regions() {
+    return regions;
+  }
+
+  deref_t &get_deref() {
+    return deref;
+  }
+
+  void clear();
+};
+
 /**
- * Memory domain state
+ * Summary-based memory domain state
  */
 class summary_memory_state: public domain_state {
   friend class managed_temporary;
@@ -71,19 +87,21 @@ private:
   shared_ptr<static_memory> sm;
 
   numeric_state *child_state;
-  region_map_t regions;
-  deref_t deref;
+  relation input;
+  relation output;
 
   typedef numeric_state*(numeric_state::*domopper_t) (domain_state *other, size_t current_node);
   summary_memory_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
 
   std::unique_ptr<managed_temporary> assign_temporary(int_t size, std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
 
+  region_t &region_by_id(region_map_t(relation::*getter)(), id_shared_t id, bool write);
+
   void bottomify();
-  region_t &dereference(id_shared_t id);
+  region_t &dereference(id_shared_t id, bool write);
 protected:
   void put(std::ostream &out) const;
-  region_t &region(id_shared_t id);
+//  region_t &region(id_shared_t id);
 
 
   /*
