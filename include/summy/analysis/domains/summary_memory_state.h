@@ -28,6 +28,10 @@
 
 namespace analysis {
 
+struct field {
+  size_t size;
+  id_shared_t num_id;
+};
 
 /*
  * region: offset -> size, numeric id
@@ -56,11 +60,6 @@ public:
   }
 };
 
-struct field {
-  size_t size;
-  id_shared_t num_id;
-};
-
 std::ostream &operator<<(std::ostream &out, field const &_this);
 
 struct relation {
@@ -76,6 +75,13 @@ struct relation {
   }
 
   void clear();
+};
+
+struct io_region {
+  region_t &in_r;
+  region_t &out_r;
+
+  field &insert(numeric_state *child_state, int64_t offset, size_t size);
 };
 
 /**
@@ -95,10 +101,10 @@ private:
 
   std::unique_ptr<managed_temporary> assign_temporary(int_t size, std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
 
-  region_t &region_by_id(region_map_t(relation::*getter)(), id_shared_t id);
+  io_region region_by_id(region_map_t&(relation::*getter)(), id_shared_t id);
 
   void bottomify();
-  region_t &dereference(id_shared_t id);
+  io_region dereference(id_shared_t id);
 protected:
   void put(std::ostream &out) const;
 //  region_t &region(id_shared_t id);
@@ -108,27 +114,27 @@ protected:
    * Static memory
    */
   std::tuple<bool, void*> static_address(id_shared_t id);
-  void initialize_static(region_t &region, void *address, size_t offset, size_t size);
+  void initialize_static(io_region io, void *address, size_t offset, size_t size);
 
   std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
   bool overlap_region(region_t &region, int64_t offset, size_t size);
 
   region_t::iterator retrieve_kill(region_t &region, int64_t offset, size_t size);
   void topify(region_t &region, int64_t offset, size_t size);
-  id_shared_t transVarReg(region_t &r_in, region_t &r_out, int64_t offset, size_t size);
+  id_shared_t transVarReg(io_region io, int64_t offset, size_t size);
   id_shared_t transVar(id_shared_t var_id, int64_t offset, size_t size);
-  api::num_linear *transLEReg(region_t &region, int64_t offset, size_t size);
+  api::num_linear *transLEReg(io_region io, int64_t offset, size_t size);
   api::num_linear *transLE(id_shared_t var_id, int64_t offset, size_t size);
 public:
-  summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, region_map_t regions, deref_t deref) :
-      sm(sm), child_state(child_state), regions(regions), deref(deref) {
+  summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, relation input, relation output) :
+      sm(sm), child_state(child_state), input(input), output(output) {
   }
   /**
    * @param start_bottom: true => start value, false => bottom
    */
   summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom);
   summary_memory_state(summary_memory_state const &o) :
-      sm(o.sm), child_state(o.child_state->copy()), regions(o.regions), deref(o.deref) {
+      sm(o.sm), child_state(o.child_state->copy()), input(o.input), output(o.output) {
   }
   ~summary_memory_state() {
     delete child_state;
@@ -157,7 +163,7 @@ public:
   summy::vs_shared_t queryVal(gdsl::rreil::expr *e, size_t size);
   std::set<summy::vs_shared_t> queryPts(std::unique_ptr<managed_temporary> &address);
   api::ptr_set_t queryAls(gdsl::rreil::address *a);
-  region_t const& query_region(id_shared_t id);
+//  region_t const& query_region(id_shared_t id);
 
   summary_memory_state *copy() const;
 
@@ -165,8 +171,8 @@ public:
   static summary_memory_state *bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num);
 
   struct memory_head {
-    region_map_t regions;
-    deref_t deref;
+    relation input;
+    relation output;
   };
   static std::tuple<memory_head, numeric_state*, numeric_state*> compat(summary_memory_state const *a, summary_memory_state const *b);
 };
