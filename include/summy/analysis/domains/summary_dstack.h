@@ -1,7 +1,7 @@
 /*
- * dstack.h
+ * summary_dstack.h
  *
- *  Created on: Mar 17, 2015
+ *  Created on: Apr 22, 2015
  *      Author: Julian Kranz
  */
 
@@ -18,13 +18,13 @@ namespace analysis {
 
 typedef std::vector<std::shared_ptr<memory_state>> state_t;
 
-struct dstack_result : public ::analysis::analysis_result<state_t> {
-  dstack_result(state_t &s) :
+struct summary_dstack_result : public ::analysis::analysis_result<state_t> {
+  summary_dstack_result(state_t &s) :
       analysis_result(s) {
   }
 };
 
-class dstack : public fp_analysis {
+class summary_dstack : public fp_analysis {
 private:
   std::shared_ptr<static_memory> sm;
   state_t state;
@@ -34,16 +34,16 @@ private:
   dependency gen_dependency(size_t from, size_t to);
   void init_state();
 public:
-  dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm);
-  dstack(cfg::cfg *cfg);
-  ~dstack();
+  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm);
+  summary_dstack(cfg::cfg *cfg);
+  ~summary_dstack();
 
   std::shared_ptr<domain_state> bottom();
   std::shared_ptr<domain_state> start_value();
 
   std::shared_ptr<domain_state> get(size_t node);
   void update(size_t node, shared_ptr<domain_state> state);
-  dstack_result result();
+  summary_dstack_result result();
 
   void put(std::ostream &out);
 };
