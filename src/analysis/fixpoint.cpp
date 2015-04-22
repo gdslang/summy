@@ -56,7 +56,7 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = worklist.pop();
 
-//    cout << "Next node: " << node_id << endl;
+    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<domain_state> accumulator;

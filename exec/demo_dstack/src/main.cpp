@@ -11,7 +11,8 @@
 #include <limits.h>
 #include <string.h>
 #include <summy/analysis/domains/api/api.h>
-#include <summy/analysis/domains/dstack.h>
+//#include <summy/analysis/domains/dstack.h>
+#include <summy/analysis/domains/summary_dstack.h>
 #include <summy/analysis/domains/numeric/vsd_state.h>
 #include <iosfwd>
 #include <vector>
@@ -75,7 +76,7 @@ int main(int argc, char **argv) {
 
   try {
 //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-  dectran dt(g, true);
+  dectran dt(g, false);
 
   dt.transduce();
   dt.register_();
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
   cfg.commit_updates();
 
   shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-  dstack ds(&cfg, se);
+  summary_dstack ds(&cfg, se);
   jd_manager jd_man(&cfg);
   fixpoint fp(&ds, jd_man);
 

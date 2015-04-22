@@ -69,14 +69,20 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   num_var *n_in = new num_var(nid_in);
   num_var *n_out = new num_var(nid_out);
+//  num_expr_cmp *in_out_eq = num_expr_cmp::equals(n_in, n_out);
+  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
 
   child_state->assume(n_in, {ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero)});
-  num_expr_cmp *in_out_eq = num_expr_cmp::equals(n_in, n_out);
-  child_state->assume(in_out_eq);
+//  child_state->assume(in_out_eq);
+  child_state->assign(n_out, ass_e);
 
   in_r.insert(make_pair(offset, field { size, nid_in }));
   region_t::iterator field_out_it;
   tie(field_out_it, ignore) = out_r.insert(make_pair(offset, field { size, nid_out }));
+
+  delete n_out;
+  delete ass_e;
+
   return field_out_it->second;
 }
 
@@ -129,7 +135,7 @@ io_region analysis::summary_memory_state::region_by_id(region_map_t&(relation::*
     tie(id_in_it, ignore) = input_rmap.insert(make_pair(id, region_t { }));
   auto id_out_it = output_rmap.find(id);
   if(id_out_it == output_rmap.end())
-    tie(id_out_it, ignore) = input_rmap.insert(make_pair(id, region_t { }));
+    tie(id_out_it, ignore) = output_rmap.insert(make_pair(id, region_t { }));
   return io_region { id_in_it->second, id_out_it->second };
 }
 
@@ -324,9 +330,7 @@ bool analysis::summary_memory_state::overlap_region(region_t& region, int64_t of
 }
 
 /*
- * Todo: If a variable is replaced by smaller one, the resuling free space of the region must be filled
- * with one or two variables containing the value top; this is important for the output relation since it
- * must know about possibly overwritten parts of regions
+ * Todo: Work on io_region, keep more relations between input and output
  */
 region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &region, int64_t offset,
     size_t size) {
@@ -335,6 +339,7 @@ region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &regio
   bool found = false;
   id_shared_t num_id;
   vector<num_var*> dead_num_vars;
+  vector<tuple<int64_t, size_t>> replacements;
   auto field_it = region.upper_bound(offset);
 
 //  if(field_it == region.end())
@@ -353,6 +358,14 @@ region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &regio
       num_id = f_next.num_id;
       break;
     } else if(overlap(offset_next, f_next.size, offset, size)) {
+      if(offset_next < offset) {
+        size_t first_size = offset - offset_next + 1;
+        replacements.push_back(make_tuple(offset_next, first_size));
+        if(f_next.size > size + first_size)
+          replacements.push_back(make_tuple(offset + size, f_next.size - size - first_size));
+      } else
+        replacements.push_back(make_tuple(offset + size, f_next.size - size));
+
       dead_num_vars.push_back(new num_var(f_next.num_id));
       erase = true;
     }
@@ -363,6 +376,12 @@ region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &regio
   child_state->kill(dead_num_vars);
   for(auto var : dead_num_vars)
     delete var;
+  for(auto repl : replacements) {
+    int64_t offset;
+    size_t size;
+    tie(offset, size) = repl;
+    region.insert(make_pair(offset, field { size, numeric_id::generate() }));
+  }
 
 //  cout << "Found: " << found << endl;
 
@@ -748,7 +767,7 @@ void analysis::summary_memory_state::cleanup() {
 //        if(!child_state->cleanup(nv))
 //        region_it->second.erase(field_it++);
 //        else
-//        field_it++;
+        field_it++;
         delete nv;
       }
 //      if(region_it->second.size() == 0)

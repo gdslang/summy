@@ -7,7 +7,7 @@
 
 #pragma once
 #include <summy/analysis/fp_analysis.h>
-#include <summy/analysis/domains/memory_state.h>
+#include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
 #include <memory>
@@ -16,7 +16,7 @@
 
 namespace analysis {
 
-typedef std::vector<std::shared_ptr<memory_state>> state_t;
+typedef std::vector<std::shared_ptr<summary_memory_state>> state_t;
 
 struct summary_dstack_result : public ::analysis::analysis_result<state_t> {
   summary_dstack_result(state_t &s) :
