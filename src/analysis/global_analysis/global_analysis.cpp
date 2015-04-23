@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/global_analysis.h>
+#include <summy/analysis/global_analysis/global_analysis.h>
 #include <summy/cfg/edge/edge_visitor.h>
 #include <cppgdsl/rreil/statement/statement.h>
 #include <summy/analysis/domains/numeric/als_state.h>
@@ -26,6 +26,13 @@ using namespace std;
 using namespace gdsl::rreil;
 
 void analysis::global_analysis::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
+  /*
+   * Hier genau für call-edge von caller-Knoten zu return-Knoten/consecutive
+   *
+   * Callee wird dep. von caller, sodass fp ihn auswertet
+   * Callee muss auf start_value initialisiert werden, falls aktuell bottom
+   */
+
 //  function<shared_ptr<memory_state>()> transfer_f = [=]() {
 //    return state[from];
 //  };

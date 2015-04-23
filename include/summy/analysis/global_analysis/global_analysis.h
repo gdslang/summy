@@ -10,13 +10,15 @@
 #include <summy/analysis/static_memory.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
+#include <summy/analysis/global_analysis/global_state.h>
 #include <memory>
 #include <vector>
 #include <set>
+#include <map>
 
 namespace analysis {
 
-typedef std::vector<std::shared_ptr<domain_state>> state_t;
+typedef std::map<size_t, std::shared_ptr<global_state>> state_t;
 
 struct global_analysis_result : public ::analysis::analysis_result<state_t> {
   global_analysis_result(state_t &s) :
