@@ -9,28 +9,13 @@
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/jd_manager.h>
 #include <summy/cfg/observer.h>
+#include <summy/analysis/fp_priority_queue.h>
 #include <set>
 #include <vector>
 
 using cfg::jd_manager;
 
 namespace analysis {
-
-class fp_priority_queue {
-private:
-  std::set<size_t> inner;
-public:
-  fp_priority_queue() {
-  }
-  fp_priority_queue(std::set<size_t> init) :
-      inner(init) {
-  }
-
-  void push(size_t value);
-  size_t pop();
-  bool empty();
-  void clear();
-};
 
 class fp_analysis;
 

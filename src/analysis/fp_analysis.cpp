@@ -1,5 +1,5 @@
 /*
- * analysis.cpp
+ * fp_analysis.cpp
  *
  *  Created on: Oct 15, 2014
  *      Author: Julian Kranz
@@ -160,6 +160,12 @@ void fp_analysis::update(vector<struct update> const &updates) {
       }
     }
   }
+}
+
+node_compare_t analysis::fp_analysis::get_fixpoint_node_comparer() {
+  return [](size_t a, size_t b) {
+    return a < b;
+  };
 }
 
 std::ostream &operator <<(std::ostream &out, fp_analysis &_this) {

@@ -16,30 +16,10 @@ using namespace cfg;
 using namespace std;
 using namespace analysis;
 
-void analysis::fp_priority_queue::push(size_t value) {
-  inner.insert(value);
-}
-
-size_t analysis::fp_priority_queue::pop() {
-  size_t value;
-  auto it = inner.begin();
-  value = *it;
-  inner.erase(it);
-  return value;
-}
-
-bool analysis::fp_priority_queue::empty() {
-  return inner.empty();
-}
-
-void analysis::fp_priority_queue::clear() {
-  inner.clear();
-}
-
 void fixpoint::iterate() {
   updated.clear();
-  fp_priority_queue worklist = analysis->pending();
-  fp_priority_queue postprocess_worklist;
+  fp_priority_queue worklist = fp_priority_queue(analysis->pending(), analysis->get_fixpoint_node_comparer());
+  fp_priority_queue postprocess_worklist(analysis->get_fixpoint_node_comparer());
 
   auto end = [&]() {
     if(worklist.empty()) {

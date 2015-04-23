@@ -15,6 +15,8 @@
 #include <tuple>
 #include <memory>
 #include <iostream>
+#include <functional>
+#include <summy/analysis/fp_priority_queue.h>
 
 using std::shared_ptr;
 
@@ -69,6 +71,8 @@ public:
   virtual std::set<size_t> dependants(size_t node_id) {
     return _dependants[node_id];
   }
+
+  virtual node_compare_t get_fixpoint_node_comparer();
 
   virtual void put(std::ostream &out) = 0;
   friend std::ostream &operator<< (std::ostream &out, fp_analysis &_this);

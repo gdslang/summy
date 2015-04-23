@@ -49,6 +49,19 @@ using namespace summy;
 using namespace analysis::api;
 
 int main(int argc, char **argv) {
+//  set<int, function<bool (int, int)>> s([&](int a, int b) {
+//    return a > b;
+//  });
+//
+//  s.insert(10);
+//  s.insert(20);
+//
+//  for(int x : s)
+//    cout << x << endl;
+//
+//  exit(0);
+
+
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
