@@ -33,30 +33,30 @@ void analysis::global_analysis::add_constraint(size_t from, size_t to, const ::c
    * Callee muss auf start_value initialisiert werden, falls aktuell bottom
    */
 
-  function<shared_ptr<memory_state>()> transfer_f = [=]() {
-    return bottom();
-  };
-  edge_visitor ev;
-  ev._([&](const stmt_edge *edge) {
-    statement *stmt = edge->get_stmt();
-    statement_visitor v;
-    v._([&](branch *b) {
-      switch(b->get_hint()) {
-        case BRANCH_HINT_JUMP: {
-          break;
-        }
-        case BRANCH_HINT_CALL: {
-          break;
-        }
-        case BRANCH_HINT_RET: {
-          break;
-        }
-      }
-    });
-    stmt->accept(v);
-  });
-  e->accept(ev);
-  (constraints[to])[from] = transfer_f;
+//  function<shared_ptr<memory_state>()> transfer_f = [=]() {
+//    return bottom();
+//  };
+//  edge_visitor ev;
+//  ev._([&](const stmt_edge *edge) {
+//    statement *stmt = edge->get_stmt();
+//    statement_visitor v;
+//    v._([&](branch *b) {
+//      switch(b->get_hint()) {
+//        case BRANCH_HINT_JUMP: {
+//          break;
+//        }
+//        case BRANCH_HINT_CALL: {
+//          break;
+//        }
+//        case BRANCH_HINT_RET: {
+//          break;
+//        }
+//      }
+//    });
+//    stmt->accept(v);
+//  });
+//  e->accept(ev);
+//  (constraints[to])[from] = transfer_f;
 }
 
 void analysis::global_analysis::remove_constraint(size_t from, size_t to) {

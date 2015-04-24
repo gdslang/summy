@@ -21,10 +21,18 @@ namespace analysis {
 
 class global_state: public domain_state {
 private:
-  shared_ptr<summary_memory_state> returned;
-  shared_ptr<summary_memory_state> consecutive;
+  summary_memory_state *returned;
+  summary_memory_state *consecutive;
 public:
-  global_state(shared_ptr<summary_memory_state> returned, shared_ptr<summary_memory_state> consecutive) :
+  summary_memory_state *get_returned() {
+    return returned;
+  }
+
+  summary_memory_state *get_consecutive() {
+    return consecutive;
+  }
+
+  global_state(summary_memory_state *returned, summary_memory_state *consecutive) :
       returned(returned), consecutive(consecutive) {
   }
 
@@ -32,7 +40,7 @@ public:
   virtual global_state *narrow(::analysis::domain_state *other, size_t current_node);
   virtual global_state *widen(::analysis::domain_state *other, size_t current_node);
 
-  global_state *apply_summary();
+  summary_memory_state *apply_summary();
 
   virtual bool operator>=(::analysis::domain_state const &other) const;
 
