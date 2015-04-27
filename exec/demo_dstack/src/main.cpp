@@ -97,12 +97,12 @@ int main(int argc, char **argv) {
   auto &cfg = dt.get_cfg();
   cfg.commit_updates();
 
-  shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-  summary_dstack ds(&cfg, se);
-  jd_manager jd_man(&cfg);
-  fixpoint fp(&ds, jd_man);
+//  shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
+//  summary_dstack ds(&cfg, se);
+//  jd_manager jd_man(&cfg);
+//  fixpoint fp(&ds, jd_man);
 
-  fp.iterate();
+//  fp.iterate();
 
 //  cout << "++++++++++" << endl;
 //  ds.put(cout);
@@ -110,10 +110,10 @@ int main(int argc, char **argv) {
 
   ofstream dot_fs;
   dot_fs.open("output.dot", ios::out);
-  cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-    out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-  });
-//  cfg.dot(dot_fs);
+//  cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
+//    out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+//  });
+  cfg.dot(dot_fs);
   dot_fs.close();
 
   } catch(string s) {

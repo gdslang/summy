@@ -11,6 +11,10 @@
 
 namespace cfg {
 
+enum decoding_state {
+  DECODED, DECODABLE, UNDEFINED
+};
+
 class address_node: public node {
 private:
   size_t address;
