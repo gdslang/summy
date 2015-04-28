@@ -8,16 +8,16 @@
 #pragma once
 #include <summy/cfg/node/node_visitor.h>
 #include <functional>
+#include "address_node.h"
 
 namespace cfg {
 
 class node;
-class address_node;
 
 class node_copy_visitor : public node_visitor {
 public:
   typedef std::function<node*(size_t)> node_ctor_t;
-  typedef std::function<address_node*(size_t, size_t, size_t)> address_node_ctor_t;
+  typedef std::function<address_node*(size_t, size_t, decoding_state)> address_node_ctor_t;
   typedef std::function<size_t(size_t)> node_id_ctor_t;
 private:
   node_ctor_t node_ctor = NULL;

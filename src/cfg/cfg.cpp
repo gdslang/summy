@@ -67,7 +67,7 @@ void cfg::cfg::add_program(translated_program_t &translated_binary) {
     vector<gdsl::rreil::statement*> *statements;
     tie(address, statements) = elem;
     size_t from_node = create_node([&](size_t id) {
-      return new address_node(id, address, true);
+      return new address_node(id, address, DECODED);
     });
     add_nodes(statements, from_node);
   }
@@ -215,6 +215,13 @@ bool cfg::cfg::contains_edge(size_t from, size_t to) {
 
 cfg::node *cfg::cfg::get_node_payload(size_t id) {
   return node_payloads[id];
+}
+
+void cfg::cfg::replace_node_payload(node *n) {
+  if(n->get_id() >= node_payloads.size())
+    throw new string("cfg::cfg::replace_node_payload(size_t, node*): Invalid node payload replacement");
+  delete node_payloads[n->get_id()];
+  node_payloads[n->get_id()] = n;
 }
 
 size_t cfg::cfg::create_node(std::function<class node*(size_t)> constr) {

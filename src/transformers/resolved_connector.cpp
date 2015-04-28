@@ -25,7 +25,7 @@ void resolved_connector::transform() {
      */
     for(auto &addr : r.second) {
       size_t new_addr_node = cfg->create_node([&](size_t id) {
-        return new address_node(id, addr, false);
+        return new address_node(id, addr, DECODABLE);
       });
 
       auto ip_assign = new assign(64, new variable(new arch_id("IP"), 0),

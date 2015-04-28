@@ -18,18 +18,18 @@ enum decoding_state {
 class address_node: public node {
 private:
   size_t address;
-  bool decoded;
+  decoding_state decs;
 public:
-  address_node(size_t id, size_t address, bool decoded) :
-      node(id), address(address), decoded(decoded) {
+  address_node(size_t id, size_t address, decoding_state decs) :
+      node(id), address(address), decs(decs) {
   }
 
   size_t get_address() {
     return address;
   }
 
-  bool get_decoded() {
-    return decoded;
+  decoding_state get_decs() {
+    return decs;
   }
 
 //  void set_decoded(bool decoded) {

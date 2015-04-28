@@ -99,7 +99,7 @@ void dectran::notify(const std::vector<cfg::update> &updates) {
       cfg::node_visitor nv;
       nv._([&](cfg::address_node *an) {
         size_t an_id = an->get_id();
-        if(!an->get_decoded()) {
+        if(an->get_decs() == cfg::DECODABLE) {
           cfg::cfg cfg_new;
           if(!gdsl.seek(an->get_address())) {
             initial_cfg(cfg_new, false);

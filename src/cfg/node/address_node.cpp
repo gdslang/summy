@@ -14,8 +14,19 @@ using std::hex;
 
 void cfg::address_node::dot(std::ostream &stream) {
   stream << get_id() << " [label=\"" << get_id() << "~ 0x" << hex << address << dec << "\", shape=box";
-  if(!decoded)
-    stream << ", color=red";
+  switch(decs) {
+    case DECODED: {
+      break;
+    }
+    case DECODABLE: {
+      stream << ", color=green";
+      break;
+    }
+    case UNDEFINED: {
+      stream << ", color=red";
+      break;
+    }
+  }
   stream << "];";
 }
 

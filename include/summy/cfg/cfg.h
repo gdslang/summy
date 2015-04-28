@@ -102,6 +102,7 @@ public:
   bool contains(size_t node);
   bool contains_edge(size_t from, size_t to);
   node *get_node_payload(size_t id);
+  void replace_node_payload(node *n);
 
   size_t create_node(std::function<class node*(size_t)> constr);
 

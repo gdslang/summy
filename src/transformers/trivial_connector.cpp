@@ -92,7 +92,7 @@ std::set<size_t> trivial_connector::transform_ur() {
     auto address_node_it = address_node_map.find(addr);
     if(address_node_it == address_node_map.end()) {
       size_t new_addr_node = cfg->create_node([&](size_t id) {
-        return new address_node(id, addr, false);
+        return new address_node(id, addr, DECODABLE);
       });
       address_node_map[addr] = new_addr_node;
       return new_addr_node;
