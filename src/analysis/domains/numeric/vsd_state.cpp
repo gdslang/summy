@@ -310,7 +310,6 @@ vsd_state* analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> s
 
 api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
 //  cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
-
   bool success = false;
   void *address;
   vs_shared_t nv_val = queryVal(nv);

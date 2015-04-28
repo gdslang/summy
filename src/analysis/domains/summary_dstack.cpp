@@ -11,6 +11,7 @@
 #include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/analysis/domains/numeric/equality_state.h>
 #include <summy/analysis/domains/numeric/vsd_state.h>
+#include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/static_memory.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/cfg/cfg.h>
@@ -25,6 +26,7 @@ using namespace analysis;
 using namespace std;
 using namespace gdsl::rreil;
 using namespace analysis::value_sets;
+using namespace api;
 
 void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
   function<shared_ptr<global_state>()> transfer_f = [=]() {
@@ -60,13 +62,24 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     });
     v._([&](branch *b) {
       switch(b->get_hint()) {
-        case gdsl::rreil::BRANCH_HINT_JUMP: {
-          break;
-        }
         case gdsl::rreil::BRANCH_HINT_CALL: {
+          transfer_f = [=]() {
+            shared_ptr<global_state> &state_c = this->state[from];
+            summary_memory_state *cons = state_c->get_consecutive();
+
+            ptr_set_t callee_aliases = cons->queryAls(b->get_target());
+            for(auto ptr : callee_aliases) {
+              cout << ptr << endl;
+            }
+
+            return state_c;
+          };
           break;
         }
         case gdsl::rreil::BRANCH_HINT_RET: {
+          break;
+        }
+        case gdsl::rreil::BRANCH_HINT_JUMP: {
           break;
         }
       }
@@ -94,12 +107,12 @@ dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {
 }
 
 void analysis::summary_dstack::init_state() {
-//  size_t old_size = state.size();
-//  state.resize(cfg->node_count());
-//  for(size_t i = old_size; i < cfg->node_count(); i++) {
-//    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<summary_memory_state>(start_value());
-//    else state[i] = dynamic_pointer_cast<summary_memory_state>(bottom());
-//  }
+  size_t old_size = state.size();
+  state.resize(cfg->node_count());
+  for(size_t i = old_size; i < cfg->node_count(); i++) {
+    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<global_state>(start_value());
+    else state[i] = dynamic_pointer_cast<global_state>(bottom());
+  }
 }
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm) :
@@ -129,11 +142,11 @@ std::shared_ptr<domain_state> analysis::summary_dstack::start_value() {
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
-//  return state[node];
+  return state[node];
 }
 
 void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> state) {
-//  this->state[node] = dynamic_pointer_cast<summary_memory_state>(state);
+  this->state[node] = dynamic_pointer_cast<global_state>(state);
 }
 
 summary_dstack_result analysis::summary_dstack::result() {

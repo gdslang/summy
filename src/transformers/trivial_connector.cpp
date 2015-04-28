@@ -53,6 +53,17 @@ std::set<size_t> trivial_connector::transform_ur() {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
         v._([&](branch *i) {
+          switch(i->get_hint()) {
+            case gdsl::rreil::BRANCH_HINT_CALL: {
+              return;
+            }
+            case gdsl::rreil::BRANCH_HINT_RET: {
+              return;
+            }
+            case gdsl::rreil::BRANCH_HINT_JUMP: {
+              break;
+            }
+          }
           rreil_evaluator rev;
           bool evalable;
           int_t value;
