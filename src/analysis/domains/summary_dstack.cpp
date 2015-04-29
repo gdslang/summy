@@ -35,10 +35,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
   auto for_mutable = [&](function<void(summary_memory_state*)> cb) {
     transfer_f = [=]() {
       shared_ptr<global_state> &state_c = this->state[from];
-      summary_memory_state *cons_new = state_c->get_consecutive()->copy();
-      summary_memory_state *ret_new = state_c->get_returned()->copy();
-      cb(cons_new);
-      shared_ptr<global_state> global_new = shared_ptr<global_state>(new global_state(ret_new, cons_new));
+      summary_memory_state *mstate_new = state_c->get_mstate()->copy();
+      cb(mstate_new);
+      shared_ptr<global_state> global_new = shared_ptr<global_state>(
+          new global_state(mstate_new, state_c->get_fstart_id(), state_c->get_callers()));
       return global_new;
     };
   };
@@ -65,7 +65,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         case gdsl::rreil::BRANCH_HINT_CALL: {
           transfer_f = [=]() {
             shared_ptr<global_state> &state_c = this->state[from];
-            summary_memory_state *cons = state_c->get_consecutive();
+            summary_memory_state *cons = state_c->get_mstate();
 
             ptr_set_t callee_aliases = cons->queryAls(b->get_target());
             for(auto ptr : callee_aliases) {
@@ -133,12 +133,12 @@ summary_memory_state *analysis::summary_dstack::sms_bottom() {
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::bottom() {
-  return shared_ptr<domain_state>(new global_state(sms_bottom(), sms_bottom()));
+  return shared_ptr<domain_state>(new global_state(sms_bottom(), 0, callers_t {}));
 }
 
 std::shared_ptr<domain_state> analysis::summary_dstack::start_value() {
   summary_memory_state *sms_start = summary_memory_state::start_value(sm, new equality_state(new als_state(vsd_state::top(sm))));
-  return shared_ptr<domain_state>(new global_state(sms_bottom(), sms_start));
+  return shared_ptr<domain_state>(new global_state(sms_start, 0, callers_t {}));
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {

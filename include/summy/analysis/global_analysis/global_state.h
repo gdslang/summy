@@ -19,28 +19,37 @@
 
 namespace analysis {
 
+typedef std::set<size_t> callers_t;
+
 class global_state: public domain_state {
 private:
-  summary_memory_state *returned;
-  summary_memory_state *consecutive;
+  summary_memory_state *mstate;
+  size_t fstart_id;
+  callers_t callers;
 public:
-  summary_memory_state *get_returned() {
-    return returned;
+  summary_memory_state *get_mstate() {
+    return mstate;
   }
 
-  summary_memory_state *get_consecutive() {
-    return consecutive;
+  size_t get_fstart_id() {
+    return fstart_id;
   }
 
-  global_state(summary_memory_state *returned, summary_memory_state *consecutive) :
-      returned(returned), consecutive(consecutive) {
+  callers_t &get_callers() {
+    return callers;
+  }
+
+  global_state(summary_memory_state *mstate, size_t fstart_id, callers_t callers) :
+      mstate(mstate), fstart_id(fstart_id), callers(callers) {
+  }
+
+  global_state(global_state const& o) :
+      mstate(o.mstate->copy()), fstart_id(o.fstart_id), callers(o.callers) {
   }
 
   virtual global_state *join(::analysis::domain_state *other, size_t current_node);
   virtual global_state *narrow(::analysis::domain_state *other, size_t current_node);
   virtual global_state *widen(::analysis::domain_state *other, size_t current_node);
-
-  summary_memory_state *apply_summary();
 
   virtual bool operator>=(::analysis::domain_state const &other) const;
 
