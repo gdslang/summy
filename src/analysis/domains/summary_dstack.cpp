@@ -16,19 +16,34 @@
 #include <summy/value_set/vs_finite.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
+#include <summy/cfg/node/address_node.h>
+#include <summy/cfg/node/node.h>
+#include <summy/cfg/observer.h>
+#include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/sm_id.h>
+#include <summy/value_set/value_set_visitor.h>
 #include <functional>
 
+using cfg::address_node;
 using cfg::cond_edge;
+using cfg::decoding_state;
 using cfg::edge_visitor;
+using cfg::node;
+using cfg::recorder;
 using cfg::stmt_edge;
+using summy::value_set_visitor;
+using summy::vs_finite;
 
 using namespace analysis;
 using namespace std;
 using namespace gdsl::rreil;
 using namespace analysis::value_sets;
 using namespace api;
+using namespace summy::rreil;
 
 void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
+  cout << "Adding constraint from " << from << " to " << to << endl;
+
   function<shared_ptr<global_state>()> transfer_f = [=]() {
     return state[from];
   };
@@ -69,9 +84,35 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
             ptr_set_t callee_aliases = cons->queryAls(b->get_target());
             for(auto ptr : callee_aliases) {
-              cout << ptr << endl;
-            }
+              summy::rreil::id_visitor idv;
+              bool is_text = false;
+              void *text_address;
+              idv._([&] (sm_id *sid) {
+                if(sid->get_symbol() == ".text") {
+                  is_text = true;
+                  text_address = sid->get_address();
+                }
+              });
+              ptr.id->accept(idv);
+              if(!is_text)
+                continue;
+              value_set_visitor vsv;
+              vsv._([&](vs_finite *vsf) {
+                for(int64_t offset : vsf->get_elements()) {
+                  void *address = (char*)text_address + offset;
 
+                  size_t an_id = cfg->create_node([&](size_t id) {
+                    return new address_node(id, (size_t)address, cfg::DECODABLE);
+                  });
+                  cfg->update_edge(from, an_id, new cond_edge(new sexpr_lin(new lin_imm(0)), true));
+                }
+              });
+              ptr.offset->accept(vsv);
+//              cout << ptr << endl;
+            }
+            recorder rec(cfg);
+            cfg->commit_updates();
+            fp_analysis::update(rec.get_updates());
             return state_c;
           };
           break;
@@ -142,6 +183,8 @@ std::shared_ptr<domain_state> analysis::summary_dstack::start_value() {
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
+//  if(node >= state.size())
+//    return bottom();
   return state[node];
 }
 

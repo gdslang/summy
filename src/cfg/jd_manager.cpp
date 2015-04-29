@@ -53,43 +53,43 @@ void jd_manager::notify(const vector<update> &updates) {
   /*
    * Todo: We need a way to bfs on the updated part of the graph...
    */
-  map<size_t, set<size_t>> update_graph;
-  node_visitor nv;
-
-  function<void(size_t)> process_graph_from;
-  process_graph_from = [&](size_t id) {
-    auto dest_current_it = update_graph.find(id);
-    set<size_t> dest_current = dest_current_it->second;
-    update_graph.erase(dest_current_it);
-    for(auto &dest : dest_current) {
-      nv._([&](address_node *an) {
-        address_map[an->get_id()] = an->get_address();
-      });
-      nv._((function<void(node*)>)([&](node *n) {
-        address_map[n->get_id()] = address_map[id];
-      }));
-      cfg->get_node_payload(dest)->accept(nv);
-    }
-    for(auto &dest : dest_current)
-      process_graph_from(dest);
-  };
-
-  for(auto &update : updates) {
-    update_graph[update.from].insert(update.to);
-
-    bool from_address = false;
-    nv._([&](address_node *an) {
-      address_map[an->get_id()] = an->get_address();
-      from_address = true;
-    });
-    nv._((function<void(node*)>)([&](node *n) {
-      auto addr_map_it = address_map.find(n->get_id());
-      if(addr_map_it != address_map.end())
-        from_address = true;
-    }));
-    cfg->get_node_payload(update.from)->accept(nv);
-
-    if(from_address)
-      process_graph_from(update.from);
-  }
+//  map<size_t, set<size_t>> update_graph;
+//  node_visitor nv;
+//
+//  function<void(size_t)> process_graph_from;
+//  process_graph_from = [&](size_t id) {
+//    auto dest_current_it = update_graph.find(id);
+//    set<size_t> dest_current = dest_current_it->second;
+//    update_graph.erase(dest_current_it);
+//    for(auto &dest : dest_current) {
+//      nv._([&](address_node *an) {
+//        address_map[an->get_id()] = an->get_address();
+//      });
+//      nv._((function<void(node*)>)([&](node *n) {
+//        address_map[n->get_id()] = address_map[id];
+//      }));
+//      cfg->get_node_payload(dest)->accept(nv);
+//    }
+//    for(auto &dest : dest_current)
+//      process_graph_from(dest);
+//  };
+//
+//  for(auto &update : updates) {
+//    update_graph[update.from].insert(update.to);
+//
+//    bool from_address = false;
+//    nv._([&](address_node *an) {
+//      address_map[an->get_id()] = an->get_address();
+//      from_address = true;
+//    });
+//    nv._((function<void(node*)>)([&](node *n) {
+//      auto addr_map_it = address_map.find(n->get_id());
+//      if(addr_map_it != address_map.end())
+//        from_address = true;
+//    }));
+//    cfg->get_node_payload(update.from)->accept(nv);
+//
+//    if(from_address)
+//      process_graph_from(update.from);
+//  }
 }
