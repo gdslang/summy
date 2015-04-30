@@ -71,6 +71,7 @@ public:
   virtual std::set<size_t> dependants(size_t node_id) {
     return _dependants[node_id];
   }
+  void assert_dependency(dependency dep);
 
   virtual node_compare_t get_fixpoint_node_comparer();
 

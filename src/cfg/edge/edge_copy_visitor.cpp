@@ -42,6 +42,14 @@ void cfg::edge_copy_visitor::visit(const phi_edge *e) {
   }
 }
 
+void cfg::edge_copy_visitor::visit(const call_edge *e) {
+  if(call_edge_ctor != NULL) _edge = call_edge_ctor(e->is_target_edge());
+  else {
+    _edge = new call_edge(e->is_target_edge());
+    _default();
+  }
+}
+
 void cfg::edge_copy_visitor::_default() {
   if(default_callback != NULL) default_callback();
 }

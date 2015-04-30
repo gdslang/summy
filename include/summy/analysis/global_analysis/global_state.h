@@ -24,27 +24,27 @@ typedef std::set<size_t> callers_t;
 class global_state: public domain_state {
 private:
   summary_memory_state *mstate;
-  size_t fstart_id;
+  void *f_addr;
   callers_t callers;
 public:
   summary_memory_state *get_mstate() {
     return mstate;
   }
 
-  size_t get_fstart_id() {
-    return fstart_id;
+  void *get_f_addr() {
+    return f_addr;
   }
 
   callers_t &get_callers() {
     return callers;
   }
 
-  global_state(summary_memory_state *mstate, size_t fstart_id, callers_t callers) :
-      mstate(mstate), fstart_id(fstart_id), callers(callers) {
+  global_state(summary_memory_state *mstate, void *f_addr, callers_t callers) :
+      mstate(mstate), f_addr(f_addr), callers(callers) {
   }
 
   global_state(global_state const& o) :
-      mstate(o.mstate->copy()), fstart_id(o.fstart_id), callers(o.callers) {
+      mstate(o.mstate->copy()), f_addr(o.f_addr), callers(o.callers) {
   }
 
   virtual global_state *join(::analysis::domain_state *other, size_t current_node);

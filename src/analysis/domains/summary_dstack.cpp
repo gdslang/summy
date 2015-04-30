@@ -18,17 +18,21 @@
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node.h>
+#include <summy/cfg/node/node_visitor.h>
 #include <summy/cfg/observer.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/value_set/value_set_visitor.h>
 #include <functional>
+#include <assert.h>
 
 using cfg::address_node;
 using cfg::cond_edge;
+using cfg::call_edge;
 using cfg::decoding_state;
 using cfg::edge_visitor;
 using cfg::node;
+using cfg::node_visitor;
 using cfg::recorder;
 using cfg::stmt_edge;
 using summy::value_set_visitor;
@@ -53,7 +57,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       summary_memory_state *mstate_new = state_c->get_mstate()->copy();
       cb(mstate_new);
       shared_ptr<global_state> global_new = shared_ptr<global_state>(
-          new global_state(mstate_new, state_c->get_fstart_id(), state_c->get_callers()));
+          new global_state(mstate_new, state_c->get_f_addr(), state_c->get_callers()));
       return global_new;
     };
   };
@@ -79,8 +83,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       switch(b->get_hint()) {
         case gdsl::rreil::BRANCH_HINT_CALL: {
           transfer_f = [=]() {
-            shared_ptr<global_state> &state_c = this->state[from];
+            shared_ptr<global_state> state_c = this->state[from];
             summary_memory_state *cons = state_c->get_mstate();
+
+            shared_ptr<summary_memory_state> summary = shared_ptr<summary_memory_state>(sms_bottom());
 
             ptr_set_t callee_aliases = cons->queryAls(b->get_target());
             for(auto ptr : callee_aliases) {
@@ -101,10 +107,17 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char*)text_address + offset;
 
+                  auto summary_it = summary_map.find(address);
+                  if(summary_it != summary_map.end()) {
+                    summary = shared_ptr<summary_memory_state>(summary->join(summary_it->second.get(), to));
+                    continue;
+                  }
+
                   size_t an_id = cfg->create_node([&](size_t id) {
                     return new address_node(id, (size_t)address, cfg::DECODABLE);
                   });
-                  cfg->update_edge(from, an_id, new cond_edge(new sexpr_lin(new lin_imm(0)), true));
+                  cfg->update_edge(to, an_id, new call_edge(true));
+                  summary_map[address] = shared_ptr<summary_memory_state>(sms_bottom());
                 }
               });
               ptr.offset->accept(vsv);
@@ -113,11 +126,26 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             recorder rec(cfg);
             cfg->commit_updates();
             fp_analysis::update(rec.get_updates());
+
+            cout << "Need to apply the following summary: " << endl;
+            cout << *summary << endl;
+
             return state_c;
           };
           break;
         }
         case gdsl::rreil::BRANCH_HINT_RET: {
+          transfer_f = [=]() {
+            shared_ptr<global_state> state_c = this->state[from];
+            auto summary_it = summary_map.find(state_c->get_f_addr());
+//            if(summary_it == summary_map.end())
+//              summary_map[state_c->get_f_addr()] = shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
+//            else
+            summary_it->second = shared_ptr<summary_memory_state>(summary_it->second->join(state_c->get_mstate(), to));
+            for(auto caller : state_c->get_callers())
+              assert_dependency(gen_dependency(to, caller));
+            return state_c;
+          };
           break;
         }
         case gdsl::rreil::BRANCH_HINT_JUMP: {
@@ -135,6 +163,25 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         state_new->assume_not(edge->get_cond());
     });
   });
+  ev._([&](const call_edge *edge) {
+    transfer_f = [=]() {
+      shared_ptr<global_state> state_new;
+      if(edge->is_target_edge()) {
+        node *dest = cfg->get_node_payload(to);
+        bool is_addr_node = false;
+        void *address;
+        node_visitor nv;
+        nv._([&](address_node *an) {
+          is_addr_node = true;
+          address = (void*)an->get_address();
+        });
+        dest->accept(nv);
+        assert(is_addr_node);
+        state_new = dynamic_pointer_cast<global_state>(start_value(address,  callers_t {from}));
+      } else state_new = state[from];
+      return state_new;
+    };
+  });
   e->accept(ev);
   (constraints[to])[from] = transfer_f;
 }
@@ -144,10 +191,13 @@ void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
 }
 
 dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {
+  cout << "Generating dep. " << from << " to " << to << endl;
   return dependency { from, to };
 }
 
 void analysis::summary_dstack::init_state() {
+  cout << "init_state()" << endl;
+
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
@@ -173,13 +223,21 @@ summary_memory_state *analysis::summary_dstack::sms_bottom() {
   return summary_memory_state::bottom(sm, new equality_state(new als_state(vsd_state::bottom(sm))));;
 }
 
+summary_memory_state *analysis::summary_dstack::sms_top() {
+  summary_memory_state *sms_start = summary_memory_state::start_value(sm, new equality_state(new als_state(vsd_state::top(sm))));
+  return sms_start;
+}
+
 shared_ptr<domain_state> analysis::summary_dstack::bottom() {
   return shared_ptr<domain_state>(new global_state(sms_bottom(), 0, callers_t {}));
 }
 
+std::shared_ptr<domain_state> analysis::summary_dstack::start_value(void *f_addr, callers_t callers) {
+  return shared_ptr<domain_state>(new global_state(sms_top(), f_addr, callers));
+}
+
 std::shared_ptr<domain_state> analysis::summary_dstack::start_value() {
-  summary_memory_state *sms_start = summary_memory_state::start_value(sm, new equality_state(new als_state(vsd_state::top(sm))));
-  return shared_ptr<domain_state>(new global_state(sms_start, 0, callers_t {}));
+  return start_value(0, callers_t {});
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {

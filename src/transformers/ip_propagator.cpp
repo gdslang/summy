@@ -82,7 +82,7 @@ std::vector<int_t> *ip_propagator::analyze_ip() {
 void ip_propagator::transform() {
   auto ips = analyze_ip();
 
-  vector<node*> call_dest_replacement;
+//  vector<node*> call_dest_replacement;
 
   for(auto node : cfg_view) {
     auto &edges = *cfg->out_edge_payloads(node->get_id());
@@ -91,8 +91,12 @@ void ip_propagator::transform() {
       ev._([&](const stmt_edge *edge) {
         statement_visitor sv;
         sv._([&](branch *b) {
-          if(b->get_hint() == gdsl::rreil::BRANCH_HINT_CALL)
-            call_dest_replacement.push_back(new address_node(edge_it->first, (*ips)[edge_it->first], UNDEFINED));
+          if(b->get_hint() == gdsl::rreil::BRANCH_HINT_CALL) {
+            size_t an_id = cfg->create_node([&](size_t id) {
+              return new address_node(id, (*ips)[edge_it->first], UNDEFINED);
+            });
+            cfg->update_edge(edge_it->first, an_id, new class call_edge(false));
+          }
         });
         edge->get_stmt()->accept(sv);
 
@@ -118,8 +122,9 @@ void ip_propagator::transform() {
     }
   }
 
-  for(node *n : call_dest_replacement)
-    cfg->replace_node_payload(n);
+//  for(node *n : call_dest_replacement) {
+//    cfg->replace_node_payload(n);
+//  }
 
   delete ips;
 }

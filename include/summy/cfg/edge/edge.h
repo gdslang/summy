@@ -68,4 +68,19 @@ public:
   virtual void accept(edge_visitor &v) const;
 };
 
+class call_edge: public edge {
+private:
+  bool target_edge;
+public:
+  call_edge(bool target_edge);
+  ~call_edge();
+
+  bool is_target_edge() const {
+    return target_edge;
+  }
+
+  void dot(std::ostream &stream) const;
+  virtual void accept(edge_visitor &v) const;
+};
+
 }

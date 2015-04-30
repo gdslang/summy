@@ -18,6 +18,7 @@ namespace cfg {
 class edge;
 class stmt_edge;
 class cond_edge;
+class call_edge;
 
 class edge_copy_visitor : public edge_visitor {
 public:
@@ -25,12 +26,14 @@ public:
   typedef std::function<stmt_edge*(gdsl::rreil::statement *stmt)> stmt_edge_ctor_t;
   typedef std::function<cond_edge*(gdsl::rreil::sexpr *cond, bool positive)> cond_edge_ctor_t;
   typedef std::function<phi_edge*(assignments_t assignments, phi_memory memory)> phi_edge_ctor_t;
+  typedef std::function<call_edge*(bool)> call_edge_ctor_t;
   typedef std::function<void(void)> default_callback_t;
 private:
   edge_ctor_t edge_ctor = NULL;
   stmt_edge_ctor_t stmt_edge_ctor = NULL;
   cond_edge_ctor_t cond_edge_ctor = NULL;
   phi_edge_ctor_t phi_edge_ctor = NULL;
+  call_edge_ctor_t call_edge_ctor = NULL;
   default_callback_t default_callback = NULL;
 protected:
   union {
@@ -45,6 +48,7 @@ public:
   virtual void visit(const stmt_edge *e);
   virtual void visit(const cond_edge *e);
   virtual void visit(const phi_edge *e);
+  virtual void visit(const call_edge *e);
   virtual void _default();
 
   void _(edge_ctor_t c) {
@@ -58,6 +62,9 @@ public:
   }
   void _(phi_edge_ctor_t c) {
     this->phi_edge_ctor = c;
+  }
+  void _(call_edge_ctor_t c) {
+    this->call_edge_ctor = c;
   }
   void _default(default_callback_t c) {
     this->default_callback = c;

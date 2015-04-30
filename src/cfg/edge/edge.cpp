@@ -65,3 +65,26 @@ void cfg::cond_edge::dot(std::ostream &stream) const {
 void cfg::cond_edge::accept(edge_visitor &v) const {
   v.visit(this);
 }
+
+
+/*
+ * call_edge
+ */
+
+cfg::call_edge::call_edge(bool target_edge) : target_edge(target_edge) {
+}
+
+cfg::call_edge::~call_edge() {
+}
+
+void cfg::call_edge::dot(std::ostream &stream) const {
+  if(target_edge)
+    stream << "\"<call>\"";
+  else
+    stream << "\"<expected return>\"";
+  stream << ", style=dotted, color=gray";
+}
+
+void cfg::call_edge::accept(edge_visitor &v) const {
+  v.visit(this);
+}

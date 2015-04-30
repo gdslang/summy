@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <map>
 
 namespace analysis {
 
@@ -28,6 +29,7 @@ struct summary_dstack_result : public ::analysis::analysis_result<state_t> {
 class summary_dstack : public fp_analysis {
 private:
   std::shared_ptr<static_memory> sm;
+  std::map<void*, std::shared_ptr<summary_memory_state>> summary_map;
   state_t state;
 
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
@@ -40,8 +42,10 @@ public:
   ~summary_dstack();
 
   summary_memory_state *sms_bottom();
+  summary_memory_state *sms_top();
   std::shared_ptr<domain_state> bottom();
   std::shared_ptr<domain_state> start_value();
+  std::shared_ptr<domain_state> start_value(void *f_addr, callers_t callers);
 
   std::shared_ptr<domain_state> get(size_t node);
   void update(size_t node, shared_ptr<domain_state> state);

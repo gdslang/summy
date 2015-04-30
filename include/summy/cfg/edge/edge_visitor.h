@@ -14,6 +14,7 @@ class edge;
 class stmt_edge;
 class cond_edge;
 class phi_edge;
+class call_edge;
 
 class edge_visitor {
 private:
@@ -21,6 +22,7 @@ private:
   std::function<void(const stmt_edge*)> stmt_edge_callback = NULL;
   std::function<void(const cond_edge*)> cond_edge_callback = NULL;
   std::function<void(const phi_edge*)> phi_edge_callback = NULL;
+  std::function<void(const call_edge*)> call_edge_callback = NULL;
 
 public:
   virtual ~edge_visitor() {
@@ -46,6 +48,11 @@ public:
     _default();
   }
 
+  virtual void visit(const call_edge *se) {
+    if(call_edge_callback != NULL) call_edge_callback(se);
+    _default();
+  }
+
   virtual void _default() {
   }
 
@@ -63,6 +70,10 @@ public:
 
   void _(std::function<void(const phi_edge*)> phi_edge_callback) {
     this->phi_edge_callback = phi_edge_callback;
+  }
+
+  void _(std::function<void(const call_edge*)> call_edge_callback) {
+    this->call_edge_callback = call_edge_callback;
   }
 };
 

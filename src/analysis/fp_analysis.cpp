@@ -67,7 +67,7 @@ void ::fp_analysis::fp_analysis::init() {
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
       add_constraint(node_id, edge_it->first, edge_it->second);
       auto dep = gen_dependency(node_id, edge_it->first);
-      _dependants[dep.source].insert(dep.sink);
+      assert_dependency(dep);
     }
   }
 
@@ -160,6 +160,10 @@ void fp_analysis::update(vector<struct update> const &updates) {
       }
     }
   }
+}
+
+void analysis::fp_analysis::assert_dependency(dependency dep) {
+  _dependants[dep.source].insert(dep.sink);
 }
 
 node_compare_t analysis::fp_analysis::get_fixpoint_node_comparer() {
