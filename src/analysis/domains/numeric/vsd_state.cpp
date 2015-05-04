@@ -93,6 +93,30 @@ vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t cur
   return new vsd_state(sm, elems_new);
 }
 
+vsd_state *analysis::value_sets::vsd_state::meet(domain_state *other, size_t current_node) {
+  vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
+  if(is_bottom())
+    return new vsd_state(*this);
+  else if(other_casted->is_bottom())
+    return new vsd_state(*other_casted);
+
+  elements_t elements_new;
+  for(auto &mapping_me : elements) {
+    auto mapping_other = other_casted->elements.find(mapping_me.first);
+    if(mapping_other != other_casted->elements.end())
+      elements_new.insert(make_pair(mapping_me.first, value_set::meet(mapping_me.second, mapping_other->second)));
+    else
+      elements_new.insert(mapping_me);
+  }
+  for(auto &mapping_other : other_casted->elements) {
+    auto mapping_me = elements.find(mapping_other.first);
+    if(mapping_me == elements.end())
+      elements_new.insert(mapping_other);
+  }
+
+  return new vsd_state(sm, elements_new);
+}
+
 vsd_state *analysis::value_sets::vsd_state::widen(domain_state *other, size_t current_node) {
   vsd_state *other_casted = dynamic_cast<vsd_state*>(other);
   if(other_casted->is_bottom()) return new vsd_state(*this);

@@ -73,6 +73,7 @@ public:
   bool operator>=(domain_state const &other) const;
 
   equality_state *join(domain_state *other, size_t current_node);
+  equality_state *meet(domain_state *other, size_t current_node);
   equality_state *widen(domain_state *other, size_t current_node);
   equality_state *narrow(domain_state *other, size_t current_node);
 

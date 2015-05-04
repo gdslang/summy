@@ -84,11 +84,11 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         case gdsl::rreil::BRANCH_HINT_CALL: {
           transfer_f = [=]() {
             shared_ptr<global_state> state_c = this->state[from];
-            summary_memory_state *cons = state_c->get_mstate();
+            summary_memory_state *mstate = state_c->get_mstate();
 
             shared_ptr<summary_memory_state> summary = shared_ptr<summary_memory_state>(sms_bottom());
 
-            ptr_set_t callee_aliases = cons->queryAls(b->get_target());
+            ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
             for(auto ptr : callee_aliases) {
               summy::rreil::id_visitor idv;
               bool is_text = false;
@@ -127,10 +127,11 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             cfg->commit_updates();
             fp_analysis::update(rec.get_updates());
 
-            cout << "Need to apply the following summary: " << endl;
-            cout << *summary << endl;
+//            cout << "Need to apply the following summary: " << endl;
+//            cout << *summary << endl;
 
-            return state_c;
+            summary_memory_state *summarized = mstate->apply_summary(summary.get());
+            return shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr(), state_c->get_callers()));
           };
           break;
         }

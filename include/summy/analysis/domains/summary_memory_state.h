@@ -147,6 +147,7 @@ public:
   summary_memory_state *join(domain_state *other, size_t current_node);
   summary_memory_state *widen(domain_state *other, size_t current_node);
   summary_memory_state *narrow(domain_state *other, size_t current_node);
+  summary_memory_state *apply_summary(summary_memory_state *summary);
 
   void update(gdsl::rreil::assign *assign);
   void update(gdsl::rreil::load *load);

@@ -268,6 +268,34 @@ equality_state *analysis::equality_state::join(domain_state *other, size_t curre
   return join_widen(other, current_node, &numeric_state::join);
 }
 
+equality_state *analysis::equality_state::meet(domain_state *other, size_t current_node) {
+  equality_state const *other_casted = dynamic_cast<equality_state*>(other);
+
+  auto merge_map = [&](auto &dest, auto &a, auto &b) {
+    for(auto &mapping_me : a) {
+      auto mapping_other = b.find(mapping_me.first);
+      if(mapping_other != b.end())
+        throw string("analysis::equality_state::meet(): Case not implemented");
+      else
+        dest.insert(mapping_me);
+    }
+    for(auto &mapping_other : b) {
+      auto mapping_me = a.find(mapping_other.first);
+      if(mapping_me == a.end())
+        dest.insert(mapping_other);
+    }
+  };
+
+  back_map_t back_map_new;
+  merge_map(back_map_new, back_map, other_casted->back_map);
+  eq_elements_t elements_new;
+  merge_map(elements_new, elements, other_casted->elements);
+
+  numeric_state *child_met = child_state->meet(other_casted->child_state, current_node);
+
+  return new equality_state(child_met, elements_new, back_map_new);
+}
+
 equality_state *analysis::equality_state::widen(domain_state *other, size_t current_node) {
   return join_widen(other, current_node, &numeric_state::widen);
 }

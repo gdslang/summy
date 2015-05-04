@@ -512,12 +512,46 @@ summary_memory_state *analysis::summary_memory_state::join(domain_state *other, 
   return domop(other, current_node, &numeric_state::join);
 }
 
+summary_memory_state *analysis::summary_memory_state::widen(domain_state *other, size_t current_node) {
+  return domop(other, current_node, &numeric_state::widen);
+}
+
 summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other, size_t current_node) {
   return domop(other, current_node, &numeric_state::narrow);
 }
 
-summary_memory_state *analysis::summary_memory_state::widen(domain_state *other, size_t current_node) {
-  return domop(other, current_node, &numeric_state::widen);
+summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
+
+  numeric_state *child_met = child_state->meet(summary->child_state, 0);
+  summary_memory_state *summary_applied = new summary_memory_state(sm, child_met, input, output);
+
+  for(auto &region_mapping : summary->input.regions) {
+    for(auto &field_mapping : region_mapping.second) {
+      field &f = field_mapping.second;
+      num_linear *l_in = summary_applied->transLE(region_mapping.first, field_mapping.first, f.size);
+      num_linear *l_out = summary_applied->transLE(region_mapping.first, field_mapping.first, f.size);
+      num_expr_cmp *nec = num_expr_cmp::equals(l_in, l_out);
+      summary_applied->child_state->assume(nec);
+      delete nec;
+    }
+  }
+
+  cout << "summary_applied:" << endl;
+  cout << *summary_applied << endl;
+
+  for(auto &region_mapping : summary->output.regions) {
+    for(auto &field_mapping : region_mapping.second) {
+      field &f = field_mapping.second;
+      num_linear *l_out = summary_applied->transLE(region_mapping.first, field_mapping.first, f.size);
+      num_expr *l_out_expr = new num_expr_lin(l_out);
+      num_var *v_update = new num_var(summary_applied->transVar(region_mapping.first, field_mapping.first, f.size));
+      summary_applied->child_state->assign(v_update, l_out_expr);
+      delete l_out_expr;
+      delete v_update;
+    }
+  }
+
+  return summary_applied;
 }
 
 void analysis::summary_memory_state::update(gdsl::rreil::assign *assign) {

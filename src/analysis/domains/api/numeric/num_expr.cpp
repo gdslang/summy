@@ -6,6 +6,7 @@
  */
 
 #include <summy/analysis/domains/api/numeric/num_expr.h>
+#include <summy/analysis/domains/api/numeric/converter.h>
 
 using namespace analysis::api;
 
@@ -86,6 +87,14 @@ void analysis::api::num_expr_cmp::accept(num_visitor &v) {
 num_expr_cmp *analysis::api::num_expr_cmp::equals(num_var *a, num_var *b) {
   num_linear *lin = new num_linear_term(1, a, new num_linear_term(-1, b));
   return new num_expr_cmp(lin, EQ);
+}
+
+num_expr_cmp *analysis::api::num_expr_cmp::equals(num_linear *a, num_linear *b) {
+  num_linear *b_neg = b->negate();
+  num_linear *added = converter::add(a, b_neg);
+  num_expr_cmp *result = new num_expr_cmp(added, EQ);
+  delete b_neg;
+  return result;
 }
 
 /*

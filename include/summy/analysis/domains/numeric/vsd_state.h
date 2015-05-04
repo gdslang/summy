@@ -68,6 +68,7 @@ public:
   bool operator>=(domain_state const &other) const;
 
   vsd_state *join(domain_state *other, size_t current_node);
+  vsd_state *meet(domain_state *other, size_t current_node);
   vsd_state *widen(domain_state *other, size_t current_node);
   vsd_state *narrow(domain_state *other, size_t current_node);
 

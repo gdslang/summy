@@ -56,6 +56,7 @@ public:
   void accept(num_visitor &v);
 
   static num_expr_cmp *equals(num_var *a, num_var *b);
+  static num_expr_cmp *equals(num_linear *a, num_linear *b);
 };
 
 class num_expr_lin: public num_expr {

@@ -65,6 +65,7 @@ public:
   bool operator>=(domain_state const &other) const;
 
   als_state *join(domain_state *other, size_t current_node);
+  als_state *meet(domain_state *other, size_t current_node);
   als_state *widen(domain_state *other, size_t current_node);
   als_state *narrow(domain_state *other, size_t current_node);
 
