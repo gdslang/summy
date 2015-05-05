@@ -385,9 +385,6 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
    * sollte man besser zunächst die Reps begrenzen und alle
    * anderen Variablen dann lediglich noch gegen diese begrenzen...
    */
-  /*
-   * Todo: Assumption of equlities
-   */
   num_var *positive = NULL;
   num_var *negative = NULL;
 
