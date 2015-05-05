@@ -7,6 +7,7 @@
  */
 #include <summy/analysis/domains/numeric/equality_state.h>
 #include <summy/analysis/domains/api/api.h>
+#include <bjutil/sort.h>
 #include <iostream>
 #include <functional>
 #include <algorithm>
@@ -110,6 +111,41 @@ void analysis::equality_state::remove(api::num_var *v) {
     }
     back_map.erase(id_back_it);
   }
+}
+
+void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
+  auto rep = [&](id_shared_t id) {
+    auto bm_it = back_map.find(id);
+    if(bm_it == back_map.end()) {
+      elements[id] = {id};
+      back_map[id] = id;
+      return id;
+    } else
+      return bm_it->second;
+  };
+//  id_set_t vw = id_set_t { rep(v->get_id()), rep(w->get_id()) };
+//  id_shared_t first;
+//  id_shared_t second;
+//  auto vw_it = vw.begin();
+//  first = *vw_it++;
+//  second = *vw_it;
+  id_shared_t first;
+  id_shared_t second;
+  tie(first, second) = tsortc(id_less_no_version(), rep(v->get_id()), rep(w->get_id()));
+
+  auto insert = [&](auto id) {
+    elements[first].insert(id);
+    back_map[id] = first;
+  };
+
+  auto second_elem_it = elements.find(second);
+  if(second_elem_it != elements.end()) {
+    for(auto &id : second_elem_it->second)
+      insert(id);
+    elements.erase(second_elem_it);
+  } else
+    insert(second);
+
 }
 
 void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs) {
@@ -352,6 +388,38 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   /*
    * Todo: Assumption of equlities
    */
+  num_var *positive = NULL;
+  num_var *negative = NULL;
+
+  auto pos_neg = [&](num_linear_term *nt) {
+    if(nt->get_scale() == 1)
+      positive = nt->get_var()->copy();
+    else if(nt->get_scale() == -1)
+      negative = nt->get_var()->copy();
+  };
+
+  num_visitor nv(true);
+  nv._([&](num_linear_term *nt) {
+    cout << "foo " << endl;
+    pos_neg(nt);
+    num_visitor nv2(true);
+    nv2._([&](num_linear_term *nt) {
+      cout << *queryVal(nt->get_next()) << endl;
+      if(*queryVal(nt->get_next()) == vs_finite::zero)
+        pos_neg(nt);
+    });
+    nt->get_next()->accept(nv2);
+  });
+  cmp->get_opnd()->accept(nv);
+
+  if(positive != NULL && negative != NULL) {
+    cout << "Merging for " << *cmp << endl;
+    merge(positive, negative);
+  }
+  delete positive;
+  delete negative;
+
+
   struct gen {
     id_set_t ids;
     gen *rest;
@@ -390,6 +458,10 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
     }
   };
 
+  /*
+   * Todo: Memory error?
+   */
+
   function<gen*(num_linear *lin)> generate_gen;
   generate_gen = [&](num_linear *lin) {
     gen *g;
@@ -422,6 +494,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
 
   gen *g = generate_gen(cmp->get_opnd());
 
+  cout << "Warning: broken assume() in equality_state..." << endl;
   while(!g->end()) {
     num_expr_cmp *ec = new num_expr_cmp(g->generate(), cmp->get_op());
     child_state->assume(ec);
@@ -466,6 +539,21 @@ bool analysis::equality_state::cleanup(api::num_var *var) {
     }
   bool child_required = child_state->cleanup(var);
   return var_required || child_required;
+}
+
+void analysis::equality_state::project(api::num_vars *vars) {
+  id_set_t need_removal;
+
+  id_set_t &p_ids = vars->get_ids();
+  for(auto &id_bmapping : back_map)
+    if(p_ids.find(id_bmapping.first) == p_ids.end())
+        need_removal.insert(id_bmapping.first);
+
+  for(auto &id : need_removal) {
+    num_var *nv = new num_var(id);
+    remove(nv);
+    delete nv;
+  }
 }
 
 api::ptr_set_t analysis::equality_state::queryAls(api::num_var *nv) {

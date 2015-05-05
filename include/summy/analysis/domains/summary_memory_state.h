@@ -123,8 +123,11 @@ protected:
   void topify(region_t &region, int64_t offset, size_t size);
   id_shared_t transVarReg(io_region io, int64_t offset, size_t size);
   id_shared_t transVar(id_shared_t var_id, int64_t offset, size_t size);
+  std::vector<field> transLERegFields(region_t &region, int64_t offset, size_t size);
+  api::num_linear *assemble_fields(std::vector<field> fields);
   api::num_linear *transLEReg(io_region io, int64_t offset, size_t size);
   api::num_linear *transLE(id_shared_t var_id, int64_t offset, size_t size);
+  api::num_linear *transLEInput(id_shared_t var_id, int64_t offset, size_t size);
 public:
   summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, relation input, relation output) :
       sm(sm), child_state(child_state), input(input), output(output) {

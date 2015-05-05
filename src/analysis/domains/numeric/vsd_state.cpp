@@ -324,6 +324,16 @@ bool analysis::value_sets::vsd_state::cleanup(api::num_var *var) {
     return true;
 }
 
+void analysis::value_sets::vsd_state::project(api::num_vars *vars) {
+  id_set_t &p_ids = vars->get_ids();
+  for(auto e_it = elements.begin(); e_it != elements.end();) {
+    if(p_ids.find(e_it->first) == p_ids.end())
+      elements.erase(e_it++);
+    else
+      ++e_it;
+  }
+}
+
 vsd_state *analysis::value_sets::vsd_state::bottom(std::shared_ptr<static_memory> sm) {
   return new vsd_state(sm, true);
 }

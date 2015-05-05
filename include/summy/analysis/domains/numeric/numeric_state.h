@@ -44,6 +44,7 @@ public:
   virtual void fold(num_var_pairs_t vars) = 0;
 
   virtual bool cleanup(api::num_var *var) = 0;
+  virtual void project(api::num_vars *vars) = 0;
 
   virtual numeric_state *join(domain_state *other, size_t current_node) = 0;
   virtual numeric_state *meet(domain_state *other, size_t current_node) = 0;

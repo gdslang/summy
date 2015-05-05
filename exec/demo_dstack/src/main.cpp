@@ -27,11 +27,13 @@
 #include <summy/cfg/jd_manager.h>
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/transformers/resolved_connector.h>
+#include <bjutil/sort.h>
 
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
 #include <summy/value_set/vs_top.h>
+#include <algorithm>
 
 #include <cstdio>
 #include <memory>
@@ -48,7 +50,21 @@ using namespace analysis;
 using namespace summy;
 using namespace analysis::api;
 
+
 int main(int argc, char **argv) {
+//  int a, b, c;
+//  tie(a, b, c) = tsort(9, 2, 10);
+//
+//  cout << a << endl;
+//  cout << b << endl;
+//  cout << c << endl;
+//
+////  auto v = foo(9, 2, 10);
+////  for(auto x : v)
+////    cout << x << endl;
+//
+//  exit(0);
+
 //  set<int, function<bool (int, int)>> s([&](int a, int b) {
 //    return a > b;
 //  });

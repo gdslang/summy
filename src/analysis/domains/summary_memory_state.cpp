@@ -422,16 +422,12 @@ id_shared_t analysis::summary_memory_state::transVar(id_shared_t var_id, int64_t
   return transVarReg(region_by_id(&relation::get_regions, var_id), offset, size);
 }
 
-num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t offset, size_t size) {
-//  cout << "transLEReg "<< offset << ":" << size << endl;
-//  if(offset == 8 && size == 8)
-//    printf("Juhu\n");
-
+vector<field> analysis::summary_memory_state::transLERegFields(region_t &region, int64_t offset, size_t size) {
   vector<field> fields;
   int64_t consumed = 0;
   while(true) {
-    auto field_it = io.out_r.find(offset + consumed);
-    if(field_it == io.out_r.end()) {
+    auto field_it = region.find(offset + consumed);
+    if(field_it == region.end()) {
       fields.clear();
       break;
     } else {
@@ -452,17 +448,12 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
       consumed += f.size;
     }
   }
+  return fields;
+}
 
-//  cout << "Number of fields: " << fields.size() << endl;
-
-  if(fields.size() == 0) {
-    if(overlap_region(io.out_r, offset, size))
-      return new num_linear_vs(value_set::top);
-    else {
-      field &f = io.insert(child_state, offset, size);
-      return new num_linear_term(new num_var(f.num_id));
-    }
-  } else if(fields.size() == 1) {
+num_linear *analysis::summary_memory_state::assemble_fields(vector<field> fields) {
+  assert(fields.size() > 0);
+  if(fields.size() == 1) {
     return new num_linear_term(new num_var(fields[0].num_id));
   } else {
     num_linear *l = new num_linear_term(new num_var(fields[0].num_id));
@@ -475,9 +466,42 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
   }
 }
 
+num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t offset, size_t size) {
+//  cout << "transLEReg "<< offset << ":" << size << endl;
+//  if(offset == 8 && size == 8)
+//    printf("Juhu\n");
+
+  vector<field> fields = transLERegFields(io.out_r, offset, size);
+
+//  cout << "Number of fields: " << fields.size() << endl;
+
+  if(fields.size() == 0) {
+    if(overlap_region(io.out_r, offset, size))
+      return new num_linear_vs(value_set::top);
+    else {
+      field &f = io.insert(child_state, offset, size);
+      return new num_linear_term(new num_var(f.num_id));
+    }
+  } else return assemble_fields(fields);
+}
+
 num_linear *analysis::summary_memory_state::transLE(id_shared_t var_id, int64_t offset, size_t size) {
   io_region io = region_by_id(&relation::get_regions, var_id);
   return transLEReg(io, offset, size);
+}
+
+num_linear *analysis::summary_memory_state::transLEInput(id_shared_t var_id, int64_t offset, size_t size) {
+
+  auto id_in_it = input.regions.find(var_id);
+  if(id_in_it == input.regions.end())
+    return new num_linear_vs(value_set::top);
+  region_t &region = id_in_it->second;
+
+  vector<field> fields = transLERegFields(region, offset, size);
+
+  if(fields.size() == 0) {
+    return new num_linear_vs(value_set::top);
+  } else return assemble_fields(fields);
 }
 
 analysis::summary_memory_state::summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom) :
@@ -528,9 +552,10 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   for(auto &region_mapping : summary->input.regions) {
     for(auto &field_mapping : region_mapping.second) {
       field &f = field_mapping.second;
-      num_linear *l_in = summary_applied->transLE(region_mapping.first, field_mapping.first, f.size);
-      num_linear *l_out = summary_applied->transLE(region_mapping.first, field_mapping.first, f.size);
-      num_expr_cmp *nec = num_expr_cmp::equals(l_in, l_out);
+      num_linear *l_s_in = summary->transLEInput(region_mapping.first, field_mapping.first, f.size);
+      num_linear *l_call_out = summary_applied->transLE(region_mapping.first, field_mapping.first, f.size);
+      num_expr_cmp *nec = num_expr_cmp::equals(l_call_out, l_s_in);
+//      cout << "nec: " << *nec << endl;
       summary_applied->child_state->assume(nec);
       delete nec;
     }
@@ -542,9 +567,10 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   for(auto &region_mapping : summary->output.regions) {
     for(auto &field_mapping : region_mapping.second) {
       field &f = field_mapping.second;
-      num_linear *l_out = summary_applied->transLE(region_mapping.first, field_mapping.first, f.size);
+      num_linear *l_out = summary->transLE(region_mapping.first, field_mapping.first, f.size);
       num_expr *l_out_expr = new num_expr_lin(l_out);
       num_var *v_update = new num_var(summary_applied->transVar(region_mapping.first, field_mapping.first, f.size));
+      cout << *v_update << " <- " << *l_out_expr << endl;
       summary_applied->child_state->assign(v_update, l_out_expr);
       delete l_out_expr;
       delete v_update;
