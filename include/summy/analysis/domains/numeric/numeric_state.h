@@ -10,6 +10,7 @@
 #include <summy/analysis/domains/api/ptr_set.h>
 #include <summy/analysis/static_memory.h>
 #include <cppgdsl/rreil/id/id.h>
+#include <summy/analysis/domains/api/numeric/num_var.h>
 #include <memory>
 #include <vector>
 #include <tuple>

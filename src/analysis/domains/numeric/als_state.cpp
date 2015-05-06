@@ -371,6 +371,23 @@ bool analysis::als_state::cleanup(api::num_var *var) {
   return child_clean;
 }
 
+void analysis::als_state::project(api::num_vars *vars) {
+  id_set_t const &p_ids = vars->get_ids();
+  for(auto e_it = elements.begin(); e_it != elements.end();) {
+    if(p_ids.find(e_it->first) == p_ids.end())
+      elements.erase(e_it++);
+    else {
+      for(auto alias_it = e_it->second.begin(); alias_it != e_it->second.end();) {
+        if(p_ids.find(*alias_it) == p_ids.end())
+          e_it->second.erase(alias_it++);
+        else
+          ++alias_it;
+      }
+      ++e_it;
+    }
+  }
+}
+
 std::tuple<bool, elements_t, numeric_state*, numeric_state*> analysis::als_state::compat(const als_state *a,
     const als_state *b) {
   bool als_a_ge_b = true;

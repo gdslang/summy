@@ -78,6 +78,7 @@ public:
   void fold(num_var_pairs_t vars);
 
   bool cleanup(api::num_var *var);
+  void project(api::num_vars *vars);
 
   api::ptr_set_t queryAls(api::num_var *nv);
   summy::vs_shared_t queryVal(api::num_linear *lin);

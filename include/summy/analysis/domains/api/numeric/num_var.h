@@ -6,13 +6,15 @@
  */
 
 #pragma once
-#include <summy/analysis/domains/numeric/numeric_state.h>
 #include <summy/analysis/util.h>
 #include <iosfwd>
+#include <set>
+#include <memory>
 
 namespace analysis {
 namespace api {
 
+typedef std::shared_ptr<gdsl::rreil::id> id_shared_t;
 typedef std::set<id_shared_t, id_less_no_version> id_set_t;
 
 class num_var {
@@ -44,11 +46,11 @@ public:
   num_vars(id_set_t ids) : ids(ids) {
   }
 
-  num_var *copy() {
+  num_vars *copy() {
     return new num_vars(ids);
   }
 
-  id_set_t &get_ids() const {
+  id_set_t const &get_ids() const {
     return ids;
   }
 };

@@ -541,7 +541,7 @@ bool analysis::equality_state::cleanup(api::num_var *var) {
 void analysis::equality_state::project(api::num_vars *vars) {
   id_set_t need_removal;
 
-  id_set_t &p_ids = vars->get_ids();
+  id_set_t const &p_ids = vars->get_ids();
   for(auto &id_bmapping : back_map)
     if(p_ids.find(id_bmapping.first) == p_ids.end())
         need_removal.insert(id_bmapping.first);

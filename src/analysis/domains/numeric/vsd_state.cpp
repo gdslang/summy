@@ -325,7 +325,7 @@ bool analysis::value_sets::vsd_state::cleanup(api::num_var *var) {
 }
 
 void analysis::value_sets::vsd_state::project(api::num_vars *vars) {
-  id_set_t &p_ids = vars->get_ids();
+  id_set_t const &p_ids = vars->get_ids();
   for(auto e_it = elements.begin(); e_it != elements.end();) {
     if(p_ids.find(e_it->first) == p_ids.end())
       elements.erase(e_it++);
