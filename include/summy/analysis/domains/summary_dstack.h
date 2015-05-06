@@ -26,10 +26,27 @@ struct summary_dstack_result : public ::analysis::analysis_result<state_t> {
   }
 };
 
+typedef std::shared_ptr<summary_memory_state> summary_t;
+
+struct function_desc {
+  summary_t summary;
+  /*
+   * Minimal call stack size
+   */
+  size_t min_calls_sz;
+
+  function_desc(summary_t summary, size_t min_calls_sz) :
+      summary(summary), min_calls_sz(min_calls_sz) {
+  }
+  function_desc(function_desc const& o) :
+      summary(o.summary), min_calls_sz(o.min_calls_sz) {
+  }
+};
+
 class summary_dstack : public fp_analysis {
 private:
   std::shared_ptr<static_memory> sm;
-  std::map<void*, std::shared_ptr<summary_memory_state>> summary_map;
+  std::map<void*, function_desc> function_desc_map;
   state_t state;
 
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
@@ -50,6 +67,8 @@ public:
   std::shared_ptr<domain_state> get(size_t node);
   void update(size_t node, shared_ptr<domain_state> state);
   summary_dstack_result result();
+
+  node_compare_t get_fixpoint_node_comparer();
 
   void put(std::ostream &out);
 };

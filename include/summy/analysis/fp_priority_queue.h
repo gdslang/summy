@@ -5,6 +5,7 @@
  *      Author: Julian Kranz
  */
 #include <set>
+#include <unordered_set>
 #include <functional>
 #include <stdlib.h>
 
@@ -13,10 +14,11 @@
 namespace analysis {
 
 typedef std::function<bool(size_t, size_t)> node_compare_t;
-typedef std::set<size_t, node_compare_t> fpp_elements_t;
+typedef std::unordered_set<size_t> fpp_elements_t;
 
 class fp_priority_queue {
 private:
+  node_compare_t comparer;
   fpp_elements_t inner;
 public:
   fp_priority_queue();

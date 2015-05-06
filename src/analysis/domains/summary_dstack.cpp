@@ -86,6 +86,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             shared_ptr<global_state> state_c = this->state[from];
             summary_memory_state *mstate = state_c->get_mstate();
 
+            size_t current_min_calls_sz = function_desc_map.at(state_c->get_f_addr()).min_calls_sz;
+
             shared_ptr<summary_memory_state> summary = shared_ptr<summary_memory_state>(sms_bottom());
 
             ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
@@ -107,9 +109,11 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char*)text_address + offset;
 
-                  auto summary_it = summary_map.find(address);
-                  if(summary_it != summary_map.end()) {
-                    summary = shared_ptr<summary_memory_state>(summary->join(summary_it->second.get(), to));
+                  auto fd_it = function_desc_map.find(address);
+                  if(fd_it != function_desc_map.end()) {
+                    auto &f_desc = fd_it->second;
+                    summary = shared_ptr<summary_memory_state>(summary->join(f_desc.summary.get(), to));
+                    f_desc.min_calls_sz = std::max(f_desc.min_calls_sz, current_min_calls_sz);
                     continue;
                   }
 
@@ -117,7 +121,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     return new address_node(id, (size_t)address, cfg::DECODABLE);
                   });
                   cfg->update_edge(to, an_id, new call_edge(true));
-                  summary_map[address] = shared_ptr<summary_memory_state>(sms_bottom());
+                  cout << "oh weh: " << (current_min_calls_sz + 1) << endl;
+                  function_desc_map.insert(make_pair(address, function_desc(summary_t(sms_bottom()), current_min_calls_sz + 1)));
                 }
               });
               ptr.offset->accept(vsv);
@@ -138,11 +143,11 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         case gdsl::rreil::BRANCH_HINT_RET: {
           transfer_f = [=]() {
             shared_ptr<global_state> state_c = this->state[from];
-            auto summary_it = summary_map.find(state_c->get_f_addr());
+            auto fd_it = function_desc_map.find(state_c->get_f_addr());
 //            if(summary_it == summary_map.end())
 //              summary_map[state_c->get_f_addr()] = shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
 //            else
-            summary_it->second = shared_ptr<summary_memory_state>(summary_it->second->join(state_c->get_mstate(), to));
+            fd_it->second.summary = shared_ptr<summary_memory_state>(fd_it->second.summary->join(state_c->get_mstate(), to));
             for(auto caller : state_c->get_callers())
               assert_dependency(gen_dependency(to, caller));
             return state_c;
@@ -209,6 +214,10 @@ void analysis::summary_dstack::init_state() {
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm) :
   fp_analysis(cfg), sm(sm) {
+  /*
+   * Todo: Use correct start address here
+   */
+  function_desc_map.insert(make_pair((void*)NULL, function_desc(summary_t(sms_bottom()), 0)));
   init();
 }
 
@@ -253,6 +262,22 @@ void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> stat
 
 summary_dstack_result analysis::summary_dstack::result() {
   return summary_dstack_result(state);
+}
+
+node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
+  return [=](size_t a, size_t b) {
+    shared_ptr<global_state> state_a = this->state[a];
+    shared_ptr<global_state> state_b = this->state[b];
+    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
+    size_t min_calls_sz_a = function_desc_map.at(state_a->get_f_addr()).min_calls_sz;
+    size_t min_calls_sz_b = function_desc_map.at(state_b->get_f_addr()).min_calls_sz;
+    cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
+    if(min_calls_sz_a > min_calls_sz_b)
+      return true;
+    else if(min_calls_sz_a < min_calls_sz_b)
+      return false;
+    else return a < b;
+  };
 }
 
 void analysis::summary_dstack::put(std::ostream &out) {
