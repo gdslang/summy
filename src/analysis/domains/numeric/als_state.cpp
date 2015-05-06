@@ -200,7 +200,7 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   });
   rhs->accept(nv);
   if(linear) {
-    set<num_var*> _vars = vars(rhs);
+    set<num_var*> _vars = ::vars(rhs);
     id_set_t ids_new;
     for(auto &var : _vars) {
       auto var_it = elements.find(var->get_id());
@@ -230,7 +230,7 @@ void als_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
   rhs->accept(nv);
 
   if(linear) {
-    set<num_var*> _vars = vars(rhs);
+    set<num_var*> _vars = ::vars(rhs);
     id_set_t ids_erase;
 
     auto ids_mine_it = elements.find(lhs->get_id());
@@ -269,7 +269,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
    * Todo: Update paper: Ignoring assumtions in case they contain pointers
    * is not a viable option since now variables are pointers 'by default'
    */
-  auto _vars = vars(cmp);
+  auto _vars = ::vars(cmp);
   for(auto &var : _vars)
     kill(var->get_id());
   child_state->assume(cmp);
@@ -386,6 +386,25 @@ void analysis::als_state::project(api::num_vars *vars) {
       ++e_it;
     }
   }
+
+  child_state->project(vars);
+}
+
+api::num_vars *analysis::als_state::vars() {
+  num_vars *child_vars = child_state->vars();
+  id_set_t const &child_ids = child_vars->get_ids();
+
+  id_set_t known_aliases;
+  for(auto alias_mapping : elements)
+    for(auto alias : alias_mapping.second)
+      known_aliases.insert(alias);
+
+  id_set_t vars_ids;
+  set_union(child_ids.begin(), child_ids.end(), known_aliases.begin(), known_aliases.end(),
+      inserter(vars_ids, vars_ids.begin()));
+  delete child_vars;
+
+  return new num_vars(vars_ids);
 }
 
 std::tuple<bool, elements_t, numeric_state*, numeric_state*> analysis::als_state::compat(const als_state *a,

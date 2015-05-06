@@ -561,8 +561,8 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     }
   }
 
-  cout << "summary_applied:" << endl;
-  cout << *summary_applied << endl;
+//  cout << "summary_applied:" << endl;
+//  cout << *summary_applied << endl;
 
   for(auto &region_mapping : summary->output.regions) {
     for(auto &field_mapping : region_mapping.second) {
@@ -840,6 +840,17 @@ void analysis::summary_memory_state::cleanup() {
   _inner(input.deref);
   _inner(output.regions);
   _inner(output.deref);
+}
+
+void analysis::summary_memory_state::project(api::num_vars *vars) {
+  /*
+   * Todo: Check for additional vars in memory regions
+   */
+  child_state->project(vars);
+}
+
+api::num_vars *analysis::summary_memory_state::vars() {
+  return child_state->vars();
 }
 
 std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_temporary(gdsl::rreil::expr *e, int_t size) {

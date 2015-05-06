@@ -551,6 +551,12 @@ void analysis::equality_state::project(api::num_vars *vars) {
     remove(nv);
     delete nv;
   }
+
+  child_state->project(vars);
+}
+
+api::num_vars *analysis::equality_state::vars() {
+  return child_state->vars();
 }
 
 api::ptr_set_t analysis::equality_state::queryAls(api::num_var *nv) {

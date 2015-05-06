@@ -334,6 +334,13 @@ void analysis::value_sets::vsd_state::project(api::num_vars *vars) {
   }
 }
 
+api::num_vars *analysis::value_sets::vsd_state::vars() {
+  id_set_t ids;
+  for(auto id_mapping : elements)
+    ids.insert(id_mapping.first);
+  return new num_vars(ids);
+}
+
 vsd_state *analysis::value_sets::vsd_state::bottom(std::shared_ptr<static_memory> sm) {
   return new vsd_state(sm, true);
 }
