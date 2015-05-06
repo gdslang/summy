@@ -53,6 +53,8 @@ public:
   id_set_t const &get_ids() const {
     return ids;
   }
+
+   void add(id_set_t const &ids);
 };
 
 }

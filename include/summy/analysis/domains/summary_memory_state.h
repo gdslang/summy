@@ -160,6 +160,7 @@ public:
 
   void cleanup();
   void project(api::num_vars *vars);
+  api::num_vars *vars_relations();
   api::num_vars *vars();
 
   std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::linear *l, int_t size);

@@ -545,9 +545,9 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
 }
 
 summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
-
   numeric_state *child_met = child_state->meet(summary->child_state, 0);
   summary_memory_state *summary_applied = new summary_memory_state(sm, child_met, input, output);
+
 
   for(auto &region_mapping : summary->input.regions) {
     for(auto &field_mapping : region_mapping.second) {
@@ -576,6 +576,10 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       delete v_update;
     }
   }
+
+  num_vars *_vars = summary_applied->vars_relations();
+  summary_applied->project(_vars);
+  delete _vars;
 
   return summary_applied;
 }
@@ -849,8 +853,36 @@ void analysis::summary_memory_state::project(api::num_vars *vars) {
   child_state->project(vars);
 }
 
+api::num_vars *analysis::summary_memory_state::vars_relations() {
+  id_set_t known_ids;
+
+  auto _inner = [&](auto &regions) {
+    auto region_it = regions.begin();
+    while(region_it != regions.end()) {
+      auto field_it = region_it->second.begin();
+      while(field_it != region_it->second.end()) {
+        known_ids.insert(field_it->second.num_id);
+        cout << "adding " << *field_it->second.num_id << endl;
+        field_it++;
+      }
+      region_it++;
+    }
+  };
+  _inner(input.regions);
+  _inner(input.deref);
+  _inner(output.regions);
+  _inner(output.deref);
+
+  return new num_vars(known_ids);
+}
+
 api::num_vars *analysis::summary_memory_state::vars() {
-  return child_state->vars();
+  num_vars *_vars = child_state->vars();
+
+  num_vars *relations_vars = vars_relations();
+  _vars->add(relations_vars->get_ids());
+
+  return _vars;
 }
 
 std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_temporary(gdsl::rreil::expr *e, int_t size) {

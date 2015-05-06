@@ -377,12 +377,12 @@ void analysis::als_state::project(api::num_vars *vars) {
     if(p_ids.find(e_it->first) == p_ids.end())
       elements.erase(e_it++);
     else {
-      for(auto alias_it = e_it->second.begin(); alias_it != e_it->second.end();) {
-        if(p_ids.find(*alias_it) == p_ids.end())
-          e_it->second.erase(alias_it++);
-        else
-          ++alias_it;
-      }
+//      for(auto alias_it = e_it->second.begin(); alias_it != e_it->second.end();) {
+//        if(p_ids.find(*alias_it) == p_ids.end())
+//          e_it->second.erase(alias_it++);
+//        else
+//          ++alias_it;
+//      }
       ++e_it;
     }
   }
@@ -392,19 +392,20 @@ void analysis::als_state::project(api::num_vars *vars) {
 
 api::num_vars *analysis::als_state::vars() {
   num_vars *child_vars = child_state->vars();
-  id_set_t const &child_ids = child_vars->get_ids();
 
   id_set_t known_aliases;
   for(auto alias_mapping : elements)
     for(auto alias : alias_mapping.second)
       known_aliases.insert(alias);
 
-  id_set_t vars_ids;
-  set_union(child_ids.begin(), child_ids.end(), known_aliases.begin(), known_aliases.end(),
-      inserter(vars_ids, vars_ids.begin()));
-  delete child_vars;
+//  id_set_t vars_ids;
+//  set_union(child_ids.begin(), child_ids.end(), known_aliases.begin(), known_aliases.end(),
+//      inserter(vars_ids, vars_ids.begin()));
+//  delete child_vars;
 
-  return new num_vars(vars_ids);
+  child_vars->add(known_aliases);
+
+  return child_vars;
 }
 
 std::tuple<bool, elements_t, numeric_state*, numeric_state*> analysis::als_state::compat(const als_state *a,
