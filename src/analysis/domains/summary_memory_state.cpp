@@ -558,6 +558,8 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 //      cout << "nec: " << *nec << endl;
       summary_applied->child_state->assume(nec);
       delete nec;
+      delete l_call_out;
+      delete l_s_in;
     }
   }
 

@@ -47,6 +47,8 @@ public:
       mstate(o.mstate->copy()), f_addr(o.f_addr), callers(o.callers) {
   }
 
+  ~global_state();
+
   virtual global_state *join(::analysis::domain_state *other, size_t current_node);
   virtual global_state *narrow(::analysis::domain_state *other, size_t current_node);
   virtual global_state *widen(::analysis::domain_state *other, size_t current_node);

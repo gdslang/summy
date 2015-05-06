@@ -12,6 +12,10 @@
 using namespace std;
 using namespace analysis;
 
+analysis::global_state::~global_state() {
+  delete this->mstate;
+}
+
 global_state *analysis::global_state::join(::analysis::domain_state *other, size_t current_node) {
   global_state *other_casted = dynamic_cast<global_state *>(other);
 
