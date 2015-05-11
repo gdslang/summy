@@ -397,11 +397,9 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
 
   num_visitor nv(true);
   nv._([&](num_linear_term *nt) {
-    cout << "foo " << endl;
     pos_neg(nt);
     num_visitor nv2(true);
     nv2._([&](num_linear_term *nt) {
-      cout << *queryVal(nt->get_next()) << endl;
       if(*queryVal(nt->get_next()) == vs_finite::zero)
         pos_neg(nt);
     });
@@ -410,7 +408,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   cmp->get_opnd()->accept(nv);
 
   if(positive != NULL && negative != NULL) {
-    cout << "Merging for " << *cmp << endl;
+//    cout << "Merging for " << *cmp << endl;
     merge(positive, negative);
   }
   delete positive;

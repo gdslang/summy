@@ -572,7 +572,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       num_linear *l_out = summary->transLE(region_mapping.first, field_mapping.first, f.size);
       num_expr *l_out_expr = new num_expr_lin(l_out);
       num_var *v_update = new num_var(summary_applied->transVar(region_mapping.first, field_mapping.first, f.size));
-      cout << *v_update << " <- " << *l_out_expr << endl;
+//      cout << *v_update << " <- " << *l_out_expr << endl;
       summary_applied->child_state->assign(v_update, l_out_expr);
       delete l_out_expr;
       delete v_update;
@@ -864,7 +864,7 @@ api::num_vars *analysis::summary_memory_state::vars_relations() {
       auto field_it = region_it->second.begin();
       while(field_it != region_it->second.end()) {
         known_ids.insert(field_it->second.num_id);
-        cout << "adding " << *field_it->second.num_id << endl;
+//        cout << "adding " << *field_it->second.num_id << endl;
         field_it++;
       }
       region_it++;

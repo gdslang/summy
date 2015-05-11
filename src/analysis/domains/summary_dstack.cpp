@@ -62,7 +62,7 @@ bool analysis::summary_dstack::unpack_f_addr(void *&r, summy::vs_shared_t f_addr
 }
 
 void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  cout << "Adding constraint from " << from << " to " << to << endl;
+//  cout << "Adding constraint from " << from << " to " << to << endl;
 
   function<shared_ptr<global_state>()> transfer_f = [=]() {
     return state[from];
@@ -140,7 +140,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     return new address_node(id, (size_t)address, cfg::DECODABLE);
                   });
                   cfg->update_edge(to, an_id, new call_edge(true));
-                  cout << "oh weh: " << (current_min_calls_sz + 1) << endl;
                   function_desc_map.insert(make_pair(address, function_desc(summary_t(sms_bottom()), current_min_calls_sz + 1)));
                 }
               });
@@ -219,12 +218,12 @@ void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
 }
 
 dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {
-  cout << "Generating dep. " << from << " to " << to << endl;
+//  cout << "Generating dep. " << from << " to " << to << endl;
   return dependency { from, to };
 }
 
 void analysis::summary_dstack::init_state() {
-  cout << "init_state()" << endl;
+//  cout << "init_state()" << endl;
 
   size_t old_size = state.size();
   state.resize(cfg->node_count());
@@ -269,7 +268,7 @@ std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t 
 }
 
 std::shared_ptr<domain_state> analysis::summary_dstack::start_value() {
-  cout << "start_value()" << endl;
+//  cout << "start_value()" << endl;
   return start_value(vs_finite::zero, callers_t {});
 }
 
@@ -291,7 +290,7 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
   return [=](size_t a, size_t b) {
     shared_ptr<global_state> state_a = this->state[a];
     shared_ptr<global_state> state_b = this->state[b];
-    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
+//    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
 
     void *f_addr_a;
     bool unpackable_a = unpack_f_addr(f_addr_a, state_a->get_f_addr());
@@ -299,7 +298,7 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
     void *f_addr_b;
     bool unpackable_b = unpack_f_addr(f_addr_b, state_b->get_f_addr());
 
-    cout << a << " < " << b << " ~~~ " << *state_a->get_f_addr() << " //// " << *state_b->get_f_addr() << endl;
+//    cout << a << " < " << b << " ~~~ " << *state_a->get_f_addr() << " //// " << *state_b->get_f_addr() << endl;
 
     if(unpackable_a && !unpackable_b)
       return true;
@@ -308,7 +307,7 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
     else if(unpackable_a && unpackable_b) {
       size_t min_calls_sz_a = function_desc_map.at(f_addr_a).min_calls_sz;
       size_t min_calls_sz_b = function_desc_map.at(f_addr_b).min_calls_sz;
-      cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
+//      cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
       if(min_calls_sz_a > min_calls_sz_b)
         return true;
       else if(min_calls_sz_a < min_calls_sz_b)
