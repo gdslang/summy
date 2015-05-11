@@ -29,9 +29,11 @@ public:
 
 class recorder : public observer {
 private:
+  ::cfg::cfg *cfg;
   std::map<size_t, std::set<size_t>> updates;
 public:
   recorder(::cfg::cfg *cfg);
+  ~recorder();
 
   void notify(std::vector<update> const &updates);
   std::vector<update> get_updates();

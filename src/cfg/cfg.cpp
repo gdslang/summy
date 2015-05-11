@@ -130,10 +130,11 @@ void cfg::cfg::register_observer(observer *o) {
 }
 
 void cfg::cfg::unregister_observer(observer *o) {
-  throw string("Unimplemented");
-//  auto o_it = observers.find(o);
-//  if(o_it != observers.end())
-//    observers.erase(o_it);
+  std::vector<observer*> obs_new;
+  for(auto mine : observers)
+    if(mine != o)
+      obs_new.push_back(mine);
+  observers = obs_new;
 }
 
 //void cfg::cfg::clear_updates() {
@@ -221,6 +222,8 @@ void cfg::cfg::replace_node_payload(node *n) {
   if(n->get_id() >= node_payloads.size())
     throw new string("cfg::cfg::replace_node_payload(size_t, node*): Invalid node payload replacement");
   delete node_payloads[n->get_id()];
+  for(auto in : in_edges(n->get_id()))
+    updates_stack.top().push_back(update { update_kind::UPDATE, in, n->get_id() });
   node_payloads[n->get_id()] = n;
 }
 

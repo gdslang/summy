@@ -25,10 +25,14 @@ cfg::observer::~observer() {
  * recorder
  */
 
-cfg::recorder::recorder(::cfg::cfg *cfg) {
+cfg::recorder::recorder(::cfg::cfg *cfg) : cfg(cfg) {
   cfg->register_observer(this);
 
   notify(cfg->get_updates());
+}
+
+cfg::recorder::~recorder() {
+  cfg->unregister_observer(this);
 }
 
 void cfg::recorder::notify(const std::vector<update> &updates) {
