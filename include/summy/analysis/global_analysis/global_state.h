@@ -10,6 +10,7 @@
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/util.h>
+#include <summy/value_set/value_set.h>
 #include <cppgdsl/rreil/id/id.h>
 #include <set>
 #include <map>
@@ -24,14 +25,14 @@ typedef std::set<size_t> callers_t;
 class global_state: public domain_state {
 private:
   summary_memory_state *mstate;
-  void *f_addr;
+  summy::vs_shared_t f_addr;
   callers_t callers;
 public:
   summary_memory_state *get_mstate() {
     return mstate;
   }
 
-  void *get_f_addr() {
+  summy::vs_shared_t get_f_addr() {
     return f_addr;
   }
 
@@ -39,7 +40,7 @@ public:
     return callers;
   }
 
-  global_state(summary_memory_state *mstate, void *f_addr, callers_t callers) :
+  global_state(summary_memory_state *mstate, summy::vs_shared_t f_addr, callers_t callers) :
       mstate(mstate), f_addr(f_addr), callers(callers) {
   }
 

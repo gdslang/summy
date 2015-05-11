@@ -44,6 +44,22 @@ using namespace gdsl::rreil;
 using namespace analysis::value_sets;
 using namespace api;
 using namespace summy::rreil;
+using namespace summy;
+
+
+bool analysis::summary_dstack::unpack_f_addr(void *&r, summy::vs_shared_t f_addr) {
+  bool single = false;
+  value_set_visitor vsv;
+  vsv._([&](vs_finite *vsf) {
+    vs_finite::elements_t const &elems = vsf->get_elements();
+    if(elems.size() == 1) {
+      single = true;
+      r = (void*)*elems.begin();
+    }
+  });
+  f_addr->accept(vsv);
+  return single;
+}
 
 void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
   cout << "Adding constraint from " << from << " to " << to << endl;
@@ -86,7 +102,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             shared_ptr<global_state> state_c = this->state[from];
             summary_memory_state *mstate = state_c->get_mstate();
 
-            size_t current_min_calls_sz = function_desc_map.at(state_c->get_f_addr()).min_calls_sz;
+            void *f_addr;
+            bool unpackable_a = unpack_f_addr(f_addr, state_c->get_f_addr());
+            assert(unpackable_a);
+            size_t current_min_calls_sz = function_desc_map.at(f_addr).min_calls_sz;
 
             shared_ptr<summary_memory_state> summary = shared_ptr<summary_memory_state>(sms_bottom());
 
@@ -143,7 +162,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         case gdsl::rreil::BRANCH_HINT_RET: {
           transfer_f = [=]() {
             shared_ptr<global_state> state_c = this->state[from];
-            auto fd_it = function_desc_map.find(state_c->get_f_addr());
+            void *f_addr;
+            bool unpackable_a = unpack_f_addr(f_addr, state_c->get_f_addr());
+            assert(unpackable_a);
+            auto fd_it = function_desc_map.find(f_addr);
 //            if(summary_it == summary_map.end())
 //              summary_map[state_c->get_f_addr()] = shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
 //            else
@@ -183,7 +205,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         });
         dest->accept(nv);
         assert(is_addr_node);
-        state_new = dynamic_pointer_cast<global_state>(start_value(address,  callers_t {from}));
+        state_new = dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address),  callers_t {from}));
       } else state_new = state[from];
       return state_new;
     };
@@ -239,15 +261,16 @@ summary_memory_state *analysis::summary_dstack::sms_top() {
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::bottom() {
-  return shared_ptr<domain_state>(new global_state(sms_bottom(), 0, callers_t {}));
+  return shared_ptr<domain_state>(new global_state(sms_bottom(), value_set::bottom, callers_t {}));
 }
 
-std::shared_ptr<domain_state> analysis::summary_dstack::start_value(void *f_addr, callers_t callers) {
+std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t f_addr, callers_t callers) {
   return shared_ptr<domain_state>(new global_state(sms_top(), f_addr, callers));
 }
 
 std::shared_ptr<domain_state> analysis::summary_dstack::start_value() {
-  return start_value(0, callers_t {});
+  cout << "start_value()" << endl;
+  return start_value(vs_finite::zero, callers_t {});
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
@@ -269,13 +292,30 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
     shared_ptr<global_state> state_a = this->state[a];
     shared_ptr<global_state> state_b = this->state[b];
     cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
-    size_t min_calls_sz_a = function_desc_map.at(state_a->get_f_addr()).min_calls_sz;
-    size_t min_calls_sz_b = function_desc_map.at(state_b->get_f_addr()).min_calls_sz;
-    cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
-    if(min_calls_sz_a > min_calls_sz_b)
+
+    void *f_addr_a;
+    bool unpackable_a = unpack_f_addr(f_addr_a, state_a->get_f_addr());
+
+    void *f_addr_b;
+    bool unpackable_b = unpack_f_addr(f_addr_b, state_b->get_f_addr());
+
+    cout << a << " < " << b << " ~~~ " << *state_a->get_f_addr() << " //// " << *state_b->get_f_addr() << endl;
+
+    if(unpackable_a && !unpackable_b)
       return true;
-    else if(min_calls_sz_a < min_calls_sz_b)
+    else if(!unpackable_a && unpackable_b)
       return false;
+    else if(unpackable_a && unpackable_b) {
+      size_t min_calls_sz_a = function_desc_map.at(f_addr_a).min_calls_sz;
+      size_t min_calls_sz_b = function_desc_map.at(f_addr_b).min_calls_sz;
+      cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
+      if(min_calls_sz_a > min_calls_sz_b)
+        return true;
+      else if(min_calls_sz_a < min_calls_sz_b)
+        return false;
+      else
+        return a < b;
+    }
     else return a < b;
   };
 }

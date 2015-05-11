@@ -11,6 +11,7 @@
 #include <summy/analysis/global_analysis/global_state.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
+#include <summy/value_set/value_set.h>
 #include <memory>
 #include <vector>
 #include <set>
@@ -49,6 +50,8 @@ private:
   std::map<void*, function_desc> function_desc_map;
   state_t state;
 
+  bool unpack_f_addr(void *&r, summy::vs_shared_t f_addr);
+
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   void remove_constraint(size_t from, size_t to);
   dependency gen_dependency(size_t from, size_t to);
@@ -62,7 +65,7 @@ public:
   summary_memory_state *sms_top();
   std::shared_ptr<domain_state> bottom();
   std::shared_ptr<domain_state> start_value();
-  std::shared_ptr<domain_state> start_value(void *f_addr, callers_t callers);
+  std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr, callers_t callers);
 
   std::shared_ptr<domain_state> get(size_t node);
   void update(size_t node, shared_ptr<domain_state> state);

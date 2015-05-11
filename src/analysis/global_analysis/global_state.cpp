@@ -11,6 +11,7 @@
 
 using namespace std;
 using namespace analysis;
+using namespace summy;
 
 analysis::global_state::~global_state() {
   delete this->mstate;
@@ -24,9 +25,9 @@ global_state *analysis::global_state::join(::analysis::domain_state *other, size
   set_union(callers.begin(), callers.end(), other_casted->callers.begin(), other_casted->callers.end(),
       inserter(callers_joined, callers_joined.begin()));
 
-  assert(this->f_addr == other_casted->f_addr);
+  vs_shared_t f_addr_joined = value_set::join(this->f_addr, other_casted->f_addr);
 
-  return new global_state(mstate_joined, this->f_addr, callers_joined);
+  return new global_state(mstate_joined, f_addr_joined, callers_joined);
 }
 
 global_state *analysis::global_state::narrow(::analysis::domain_state *other, size_t current_node) {
@@ -43,13 +44,13 @@ bool analysis::global_state::operator >=(const ::analysis::domain_state &other) 
   global_state const &other_casted = dynamic_cast<global_state const &>(other);
   bool callers_include = includes(callers.begin(), callers.end(), other_casted.callers.begin(), other_casted.callers.end());
 
-  return callers_include && (f_addr == other_casted.f_addr) && (*mstate >= *other_casted.mstate);
+  return callers_include && (*other_casted.f_addr <= f_addr) && (*mstate >= *other_casted.mstate);
 }
 
 void analysis::global_state::put(std::ostream &out) const {
   out << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
   out << *mstate << endl;
-  out << "f_addr = " << f_addr << endl;
+  out << "f_addr = " << *f_addr << endl;
   out << "Callers: {";
   bool first = true;
   for(auto caller : callers) {
