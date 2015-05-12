@@ -25,7 +25,7 @@ cfg::observer::~observer() {
  * recorder
  */
 
-cfg::recorder::recorder(::cfg::cfg *cfg) : cfg(cfg) {
+cfg::recorder::recorder(::cfg::cfg *cfg, bool record) : cfg(cfg), record(record) {
   cfg->register_observer(this);
 
   notify(cfg->get_updates());
@@ -35,7 +35,18 @@ cfg::recorder::~recorder() {
   cfg->unregister_observer(this);
 }
 
+void cfg::recorder::start() {
+  record = true;
+}
+
+void cfg::recorder::stop() {
+  record = false;
+}
+
 void cfg::recorder::notify(const std::vector<update> &updates) {
+  if(!record)
+    return;
+
   for(auto &update : updates) {
     switch(update.kind) {
       case INSERT:
@@ -56,10 +67,11 @@ void cfg::recorder::notify(const std::vector<update> &updates) {
   }
 }
 
-std::vector<cfg::update> cfg::recorder::get_updates() {
+std::vector<cfg::update> cfg::recorder::checkout_updates() {
   vector<update> updates;
   for(auto node_updates_it : this->updates)
     for(auto node_update : node_updates_it.second)
       updates.push_back(update {UPDATE, node_updates_it.first, node_update});
+  this->updates.clear();
   return updates;
 }

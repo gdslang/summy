@@ -30,13 +30,17 @@ public:
 class recorder : public observer {
 private:
   ::cfg::cfg *cfg;
+  bool record;
   std::map<size_t, std::set<size_t>> updates;
 public:
-  recorder(::cfg::cfg *cfg);
+  recorder(::cfg::cfg *cfg, bool record);
   ~recorder();
 
+  void start();
+  void stop();
+
   void notify(std::vector<update> const &updates);
-  std::vector<update> get_updates();
+  std::vector<update> checkout_updates();
 };
 
 }

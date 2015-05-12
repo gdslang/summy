@@ -17,6 +17,7 @@
 #include <iostream>
 #include <functional>
 #include <summy/analysis/fp_priority_queue.h>
+#include <summy/cfg/observer.h>
 
 using std::shared_ptr;
 
@@ -32,6 +33,8 @@ struct dependency {
 typedef std::function<std::shared_ptr<domain_state>()> constraint_t;
 
 class fp_analysis {
+private:
+  cfg::recorder rec;
 public:
   typedef std::map<size_t, std::set<size_t>> dependants_t;
 protected:
@@ -57,6 +60,8 @@ public:
   }
 
   void update(std::vector<::cfg::update> const &updates);
+  void record_updates();
+  void record_stop_commit();
 
   virtual std::map<size_t, constraint_t> &constraints_at(size_t node) {
     return constraints[node];

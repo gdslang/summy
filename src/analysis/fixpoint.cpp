@@ -82,8 +82,10 @@ void fixpoint::iterate() {
         }
       };
 
+      analysis->record_updates();
       for(auto constraint_it = constraints.begin(); constraint_it != constraints.end(); constraint_it++)
         process_constraint(constraint_it->first, constraint_it->second);
+      analysis->record_stop_commit();
 
 //      cout << "Current: " << *current << endl;
 //      cout << "Acc: " << *accumulator << endl;

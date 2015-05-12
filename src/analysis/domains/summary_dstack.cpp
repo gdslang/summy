@@ -33,7 +33,6 @@ using cfg::decoding_state;
 using cfg::edge_visitor;
 using cfg::node;
 using cfg::node_visitor;
-using cfg::recorder;
 using cfg::stmt_edge;
 using summy::value_set_visitor;
 using summy::vs_finite;
@@ -147,9 +146,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 //              cout << ptr << endl;
             }
             cout << this->cfg << endl;
-            recorder rec(cfg);
             cfg->commit_updates();
-            fp_analysis::update(rec.get_updates());
 
 //            cout << "Need to apply the following summary: " << endl;
 //            cout << *summary << endl;
@@ -223,12 +220,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
           assert(addr_node);
           this->cfg->replace_node_payload(new address_node(to, addr, cfg::DECODABLE));
-          recorder rec(this->cfg);
           /**
            * Todo: The node state is replaced...?
            */
           this->cfg->commit_updates();
-//          fp_analysis::update(rec.get_updates());
         }
       }
       return state_new;

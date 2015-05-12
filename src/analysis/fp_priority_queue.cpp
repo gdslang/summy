@@ -38,8 +38,9 @@ size_t analysis::fp_priority_queue::pop() {
 //  for(auto e : inner)
 //    cout << "===> " << e << endl;
   auto min_it = std::min_element(inner.begin(),inner.end(), comparer);
+  size_t minimum = *min_it;
   inner.erase(min_it);
-  return *min_it;
+  return minimum;
 }
 
 bool analysis::fp_priority_queue::empty() {

@@ -9,6 +9,6 @@ ret
 main:
 mov $99, %r11
 call f
-mov %r11, %rax
+mov %r12, %rax
 ret
 

@@ -57,7 +57,7 @@ void fp_analysis::init_fixpoint_pending() {
 }
 
 fp_analysis::fp_analysis(class cfg *cfg) :
-    cfg(cfg) {
+    rec(cfg, false), cfg(cfg) {
 }
 
 void ::fp_analysis::fp_analysis::init() {
@@ -160,6 +160,15 @@ void fp_analysis::update(vector<struct update> const &updates) {
       }
     }
   }
+}
+
+void analysis::fp_analysis::record_updates() {
+  rec.start();
+}
+
+void analysis::fp_analysis::record_stop_commit() {
+  rec.stop();
+  update(rec.checkout_updates());
 }
 
 void analysis::fp_analysis::assert_dependency(dependency dep) {
