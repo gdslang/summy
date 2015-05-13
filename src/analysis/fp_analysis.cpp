@@ -12,6 +12,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <assert.h>
 
 using namespace cfg;
 using namespace std;

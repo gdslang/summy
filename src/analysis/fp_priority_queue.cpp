@@ -7,6 +7,7 @@
 #include <summy/analysis/fp_priority_queue.h>
 #include <algorithm>
 #include <iostream>
+#include <assert.h>
 
 using namespace std;
 using namespace analysis;

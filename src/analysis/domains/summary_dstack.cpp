@@ -126,20 +126,26 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               vsv._([&](vs_finite *vsf) {
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char*)text_address + offset;
-
                   auto fd_it = function_desc_map.find(address);
                   if(fd_it != function_desc_map.end()) {
                     auto &f_desc = fd_it->second;
                     summary = shared_ptr<summary_memory_state>(summary->join(f_desc.summary.get(), to));
                     f_desc.min_calls_sz = std::max(f_desc.min_calls_sz, current_min_calls_sz);
-                    continue;
-                  }
 
-                  size_t an_id = cfg->create_node([&](size_t id) {
-                    return new address_node(id, (size_t)address, cfg::DECODABLE);
-                  });
-                  cfg->update_edge(to, an_id, new call_edge(true));
-                  function_desc_map.insert(make_pair(address, function_desc(summary_t(sms_bottom()), current_min_calls_sz + 1)));
+                    size_t head_id = fd_it->second.head_id;
+                    cfg::in_edges_t const &head_in = cfg->in_edges(head_id);
+                    if(head_in.find(to) == head_in.end()) {
+//                      cout << "New edge from " << to << " to " << head_id << endl;
+                      cfg->update_edge(to, head_id, new call_edge(true));
+                    }
+                  } else {
+                    size_t an_id = cfg->create_node([&](size_t id) {
+                      return new address_node(id, (size_t)address, cfg::DECODABLE);
+                    });
+                    function_desc_map.insert(make_pair(address, function_desc(summary_t(sms_bottom()), current_min_calls_sz + 1, an_id)));
+//                    cout << "New edge from " << to << " to " << an_id << endl;
+                    cfg->update_edge(to, an_id, new call_edge(true));
+                  }
                 }
               });
               ptr.offset->accept(vsv);
@@ -205,21 +211,24 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       } else {
         state_new = state[from];
         if(!state_new->get_mstate()->is_bottom()) {
-          bool addr_node = false;
+          bool needs_decoding = false;
           size_t addr;
           node_visitor nv;
           nv._([&](address_node *av) {
-            addr_node = true;
-            addr = av->get_address();
+            if(av->get_decs() != cfg::DECODED) {
+              needs_decoding = true;
+              addr = av->get_address();
+            }
           });
           this->cfg->get_node_payload(to)->accept(nv);
 
-          assert(addr_node);
-          this->cfg->replace_node_payload(new address_node(to, addr, cfg::DECODABLE));
-          /**
-           * Todo: The node state is replaced...?
-           */
-          this->cfg->commit_updates();
+          if(needs_decoding) {
+            this->cfg->replace_node_payload(new address_node(to, addr, cfg::DECODABLE));
+            /**
+             * Todo: The node state is replaced...?
+             */
+            this->cfg->commit_updates();
+          }
         }
       }
       return state_new;
@@ -254,7 +263,7 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
   /*
    * Todo: Use correct start address here
    */
-  function_desc_map.insert(make_pair((void*)NULL, function_desc(summary_t(sms_bottom()), 0)));
+  function_desc_map.insert(make_pair((void*)NULL, function_desc(summary_t(sms_bottom()), 0, 0)));
   init();
 }
 

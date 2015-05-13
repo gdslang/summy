@@ -35,12 +35,13 @@ struct function_desc {
    * Minimal call stack size
    */
   size_t min_calls_sz;
+  /*
+   * Node id of head node
+   */
+  size_t head_id;
 
-  function_desc(summary_t summary, size_t min_calls_sz) :
-      summary(summary), min_calls_sz(min_calls_sz) {
-  }
-  function_desc(function_desc const& o) :
-      summary(o.summary), min_calls_sz(o.min_calls_sz) {
+  function_desc(summary_t summary, size_t min_calls_sz, size_t head_id) :
+      summary(summary), min_calls_sz(min_calls_sz), head_id(head_id) {
   }
 };
 

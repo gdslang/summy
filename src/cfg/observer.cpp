@@ -8,6 +8,7 @@
 #include <summy/cfg/observer.h>
 #include <summy/cfg/cfg.h>
 #include <vector>
+#include <assert.h>
 
 using namespace std;
 
