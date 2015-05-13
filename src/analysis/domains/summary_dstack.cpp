@@ -61,7 +61,7 @@ bool analysis::summary_dstack::unpack_f_addr(void *&r, summy::vs_shared_t f_addr
 }
 
 void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  cout << "Adding constraint from " << from << " to " << to << endl;
+//  cout << "Adding constraint from " << from << " to " << to << endl;
 
   function<shared_ptr<global_state>()> transfer_f = [=]() {
     return state[from];
@@ -145,7 +145,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               ptr.offset->accept(vsv);
 //              cout << ptr << endl;
             }
-            cout << this->cfg << endl;
             cfg->commit_updates();
 
 //            cout << "Need to apply the following summary: " << endl;
@@ -205,9 +204,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         state_new = dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address),  callers_t {from}));
       } else {
         state_new = state[from];
-        cout << "fuuu" << endl;
         if(!state_new->get_mstate()->is_bottom()) {
-        cout << "blaaah" << endl;
           bool addr_node = false;
           size_t addr;
           node_visitor nv;
@@ -215,7 +212,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             addr_node = true;
             addr = av->get_address();
           });
-          cout << this->cfg << endl;
           this->cfg->get_node_payload(to)->accept(nv);
 
           assert(addr_node);
