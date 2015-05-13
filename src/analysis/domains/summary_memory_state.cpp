@@ -545,45 +545,74 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
 }
 
 summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
-  numeric_state *child_met = child_state->meet(summary->child_state, 0);
-  summary_memory_state *summary_applied = new summary_memory_state(sm, child_met, input, output);
+  std::map<id_shared_t, id_shared_t, id_less_no_version> s_caller_id_map;
 
+  for(auto &region_mapping_si : summary->input.regions) {
+    id_shared_t region_key = region_mapping_si.first;
+    s_caller_id_map.insert(make_pair(region_key, region_key));
 
-  for(auto &region_mapping : summary->input.regions) {
-    for(auto &field_mapping : region_mapping.second) {
+//    auto region_mapping_mo = output.regions.find(region_key);
+//    assert(region_mapping_mo != output.regions.end());
+
+    for(auto &field_mapping : region_mapping_si.second) {
       field &f = field_mapping.second;
-      num_linear *l_s_in = summary->transLEInput(region_mapping.first, field_mapping.first, f.size);
-      num_linear *l_call_out = summary_applied->transLE(region_mapping.first, field_mapping.first, f.size);
-      num_expr_cmp *nec = num_expr_cmp::equals(l_call_out, l_s_in);
-//      cout << "nec: " << *nec << endl;
-      summary_applied->child_state->assume(nec);
-      delete nec;
-      delete l_call_out;
-      delete l_s_in;
+      num_var *nv_me = transVar(region_key, field_mapping.first, f.size);
+      s_caller_id_map.insert(make_pair(f.num_id, nv_me->get_id()));
+
+      ptr_set_t aliases_me = child_state->queryAls(nv_me);
+      num_var nv_s = new num_var(f.num_id);
+      ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
+
+      assert(aliases_me.size() == 1);
+      assert(aliases_s.size() == 1);
+      s_caller_id_map.insert(make_pair(*aliases_s.begin(), *aliases_me.begin()));
+
+      delete nv_me;
     }
+
   }
 
-//  cout << "summary_applied:" << endl;
-//  cout << *summary_applied << endl;
+  return NULL;
 
-  for(auto &region_mapping : summary->output.regions) {
-    for(auto &field_mapping : region_mapping.second) {
-      field &f = field_mapping.second;
-      num_linear *l_out = summary->transLE(region_mapping.first, field_mapping.first, f.size);
-      num_expr *l_out_expr = new num_expr_lin(l_out);
-      num_var *v_update = new num_var(summary_applied->transVar(region_mapping.first, field_mapping.first, f.size));
-//      cout << *v_update << " <- " << *l_out_expr << endl;
-      summary_applied->child_state->assign(v_update, l_out_expr);
-      delete l_out_expr;
-      delete v_update;
-    }
-  }
-
-  num_vars *_vars = summary_applied->vars_relations();
-  summary_applied->project(_vars);
-  delete _vars;
-
-  return summary_applied;
+//  numeric_state *child_met = child_state->meet(summary->child_state, 0);
+//  summary_memory_state *summary_applied = new summary_memory_state(sm, child_met, input, output);
+//
+//
+//  for(auto &region_mapping : summary->input.regions) {
+//    for(auto &field_mapping : region_mapping.second) {
+//      field &f = field_mapping.second;
+//      num_linear *l_s_in = summary->transLEInput(region_mapping.first, field_mapping.first, f.size);
+//      num_linear *l_call_out = summary_applied->transLE(region_mapping.first, field_mapping.first, f.size);
+//      num_expr_cmp *nec = num_expr_cmp::equals(l_call_out, l_s_in);
+////      cout << "nec: " << *nec << endl;
+//      summary_applied->child_state->assume(nec);
+//      delete nec;
+//      delete l_call_out;
+//      delete l_s_in;
+//    }
+//  }
+//
+////  cout << "summary_applied:" << endl;
+////  cout << *summary_applied << endl;
+//
+//  for(auto &region_mapping : summary->output.regions) {
+//    for(auto &field_mapping : region_mapping.second) {
+//      field &f = field_mapping.second;
+//      num_linear *l_out = summary->transLE(region_mapping.first, field_mapping.first, f.size);
+//      num_expr *l_out_expr = new num_expr_lin(l_out);
+//      num_var *v_update = new num_var(summary_applied->transVar(region_mapping.first, field_mapping.first, f.size));
+////      cout << *v_update << " <- " << *l_out_expr << endl;
+//      summary_applied->child_state->assign(v_update, l_out_expr);
+//      delete l_out_expr;
+//      delete v_update;
+//    }
+//  }
+//
+//  num_vars *_vars = summary_applied->vars_relations();
+//  summary_applied->project(_vars);
+//  delete _vars;
+//
+//  return summary_applied;
 }
 
 void analysis::summary_memory_state::update(gdsl::rreil::assign *assign) {
