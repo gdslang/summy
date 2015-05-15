@@ -549,6 +549,10 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   std::map<id_shared_t, ptr, id_less_no_version> alias_map;
 
   /*
+   * Richtig: read und write map?
+   */
+
+  /*
    * Build caller id map from input
    */
   for(auto &region_mapping_si : summary->input.regions) {
@@ -564,8 +568,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       id_shared_t id_me = me_copy->transVar(region_key, field_mapping_s.first, f_s.size);
       num_var *nv_me = new num_var(id_me);
 
-      cout << *region_key << endl;
-      cout << *f_s.num_id << endl;
+      cout << "New mapping in region " << *region_key << " from " << *f_s.num_id << " to " << *id_me << endl;
 
       alias_map.insert(make_pair(f_s.num_id, ptr(nv_me->get_id(), vs_finite::zero)));
 
@@ -579,7 +582,14 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       ptr const &p_s = *aliases_s.begin();
 //      assert(*p_me.offset == vs_finite::zero);
       assert(*p_s.offset == vs_finite::zero);
-      alias_map.insert(make_pair(p_s.id, p_me));
+
+      cout << "\tAlias mapping from " << p_s << " to ";
+      for(auto &foo : aliases_me)
+        cout << foo << ", ";
+      cout << endl;
+
+      if(aliases_me.size() > 0)
+        alias_map.insert(make_pair(p_s.id, p_me));
 
       delete nv_me;
     }
