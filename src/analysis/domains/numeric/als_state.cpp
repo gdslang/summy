@@ -277,9 +277,11 @@ void als_state::assume(api::num_expr_cmp *cmp) {
 
 void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
   if(is_bottom()) return;
+  elements[lhs->get_id()].clear();
   for(auto &alias : aliases) {
     elements[lhs->get_id()].insert(alias.id);
     num_expr *e = new num_expr_lin(new num_linear_vs(alias.offset));
+    cout << "Assign " << *lhs << " := " << *e << endl;
     child_state->assign(lhs, e);
     delete e;
   }

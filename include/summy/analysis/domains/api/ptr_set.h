@@ -23,6 +23,8 @@ struct ptr {
   ptr(std::shared_ptr<gdsl::rreil::id> id, summy::vs_shared_t offset) :
       id(id), offset(offset) {
   }
+//  ptr(ptr const& other) : id(other.id), offset(other.offset) {
+//  }
 
   bool operator <(const ptr &other) const;
   friend std::ostream &operator<< (std::ostream &out, ptr const &_this);

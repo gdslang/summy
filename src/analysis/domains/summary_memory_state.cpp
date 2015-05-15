@@ -545,34 +545,92 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
 }
 
 summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
-  std::map<id_shared_t, id_shared_t, id_less_no_version> s_caller_id_map;
+  summary_memory_state *me_copy = copy();
+  std::map<id_shared_t, ptr, id_less_no_version> alias_map;
 
+  /*
+   * Build caller id map from input
+   */
   for(auto &region_mapping_si : summary->input.regions) {
     id_shared_t region_key = region_mapping_si.first;
-    s_caller_id_map.insert(make_pair(region_key, region_key));
+//    num_var *region_key_var = new num_var(region_key);
+    alias_map.insert(make_pair(region_key, ptr(region_key, vs_finite::zero)));
 
 //    auto region_mapping_mo = output.regions.find(region_key);
 //    assert(region_mapping_mo != output.regions.end());
 
-    for(auto &field_mapping : region_mapping_si.second) {
-      field &f = field_mapping.second;
-      num_var *nv_me = transVar(region_key, field_mapping.first, f.size);
-      s_caller_id_map.insert(make_pair(f.num_id, nv_me->get_id()));
+    for(auto &field_mapping_s : region_mapping_si.second) {
+      field &f_s = field_mapping_s.second;
+      id_shared_t id_me = me_copy->transVar(region_key, field_mapping_s.first, f_s.size);
+      num_var *nv_me = new num_var(id_me);
 
-      ptr_set_t aliases_me = child_state->queryAls(nv_me);
-      num_var nv_s = new num_var(f.num_id);
+      cout << *region_key << endl;
+      cout << *f_s.num_id << endl;
+
+      alias_map.insert(make_pair(f_s.num_id, ptr(nv_me->get_id(), vs_finite::zero)));
+
+      ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
+      num_var *nv_s = new num_var(f_s.num_id);
       ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
 
-      assert(aliases_me.size() == 1);
+//      assert(aliases_me.size() == 1);
       assert(aliases_s.size() == 1);
-      s_caller_id_map.insert(make_pair(*aliases_s.begin(), *aliases_me.begin()));
+      ptr const &p_me = *aliases_me.begin();
+      ptr const &p_s = *aliases_s.begin();
+//      assert(*p_me.offset == vs_finite::zero);
+      assert(*p_s.offset == vs_finite::zero);
+      alias_map.insert(make_pair(p_s.id, p_me));
 
       delete nv_me;
     }
 
+//    delete region_key_var;
+
   }
 
-  return NULL;
+  return me_copy;
+
+  /*
+   * Apply output
+   */
+
+  for(auto &region_mapping_so : summary->output.regions) {
+    id_shared_t region_key = region_mapping_so.first;
+//    num_var *region_key_var = new num_var(region_key);
+
+    for(auto &field_mapping_s : region_mapping_so.second) {
+      field &f_s = field_mapping_s.second;
+      id_shared_t id_me = me_copy->transVar(alias_map.at(region_key).id, field_mapping_s.first, f_s.size);
+
+      cout << "    " << *id_me << endl;
+
+      num_var *nv_s = new num_var(f_s.num_id);
+      ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
+
+      ptr_set_t aliases_s_translated;
+      for(auto &_ptr : aliases_s) {
+        auto alias_it = alias_map.find(_ptr.id);
+        if(alias_it != alias_map.end()) {
+//          cout << ptr(s_caller_it->second, _ptr.offset) << endl;
+          aliases_s_translated.insert(ptr(alias_it->second.id, *_ptr.offset + alias_it->second.offset));
+        }
+        else {
+//          cout << _ptr << endl;
+          aliases_s_translated.insert(_ptr);
+        }
+      }
+
+      num_var *nv_me = new num_var(id_me);
+      me_copy->child_state->assume(nv_me, aliases_s_translated);
+    }
+
+  }
+
+    num_vars *_vars = me_copy->vars_relations();
+    me_copy->project(_vars);
+    delete _vars;
+
+  return me_copy;
 
 //  numeric_state *child_met = child_state->meet(summary->child_state, 0);
 //  summary_memory_state *summary_applied = new summary_memory_state(sm, child_met, input, output);
