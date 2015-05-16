@@ -3,9 +3,11 @@ mov %r13, %r14
 ret
 
 f:
-//mov %r11, %r12
-//add $8, %r12
-add $8, %r11
+//add $1, %r12
+add $1, %r11
+mov %r11, %r12
+add $8, %r12
+//add $8, %r11
 ret
 
 main:
