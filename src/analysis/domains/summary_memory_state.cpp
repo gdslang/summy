@@ -553,7 +553,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
    */
 
   /*
-   * Build caller id map from input
+   * Build caller id map from input, including aliases
    */
   for(auto &region_mapping_si : summary->input.regions) {
     id_shared_t region_key = region_mapping_si.first;
@@ -598,7 +598,26 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
   }
 
-  return me_copy;
+
+  /*
+   * Build caller id map from output, no aliases
+   */
+  for(auto &region_mapping_so : summary->output.regions) {
+    id_shared_t region_key = region_mapping_so.first;
+//    num_var *region_key_var = new num_var(region_key);
+
+    for(auto &field_mapping_s : region_mapping_so.second) {
+      field &f_s = field_mapping_s.second;
+      id_shared_t id_me = me_copy->transVar(region_key, field_mapping_s.first, f_s.size);
+      num_var *nv_me = new num_var(id_me);
+
+      cout << "New mapping in region " << *region_key << " from " << *f_s.num_id << " to " << *id_me << endl;
+
+      alias_map.insert(make_pair(f_s.num_id, ptr(nv_me->get_id(), vs_finite::zero)));
+
+      delete nv_me;
+    }
+  }
 
   /*
    * Apply output
