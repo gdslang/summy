@@ -592,6 +592,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         alias_map.insert(make_pair(p_s.id, p_me));
 
       delete nv_me;
+      delete nv_s;
     }
 
 //    delete region_key_var;
@@ -651,6 +652,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
       num_var *nv_me = new num_var(id_me);
       me_copy->child_state->assume(nv_me, aliases_s_translated);
+
+      delete nv_me;
+      delete nv_s;
     }
 
   }
