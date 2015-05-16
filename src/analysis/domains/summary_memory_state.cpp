@@ -551,6 +551,14 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   /*
    * Richtig: read und write map?
    */
+  /*
+   * Idee:
+   *  - Man nehme einen Alias, für den man einen Match hat
+   *  - Gleiche Prozedur wie unten für die entsprechende Region
+   *  - Wiederholen, bis keine solcher Alias mehr gefunden werden kann
+   */
+
+  std::set<id_shared_t, id_less_no_version> alias_queue_next;
 
   /*
    * Build caller id map from input, including aliases
@@ -588,8 +596,13 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         cout << foo << ", ";
       cout << endl;
 
-      if(aliases_me.size() > 0)
+      if(aliases_me.size() > 0) {
+        /*
+         * Todo: Mehrere Aliase
+         */
+        alias_queue_next.insert(p_s.id);
         alias_map.insert(make_pair(p_s.id, p_me));
+      }
 
       delete nv_me;
       delete nv_s;
@@ -598,7 +611,6 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 //    delete region_key_var;
 
   }
-
 
   /*
    * Build caller id map from output, no aliases
@@ -619,6 +631,19 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       delete nv_me;
     }
   }
+
+  std::set<id_shared_t, id_less_no_version> alias_queue;
+  bool change = false;
+  do {
+    alias_queue = alias_queue_next;
+    while(!alias_queue.empty()) {
+      auto aq_first_it = alias_queue.begin();
+      id_shared_t next = *aq_first_it;
+      alias_queue.erase(aq_first_it);
+
+    }
+
+  } while(change);
 
   /*
    * Apply output
@@ -659,9 +684,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
   }
 
-    num_vars *_vars = me_copy->vars_relations();
-    me_copy->project(_vars);
-    delete _vars;
+  num_vars *_vars = me_copy->vars_relations();
+  me_copy->project(_vars);
+  delete _vars;
 
   return me_copy;
 
