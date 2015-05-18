@@ -123,6 +123,7 @@ protected:
   void topify(region_t &region, int64_t offset, size_t size);
   id_shared_t transVarReg(io_region io, int64_t offset, size_t size);
   id_shared_t transVar(id_shared_t var_id, int64_t offset, size_t size);
+  id_shared_t transDeref(id_shared_t var_id, int64_t offset, size_t size);
   std::vector<field> transLERegFields(region_t &region, int64_t offset, size_t size);
   api::num_linear *assemble_fields(std::vector<field> fields);
   api::num_linear *transLEReg(io_region io, int64_t offset, size_t size);

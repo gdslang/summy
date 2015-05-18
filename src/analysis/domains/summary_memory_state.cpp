@@ -121,6 +121,7 @@ std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_tempor
     return transLE(id, offset, size);
   });
   num_expr *addr_expr = cvc(addr_cv);
+  cout << *addr_expr << endl;
   child_state->assign(var, addr_expr);
   delete addr_expr;
 
@@ -422,6 +423,10 @@ id_shared_t analysis::summary_memory_state::transVar(id_shared_t var_id, int64_t
   return transVarReg(region_by_id(&relation::get_regions, var_id), offset, size);
 }
 
+id_shared_t analysis::summary_memory_state::transDeref(id_shared_t var_id, int64_t offset, size_t size) {
+  return transVarReg(region_by_id(&relation::get_deref, var_id), offset, size);
+}
+
 vector<field> analysis::summary_memory_state::transLERegFields(region_t &region, int64_t offset, size_t size) {
   vector<field> fields;
   int64_t consumed = 0;
@@ -473,6 +478,9 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
 
   vector<field> fields = transLERegFields(io.out_r, offset, size);
 
+  for(auto &f : fields)
+    cout << "Field: " << *f.num_id << endl;
+
 //  cout << "Number of fields: " << fields.size() << endl;
 
   if(fields.size() == 0) {
@@ -486,6 +494,7 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
 }
 
 num_linear *analysis::summary_memory_state::transLE(id_shared_t var_id, int64_t offset, size_t size) {
+  cout << "transLE(" << *var_id << ", ...)" << endl;
   io_region io = region_by_id(&relation::get_regions, var_id);
   return transLEReg(io, offset, size);
 }
@@ -632,10 +641,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     }
   }
 
-  std::set<id_shared_t, id_less_no_version> alias_queue;
-  bool change = false;
   do {
-    alias_queue = alias_queue_next;
+    std::set<id_shared_t, id_less_no_version> alias_queue = alias_queue_next;
+    alias_queue_next.clear();
     while(!alias_queue.empty()) {
       auto aq_first_it = alias_queue.begin();
       id_shared_t next_s = *aq_first_it;
@@ -645,7 +653,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       if(next_ids == summary->input.deref.end())
         continue;
 
-      auto next_odme = me_copy->output.deref.find(alias_map.at(next_s).id);
+      id_shared_t next_me = alias_map.at(next_s).id;
+      /*
+       * Todo: ^--- offset?
+       */
+      auto next_odme = me_copy->output.deref.find(next_me);
       if(next_odme == me_copy->output.deref.end()) {
         /*
          * Todo: ...
@@ -653,9 +665,73 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         continue;
       }
 
+      region_t &region_s = next_ids->second;
+//      region_t &region_me = next_odme->second;
+
+      /*
+       * Todo: uncopy
+       */
+      for(auto &field_mapping_s : region_s) {
+        field &f_s = field_mapping_s.second;
+        id_shared_t id_me = me_copy->transDeref(next_me, field_mapping_s.first, f_s.size);
+        num_var *nv_me = new num_var(id_me);
+
+        cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
+
+        alias_map.insert(make_pair(f_s.num_id, ptr(nv_me->get_id(), vs_finite::zero)));
+
+        ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
+        num_var *nv_s = new num_var(f_s.num_id);
+        ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
+
+  //      assert(aliases_me.size() == 1);
+        assert(aliases_s.size() == 1);
+        ptr const &p_me = *aliases_me.begin();
+        ptr const &p_s = *aliases_s.begin();
+  //      assert(*p_me.offset == vs_finite::zero);
+        assert(*p_s.offset == vs_finite::zero);
+
+        cout << "\tAlias mapping from " << p_s << " to ";
+        for(auto &foo : aliases_me)
+          cout << foo << ", ";
+        cout << endl;
+
+        if(aliases_me.size() > 0) {
+          /*
+           * Todo: Mehrere Aliase, auch mehrere Keys
+           */
+          if(alias_map.find(p_s.id) == alias_map.end()) {
+            alias_queue_next.insert(p_s.id);
+            alias_map.insert(make_pair(p_s.id, p_me));
+          }
+        }
+
+        delete nv_me;
+        delete nv_s;
+      }
+
+      auto next_ods = summary->output.deref.find(next_s);
+      assert(next_ods != summary->output.deref.end());
+
+      region_s = next_ids->second;
+
+      /*
+       * Todo: uncopy
+       */
+      for(auto &field_mapping_s : region_s) {
+        field &f_s = field_mapping_s.second;
+        id_shared_t id_me = me_copy->transDeref(next_me, field_mapping_s.first, f_s.size);
+        num_var *nv_me = new num_var(id_me);
+
+        cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
+
+        alias_map.insert(make_pair(f_s.num_id, ptr(nv_me->get_id(), vs_finite::zero)));
+
+        delete nv_me;
+      }
     }
 
-  } while(change);
+  } while(alias_queue_next.size() > 0);
 
   /*
    * Apply output
@@ -688,8 +764,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       }
 
       num_var *nv_me = new num_var(id_me);
+      num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
+      me_copy->child_state->assign(nv_me, _top);
       me_copy->child_state->assume(nv_me, aliases_s_translated);
 
+      delete _top;
       delete nv_me;
       delete nv_s;
     }
@@ -780,7 +859,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   vector<num_linear*> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
-//    cout << "Alias: " << *alias.id << "@" << *alias.offset << endl;
+    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
     io_region io = dereference(alias.id);
 
     bool is_static = false;
