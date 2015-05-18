@@ -927,13 +927,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   cleanup();
 }
 
-void analysis::summary_memory_state::update(gdsl::rreil::store *store) {
-  if(is_bottom()) return;
-
-  address *addr = store->get_address();
-  auto temp = assign_temporary(addr->get_lin(), addr->get_size());
-
-  ptr_set_t aliases = child_state->queryAls(temp->get_var());
+void analysis::summary_memory_state::store(api::ptr_set_t aliases, size_t size, std::function<void(api::num_var*)> strong,
+    std::function<void(api::num_var*)> weak) {
   for(auto &alias : aliases) {
     io_region io = dereference(alias.id);
 
@@ -961,12 +956,12 @@ void analysis::summary_memory_state::update(gdsl::rreil::store *store) {
 
       set<int64_t> overlapping;
       set<int64_t> non_overlapping;
-      tie(overlapping, non_overlapping) = overlappings(v, store->get_size());
+      tie(overlapping, non_overlapping) = overlappings(v, size);
 
       for(auto oo : overlapping)
-        topify(io.out_r, oo, store->get_size());
+        topify(io.out_r, oo, size);
       for(auto noo : non_overlapping)
-        ids.push_back(transVarReg(io, noo, store->get_size()));
+        ids.push_back(transVarReg(io, noo, size));
     });
     vsv._([&](vs_open *o) {
       singleton = false;
@@ -974,15 +969,15 @@ void analysis::summary_memory_state::update(gdsl::rreil::store *store) {
         case UPWARD: {
           for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++)
             if(field_it->first + field_it->second.size > o->get_limit())
-              topify(io.out_r, field_it->first, store->get_size());
+              topify(io.out_r, field_it->first, size);
           break;
         }
         case DOWNWARD: {
           for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++) {
             if(field_it->first < o->get_limit())
-              topify(io.out_r, field_it->first, store->get_size());
-            else if(field_it->first < o->get_limit() + store->get_size())
-              topify(io.out_r, field_it->first, store->get_size());
+              topify(io.out_r, field_it->first, size);
+            else if(field_it->first < o->get_limit() + size)
+              topify(io.out_r, field_it->first, size);
           }
           break;
         }
@@ -1005,20 +1000,38 @@ void analysis::summary_memory_state::update(gdsl::rreil::store *store) {
     if(_continue)
       continue;
 
-    converter rhs_cv(store->get_size(), [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
-      return transLE(id, offset, size);
-    });
     for(auto id : ids) {
       num_var *lhs = new num_var(id);
-      num_expr *rhs = rhs_cv.conv_expr(store->get_rhs());
       if(singleton)
-        child_state->assign(lhs, rhs);
+        strong(lhs);
       else
-        child_state->weak_assign(lhs, rhs);
+        weak(lhs);
       delete lhs;
-      delete rhs;
     }
   }
+}
+
+void analysis::summary_memory_state::store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs) {
+  store(aliases, size, [&](num_var *lhs) {
+    child_state->assign(lhs, rhs);
+  }, [&](num_var *lhs) {
+    child_state->weak_assign(lhs, rhs);
+  });
+}
+
+void analysis::summary_memory_state::update(gdsl::rreil::store *store) {
+  if(is_bottom()) return;
+
+  address *addr = store->get_address();
+  auto temp = assign_temporary(addr->get_lin(), addr->get_size());
+  ptr_set_t aliases = child_state->queryAls(temp->get_var());
+
+  converter rhs_cv(store->get_size(), [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
+  });
+  num_expr *rhs = rhs_cv.conv_expr(store->get_rhs());
+  this->store(aliases, store->get_size(), rhs);
+  delete rhs;
 
   cleanup();
 }

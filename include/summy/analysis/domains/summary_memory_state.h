@@ -96,10 +96,11 @@ private:
   relation input;
   relation output;
 
-  typedef numeric_state*(numeric_state::*domopper_t) (domain_state *other, size_t current_node);
+  typedef numeric_state*(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
   summary_memory_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
 
-  std::unique_ptr<managed_temporary> assign_temporary(int_t size, std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
+  std::unique_ptr<managed_temporary> assign_temporary(int_t size,
+      std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
 
   io_region region_by_id(region_map_t&(relation::*getter)(), id_shared_t id);
 
@@ -108,7 +109,6 @@ private:
 protected:
   void put(std::ostream &out) const;
 //  region_t &region(id_shared_t id);
-
 
   /*
    * Static memory
@@ -153,6 +153,10 @@ public:
   summary_memory_state *narrow(domain_state *other, size_t current_node);
   summary_memory_state *apply_summary(summary_memory_state *summary);
 
+  void store(api::ptr_set_t aliases, size_t size, std::function<void(api::num_var*)> strong,
+      std::function<void(api::num_var*)> weak);
+  void store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs);
+
   void update(gdsl::rreil::assign *assign);
   void update(gdsl::rreil::load *load);
   void update(gdsl::rreil::store *store);
@@ -182,7 +186,8 @@ public:
     relation input;
     relation output;
   };
-  static std::tuple<memory_head, numeric_state*, numeric_state*> compat(summary_memory_state const *a, summary_memory_state const *b);
+  static std::tuple<memory_head, numeric_state*, numeric_state*> compat(summary_memory_state const *a,
+      summary_memory_state const *b);
 };
 
 }
