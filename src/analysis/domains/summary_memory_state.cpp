@@ -638,8 +638,20 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     alias_queue = alias_queue_next;
     while(!alias_queue.empty()) {
       auto aq_first_it = alias_queue.begin();
-      id_shared_t next = *aq_first_it;
+      id_shared_t next_s = *aq_first_it;
       alias_queue.erase(aq_first_it);
+
+      auto next_ids = summary->input.deref.find(next_s);
+      if(next_ids == summary->input.deref.end())
+        continue;
+
+      auto next_odme = me_copy->output.deref.find(alias_map.at(next_s).id);
+      if(next_odme == me_copy->output.deref.end()) {
+        /*
+         * Todo: ...
+         */
+        continue;
+      }
 
     }
 
