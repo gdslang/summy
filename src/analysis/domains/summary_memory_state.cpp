@@ -555,7 +555,7 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
 
 summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
   summary_memory_state *me_copy = copy();
-  std::map<id_shared_t, ptr, id_less_no_version> alias_map;
+  std::map<id_shared_t, ptr_set_t, id_less_no_version> alias_map;
 
   /*
    * Richtig: read und write map?
@@ -587,7 +587,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
       cout << "New mapping in region " << *region_key << " from " << *f_s.num_id << " to " << *id_me << endl;
 
-      alias_map.insert(make_pair(f_s.num_id, ptr(nv_me->get_id(), vs_finite::zero)));
+      alias_map[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
 
       ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
       num_var *nv_s = new num_var(f_s.num_id);
@@ -610,7 +610,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
          * Todo: Mehrere Aliase
          */
         alias_queue_next.insert(p_s.id);
-        alias_map.insert(make_pair(p_s.id, p_me));
+        alias_map[p_s.id].insert(p_me);
       }
 
       delete nv_me;
@@ -635,7 +635,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
       cout << "New mapping in region " << *region_key << " from " << *f_s.num_id << " to " << *id_me << endl;
 
-      alias_map.insert(make_pair(f_s.num_id, ptr(nv_me->get_id(), vs_finite::zero)));
+      alias_map[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
 
       delete nv_me;
     }
@@ -653,7 +653,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       if(next_ids == summary->input.deref.end())
         continue;
 
-      id_shared_t next_me = alias_map.at(next_s).id;
+      ptr_set_t const &next_set = alias_map.at(next_s);
+      assert(next_set.size() == 1);
+      id_shared_t next_me = next_set.begin()->id;
       /*
        * Todo: ^--- offset?
        */
@@ -678,7 +680,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
         cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
 
-        alias_map.insert(make_pair(f_s.num_id, ptr(nv_me->get_id(), vs_finite::zero)));
+        alias_map[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
 
         ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
         num_var *nv_s = new num_var(f_s.num_id);
@@ -702,7 +704,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
            */
           if(alias_map.find(p_s.id) == alias_map.end()) {
             alias_queue_next.insert(p_s.id);
-            alias_map.insert(make_pair(p_s.id, p_me));
+            alias_map[p_s.id].insert(p_me);
           }
         }
 
@@ -725,7 +727,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
         cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
 
-        alias_map.insert(make_pair(f_s.num_id, ptr(nv_me->get_id(), vs_finite::zero)));
+        alias_map[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
 
         delete nv_me;
       }
@@ -757,8 +759,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       for(auto &_ptr : aliases_s) {
         auto alias_it = alias_map.find(_ptr.id);
         if(alias_it != alias_map.end()) {
+          ptr_set_t const &ptr_set = alias_it->second;
+          assert(ptr_set.size() == 1);
+          ptr const &p = *ptr_set.begin();
 //          cout << ptr(s_caller_it->second, _ptr.offset) << endl;
-          aliases_s_translated.insert(ptr(alias_it->second.id, *_ptr.offset + alias_it->second.offset));
+          aliases_s_translated.insert(ptr(p.id, *_ptr.offset + p.offset));
         }
         else {
 //          cout << _ptr << endl;
