@@ -128,7 +128,7 @@ std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_tempor
   return unique_ptr<managed_temporary>(new managed_temporary(*this, var));
 }
 
-io_region analysis::summary_memory_state::region_by_id(region_map_t&(relation::*getter)(), id_shared_t id) {
+io_region analysis::summary_memory_state::region_by_id(regions_getter_t getter, id_shared_t id) {
   region_map_t &input_rmap =  (input.*getter)();
   region_map_t &output_rmap =  (output.*getter)();
   auto id_in_it = input_rmap.find(id);
@@ -575,7 +575,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   for(auto &region_mapping_si : summary->input.regions) {
     id_shared_t region_key = region_mapping_si.first;
 //    num_var *region_key_var = new num_var(region_key);
-    alias_map.insert(make_pair(region_key, ptr(region_key, vs_finite::zero)));
+//    alias_map.insert(make_pair(region_key, ptr(region_key, vs_finite::zero)));
 
 //    auto region_mapping_mo = output.regions.find(region_key);
 //    assert(region_mapping_mo != output.regions.end());
@@ -737,13 +737,16 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
    * Apply output
    */
 
+  /*
+   * Application in regions, one alias
+   */
   for(auto &region_mapping_so : summary->output.regions) {
     id_shared_t region_key = region_mapping_so.first;
 //    num_var *region_key_var = new num_var(region_key);
 
     for(auto &field_mapping_s : region_mapping_so.second) {
       field &f_s = field_mapping_s.second;
-      id_shared_t id_me = me_copy->transVar(alias_map.at(region_key).id, field_mapping_s.first, f_s.size);
+      id_shared_t id_me = me_copy->transVar(region_key, field_mapping_s.first, f_s.size);
 
       cout << "    " << *id_me << endl;
 
@@ -774,6 +777,10 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     }
 
   }
+
+  /*
+   * Todo: Application in deref, multiple aliases!
+   */
 
   num_vars *_vars = me_copy->vars_relations();
   me_copy->project(_vars);

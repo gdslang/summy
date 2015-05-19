@@ -102,7 +102,8 @@ private:
   std::unique_ptr<managed_temporary> assign_temporary(int_t size,
       std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
 
-  io_region region_by_id(region_map_t&(relation::*getter)(), id_shared_t id);
+  typedef region_map_t&(relation::*regions_getter_t)() ;
+  io_region region_by_id(regions_getter_t getter, id_shared_t id);
 
   void bottomify();
   io_region dereference(id_shared_t id);
