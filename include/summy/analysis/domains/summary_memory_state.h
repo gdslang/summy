@@ -102,7 +102,7 @@ private:
   std::unique_ptr<managed_temporary> assign_temporary(int_t size,
       std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
 
-  typedef region_map_t&(relation::*regions_getter_t)() ;
+  typedef region_map_t&(relation::*regions_getter_t)();
   io_region region_by_id(regions_getter_t getter, id_shared_t id);
 
   void bottomify();
@@ -154,8 +154,8 @@ public:
   summary_memory_state *narrow(domain_state *other, size_t current_node);
   summary_memory_state *apply_summary(summary_memory_state *summary);
 
-  void store(api::ptr_set_t aliases, size_t size, std::function<void(api::num_var*)> strong,
-      std::function<void(api::num_var*)> weak);
+  typedef std::function<void(api::num_var*)> updater_t;
+  void store(api::ptr_set_t aliases, size_t size, updater_t strong, updater_t weak);
   void store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs);
 
   void update(gdsl::rreil::assign *assign);
