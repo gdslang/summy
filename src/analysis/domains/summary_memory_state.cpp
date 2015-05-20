@@ -682,37 +682,35 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
           alias_map[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
 
-          ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
+          ptr_set_t aliases_me_new = me_copy->child_state->queryAls(nv_me);
     //      assert(aliases_me.size() == 1);
-          ptr const &p_me = *aliases_me.begin();
+//          ptr const &p_me = *aliases_me.begin();
     //      assert(*p_me.offset == vs_finite::zero);
           assert(*p_s.offset == vs_finite::zero);
 
           cout << "\tAlias mapping from " << p_s << " to ";
-          for(auto &foo : aliases_me)
+          for(auto &foo : aliases_me_new)
             cout << foo << ", ";
           cout << endl;
 
-          if(aliases_me.size() > 0) {
-            /*
-             * Todo: Mehrere Aliase, auch mehrere Keys
-             */
-            if(alias_map.find(p_s.id) == alias_map.end()) {
-              alias_queue_next.insert(p_s.id);
-              alias_map[p_s.id].insert(p_me);
-            }
+          ptr_set_t aliases_me_current = alias_map[p_s.id];
+          if(!includes(aliases_me_current.begin(), aliases_me_current.end(),
+              aliases_me_new.begin(), aliases_me_new.end())) {
+            alias_queue_next.insert(p_s.id);
+            alias_map[p_s.id].insert(aliases_me_new.begin(), aliases_me_new.end());
           }
 
-          delete nv_me;
           delete nv_s;
         };
 
-        updater_t weak = [&](num_var *nv_me) {
-          assert(false);
-        };
-
+//        updater_t weak = [&](num_var *nv_me) {
+//          assert(false);
+//
+////          alias_map[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
+////          ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
+//        };
 //        id_shared_t id_me = me_copy->transDeref(next_me, field_mapping_s.first, f_s.size);
-        me_copy->store(next_me_set, 64, strong, weak);
+        me_copy->store(next_me_set, f_s.size, strong, strong);
 
       }
 
