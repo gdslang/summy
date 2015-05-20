@@ -155,7 +155,7 @@ public:
   summary_memory_state *apply_summary(summary_memory_state *summary);
 
   typedef std::function<void(api::num_var*)> updater_t;
-  void store(api::ptr_set_t aliases, size_t size, updater_t strong, updater_t weak);
+  void update_aliases(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak);
   void store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs);
 
   void update(gdsl::rreil::assign *assign);
