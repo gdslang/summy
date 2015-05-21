@@ -602,7 +602,7 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
 summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
   summary_memory_state *me_copy = copy();
   map<id_shared_t, ptr_set_t, id_less_no_version> alias_map;
-  map<id_set_t, id_shared_t> merge_map;
+  map<ptr_set_t, id_shared_t> merge_map;
 
   /*
    * Richtig: read und write map?
@@ -725,9 +725,31 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         /*
          * if aliases_s.size() > 1: Merge entsprechend Fall 1
          */
+        /*
+         * Todo: aliases_s.size() == 0
+         */
 
-        assert(aliases_s.size() == 1);
-        ptr const &p_s = *aliases_s.begin();
+        auto ptr_from_aliases = [&]() {
+          if(aliases_s.size() == 1)
+            return *aliases_s.begin();
+          if(aliases_s.size() > 1) {
+            auto merge_map_it = merge_map.find(aliases_s);
+            if(merge_map_it == merge_map.end()) {
+              auto aliases_s_it = aliases_s.begin();
+              id_shared_t merged_key = aliases_s_it->id;
+              while(aliases_s_it != aliases_s.end()) {
+                merged_key = summary->merge_memory(merged_key, aliases_s_it->id);
+                aliases_s_it++;
+              }
+              return ptr(merged_key, vs_finite::zero);
+            }
+          }
+        };
+        ptr const &p_s = ptr_from_aliases();
+
+        /*
+         * Todo: Offset
+         */
 
         updater_t strong = [&](num_var *nv_me) {
 //          cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
