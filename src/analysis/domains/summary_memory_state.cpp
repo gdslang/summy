@@ -674,6 +674,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         field &f_s = field_mapping_s.second;
         num_var *nv_s = new num_var(f_s.num_id);
         ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
+
+        /*
+         * if aliases_s.size() > 1: Merge entsprechend Fall 1
+         */
+
         assert(aliases_s.size() == 1);
         ptr const &p_s = *aliases_s.begin();
 
@@ -710,7 +715,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 ////          ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
 //        };
 //        id_shared_t id_me = me_copy->transDeref(next_me, field_mapping_s.first, f_s.size);
-        me_copy->update_aliases(next_me_set, &relation::get_deref, f_s.size, strong, strong);
+        me_copy->update_multiple(next_me_set, &relation::get_deref, f_s.size, strong, strong);
       }
 
       auto next_ods = summary->output.deref.find(next_s);
@@ -780,7 +785,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         aliases_joined_me.insert(aliases_me.begin(), aliases_me.end());
         me_copy->child_state->assume(nv_me, aliases_joined_me);
       };
-      me_copy->update_aliases(region_aliases_me, getter, 64, strong, weak);
+      me_copy->update_multiple(region_aliases_me, getter, ff.size, strong, weak);
     });
   };
 
@@ -793,7 +798,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   for(auto &deref_mapping_so : summary->output.deref) {
     id_shared_t region_key = deref_mapping_so.first;
     ptr_set_t &region_aliases_me = alias_map.at(region_key);
-    process_region(&relation::get_deref, region_aliases_me, deref_mapping_so.second);;
+    process_region(&relation::get_deref, region_aliases_me, deref_mapping_so.second);
   }
   delete _top;
 
@@ -953,7 +958,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   cleanup();
 }
 
-void analysis::summary_memory_state::update_aliases(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak) {
+void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak) {
   for(auto &alias : aliases) {
 
     io_region io = region_by_id(getter, alias.id);
@@ -1038,7 +1043,7 @@ void analysis::summary_memory_state::update_aliases(api::ptr_set_t aliases, regi
 }
 
 void analysis::summary_memory_state::store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs) {
-  update_aliases(aliases, &relation::get_deref, size, [&](num_var *lhs) {
+  update_multiple(aliases, &relation::get_deref, size, [&](num_var *lhs) {
     child_state->assign(lhs, rhs);
   }, [&](num_var *lhs) {
     child_state->weak_assign(lhs, rhs);
