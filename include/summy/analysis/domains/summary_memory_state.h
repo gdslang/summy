@@ -120,7 +120,8 @@ protected:
   std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
   bool overlap_region(region_t &region, int64_t offset, size_t size);
 
-  id_shared_t merge_memory(id_shared_t addr_a, id_shared_t addr_b);
+  region_t merge_memory(id_shared_t addr_a, region_t &r);
+  region_t merge_memory(id_shared_t addr_a, id_shared_t addr_b);
   region_t::iterator retrieve_kill(region_t &region, int64_t offset, size_t size);
   void topify(region_t &region, int64_t offset, size_t size);
   id_shared_t transVarReg(io_region io, int64_t offset, size_t size);
