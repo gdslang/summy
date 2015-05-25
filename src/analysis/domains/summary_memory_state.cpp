@@ -614,7 +614,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
   struct merged_region_t {
     region_t merged;
-    ptr_set_t aliases_me;
+//    ptr_set_t aliases_me;
   };
   map<ptr_set_t, merged_region_t> merge_map;
 
@@ -769,22 +769,30 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
           if(merge_map_it == merge_map.end()) {
             auto aliases_s_it = aliases_s.begin();
             ptr const &first = *aliases_s_it;
+            cout << "FIRST: " << first << endl;
             aliases_s_it++;
             region_t merged = merge_memory(first.id, aliases_s_it->id);
             while(aliases_s_it != aliases_s.end()) {
+            cout << "NEXT: " << *aliases_s_it << endl;
               merged = summary->merge_memory(aliases_s_it->id, merged);
               aliases_s_it++;
             }
-            merge_map.insert(make_pair(aliases_s, merged_region_t { merged, ptr_set_t() }));
+            merge_map.insert(make_pair(aliases_s, merged_region_t { merged }));
           }
           merged_queue_next.insert(aliases_s);
-          continue;
         }
-        ptr const &p_s = *aliases_s.begin();
 
         /*
          * Todo: Offset
          */
+
+
+        bool update = false;
+        ptr_set_t aliases_me_current;
+        for(auto &p_s : aliases_s) {
+          ptr_set_t &aliases_me = alias_map[p_s.id];
+          aliases_me_current.insert(aliases_me.begin(), aliases_me.end());
+        }
 
         updater_t strong = [&](num_var *nv_me) {
 //          cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
@@ -795,18 +803,17 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     //      assert(aliases_me.size() == 1);
 //          ptr const &p_me = *aliases_me.begin();
     //      assert(*p_me.offset == vs_finite::zero);
-          assert(*p_s.offset == vs_finite::zero);
 
-          cout << "\tAlias mapping from " << p_s << " to ";
-          for(auto &foo : aliases_me_new)
-            cout << foo << ", ";
-          cout << endl;
+//          assert(*p_s.offset == vs_finite::zero);
+//          cout << "\tAlias mapping from " << p_s << " to ";
+//          for(auto &foo : aliases_me_new)
+//            cout << foo << ", ";
+//          cout << endl;
 
-          ptr_set_t aliases_me_current = alias_map[p_s.id];
           if(!includes(aliases_me_current.begin(), aliases_me_current.end(),
               aliases_me_new.begin(), aliases_me_new.end())) {
-            alias_queue_next.insert(p_s.id);
-            alias_map[p_s.id].insert(aliases_me_new.begin(), aliases_me_new.end());
+            update = true;
+            aliases_me_current.insert(aliases_me_new.begin(), aliases_me_new.end());
           }
 
           delete nv_s;
@@ -820,6 +827,13 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 //        };
 //        id_shared_t id_me = me_copy->transDeref(next_me, field_mapping_s.first, f_s.size);
         me_copy->update_multiple(next_me_set, &relation::get_deref, f_s.size, strong, strong);
+
+        if(update) {
+          for(auto &p_s : aliases_s) {
+            alias_queue_next.insert(p_s.id);
+            alias_map[p_s.id].insert(aliases_me_current.begin(), aliases_me_current.end());
+          }
+        }
       }
 
       auto next_ods = summary->output.deref.find(next_s);
@@ -847,16 +861,29 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     merged_queue_next.clear();
 
     while(!merge_queue.empty()) {
-      assert(false);
-
       auto aq_first_it = merge_queue.begin();
       ptr_set_t next_s = *aq_first_it;
       merge_queue.erase(aq_first_it);
 
       merged_region_t &merged_region = merge_map.at(next_s);
 
-      assert(merged_region.aliases_me.size() == 1);
-      id_shared_t next_me = merged_region.aliases_me.begin()->id;
+      ptr_set_t aliases_me;
+      for(auto &ptr_s : next_s) {
+        ptr_set_t &aliases_me_new = alias_map.at(ptr_s.id);
+        aliases_me.insert(aliases_me_new.begin(), aliases_me_new.end());
+      }
+
+      cout << "oink"<< endl;
+
+      cout << *me_copy << endl;
+      for(auto &al : aliases_me)
+        cout << al << ", ";
+      cout << endl;
+      if(aliases_me.size() == 0)
+        continue;
+
+      assert(aliases_me.size() == 1);
+      id_shared_t next_me = aliases_me.begin()->id;
       /*
        * Todo: ^--- offset?
        */
@@ -894,7 +921,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
               merged = summary->merge_memory(aliases_s_it->id, merged);
               aliases_s_it++;
             }
-            merge_map.insert(make_pair(aliases_s, merged_region_t { merged, ptr_set_t() }));
+            merge_map.insert(make_pair(aliases_s, merged_region_t { merged }));
           }
           merged_queue_next.insert(aliases_s);
           continue;
@@ -903,6 +930,8 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         /*
          * Todo: Offset
          */
+
+        cout << "oink oink"<< endl;
 
         updater_t strong = [&](num_var *nv_me) {
 //        cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
@@ -937,7 +966,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 ////          ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
 //        };
 //        id_shared_t id_me = me_copy->transDeref(next_me, field_mapping_s.first, f_s.size);
-        me_copy->update_multiple(merged_region.aliases_me, &relation::get_deref, f_s.size, strong, strong);
+        me_copy->update_multiple(aliases_me, &relation::get_deref, f_s.size, strong, strong);
       }
     }
 
