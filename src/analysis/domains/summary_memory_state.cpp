@@ -715,6 +715,10 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     }
   }
 
+  /*
+   * Memory matching, only!!!!! using input
+   */
+
   do {
     alias_queue_t alias_queue = alias_queue_next;
     alias_queue_next.clear();
@@ -730,7 +734,10 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         continue;
 
       ptr_set_t const &next_me_set = alias_map.at(next_s);
-      assert(next_me_set.size() == 1);
+//      assert(next_me_set.size() == 1);
+      if(next_me_set.size() != 1)
+        continue;
+
       id_shared_t next_me = next_me_set.begin()->id;
       /*
        * Todo: ^--- offset?
@@ -800,6 +807,12 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
           alias_map[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
 
           ptr_set_t aliases_me_new = me_copy->child_state->queryAls(nv_me);
+
+          cout << "me_copy->child_state->queryAls(" << *nv_me << ") = ";
+          for(auto p : aliases_me_new)
+            cout << p << ", ";
+          cout << endl;
+
     //      assert(aliases_me.size() == 1);
 //          ptr const &p_me = *aliases_me.begin();
     //      assert(*p_me.offset == vs_finite::zero);
@@ -865,6 +878,8 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       ptr_set_t next_s = *aq_first_it;
       merge_queue.erase(aq_first_it);
 
+      continue;
+
       merged_region_t &merged_region = merge_map.at(next_s);
 
       ptr_set_t aliases_me;
@@ -873,7 +888,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         aliases_me.insert(aliases_me_new.begin(), aliases_me_new.end());
       }
 
-      cout << "oink"<< endl;
+      cout << "oink: "<< endl;
+      for(auto ame : aliases_me)
+        cout << ame << endl;
 
       cout << *me_copy << endl;
       for(auto &al : aliases_me)
@@ -971,6 +988,21 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     }
 
   } while(!alias_queue_next.empty() || !merged_queue_next.empty());
+
+  cout << "alias_map:" << endl;
+  for(auto &am : alias_map) {
+    cout << *am.first << " -> ";
+    for(auto &ptr : am.second)
+      cout << ptr << ", ";
+    cout << endl;
+  }
+
+  cout << "merge_map:" << endl;
+  for(auto &mm : merge_map) {
+    for(auto &ptr : mm.first)
+      cout << ptr << ", ";
+    cout << " -> merged_region" << endl;
+  }
 
   /*
    * Apply output
