@@ -39,6 +39,7 @@ public:
   typedef std::map<size_t, std::set<size_t>> dependants_t;
 protected:
   cfg::cfg *cfg;
+
   std::map<size_t, std::map<size_t, constraint_t>> constraints;
   dependants_t _dependants;
   std::set<size_t> fixpoint_pending;

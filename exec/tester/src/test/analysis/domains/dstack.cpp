@@ -71,11 +71,14 @@ protected:
 };
 
 struct _analysis_result {
+  dectran *dt;
+
   dstack *ds_analyzed;
   map<size_t, size_t> addr_node_map;
   elf_provider *elfp;
 
   _analysis_result() {
+    dt = NULL;
     ds_analyzed = NULL;
     elfp = NULL;
   }
@@ -83,6 +86,11 @@ struct _analysis_result {
   ~_analysis_result() {
     delete ds_analyzed;
     delete elfp;
+    delete dt;
+
+    ds_analyzed = NULL;
+    elfp = NULL;
+    dt = NULL;
   }
 };
 
@@ -102,11 +110,11 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
 
   g.set_code(compiled.data(), compiled.size(), 0);
 
-  dectran dt(g, gdsl_optimize);
-  dt.transduce();
-  dt.register_();
+  r.dt = new dectran(g, gdsl_optimize);
+  r.dt->transduce();
+  r.dt->register_();
 
-  auto &cfg = dt.get_cfg();
+  auto &cfg = r.dt->get_cfg();
   cfg.commit_updates();
 
   for(auto *node : cfg) {
@@ -227,6 +235,8 @@ TEST_F(dstack_test, Basics) {
    "mov $99, %rax\n\
    first: mov $20, %rax\n\
    second: nop\n"));
+
+
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));

@@ -136,7 +136,7 @@ void cfg::cfg::register_observer(observer *o) {
 
 void cfg::cfg::unregister_observer(observer *o) {
   std::vector<observer*> obs_new;
-  for(auto mine : observers)
+  for(observer *mine : observers)
     if(mine != o)
       obs_new.push_back(mine);
   observers = obs_new;

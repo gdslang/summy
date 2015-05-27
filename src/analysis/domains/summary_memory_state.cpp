@@ -330,57 +330,57 @@ bool analysis::summary_memory_state::overlap_region(region_t& region, int64_t of
   return _overlap;
 }
 
-region_t analysis::summary_memory_state::merge_memory(id_shared_t addr_a, region_t &r_b) {
-  io_region io_a = dereference(addr_a);
-
-  region_t merged;
-
-  auto a_it = io_a.out_r.begin();
-  auto b_it = r_b.begin();
-  while(a_it != io_a.out_r.end() && b_it != r_b.end()) {
-    int64_t offset_a = a_it->first;
-    int64_t offset_b = b_it->first;
-    if(offset_a < offset_b)
-      a_it++;
-    else if(offset_b < offset_a)
-      b_it++;
-    else {
-      field &f_a = a_it->second;
-      field &f_b = b_it->second;
-      if(f_a.size == f_b.size) {
-        id_shared_t n_id = numeric_id::generate();
-
-        num_var *n_var = new num_var(n_id);
-        num_expr *expr_a = new num_expr_lin(new num_linear_term(new num_var(f_a.num_id)));
-        num_expr *expr_b = new num_expr_lin(new num_linear_term(new num_var(f_b.num_id)));
-        child_state->assign(n_var, expr_a);
-        child_state->weak_assign(n_var, expr_b);
-        delete expr_b;
-        delete expr_a;
-        delete n_var;
-
-        merged.insert(make_pair(offset_a, field { f_a.size, n_id } ));
-      }
-      a_it++;
-      b_it++;
-    }
-  }
-
-//  id_shared_t merged_key = make_shared<memory_id>(0, numeric_id::generate());
-//  input.deref.insert(make_pair(merged_key, merged));
-//  /*
-//   * Todo: Same numeric variables in input and output?
-//   */
-//  output.deref.insert(make_pair(merged_key, merged));
-
-  return merged;
-}
-
-region_t analysis::summary_memory_state::merge_memory(id_shared_t addr_a, id_shared_t addr_b) {
-  io_region io_b = dereference(addr_b);
-
-  return merge_memory(addr_a, io_b.out_r);
-}
+//region_t analysis::summary_memory_state::merge_memory(id_shared_t addr_a, region_t &r_b) {
+//  io_region io_a = dereference(addr_a);
+//
+//  region_t merged;
+//
+//  auto a_it = io_a.out_r.begin();
+//  auto b_it = r_b.begin();
+//  while(a_it != io_a.out_r.end() && b_it != r_b.end()) {
+//    int64_t offset_a = a_it->first;
+//    int64_t offset_b = b_it->first;
+//    if(offset_a < offset_b)
+//      a_it++;
+//    else if(offset_b < offset_a)
+//      b_it++;
+//    else {
+//      field &f_a = a_it->second;
+//      field &f_b = b_it->second;
+//      if(f_a.size == f_b.size) {
+//        id_shared_t n_id = numeric_id::generate();
+//
+//        num_var *n_var = new num_var(n_id);
+//        num_expr *expr_a = new num_expr_lin(new num_linear_term(new num_var(f_a.num_id)));
+//        num_expr *expr_b = new num_expr_lin(new num_linear_term(new num_var(f_b.num_id)));
+//        child_state->assign(n_var, expr_a);
+//        child_state->weak_assign(n_var, expr_b);
+//        delete expr_b;
+//        delete expr_a;
+//        delete n_var;
+//
+//        merged.insert(make_pair(offset_a, field { f_a.size, n_id } ));
+//      }
+//      a_it++;
+//      b_it++;
+//    }
+//  }
+//
+////  id_shared_t merged_key = make_shared<memory_id>(0, numeric_id::generate());
+////  input.deref.insert(make_pair(merged_key, merged));
+////  /*
+////   * Todo: Same numeric variables in input and output?
+////   */
+////  output.deref.insert(make_pair(merged_key, merged));
+//
+//  return merged;
+//}
+//
+//region_t analysis::summary_memory_state::merge_memory(id_shared_t addr_a, id_shared_t addr_b) {
+//  io_region io_b = dereference(addr_b);
+//
+//  return merge_memory(addr_a, io_b.out_r);
+//}
 
 
 /*
@@ -808,6 +808,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
           ptr_set_t aliases_me_new = me_copy->child_state->queryAls(nv_me);
 
+          /*
+           * Todo: What if the resulting alias set is empty? We still need a mapping!
+           *
+           * ====> In this case, a non-pointer is derefed in the called function
+           */
           cout << "me_copy->child_state->queryAls(" << *nv_me << ") = ";
           for(auto p : aliases_me_new)
             cout << p << ", ";
