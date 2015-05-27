@@ -910,8 +910,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         auto aliases_mapped_it = alias_map.find(_ptr.id);
         ptr_set_t const &aliases_me_ptr = aliases_mapped_it->second;
 //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
+        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) << endl;
         if(aliases_mapped_it != alias_map.end())
-        aliases_me.insert(aliases_me_ptr.begin(), aliases_me_ptr.end());
+          aliases_me.insert(aliases_me_ptr.begin(), aliases_me_ptr.end());
       }
 
       field_processor(f_s, aliases_me);
@@ -922,6 +923,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   auto process_region = [&](regions_getter_t getter, ptr_set_t &region_aliases_me, region_t &region) {
     for_field(region, [&](field &ff, ptr_set_t &aliases_me) {
       updater_t strong = [&](api::num_var *nv_me) {
+        cout << "strong for " << *nv_me << ": ";
+        for(auto a : aliases_me)
+          cout << a << ", ";
+        cout << endl;
+
         me_copy->child_state->assign(nv_me, _top);
         me_copy->child_state->assume(nv_me, aliases_me);
       };
