@@ -35,29 +35,6 @@ using namespace summy::rreil;
 using namespace analysis;
 using namespace std;
 
-/*
- * managed temporary
- */
-
-analysis::managed_temporary::managed_temporary(summary_memory_state &_this, api::num_var *var) :
-    _this(_this), var(var) {
-}
-
-managed_temporary::~managed_temporary() {
-  _this.child_state->kill( { var });
-  delete var;
-}
-
-/*
- * field & relation
- */
-
-std::ostream& analysis::operator <<(std::ostream &out, const field &_this) {
-  out << "{" << *_this.num_id << ":" << _this.size << "}";
-  return out;
-}
-
-
 void analysis::relation::clear() {
   regions.clear();
   deref.clear();
@@ -566,8 +543,9 @@ num_linear *analysis::summary_memory_state::transLEInput(id_shared_t var_id, int
   } else return assemble_fields(fields);
 }
 
-analysis::summary_memory_state::summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom) :
-    sm(sm), child_state(child_state) {
+analysis::summary_memory_state::summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state,
+    bool start_bottom) :
+    memory_state_base(child_state), sm(sm) {
   if(start_bottom) {
     /*
      * start value

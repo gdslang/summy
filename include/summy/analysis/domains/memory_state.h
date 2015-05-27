@@ -10,6 +10,7 @@
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/domains/numeric/numeric_state.h>
 #include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/memstate_util.h>
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
 #include <summy/analysis/domains/api/api.h>
@@ -24,49 +25,12 @@
 
 namespace analysis {
 
-struct field {
-  size_t size;
-  id_shared_t num_id;
-};
-
-std::ostream &operator<<(std::ostream &out, field const &_this);
-
-/*
- * region: offset -> size, numeric id
- */
-typedef std::map<int64_t, field> region_t;
-/*
- * region_map: memory id -> memory region
- */
-typedef std::map<id_shared_t, region_t, id_less_no_version> region_map_t;
-/*
- * deref: numeric id -> memory region
- */
-typedef region_map_t deref_t;
-
-class memory_state;
-class managed_temporary {
-private:
-  memory_state &_this;
-  api::num_var *var;
-public:
-  managed_temporary(memory_state &_this, api::num_var *var);
-  managed_temporary(managed_temporary const&) = delete;
-  ~managed_temporary();
-  api::num_var *get_var() {
-    return var;
-  }
-};
-
 /**
  * Memory domain state
  */
-class memory_state: public domain_state {
-  friend class managed_temporary;
+class memory_state: public domain_state, public memory_state_base {
 private:
   shared_ptr<static_memory> sm;
-
-  numeric_state *child_state;
   region_map_t regions;
   deref_t deref;
 
@@ -99,14 +63,14 @@ protected:
   api::num_linear *transLE(id_shared_t var_id, int64_t offset, size_t size);
 public:
   memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, region_map_t regions, deref_t deref) :
-      sm(sm), child_state(child_state), regions(regions), deref(deref) {
+      memory_state_base(child_state), sm(sm), regions(regions), deref(deref) {
   }
   /**
    * @param start_bottom: true => start value, false => bottom
    */
   memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom);
   memory_state(memory_state const &o) :
-      sm(o.sm), child_state(o.child_state->copy()), regions(o.regions), deref(o.deref) {
+      memory_state_base(o.child_state->copy()), sm(o.sm), regions(o.regions), deref(o.deref) {
   }
   ~memory_state() {
     delete child_state;

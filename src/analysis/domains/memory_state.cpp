@@ -34,20 +34,6 @@ using namespace summy::rreil;
 using namespace analysis;
 using namespace std;
 
-std::ostream& analysis::operator <<(std::ostream &out, const field &_this) {
-  out << "{" << *_this.num_id << ":" << _this.size << "}";
-  return out;
-}
-
-analysis::managed_temporary::managed_temporary(memory_state &_this, api::num_var *var) :
-    _this(_this), var(var) {
-}
-
-managed_temporary::~managed_temporary() {
-  _this.child_state->kill( { var });
-  delete var;
-}
-
 memory_state *analysis::memory_state::domop(domain_state *other, size_t current_node, domopper_t domopper) {
   //  cout << "JOIN OF" << endl;
   //  cout << *this << endl;
@@ -406,7 +392,7 @@ num_linear *analysis::memory_state::transLE(id_shared_t var_id, int64_t offset, 
 }
 
 analysis::memory_state::memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom) :
-    sm(sm), child_state(child_state) {
+    memory_state_base(child_state), sm(sm){
   auto arch_ptr = [&](string id_name) {
     num_var *nv = new num_var(shared_ptr<gdsl::rreil::id>(new arch_id(id_name)));
 

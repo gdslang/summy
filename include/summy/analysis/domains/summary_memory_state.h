@@ -14,6 +14,7 @@
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/domains/numeric/numeric_state.h>
 #include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/memstate_util.h>
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
 #include <summy/analysis/domains/api/api.h>
@@ -27,40 +28,6 @@
 #include <functional>
 
 namespace analysis {
-
-struct field {
-  size_t size;
-  id_shared_t num_id;
-};
-
-/*
- * region: offset -> size, numeric id
- */
-typedef std::map<int64_t, field> region_t;
-/*
- * region_map: memory id -> memory region
- */
-typedef std::map<id_shared_t, region_t, id_less_no_version> region_map_t;
-/*
- * deref: numeric id -> memory region
- */
-typedef region_map_t deref_t;
-
-class summary_memory_state;
-class managed_temporary {
-private:
-  summary_memory_state &_this;
-  api::num_var *var;
-public:
-  managed_temporary(summary_memory_state &_this, api::num_var *var);
-  managed_temporary(managed_temporary const&) = delete;
-  ~managed_temporary();
-  api::num_var *get_var() {
-    return var;
-  }
-};
-
-std::ostream &operator<<(std::ostream &out, field const &_this);
 
 struct relation {
   region_map_t regions;
@@ -87,12 +54,10 @@ struct io_region {
 /**
  * Summary-based memory domain state
  */
-class summary_memory_state: public domain_state {
-  friend class managed_temporary;
+class summary_memory_state: public domain_state, public memory_state_base {
 private:
   shared_ptr<static_memory> sm;
 
-  numeric_state *child_state;
   relation input;
   relation output;
 
@@ -134,14 +99,14 @@ protected:
   api::num_linear *transLEInput(id_shared_t var_id, int64_t offset, size_t size);
 public:
   summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, relation input, relation output) :
-      sm(sm), child_state(child_state), input(input), output(output) {
+      memory_state_base(child_state), sm(sm), input(input), output(output) {
   }
   /**
    * @param start_bottom: true => start value, false => bottom
    */
   summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom);
   summary_memory_state(summary_memory_state const &o) :
-      sm(o.sm), child_state(o.child_state->copy()), input(o.input), output(o.output) {
+      memory_state_base(o.child_state->copy()), sm(o.sm), input(o.input), output(o.output) {
   }
   ~summary_memory_state() {
     delete child_state;
