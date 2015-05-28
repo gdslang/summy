@@ -523,14 +523,17 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
   } else return assemble_fields(fields);
 }
 
-num_linear *analysis::summary_memory_state::transLE(id_shared_t var_id, int64_t offset, size_t size) {
-//  cout << "transLE(" << *var_id << ", ...)" << endl;
-  io_region io = region_by_id(&relation::get_regions, var_id);
+num_linear *analysis::summary_memory_state::transLE(regions_getter_t rget, id_shared_t var_id, int64_t offset, size_t size) {
+  io_region io = region_by_id(rget, var_id);
   return transLEReg(io, offset, size);
 }
 
-num_linear *analysis::summary_memory_state::transLEInput(id_shared_t var_id, int64_t offset, size_t size) {
+num_linear *analysis::summary_memory_state::transLE(id_shared_t var_id, int64_t offset, size_t size) {
+//  cout << "transLE(" << *var_id << ", ...)" << endl;
+  return transLE(&relation::get_regions, var_id, offset, size);
+}
 
+num_linear *analysis::summary_memory_state::transLEInput(id_shared_t var_id, int64_t offset, size_t size) {
   auto id_in_it = input.regions.find(var_id);
   if(id_in_it == input.regions.end())
     return new num_linear_vs(value_set::top);
@@ -1336,6 +1339,10 @@ summy::vs_shared_t analysis::summary_memory_state::queryVal(gdsl::rreil::expr *e
   return result;
 }
 
+api::num_linear *analysis::summary_memory_state::dereference(api::num_var *v, int64_t offset, size_t size) {
+  return transLE(&relation::get_deref, v->get_id(), offset, size);
+}
+
 std::set<summy::vs_shared_t> analysis::summary_memory_state::queryPts(std::unique_ptr<managed_temporary> &address) {
   throw string("analysis::summary_memory_state::queryPts(std::unique_ptr<managed_temporary>&)");
 //  std::set<summy::vs_shared_t> result;
@@ -1359,6 +1366,11 @@ api::ptr_set_t analysis::summary_memory_state::queryAls(gdsl::rreil::address *a)
   if(is_bottom()) return ptr_set_t {};
   auto temp = assign_temporary(a->get_lin(), a->get_size());
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
+  return aliases;
+}
+
+api::ptr_set_t analysis::summary_memory_state::queryAls(api::num_var *v) {
+  ptr_set_t aliases = child_state->queryAls(v);
   return aliases;
 }
 

@@ -95,6 +95,7 @@ protected:
   std::vector<field> transLERegFields(region_t &region, int64_t offset, size_t size);
   api::num_linear *assemble_fields(std::vector<field> fields);
   api::num_linear *transLEReg(io_region io, int64_t offset, size_t size);
+  api::num_linear *transLE(regions_getter_t rget, id_shared_t var_id, int64_t offset, size_t size);
   api::num_linear *transLE(id_shared_t var_id, int64_t offset, size_t size);
   api::num_linear *transLEInput(id_shared_t var_id, int64_t offset, size_t size);
 public:
@@ -141,8 +142,10 @@ public:
   std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::sexpr *se, int_t size);
   summy::vs_shared_t queryVal(gdsl::rreil::linear *l, size_t size);
   summy::vs_shared_t queryVal(gdsl::rreil::expr *e, size_t size);
+  api::num_linear *dereference(api::num_var *v, int64_t offset, size_t size);
   std::set<summy::vs_shared_t> queryPts(std::unique_ptr<managed_temporary> &address);
   api::ptr_set_t queryAls(gdsl::rreil::address *a);
+  api::ptr_set_t queryAls(api::num_var *a);
 //  region_t const& query_region(id_shared_t id);
 
   summary_memory_state *copy() const;

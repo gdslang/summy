@@ -27,12 +27,16 @@ struct ptr {
 //  }
 
   bool operator <(const ptr &other) const;
+  bool operator ==(const ptr &other) const;
   friend std::ostream &operator<< (std::ostream &out, ptr const &_this);
 };
 
 std::ostream &operator<<(std::ostream &out, ptr const &_this);
 
 typedef std::set<ptr> ptr_set_t;
+
+//bool operator==(ptr_set_t const &a, ptr_set_t const &b);
+
 
 }
 }

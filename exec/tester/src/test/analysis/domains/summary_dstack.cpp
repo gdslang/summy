@@ -24,6 +24,7 @@
 #include <memory>
 #include <iostream>
 #include <map>
+#include <set>
 
 using namespace analysis;
 using namespace analysis::api;
@@ -157,7 +158,7 @@ static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string
   delete lv;
 }
 
-static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_first, string arch_id_second) {
+//static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_first, string arch_id_second) {
 //  SCOPED_TRACE("query_eq()");
 //
 //  auto analy_r = ar.ds_analyzed->result();
@@ -177,9 +178,9 @@ static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string 
 //  expr *ec = new expr_sexpr(new sexpr_cmp(64, new expr_cmp(CMP_EQ, lv_first, lv_second)));
 //  r = analy_r.result[ar.addr_node_map[e.address]]->queryVal(ec, 64);
 //  delete ec;
-}
-
-static void equal_structure(region_t const& a, region_t const& b) {
+//}
+//
+//static void equal_structure(region_t const& a, region_t const& b) {
 //  SCOPED_TRACE("equal_structure()");
 //  ASSERT_EQ(a.size(), b.size());
 //  for(auto &a_it : a) {
@@ -187,9 +188,9 @@ static void equal_structure(region_t const& a, region_t const& b) {
 //    ASSERT_NE(b_it, b.end());
 //    ASSERT_EQ(a_it.second.size, b_it->second.size);
 //  }
-}
+//}
 
-static void equal_structure(region_t const& cmp, _analysis_result &ar, string label, string arch_id_name) {
+//static void equal_structure(region_t const& cmp, _analysis_result &ar, string label, string arch_id_name) {
 //  SCOPED_TRACE("equal_structure()");
 //
 //  auto analy_r = ar.ds_analyzed->result();
@@ -208,26 +209,72 @@ static void equal_structure(region_t const& cmp, _analysis_result &ar, string la
 //  region_t const& rr = analy_r.result[ar.addr_node_map[e.address]]->query_region(id);
 //
 //  equal_structure(cmp, rr);
+//}
+
+static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
+  SCOPED_TRACE("query_deref_als()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->symbol(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+  summary_memory_state *mstate = analy_r.result[ar.addr_node_map[e.address]]->get_mstate();
+
+  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
+  ptr_set_t addresses = mstate->queryAls(a);
+  ASSERT_EQ(addresses.size(), 1);
+  ptr const &p = *addresses.begin();
+  ASSERT_EQ(*p.offset, vs_finite::zero);
+  num_var *ptr_var = new num_var(p.id);
+
+  num_linear *derefed = mstate->dereference(ptr_var, 0, 64);
+
+  num_var *derefed_var;
+  num_visitor nv;
+  nv._([&](num_linear_term *nt) {
+    ASSERT_EQ(nt->get_scale(), 1);
+    num_visitor nv_inner;
+    nv_inner._([&](num_linear_vs *vs) {
+      ASSERT_EQ(*vs->get_value_set(), vs_finite::zero);
+    });
+    nt->get_next()->accept(nv_inner);
+    derefed_var = nt->get_var();
+  });
+  derefed->accept(nv);
+
+  aliases = mstate->queryAls(derefed_var);
+  delete derefed;
+
+  delete a;
+
 }
 
 static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
-//  SCOPED_TRACE("query_als()");
-//
-//  auto analy_r = ar.ds_analyzed->result();
-//
-//  bool found;
-//  binary_provider::entry_t e;
-//  tie(found, e) = ar.elfp->symbol(label);
-//  ASSERT_TRUE(found);
-//
-//  auto addr_it = ar.addr_node_map.find(e.address);
-//  ASSERT_NE(addr_it, ar.addr_node_map.end());
-//
-//  ASSERT_GT(analy_r.result.size(), addr_it->second);
-//
-//  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
-//  aliases = analy_r.result[ar.addr_node_map[e.address]]->queryAls(a);
-//  delete a;
+  SCOPED_TRACE("query_als()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->symbol(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
+  aliases = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryAls(a);
+  delete a;
 }
 
 
@@ -248,11 +295,17 @@ mov (%rbx), %rcx\n\
 mov %rdx, (%rcx)\n\
 mov %rbx, %r11\n\
 call f\n\
-movq (%rax), %r13\n\
+after_call: movq (%rax), %r13\n\
 movq (%r13), %r13\n\
 end: ret", false));
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R13", 0, 64));
   ASSERT_EQ(*r, vs_finite::single(42));
+
+  ptr_set_t aliases_ac_a_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_ac_a_deref, ar, "after_call", "A"));
+  ptr_set_t aliases_ac_d;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_ac_d, ar, "after_call", "D"));
+  ASSERT_EQ(aliases_ac_a_deref, aliases_ac_d);
 }

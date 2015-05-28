@@ -19,7 +19,15 @@ bool ptr::operator <(const ptr &other) const {
   return vs_total_less()(offset, other.offset);
 }
 
+bool analysis::api::ptr::operator ==(const ptr &other) const {
+  return !(*this < other) && !(other < *this);
+}
+
 std::ostream& analysis::api::operator <<(std::ostream &out, const ptr &_this) {
   out << "(" << *_this.id << " + " << *_this.offset << ")";
   return out;
 }
+
+//bool analysis::api::operator ==(const ptr_set_t &a, const ptr_set_t &b) {
+//  return a == b;
+//}
