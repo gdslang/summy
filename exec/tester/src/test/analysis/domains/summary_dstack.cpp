@@ -117,7 +117,8 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
   auto &cfg = r.dt->get_cfg();
   cfg.commit_updates();
 
-  r.ds_analyzed = new summary_dstack(&cfg);
+  shared_ptr<static_memory> se = make_shared<static_elf>(r.elfp);
+  r.ds_analyzed = new summary_dstack(&cfg, se);
   jd_manager jd_man(&cfg);
   fixpoint fp(r.ds_analyzed, jd_man);
   fp.iterate();
@@ -126,15 +127,10 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
   for(auto *node : cfg) {
     node_visitor nv;
     nv._([&](address_node *an) {
-      an->dot(cout);
-      cout << endl;
       r.addr_node_map[an->get_address()] = an->get_id();
     });
     node->accept(nv);
   }
-
-  cfg.dot(cout);
-  cout << endl;
 }
 
 static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_name, size_t offset,
