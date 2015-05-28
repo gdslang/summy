@@ -89,7 +89,26 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  g.set_code(compiled.data(), compiled.size(), 0);
+  binary_provider::entry_t section;
+  bool success;
+  tie(success, section) = r.elfp->section(".text");
+  if(!success)
+    throw string("Invalid section .text");
+
+  binary_provider::entry_t function;
+  tie(ignore, function) = r.elfp->symbol("main");
+
+//  unsigned char *buffer = (unsigned char*)malloc(section.size);
+//  memcpy(buffer, elfp.get_data().data + section.offset, section.size);
+
+  size_t size = (function.offset - section.offset) + function.size + 1000;
+  if(size > section.size)
+    size = section.size;
+
+  g.set_code(r.elfp->get_data().data + section.offset, size, section.address);
+  if(g.seek(function.address)) {
+    throw string("Unable to seek to given function_name");
+  }
 
   r.dt = new dectran(g, gdsl_optimize);
   r.dt->transduce();
@@ -98,42 +117,48 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
   auto &cfg = r.dt->get_cfg();
   cfg.commit_updates();
 
-  for(auto *node : cfg) {
-    bool _break = false;
-    node_visitor nv;
-    nv._([&](address_node *an) {
-      r.addr_node_map[an->get_address()] = an->get_id();
-    });
-    node->accept(nv);
-    if(_break) break;
-  }
-
   r.ds_analyzed = new summary_dstack(&cfg);
   jd_manager jd_man(&cfg);
   fixpoint fp(r.ds_analyzed, jd_man);
-
   fp.iterate();
+
+
+  for(auto *node : cfg) {
+    node_visitor nv;
+    nv._([&](address_node *an) {
+      an->dot(cout);
+      cout << endl;
+      r.addr_node_map[an->get_address()] = an->get_id();
+    });
+    node->accept(nv);
+  }
+
+  cfg.dot(cout);
+  cout << endl;
 }
 
 static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_name, size_t offset,
     size_t size) {
-//  SCOPED_TRACE("query_val()");
-//
-//  auto analy_r = ar.ds_analyzed->result();
-//
-//  bool found;
-//  binary_provider::entry_t e;
-//  tie(found, e) = ar.elfp->symbol(label);
-//  ASSERT_TRUE(found);
-//
-//  auto addr_it = ar.addr_node_map.find(e.address);
-//  ASSERT_NE(addr_it, ar.addr_node_map.end());
-//
-//  ASSERT_GT(analy_r.result.size(), addr_it->second);
-//
-//  lin_var *lv = new lin_var(new variable(new arch_id(arch_id_name), offset));
-//  r = analy_r.result[ar.addr_node_map[e.address]]->queryVal(lv, size);
-//  delete lv;
+  SCOPED_TRACE("query_val()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->symbol(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+  lin_var *lv = new lin_var(new variable(new arch_id(arch_id_name), offset));
+  cout << e.address << endl;
+  cout << ar.addr_node_map[e.address] << endl;
+//  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
+  r = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryVal(lv, size);
+  delete lv;
 }
 
 static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_first, string arch_id_second) {
@@ -210,16 +235,28 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
 }
 
 
-TEST_F(summary_dstack_test, Basics) {
+TEST_F(summary_dstack_test, Call) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
-   "mov $99, %rax\n\
-   first: mov $20, %rax\n\
-   second: nop\n"));
+"g:\n\
+mov %r13, %r14\n\
+ret\n\
+f:\n\
+mov (%r11), %r12\n\
+mov %r12, %rax\n\
+ret\n\
+\n\
+main:\n\
+movq $42, (%rdx)\n\
+mov (%rbx), %rcx\n\
+mov %rdx, (%rcx)\n\
+mov %rbx, %r11\n\
+call f\n\
+movq (%rax), %r13\n\
+movq (%r13), %r13\n\
+end: ret", false));
 
-//  vs_shared_t r;
-//  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
-//  ASSERT_EQ(*r, vs_finite::single(99));
-//  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
-//  ASSERT_EQ(*r, vs_finite::single(20));
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R13", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(42));
 }

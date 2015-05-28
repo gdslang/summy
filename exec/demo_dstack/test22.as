@@ -3,17 +3,24 @@ mov %r13, %r14
 ret
 
 f:
+//r12 = *r11  --> **r12 = 42
 mov (%r11), %r12
+//a = r12 -> **a = 42
 mov %r12, %rax
 ret
 
 main:
+//*d = 42
 movq $42, (%rdx)
+//c = *b
 mov (%rbx), %rcx
-mov %rdx, (%rcx)
-mov %rbx, %r11
+//**c = 42
+mov %rdx, (%rcx)    
+//r11 = b --> ***b = 42, ***r11 = 42
+mov %rbx, %r11      
 call f
-movq (%rax), %r13
+//r13 = **a
+movq (%rax), %r13   
 movq (%r13), %r13
 
 //mov (%rcx), %r12

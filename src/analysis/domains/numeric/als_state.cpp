@@ -192,7 +192,7 @@ als_state *als_state::narrow(domain_state *other, size_t current_node) {
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-  cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
+//  cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
   bool linear = false;
   num_visitor nv(true);
   nv._([&](num_expr_lin *le) {
@@ -281,7 +281,7 @@ void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
   for(auto &alias : aliases) {
     elements[lhs->get_id()].insert(alias.id);
     num_expr *e = new num_expr_lin(new num_linear_vs(alias.offset));
-    cout << "Assign " << *lhs << " := " << *e << endl;
+//    cout << "Assign " << *lhs << " := " << *e << endl;
     child_state->assign(lhs, e);
     delete e;
   }

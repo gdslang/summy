@@ -508,8 +508,8 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
 
   vector<field> fields = transLERegFields(io.out_r, offset, size);
 
-  for(auto &f : fields)
-    cout << "Field: " << *f.num_id << endl;
+//  for(auto &f : fields)
+//    cout << "Field: " << *f.num_id << endl;
 
 //  cout << "Number of fields: " << fields.size() << endl;
 
@@ -524,7 +524,7 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
 }
 
 num_linear *analysis::summary_memory_state::transLE(id_shared_t var_id, int64_t offset, size_t size) {
-  cout << "transLE(" << *var_id << ", ...)" << endl;
+//  cout << "transLE(" << *var_id << ", ...)" << endl;
   io_region io = region_by_id(&relation::get_regions, var_id);
   return transLEReg(io, offset, size);
 }

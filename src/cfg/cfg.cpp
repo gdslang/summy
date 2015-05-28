@@ -89,7 +89,7 @@ size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, siz
 }
 
 void cfg::cfg::update_destroy_edge(size_t from, size_t to, const edge *edge) {
-  cout << "New edge from " << from << " to " << to << endl;
+//  cout << "New edge from " << from << " to " << to << endl;
 
   auto it = edge_payloads[from]->find(to);
   if(it != edge_payloads[from]->end()) {
@@ -104,7 +104,7 @@ void cfg::cfg::update_destroy_edge(size_t from, size_t to, const edge *edge) {
 }
 
 void cfg::cfg::update_edge(size_t from, size_t to, const edge *edge) {
-  cout << "New edge from " << from << " to " << to << endl;
+//  cout << "New edge from " << from << " to " << to << endl;
 
   auto it = edge_payloads[from]->find(to);
   if(it != edge_payloads[from]->end()) {
