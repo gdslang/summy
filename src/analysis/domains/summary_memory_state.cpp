@@ -640,15 +640,23 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
 //      assert(aliases_me.size() == 1);
 
+      cout << "aliases_s: ";
+      for(auto &ptrs : aliases_s)
+        cout << ptrs << ", ";
+      cout << endl;
 
+      if(aliases_s.size() == 0)
+        continue;
 
       /*
        * Todo: Uncomment this
        */
-//      assert(aliases_s.size() == 1);
+      assert(aliases_s.size() == 1);
 
 //      ptr const &p_me = *aliases_me.begin();
       ptr const &p_s = *aliases_s.begin();
+      assert(*p_s.offset == vs_finite::zero);
+
       if(aliases_s.size() != 1 || !(*p_s.offset == vs_finite::zero))
         continue;
 //      assert(*p_me.offset == vs_finite::zero);
