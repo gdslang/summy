@@ -25,6 +25,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <algorithm>
 
 using namespace analysis;
 using namespace analysis::api;
@@ -308,4 +309,90 @@ end: ret", false));
   ptr_set_t aliases_ac_d;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_ac_d, ar, "after_call", "D"));
   ASSERT_EQ(aliases_ac_a_deref, aliases_ac_d);
+}
+
+TEST_F(summary_dstack_test, Call_2AliasesCallee_1AliasesCaller) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+"g:\n\
+mov %r13, %r14\n\
+ret\n\
+\n\
+f:\n\
+mov %rcx, %rcx\n\
+mov %rdx, %rdx\n\
+je else\n\
+mov %rcx, %r11\n\
+jmp ite_end\n\
+else:\n\
+mov %rdx, %r11\n\
+ite_end:\n\
+mov %r11, (%r12)\n\
+ret\n\
+\n\
+main:\n\
+movq $41000, (%rcx)\n\
+mov %rcx, %rdx\n\
+call f\n\
+after_call: mov (%r12), %r12\n\
+mov (%r12), %r13\n\
+end: ret", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R13", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(41000));
+
+  ptr_set_t aliases_ac_c;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_ac_c, ar, "after_call", "C"));
+  ptr_set_t aliases_ac_d;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_ac_d, ar, "after_call", "D"));
+  ASSERT_EQ(aliases_ac_c, aliases_ac_d);
+
+  ptr_set_t aliases_ac_r12_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_ac_r12_deref, ar, "after_call", "R12"));
+  ASSERT_EQ(aliases_ac_r12_deref, aliases_ac_c);
+}
+
+TEST_F(summary_dstack_test, Call_2AliasesCallee_2AliasesCaller) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+"g:\n\
+mov %r13, %r14\n\
+ret\n\
+\n\
+f:\n\
+mov %rcx, %rcx\n\
+mov %rdx, %rdx\n\
+je else\n\
+mov %rcx, %r11\n\
+jmp ite_end\n\
+else:\n\
+mov %rdx, %r11\n\
+ite_end:\n\
+mov %r11, (%r12)\n\
+ret\n\
+\n\
+main:\n\
+movq $41000, (%rcx)\n\
+movq $42000, (%rdx)\n\
+call f\n\
+after_call: mov (%r12), %r12\n\
+mov (%r12), %r13\n\
+end: ret", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R13", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({41000, 42000})));
+
+  ptr_set_t aliases_ac_c;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_ac_c, ar, "after_call", "C"));
+  ptr_set_t aliases_ac_d;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_ac_d, ar, "after_call", "D"));
+
+  ptr_set_t aliases_ac_c_d;
+  set_union(aliases_ac_c.begin(), aliases_ac_c.end(), aliases_ac_d.begin(), aliases_ac_d.end(), inserter(aliases_ac_c_d, aliases_ac_c_d.begin()));
+
+  ptr_set_t aliases_ac_r12_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_ac_r12_deref, ar, "after_call", "R12"));
+  ASSERT_EQ(aliases_ac_r12_deref, aliases_ac_c_d);
 }
