@@ -10,6 +10,7 @@
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/value_set/value_set.h>
 #include <algorithm>
+#include <assert.h>
 
 using namespace analysis;
 using namespace analysis::api;
@@ -297,6 +298,30 @@ void als_state::kill(std::vector<api::num_var*> vars) {
 }
 
 void als_state::equate_kill(num_var_pairs_t vars) {
+  /*
+   * Build back map
+   *
+   * Todo: cache back map
+   */
+  elements_t back_map;
+  for(auto e_mapping : elements)
+    for(auto elem : e_mapping.second)
+      back_map[elem].insert(e_mapping.first);
+
+  for(auto var_pair : vars) {
+    num_var *a, *b;
+    tie(a, b) = var_pair;
+    auto b_it = back_map.find(b->get_id());
+    if(b_it != back_map.end())
+      for(auto preimage : b_it->second) {
+        auto &aliases = elements.at(preimage);
+//        assert(aliases_it != elements.end());
+//        id_set_t &aliases = *aliases_it;
+        aliases.erase(b->get_id());
+        aliases.insert(a->get_id());
+      }
+  }
+
   for(auto var_pair : vars) {
     num_var *a, *b;
     tie(a, b) = var_pair;

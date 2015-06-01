@@ -25,6 +25,7 @@
 #include <tuple>
 #include <vector>
 #include <assert.h>
+#include <queue>
 
 using namespace analysis::api;
 using namespace summy;
@@ -1386,10 +1387,100 @@ api::ptr_set_t analysis::summary_memory_state::queryAls(api::num_var *v) {
 //  return regions[id];
 //}
 
+num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation const &a, numeric_state *a_n, relation const &b,
+    numeric_state *b_n) {
+  function<num_var_pairs_t(region_t const &ra, region_t const &rb)> equate_region;
+  equate_region = [&](region_t const &ra, region_t const &rb) {
+    num_var_pairs_t upcoming;
+
+    auto a_it = ra.begin();
+    auto b_it = rb.begin();
+    while(a_it != ra.end() && b_it != rb.end()) {
+      int64_t offset_a = a_it->first;
+      int64_t offset_b = b_it->first;
+      if(offset_a < offset_b)
+        a_it++;
+      else if(offset_b < offset_a)
+        b_it++;
+      else {
+        field const &f_a = a_it->second;
+        field const &f_b = b_it->second;
+        if(f_a.size == f_b.size) {
+          num_var *f_a_nv = new num_var(f_a.num_id);
+          ptr_set_t als_a = a_n->queryAls(f_a_nv);
+          assert(als_a.size() <= 1);
+          cout << "f_a_nv: "<< *f_a_nv << endl;
+          delete f_a_nv;
+
+          num_var *f_b_nv = new num_var(f_b.num_id);
+          ptr_set_t als_b = b_n->queryAls(f_b_nv);
+          assert(als_b.size() <= 1);
+          cout << "f_b_nv: "<< *f_b_nv << endl;
+          delete f_b_nv;
+
+          if(als_a.size() == 1 && als_b.size() == 1) {
+            ptr p_a = *als_a.begin();
+            assert(*p_a.offset == vs_finite::zero);
+            ptr p_b = *als_b.begin();
+            assert(*p_b.offset == vs_finite::zero);
+
+            if(!(*p_a.id == *p_b.id))
+              upcoming.push_back(make_tuple(new num_var(p_a.id), new num_var(p_b.id)));
+          }
+        }
+        a_it++;
+        b_it++;
+      }
+    }
+
+    return upcoming;
+  };
+
+  num_var_pairs_t result;
+
+  struct region_pair {
+    region_t const &ra;
+    region_t const &rb;
+  };
+  queue<region_pair> worklist;
+  for(auto regions_a_it = a.regions.begin(); regions_a_it != a.regions.end(); regions_a_it++) {
+    auto regions_b_it = b.regions.find(regions_a_it->first);
+    if(regions_b_it == b.regions.end())
+      continue;
+    worklist.push(region_pair { regions_a_it->second, regions_b_it->second });
+  }
+  while(!worklist.empty()) {
+    region_pair rp = worklist.front();
+    worklist.pop();
+
+    num_var_pairs_t upcoming = equate_region(rp.ra, rp.rb);
+    result.insert(result.end(), upcoming.begin(), upcoming.end());
+
+    for(auto vpair : upcoming) {
+      num_var *va;
+      num_var *vb;
+      tie(va, vb) = vpair;
+
+      auto deref_a_it = a.deref.find(va->get_id());
+      if(deref_a_it == a.deref.end())
+        continue;
+      auto deref_b_it = b.deref.find(va->get_id());
+      if(deref_b_it == b.deref.end())
+        continue;
+      worklist.push(region_pair { deref_a_it->second, deref_b_it->second });
+    }
+  }
+
+  return result;
+}
+
 std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> analysis::summary_memory_state::compat(
     const summary_memory_state *a, const summary_memory_state *b) {
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();
+
+  cout << "----------------> a" << endl << *a << endl;
+  cout << "----------------> b" << endl << *b << endl;
 
 //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
 //    cout << "++++++++++++++++++++++++++++++" << endl;
@@ -1406,18 +1497,38 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
 
     auto handle_region = [&](id_shared_t id, region_t const &region_a, region_t const &region_b) {
       num_var_pairs_t equate_kill_vars;
+
+      /*
+       * New version
+       */
+
+//      auto a_field_it = region_a.begin();
+//      auto b_field_it = region_b.begin();
+//      while(a_field_it != region_a.end() && b_field_it != region_b.end()) {
+//        int64_t offset_a = a_field_it->first;
+//        int64_t offset_b = b_field_it->first;
+//        if(offset_a < offset_b) {
+//
+//        }
+//      }
+
+      /*
+       * Old version
+       */
+
       for(auto &field_it : region_a) {
         auto field_b_it = region_b.find(field_it.first);
         if(field_b_it != region_b.end()) {
           field const &f = field_it.second;
           field const &f_b = field_b_it->second;
-          if(!(*f.num_id == *f_b.num_id)) {
+          if((f.size == f_b.size) && !(*f.num_id == *f_b.num_id)) {
             equate_kill_vars.push_back(make_tuple(new num_var(f.num_id), new num_var(f_b.num_id)));
 //            cout << "Some vars get equate-killed..." << *f.num_id << " / " << *f_b.num_id << endl;
 //            cout << "handle id..." << *id << endl;
           }
         }
       }
+
       b_n->equate_kill(equate_kill_vars);
       for(auto pair : equate_kill_vars) {
         num_var *a, *b;
@@ -1426,9 +1537,6 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
         delete b;
       }
 
-      //      region_map_t::iterator head_region_it;
-      //      tie(head_region_it, ignore) = result_map.insert(make_pair(id, region_t()));
-      //      region_t &region = head_region_it->second;
       region_t region;
 
       auto join = [&](numeric_state *n, region_t const &from, region_t const &to) {
@@ -1438,17 +1546,15 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
           delete nv;
         };
 
-      //        cout << "n equals " << (a_n == n ? "a" : "b") << endl;
-
         for(auto &field_it : from) {
           field const &f = field_it.second;
           auto field_b_it = to.find(field_it.first);
           if(field_b_it != to.end()) {
             field const &f_b = field_b_it->second;
             if(f.size == f_b.size)
-            region.insert(make_pair(field_it.first, field {f.size, f.num_id}));
+              region.insert(make_pair(field_it.first, field {f.size, f.num_id}));
             else
-            kill(f.num_id);
+              kill(f.num_id);
           } else
           kill(f.num_id);
         }
@@ -1475,11 +1581,38 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
     return result_map;
   };
 
+  relation b_input = b->input;
+  relation b_output = b->output;
+
+  auto rename_rk = [&](relation &rel, id_shared_t from, id_shared_t to) {
+    cout << "rename_rk " << *from << " / " << *to << endl;
+
+    auto rel_it = rel.deref.find(from);
+    if(rel_it != rel.deref.end()) {
+      region_t region = rel_it->second;
+      rel.deref.erase(rel_it);
+      rel.deref.insert(make_pair(to, region));
+    }
+  };
+
+  num_var_pairs_t eq_aliases = equate_aliases(a->input, a_n, b->input, b_n);
+  b_n->equate_kill(eq_aliases);
+  for(auto &eq_alias : eq_aliases) {
+    num_var *alias_a;
+    num_var *alias_b;
+    tie(alias_a, alias_b) = eq_alias;
+    rename_rk(b_input, alias_b->get_id(), alias_a->get_id());
+    rename_rk(b_output, alias_b->get_id(), alias_a->get_id());
+  }
+
+  summary_memory_state *after_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
+  cout << "after_rename: " << *after_rename << endl;
+
   memory_head head;
-  head.input.regions = join_region_map(a->input.regions, b->input.regions);
-  head.input.deref = join_region_map(a->input.deref, b->input.deref);
-  head.output.regions = join_region_map(a->output.regions, b->output.regions);
-  head.output.deref = join_region_map(a->output.deref, b->output.deref);
+  head.input.regions = join_region_map(a->input.regions, b_input.regions);
+  head.input.deref = join_region_map(a->input.deref, b_input.deref);
+  head.output.regions = join_region_map(a->output.regions, b_output.regions);
+  head.output.deref = join_region_map(a->output.deref, b_output.deref);
 
 //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
 //    cout << "Result #1" << endl;
