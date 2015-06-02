@@ -26,6 +26,7 @@
 #include <vector>
 #include <assert.h>
 #include <queue>
+#include <experimental/optional>
 
 using namespace analysis::api;
 using namespace summy;
@@ -35,6 +36,7 @@ using namespace summy::rreil;
 
 using namespace analysis;
 using namespace std;
+using namespace std::experimental;
 
 void analysis::relation::clear() {
   regions.clear();
@@ -1497,20 +1499,41 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
 
     auto handle_region = [&](id_shared_t id, region_t const &region_a, region_t const &region_b) {
       num_var_pairs_t equate_kill_vars;
+      id_set_t a_kill_ids;
+      id_set_t b_kill_ids;
 
       /*
        * New version
        */
+      region_t region;
 
-//      auto a_field_it = region_a.begin();
-//      auto b_field_it = region_b.begin();
-//      while(a_field_it != region_a.end() && b_field_it != region_b.end()) {
-//        int64_t offset_a = a_field_it->first;
-//        int64_t offset_b = b_field_it->first;
-//        if(offset_a < offset_b) {
-//
-//        }
-//      }
+      auto a_field_it = region_a.begin();
+      auto b_field_it = region_b.begin();
+
+      optional<pair<int64_t, field>> f_next = nullopt;
+      auto insert_f = [&]() {
+        if(f_next) {
+          region.insert(f_next.value());
+          f_next = nullopt;
+        }
+      };
+
+      while(a_field_it != region_a.end() && b_field_it != region_b.end()) {
+        int64_t offset_a = a_field_it->first;
+        field &f_a = a_field_it->second;
+        int64_t offset_b = b_field_it->first;
+        field &f_b = b_field_it->second;
+        if(offset_a == offset_b && f_a.size == f_b.size) {
+          insert_f();
+          equate_kill_vars.push_back(make_tuple(new num_var(f_a.num_id), new num_var(f_b.num_id)));
+        }
+        /*
+         * Todo: if overlap => add to f_next, keep further reaching field, ...
+         */
+        if(offset_a < offset_b) {
+
+        }
+      }
 
       /*
        * Old version
@@ -1537,7 +1560,6 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
         delete b;
       }
 
-      region_t region;
 
       auto join = [&](numeric_state *n, region_t const &from, region_t const &to) {
         auto kill = [&](id_shared_t id) {
