@@ -1,7 +1,7 @@
 main:
 mov %rax, %rax
-mov %rbx, %rbx
-mov %rcx, %rcx
+//mov %rbx, %rbx
+//mov %rcx, %rcx
 je else
 mov %rbx, (%rax)
 jmp end

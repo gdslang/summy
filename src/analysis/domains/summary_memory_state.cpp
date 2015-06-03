@@ -1533,10 +1533,13 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
         }
       };
       auto nsync = [&](id_shared_t id, numeric_state *from, numeric_state *to) {
-        if(!input)
-          return;
+//        if(!input)
+//          return;
+        cout << "**id: " << *id << endl;
         num_var *id_nv = new num_var(id);
         ptr_set_t aliases = from->queryAls(id_nv);
+        for(auto a : aliases)
+          cout << "**alias: " << a << endl;
         to->assume(id_nv, aliases);
         delete id_nv;
       };
@@ -1597,11 +1600,13 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
       }
       while(a_field_it != region_a.end()) {
         field const &f_a = a_field_it->second;
+        region.insert(make_pair(a_field_it->first, f_a));
         nsync(f_a.num_id, a_n, b_n);
         a_field_it++;
       }
       while(b_field_it != region_b.end()) {
         field const &f_b = b_field_it->second;
+        region.insert(make_pair(b_field_it->first, f_b));
         nsync(f_b.num_id, b_n, a_n);
         b_field_it++;
       }
@@ -1636,7 +1641,7 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
     }
     for(auto &region_b_it : b_map) {
       if(a_map.find(region_b_it.first) == a_map.end())
-        handle_region(region_b_it.first, region_b_it.second, region_t());
+        handle_region(region_b_it.first, region_t(), region_b_it.second);
     }
     return result_map;
   };
@@ -1669,9 +1674,13 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
   cout << "after_rename: " << *after_rename << endl;
 
   memory_head head;
+  cout << "input_regions" << endl;
   head.input.regions = join_region_map(a->input.regions, b_input.regions, true);
+  cout << "input_deref" << endl;
   head.input.deref = join_region_map(a->input.deref, b_input.deref, true);
+  cout << "output_regions" << endl;
   head.output.regions = join_region_map(a->output.regions, b_output.regions, false);
+  cout << "output_deref" << endl;
   head.output.deref = join_region_map(a->output.deref, b_output.deref, false);
 
 //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
