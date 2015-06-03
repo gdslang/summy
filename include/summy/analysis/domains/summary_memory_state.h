@@ -153,7 +153,8 @@ public:
   static summary_memory_state *start_value(shared_ptr<static_memory> sm, numeric_state *start_num);
   static summary_memory_state *bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num);
 
-  static num_var_pairs_t equate_aliases(relation const &a, numeric_state *a_n, relation const &b, numeric_state *b_n);
+  static num_var_pairs_t equate_aliases(relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in,
+      relation &b_out, numeric_state *b_n);
   struct memory_head {
     relation input;
     relation output;

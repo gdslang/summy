@@ -16,30 +16,21 @@ using namespace analysis;
  * region_pair_desc
  */
 
-bool region_pair_desc_t::collision() {
-}
-
-field_off_t region_pair_desc_t::current() {
-}
-
-std::experimental::optional<field_off_t> region_pair_desc_t::partner() {
-}
-
 /*
  * merge_region_itearator
  */
 
-merge_region_iterator::merge_region_iterator(region_t::iterator r1_it, region_t::iterator r1_it_end,
-    region_t::iterator r2_it, region_t::iterator r2_it_end) :
+merge_region_iterator::merge_region_iterator(region_t::const_iterator r1_it, region_t::const_iterator r1_it_end,
+    region_t::const_iterator r2_it, region_t::const_iterator r2_it_end) :
     r1_it(r1_it), r1_it_end(r1_it_end), r2_it(r2_it), r2_it_end(r2_it_end) {
 }
 
-merge_region_iterator::merge_region_iterator(region_t &r1, region_t &r2) :
+merge_region_iterator::merge_region_iterator(region_t const &r1, region_t const &r2) :
     r1_it(r1.begin()), r1_it_end(r1.end()), r2_it(r2.begin()), r2_it_end(r2.end()) {
 }
 
-merge_region_iterator merge_region_iterator::end(region_t &r1, region_t &r2) {
-  return merge_region_iterator(r1.begin(), r1.end(), r2.begin(), r2.end());
+merge_region_iterator merge_region_iterator::end(region_t const &r1, region_t const &r2) {
+  return merge_region_iterator(r1.end(), r1.end(), r2.end(), r2.end());
 }
 
 region_pair_desc_t merge_region_iterator::operator *() {
@@ -53,8 +44,6 @@ region_pair_desc_t merge_region_iterator::operator *() {
     field const &f_b = r2_it->second;
     field_off_t f_b_off = field_off_t { offset_b, f_b };
     int64_t end_b = offset_b + f_b.size;
-
-
 
     bool collision = false;
     bool perfect_overlap = false;
@@ -73,26 +62,38 @@ region_pair_desc_t merge_region_iterator::operator *() {
 
     if(collision) {
       if(end_a < end_b)
-        return region_pair_desc_t { true, f_a, f_b };
+        return region_pair_desc_t { true, f_a_off, f_b_off };
       else {
         assert(end_b > end_a);
-        return region_pair_desc_t { true, f_b, f_a };
+        return region_pair_desc_t { true, f_b_off, f_a_off };
       }
-    } else {
+    }
+    else {
       if(perfect_overlap)
-        return region_pair_desc_t { false, f_a, f_b };
+        return region_pair_desc_t { false, f_a_off, f_b_off };
       else /* no overlap */
         if(end_a < end_b)
-          return region_pair_desc_t { false, f_a, nullopt };
+          return region_pair_desc_t { false, f_a_off, nullopt };
         else
-          return region_pair_desc_t { false, f_b, nullopt };
+          return region_pair_desc_t { false, f_b_off, nullopt };
     }
+  } else if(r1_it != r1_it_end && r2_it == r2_it_end) {
+    int64_t offset_a = r1_it->first;
+    field const &f_a = r1_it->second;
+    field_off_t f_a_off = field_off_t { offset_a, f_a };
 
-  }
+    return region_pair_desc_t { false, f_a_off, nullopt };
+  } else if(r1_it == r1_it_end && r2_it != r2_it_end) {
+    int64_t offset_b = r2_it->first;
+    field const &f_b = r2_it->second;
+    field_off_t f_b_off = field_off_t { offset_b, f_b };
 
+    return region_pair_desc_t { false, f_b_off, nullopt };
+  } else
+    assert(false);
 }
 
-merge_region_iterator& merge_region_iterator::operator ++() {
+merge_region_iterator &merge_region_iterator::operator ++() {
   if(r1_it != r1_it_end && r2_it != r2_it_end) {
     int64_t offset_a = r1_it->first;
     field const &f_a = r1_it->second;
@@ -110,11 +111,11 @@ merge_region_iterator& merge_region_iterator::operator ++() {
   else if(r1_it != r1_it_end && r2_it == r2_it_end) r1_it++;
   else
   assert(false);
-  return this;
+  return *this;
 }
 
 bool analysis::operator ==(const merge_region_iterator &a, const merge_region_iterator &b) {
-  return (a.r1_it == b.r1_it) && (b.r1_it == b.r1_it);
+  return (a.r1_it == b.r1_it) && (a.r2_it == b.r2_it);
 }
 
 bool analysis::operator !=(const merge_region_iterator &a, const merge_region_iterator &b) {

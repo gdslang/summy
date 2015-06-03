@@ -8,6 +8,7 @@
 #include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/api/numeric/converter.h>
 #include <summy/analysis/domains/summary_memory_state.h>
+#include <summy/analysis/domains/merge_region_iterator.h>
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/shared_copy.h>
@@ -1389,51 +1390,51 @@ api::ptr_set_t analysis::summary_memory_state::queryAls(api::num_var *v) {
 //  return regions[id];
 //}
 
-num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation const &a, numeric_state *a_n, relation const &b,
-    numeric_state *b_n) {
-  function<num_var_pairs_t(region_t const &ra, region_t const &rb)> equate_region;
-  equate_region = [&](region_t const &ra, region_t const &rb) {
+num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, relation &a_out, numeric_state *a_n,
+    relation &b_in, relation &b_out, numeric_state *b_n) {
+  function<num_var_pairs_t(io_region const &io_ra, io_region const &io_rb)> equate_region;
+  equate_region = [&](io_region const &io_ra, io_region const &io_rb) {
     num_var_pairs_t upcoming;
 
-    auto a_it = ra.begin();
-    auto b_it = rb.begin();
-    while(a_it != ra.end() && b_it != rb.end()) {
-      int64_t offset_a = a_it->first;
-      int64_t offset_b = b_it->first;
-      if(offset_a < offset_b)
-        a_it++;
-      else if(offset_b < offset_a)
-        b_it++;
-      else {
-        field const &f_a = a_it->second;
-        field const &f_b = b_it->second;
-        if(f_a.size == f_b.size) {
-          num_var *f_a_nv = new num_var(f_a.num_id);
-          ptr_set_t als_a = a_n->queryAls(f_a_nv);
-          assert(als_a.size() <= 1);
-          cout << "f_a_nv: "<< *f_a_nv << endl;
-          delete f_a_nv;
+    merge_region_iterator mri(io_ra.in_r, io_rb.in_r);
+    while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
+      region_pair_desc_t rpd = *mri;
+      if(!rpd.collision) {
+        if(rpd.ending_last) {
+          field const &f_a = rpd.ending_first.f;
+          field const &f_b = rpd.ending_last.value().f;
+          if(f_a.size == f_b.size) {
+            num_var *f_a_nv = new num_var(f_a.num_id);
+            ptr_set_t als_a = a_n->queryAls(f_a_nv);
+            assert(als_a.size() <= 1);
+            cout << "f_a_nv: "<< *f_a_nv << endl;
+            delete f_a_nv;
 
-          num_var *f_b_nv = new num_var(f_b.num_id);
-          ptr_set_t als_b = b_n->queryAls(f_b_nv);
-          assert(als_b.size() <= 1);
-          cout << "f_b_nv: "<< *f_b_nv << endl;
-          delete f_b_nv;
+            num_var *f_b_nv = new num_var(f_b.num_id);
+            ptr_set_t als_b = b_n->queryAls(f_b_nv);
+            assert(als_b.size() <= 1);
+            cout << "f_b_nv: "<< *f_b_nv << endl;
+            delete f_b_nv;
 
-          if(als_a.size() == 1 && als_b.size() == 1) {
-            cout << "pushing aliases... ";
+            if(als_a.size() == 1 && als_b.size() == 1) {
+              cout << "pushing aliases... ";
 
-            ptr p_a = *als_a.begin();
-            assert(*p_a.offset == vs_finite::zero);
-            ptr p_b = *als_b.begin();
-            assert(*p_b.offset == vs_finite::zero);
+              ptr p_a = *als_a.begin();
+              assert(*p_a.offset == vs_finite::zero);
+              ptr p_b = *als_b.begin();
+              assert(*p_b.offset == vs_finite::zero);
 
-            upcoming.push_back(make_tuple(new num_var(p_a.id), new num_var(p_b.id)));
+              upcoming.push_back(make_tuple(new num_var(p_a.id), new num_var(p_b.id)));
+            }
           }
         }
-        a_it++;
-        b_it++;
+      } else {
+        /*
+         * Todo...
+         */
+
       }
+      ++mri;
     }
 
     return upcoming;
@@ -1442,21 +1443,26 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation const &a
   num_var_pairs_t result;
 
   struct region_pair {
-    region_t const &ra;
-    region_t const &rb;
+    io_region &io_ra;
+    io_region &io_rb;
   };
   queue<region_pair> worklist;
-  for(auto regions_a_it = a.regions.begin(); regions_a_it != a.regions.end(); regions_a_it++) {
-    auto regions_b_it = b.regions.find(regions_a_it->first);
-    if(regions_b_it == b.regions.end())
+  for(auto regions_a_it = a_in.regions.begin(); regions_a_it != a_in.regions.end(); regions_a_it++) {
+    auto regions_b_it = b_in.regions.find(regions_a_it->first);
+    if(regions_b_it == b_in.regions.end())
       continue;
-    worklist.push(region_pair { regions_a_it->second, regions_b_it->second });
+
+    auto &regions_a_out = a_out.regions.at(regions_a_it->first);
+    auto &regions_b_out = b_out.regions.at(regions_a_it->first);
+    io_region io_a = io_region { regions_a_it->second, regions_a_out };
+    io_region io_b = io_region { regions_b_it->second, regions_b_out };
+    worklist.push(region_pair { io_a, io_b });
   }
   while(!worklist.empty()) {
     region_pair rp = worklist.front();
     worklist.pop();
 
-    num_var_pairs_t upcoming = equate_region(rp.ra, rp.rb);
+    num_var_pairs_t upcoming = equate_region(rp.io_ra, rp.io_rb);
     for(auto upc : upcoming) {
       num_var *a;
       num_var *b;
@@ -1470,13 +1476,17 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation const &a
       num_var *vb;
       tie(va, vb) = vpair;
 
-      auto deref_a_it = a.deref.find(va->get_id());
-      if(deref_a_it == a.deref.end())
+      auto deref_a_in_it = a_in.deref.find(va->get_id());
+      if(deref_a_in_it == a_in.deref.end())
         continue;
-      auto deref_b_it = b.deref.find(va->get_id());
-      if(deref_b_it == b.deref.end())
+      auto deref_b_in_it = b_in.deref.find(va->get_id());
+      if(deref_b_in_it == b_in.deref.end())
         continue;
-      worklist.push(region_pair { deref_a_it->second, deref_b_it->second });
+      auto &deref_a_out = a_out.deref.at(va->get_id());
+      auto &deref_b_out = b_out.deref.at(va->get_id());
+      io_region io_a = io_region { deref_a_in_it->second, deref_a_out };
+      io_region io_b = io_region { deref_b_in_it->second, deref_b_out };
+      worklist.push(region_pair { io_a, io_b });
     }
   }
 
@@ -1648,6 +1658,8 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
 
   relation b_input = b->input;
   relation b_output = b->output;
+  relation a_input = a->input;
+  relation a_output = a->output;
 
   auto rename_rk = [&](relation &rel, id_shared_t from, id_shared_t to) {
     cout << "rename_rk " << *from << " / " << *to << endl;
@@ -1660,7 +1672,7 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
     }
   };
 
-  num_var_pairs_t eq_aliases = equate_aliases(a->input, a_n, b->input, b_n);
+  num_var_pairs_t eq_aliases = equate_aliases(a_input, a_output, a_n, b_input, b_output, b_n);
   b_n->equate_kill(eq_aliases);
   for(auto &eq_alias : eq_aliases) {
     num_var *alias_a;
