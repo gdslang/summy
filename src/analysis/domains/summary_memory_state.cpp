@@ -1421,13 +1421,14 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation const &a
           delete f_b_nv;
 
           if(als_a.size() == 1 && als_b.size() == 1) {
+            cout << "pushing aliases... ";
+
             ptr p_a = *als_a.begin();
             assert(*p_a.offset == vs_finite::zero);
             ptr p_b = *als_b.begin();
             assert(*p_b.offset == vs_finite::zero);
 
-            if(!(*p_a.id == *p_b.id))
-              upcoming.push_back(make_tuple(new num_var(p_a.id), new num_var(p_b.id)));
+            upcoming.push_back(make_tuple(new num_var(p_a.id), new num_var(p_b.id)));
           }
         }
         a_it++;
@@ -1456,7 +1457,13 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation const &a
     worklist.pop();
 
     num_var_pairs_t upcoming = equate_region(rp.ra, rp.rb);
-    result.insert(result.end(), upcoming.begin(), upcoming.end());
+    for(auto upc : upcoming) {
+      num_var *a;
+      num_var *b;
+      tie(a, b) = upc;
+      if(!(*a->get_id() == *b->get_id()))
+        result.push_back(upc);
+    }
 
     for(auto vpair : upcoming) {
       num_var *va;
@@ -1499,12 +1506,15 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
 
     auto handle_region = [&](id_shared_t id, region_t const &region_a, region_t const &region_b) {
       num_var_pairs_t equate_kill_vars;
+      auto eqk_add = [&](id_shared_t x, id_shared_t y) {
+        if(!(*x == *y))
+          equate_kill_vars.push_back(make_tuple(new num_var(x), new num_var(y)));
+      };
       id_set_t a_kill_ids;
       id_set_t b_kill_ids;
 
-      /*
-       * New version
-       */
+      cout << *id << endl;
+
       region_t region;
 
       auto a_field_it = region_a.begin();
@@ -1539,9 +1549,10 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
         field const &f_b = b_field_it->second;
         int64_t end_b = offset_b + f_b.size;
 
-        /*
-         * Todo: if overlap => add to f_next, keep further reaching field, ...
-         */
+//        enum relp_t {
+//          A_BEFORE_B, B_BEFORE_A, COLLISION, PERFECT_OVERLAP
+//        };
+
         bool collision = false;
         if(offset_a < offset_b) {
           if(end_a > offset_b)
@@ -1561,20 +1572,27 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
         } else {
           if(offset_a == offset_b && f_a.size == f_b.size) {
             insert_f();
-            equate_kill_vars.push_back(make_tuple(new num_var(f_a.num_id), new num_var(f_b.num_id)));
+            eqk_add(f_a.num_id, f_b.num_id);
             region.insert(make_pair(offset_a, f_a));
           }
           else {
             /*
              * no collision, no overlap => field is only contained in one of the regions
              */
-            if(end_a < end_b)
+            if(end_a < end_b) {
+              region.insert(make_pair(offset_a, f_a));
               nsync(f_a.num_id, a_n, b_n);
-            else
+            } else {
+              assert(end_b < end_a);
+              region.insert(make_pair(offset_b, f_b));
               nsync(f_b.num_id, b_n, a_n);
+            }
           }
         }
-        if(end_a < end_b) a_field_it++;
+        if(offset_a == offset_b && end_a == end_b) {
+          a_field_it++;
+          b_field_it++;
+        } else if(end_a < end_b) a_field_it++;
         else b_field_it++;
       }
       while(a_field_it != region_a.end()) {
@@ -1587,8 +1605,6 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
         nsync(f_b.num_id, b_n, a_n);
         b_field_it++;
       }
-
-     result_map.insert(make_pair(id, region));
 
      b_n->equate_kill(equate_kill_vars);
      for(auto pair : equate_kill_vars) {
@@ -1608,6 +1624,8 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
        a_n->kill({nv_id});
        delete nv_id;
      }
+
+     result_map.insert(make_pair(id, region));
     };
     for(auto &region_it : a_map) {
       auto region_b_it = b_map.find(region_it.first);
