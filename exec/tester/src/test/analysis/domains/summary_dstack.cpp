@@ -396,3 +396,33 @@ end: ret", false));
   ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_ac_r12_deref, ar, "after_call", "R12"));
   ASSERT_EQ(aliases_ac_r12_deref, aliases_ac_c_d);
 }
+
+TEST_F(summary_dstack_test, StructuralCompat) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+"main:\n\
+je else\n\
+mov %rbx, (%rax)\n\
+jmp end\n\
+else:\n\
+mov %rcx, (%rax)\n\
+end:\n\
+ret", false));
+
+  ptr_set_t aliases_b;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_b, ar, "end", "B"));
+  ASSERT_EQ(aliases_b.size(), 1);
+  ptr_set_t aliases_c;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_c, ar, "end", "C"));
+  ASSERT_EQ(aliases_c.size(), 1);
+
+  ptr_set_t aliases_a_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_a_deref, ar, "end", "A"));
+  ASSERT_EQ(aliases_a_deref.size(), 2);
+  ASSERT_NE(aliases_a_deref.find(*aliases_b.begin()), aliases_a_deref.end());
+  ASSERT_NE(aliases_a_deref.find(*aliases_c.begin()), aliases_a_deref.end());
+
+  ptr_set_t aliases_ip;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_ip, ar, "end", "IP"));
+  ASSERT_EQ(aliases_ip.size(), 1);
+}
