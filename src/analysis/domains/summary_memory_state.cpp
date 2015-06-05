@@ -1475,22 +1475,29 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
   };
   queue<region_pair> worklist;
 
-  /*
-   * Todo: nicht nur a...
-   */
-  for(auto regions_a_it = a_in.regions.begin(); regions_a_it != a_in.regions.end(); regions_a_it++) {
-    auto regions_b_it = b_in.regions.find(regions_a_it->first);
-    if(regions_b_it == b_in.regions.end()) {
-      tie(regions_b_it, ignore) = b_in.regions.insert(make_pair(regions_a_it->first, region_t()));
-      b_out.regions.insert(make_pair(regions_a_it->first, region_t()));
-    }
+  auto init_from_regions = [&](region_map_t &first_in, region_map_t &first_out,
+      region_map_t &second_in, region_map_t &second_out, bool a_b) {
+    for(auto regions_first_it = first_in.begin(); regions_first_it != first_in.end(); regions_first_it++) {
+      auto regions_second_it = second_in.find(regions_first_it->first);
+      if(regions_second_it == second_in.end()) {
+        tie(regions_second_it, ignore) = second_in.insert(make_pair(regions_first_it->first, region_t()));
+        second_out.insert(make_pair(regions_first_it->first, region_t()));
+      } else if(a_b)
+        continue;
 
-    auto &regions_a_out = a_out.regions.at(regions_a_it->first);
-    auto &regions_b_out = b_out.regions.at(regions_a_it->first);
-    io_region io_a = io_region { regions_a_it->second, regions_a_out };
-    io_region io_b = io_region { regions_b_it->second, regions_b_out };
-    worklist.push(region_pair { io_a, io_b });
-  }
+      auto &regions_first_out = first_out.at(regions_first_it->first);
+      auto &regions_second_out = second_out.at(regions_first_it->first);
+      io_region io_first = io_region { regions_first_it->second, regions_first_out };
+      io_region io_second = io_region { regions_second_it->second, regions_second_out };
+      if(a_b)
+        worklist.push(region_pair { io_first, io_second });
+      else
+        worklist.push(region_pair { io_second, io_first });
+    }
+  };
+  init_from_regions(a_in.regions, a_out.regions, b_in.regions, b_out.regions, true);
+  init_from_regions(b_in.regions, b_out.regions, a_in.regions, a_out.regions, false);
+
 
   while(!worklist.empty()) {
     region_pair rp = worklist.front();
