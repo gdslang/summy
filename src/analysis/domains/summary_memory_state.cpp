@@ -1443,8 +1443,8 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
   num_var_pairs_t result;
 
   struct region_pair {
-    io_region &io_ra;
-    io_region &io_rb;
+    io_region io_ra;
+    io_region io_rb;
   };
   queue<region_pair> worklist;
   for(auto regions_a_it = a_in.regions.begin(); regions_a_it != a_in.regions.end(); regions_a_it++) {
