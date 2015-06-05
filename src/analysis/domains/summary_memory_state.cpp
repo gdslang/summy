@@ -53,7 +53,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 //  num_expr_cmp *in_out_eq = num_expr_cmp::equals(n_in, n_out);
   num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
 
-  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero) << endl;
+//  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero) << endl;
 
   child_state->assume(n_in, {ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero)});
 //  child_state->assume(in_out_eq);
@@ -1405,15 +1405,18 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
       region_pair_desc_t rpd = *mri;
       if(!rpd.collision) {
         if(!rpd.ending_last) {
+          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
+
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first)
-            insertions.push_back([&]() {
-              cout << "XXXX: " << *b_n;
+            insertions.push_back([&io_rb, &b_n, ending_first]() {
+            cout << "Insertion into io_rb at " << ending_first.offset << endl;
+//              cout << "XXXX: " << *b_n;
               io_rb.insert(b_n, ending_first.offset, ending_first.f.size);
-              cout << "YYYY: " << *b_n;
+//              cout << "YYYY: " << *b_n;
             });
           else
-            insertions.push_back([&]() {
+            insertions.push_back([&io_ra, &a_n, ending_first]() {
               io_ra.insert(a_n, ending_first.offset, ending_first.f.size);
             });
         }
@@ -1421,8 +1424,12 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
       ++mri;
     }
 
+    cout << "found: " << (io_rb.in_r.find(0) != io_rb.in_r.end()) << endl;
+
     for(auto inserter : insertions)
       inserter();
+
+    cout << "found: " << (io_rb.in_r.find(0) != io_rb.in_r.end()) << endl;
 
     mri = merge_region_iterator(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
@@ -1456,6 +1463,8 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
             }
           }
         } else {
+          cout << *rpd.ending_first.f.num_id << endl;
+
           assert(false);
         }
       }
