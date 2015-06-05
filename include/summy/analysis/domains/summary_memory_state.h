@@ -113,7 +113,7 @@ public:
     delete child_state;
   }
 
-  bool is_bottom();
+  bool is_bottom() const;
 
   bool operator>=(domain_state const &other) const;
 

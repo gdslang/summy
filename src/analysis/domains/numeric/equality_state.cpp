@@ -380,6 +380,9 @@ void analysis::equality_state::weak_assign(api::num_var *lhs, api::num_expr *rhs
 }
 
 void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
+  if(is_bottom())
+    return;
+
   /*
    * Besser: Statt quadratisch alle Kombinationen zu testen,
    * sollte man besser zunächst die Reps begrenzen und alle
@@ -500,6 +503,9 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
 }
 
 void analysis::equality_state::assume(api::num_var *lhs, api::ptr_set_t aliases) {
+  if(is_bottom())
+    return;
+
   child_state->assume(lhs, aliases);
 }
 

@@ -12,15 +12,16 @@
 
 namespace analysis {
 
-struct field_off_t {
+struct field_desc_t {
+  bool region_first;
   int64_t offset;
-  field const &f;
+  field const f;
 };
 
 struct region_pair_desc_t {
   bool collision;
-  field_off_t ending_first;
-  std::experimental::optional<field_off_t> ending_last;
+  field_desc_t ending_first;
+  std::experimental::optional<field_desc_t> ending_last;
 };
 
 class merge_region_iterator;

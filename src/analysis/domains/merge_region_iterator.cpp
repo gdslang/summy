@@ -37,12 +37,12 @@ region_pair_desc_t merge_region_iterator::operator *() {
   if(r1_it != r1_it_end && r2_it != r2_it_end) {
     int64_t offset_a = r1_it->first;
     field const &f_a = r1_it->second;
-    field_off_t f_a_off = field_off_t { offset_a, f_a };
+    field_desc_t f_a_off = field_desc_t { true, offset_a, f_a };
     int64_t end_a = offset_a + f_a.size;
 
     int64_t offset_b = r2_it->first;
     field const &f_b = r2_it->second;
-    field_off_t f_b_off = field_off_t { offset_b, f_b };
+    field_desc_t f_b_off = field_desc_t { false, offset_b, f_b };
     int64_t end_b = offset_b + f_b.size;
 
     bool collision = false;
@@ -80,13 +80,13 @@ region_pair_desc_t merge_region_iterator::operator *() {
   } else if(r1_it != r1_it_end && r2_it == r2_it_end) {
     int64_t offset_a = r1_it->first;
     field const &f_a = r1_it->second;
-    field_off_t f_a_off = field_off_t { offset_a, f_a };
+    field_desc_t f_a_off = field_desc_t { true, offset_a, f_a };
 
     return region_pair_desc_t { false, f_a_off, nullopt };
   } else if(r1_it == r1_it_end && r2_it != r2_it_end) {
     int64_t offset_b = r2_it->first;
     field const &f_b = r2_it->second;
-    field_off_t f_b_off = field_off_t { offset_b, f_b };
+    field_desc_t f_b_off = field_desc_t { false, offset_b, f_b };
 
     return region_pair_desc_t { false, f_b_off, nullopt };
   } else
