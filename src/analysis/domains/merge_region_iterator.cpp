@@ -16,6 +16,20 @@ using namespace analysis;
  * region_pair_desc
  */
 
+std::experimental::optional<field_desc_t> region_pair_desc_t::field_first_region() {
+  if(ending_first.region_first)
+    return ending_first;
+  else
+    return ending_last;
+}
+
+std::experimental::optional<field_desc_t> region_pair_desc_t::field_second_region() {
+  if(ending_first.region_first)
+    return ending_last;
+  else
+    return ending_first;
+}
+
 /*
  * merge_region_itearator
  */
@@ -121,4 +135,3 @@ bool analysis::operator ==(const merge_region_iterator &a, const merge_region_it
 bool analysis::operator !=(const merge_region_iterator &a, const merge_region_iterator &b) {
   return !(a == b);
 }
-

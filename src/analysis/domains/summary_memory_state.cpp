@@ -1405,8 +1405,6 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
       region_pair_desc_t rpd = *mri;
       if(!rpd.collision) {
         if(!rpd.ending_last) {
-          cout << "Partnerloses Feld: " << rpd.ending_first.f << endl;
-
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first)
             insertions.push_back([&]() {
@@ -1447,7 +1445,7 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
             delete f_b_nv;
 
             if(als_a.size() == 1 && als_b.size() == 1) {
-              cout << "pushing aliases... ";
+              cout << "pushing aliases... " << endl;
 
               ptr p_a = *als_a.begin();
               assert(*p_a.offset == vs_finite::zero);
@@ -1586,11 +1584,6 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
 
       region_t region;
 
-      auto a_field_it = region_a.begin();
-      auto b_field_it = region_b.begin();
-
-//      optional<pair<int64_t, int64_t>> f_next = nullopt;
-//      optional<pair<int64_t, field>> f_next = nullopt;
       optional<int64_t> fn_from;
       optional<int64_t> fn_to;
       auto insert_f = [&]() {
@@ -1601,88 +1594,43 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
           fn_to = nullopt;
         }
       };
-      auto nsync = [&](id_shared_t id, numeric_state *from, numeric_state *to) {
+//      auto nsync = [&](id_shared_t id, numeric_state *from, numeric_state *to) {
+//        assert(false);
+////        if(!input)
+////          return;
+////        cout << "**id: " << *id << endl;
+////        num_var *id_nv = new num_var(id);
+////        ptr_set_t aliases = from->queryAls(id_nv);
+////        for(auto a : aliases)
+////          cout << "**alias: " << a << endl;
+////        to->assume(id_nv, aliases);
+////        delete id_nv;
+//      };
+
+      merge_region_iterator mri(region_a, region_b);
+      while(mri != merge_region_iterator::end(region_a, region_b)) {
+        region_pair_desc_t rpd = *mri;
+        if(!rpd.ending_last)
         assert(false);
-//        if(!input)
-//          return;
-//        cout << "**id: " << *id << endl;
-//        num_var *id_nv = new num_var(id);
-//        ptr_set_t aliases = from->queryAls(id_nv);
-//        for(auto a : aliases)
-//          cout << "**alias: " << a << endl;
-//        to->assume(id_nv, aliases);
-//        delete id_nv;
-      };
+        if(rpd.collision) {
+          field_desc_t fd_ending_first = rpd.ending_first;
+          field_desc_t fd_ending_last = rpd.ending_last.value();
 
-      while(a_field_it != region_a.end() && b_field_it != region_b.end()) {
-        int64_t offset_a = a_field_it->first;
-        field const &f_a = a_field_it->second;
-        int64_t end_a = offset_a + f_a.size;
-        int64_t offset_b = b_field_it->first;
-        field const &f_b = b_field_it->second;
-        int64_t end_b = offset_b + f_b.size;
-
-//        enum relp_t {
-//          A_BEFORE_B, B_BEFORE_A, COLLISION, PERFECT_OVERLAP
-//        };
-
-        bool collision = false;
-        if(offset_a < offset_b) {
-          if(end_a > offset_b)
-            collision = true;
-        } else if(offset_b > offset_a) {
-          if(end_b > offset_a)
-            collision = true;
-        } else
-          if(end_a != end_b)
-            collision = true;
-        if(collision) {
-          fn_to = std::max(end_a, end_b);
+          fn_to = fd_ending_last.offset + fd_ending_last.f.size;
           if(!fn_from)
-            fn_from = std::min(offset_a, offset_b);
-          a_kill_ids.insert(f_a.num_id);
-          b_kill_ids.insert(f_b.num_id);
+            fn_from = fd_ending_first.offset;
+          a_kill_ids.insert(rpd.field_first_region().value().f.num_id);
+          b_kill_ids.insert(rpd.field_second_region().value().f.num_id);
         } else {
-          if(offset_a == offset_b && f_a.size == f_b.size) {
-            insert_f();
-            eqk_add(f_a.num_id, f_b.num_id);
-            region.insert(make_pair(offset_a, f_a));
-          }
-          else {
-            /*
-             * no collision, no overlap => field is only contained in one of the regions
-             */
-            if(end_a < end_b) {
-              cout << "Seltsam, einsames Feld in a: " << f_a << endl;
-              region.insert(make_pair(offset_a, f_a));
-              nsync(f_a.num_id, a_n, b_n);
-            } else {
-              cout << "Seltsam, einsames Feld in b: " << f_b << endl;
-              assert(end_b < end_a);
-              region.insert(make_pair(offset_b, f_b));
-              nsync(f_b.num_id, b_n, a_n);
-            }
-          }
+          insert_f();
+
+          field_desc_t fd_first = rpd.field_first_region().value();
+          field_desc_t fd_second = rpd.field_second_region().value();
+
+          eqk_add(fd_first.f.num_id, fd_second.f.num_id);
+          region.insert(make_pair(fd_first.offset, fd_first.f));
         }
-        if(offset_a == offset_b && end_a == end_b) {
-          a_field_it++;
-          b_field_it++;
-        } else if(end_a < end_b) a_field_it++;
-        else b_field_it++;
-      }
-      while(a_field_it != region_a.end()) {
-        field const &f_a = a_field_it->second;
-        cout << "Seltsam, einsames Feld in a: " << f_a << endl;
-        region.insert(make_pair(a_field_it->first, f_a));
-        nsync(f_a.num_id, a_n, b_n);
-        a_field_it++;
-      }
-      while(b_field_it != region_b.end()) {
-        field const &f_b = b_field_it->second;
-        cout << "Seltsam, einsames Feld in b: " << f_b << endl;
-        region.insert(make_pair(b_field_it->first, f_b));
-        nsync(f_b.num_id, b_n, a_n);
-        b_field_it++;
+        ++mri;
       }
 
      b_n->equate_kill(equate_kill_vars);

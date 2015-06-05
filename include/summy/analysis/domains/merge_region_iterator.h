@@ -20,6 +20,10 @@ struct field_desc_t {
 
 struct region_pair_desc_t {
   bool collision;
+
+  std::experimental::optional<field_desc_t> field_first_region();
+  std::experimental::optional<field_desc_t> field_second_region();
+
   field_desc_t ending_first;
   std::experimental::optional<field_desc_t> ending_last;
 };

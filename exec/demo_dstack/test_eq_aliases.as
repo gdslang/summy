@@ -1,5 +1,5 @@
 main:
-mov %rax, %rax
+//mov %rax, %rax
 //mov %rbx, %rbx
 //mov %rcx, %rcx
 je else
