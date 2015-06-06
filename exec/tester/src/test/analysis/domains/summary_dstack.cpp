@@ -235,6 +235,7 @@ static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string lab
   num_var *ptr_var = new num_var(p.id);
 
   num_linear *derefed = mstate->dereference(ptr_var, 0, 64);
+  delete ptr_var;
 
   num_var *derefed_var;
   num_visitor nv;

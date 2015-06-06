@@ -644,8 +644,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 //      assert(aliases_me.size() == 1);
 //      cout << "aliases_s: " << aliases_s << endl;
 
-      if(aliases_s.size() == 0)
+      if(aliases_s.size() == 0) {
+        delete nv_me;
+        delete nv_s;
         continue;
+      }
 
       assert(aliases_s.size() == 1);
 
@@ -1418,9 +1421,8 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
               upcoming.push_back(make_tuple(new num_var(p_a.id), new num_var(p_b.id)));
             }
           }
-        } else {
+        } else
           assert(false);
-        }
       }
       ++mri;
     }
@@ -1470,7 +1472,7 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
       num_var *b;
       tie(a, b) = upc;
       if(!(*a->get_id() == *b->get_id()))
-        result.push_back(upc);
+        result.push_back(make_tuple(a->copy(), b->copy()));
     }
 
     for(auto vpair : upcoming) {
@@ -1480,8 +1482,11 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
 
       auto deref_a_in_it = a_in.deref.find(va->get_id());
       auto deref_b_in_it = b_in.deref.find(vb->get_id());
-      if(deref_a_in_it == a_in.deref.end() && deref_b_in_it == b_in.deref.end())
+      if(deref_a_in_it == a_in.deref.end() && deref_b_in_it == b_in.deref.end()) {
+        delete va;
+        delete vb;
         continue;
+      }
       else if(deref_a_in_it == a_in.deref.end()) {
         tie(deref_a_in_it, ignore) = a_in.deref.insert(make_pair(va->get_id(), region_t()));
         a_out.deref.insert(make_pair(va->get_id(), region_t()));
@@ -1494,6 +1499,9 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
       io_region io_a = io_region { deref_a_in_it->second, deref_a_out };
       io_region io_b = io_region { deref_b_in_it->second, deref_b_out };
       worklist.push(region_pair { io_a, io_b });
+
+      delete va;
+      delete vb;
     }
   }
 
@@ -1516,7 +1524,6 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
     head.output = a->output;
     return make_tuple(head, a_n, b_n);
   }
-
 
 //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
 //    cout << "++++++++++++++++++++++++++++++" << endl;
@@ -1599,16 +1606,16 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
        delete b;
      }
 
-     for(auto id : a_kill_ids) {
-       num_var *nv_id = new num_var(id);
-       a_n->kill({nv_id});
-       delete nv_id;
-     }
-     for(auto id : b_kill_ids) {
-       num_var *nv_id = new num_var(id);
-       a_n->kill({nv_id});
-       delete nv_id;
-     }
+     auto kill = [&](id_set_t kill_ids, numeric_state *ns) {
+       for(auto id : kill_ids) {
+         num_var *nv_id = new num_var(id);
+         ns->kill({nv_id});
+         delete nv_id;
+       }
+     };
+
+     kill(a_kill_ids, a_n);
+     kill(b_kill_ids, b_n);
 
      result_map.insert(make_pair(id, region));
     };
@@ -1644,7 +1651,7 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
 
   num_var_pairs_t eq_aliases = equate_aliases(a_input, a_output, a_n, b_input, b_output, b_n);
 
-  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
+//  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
 //  cout << "before_rename: " << *before_rename << endl;
 
   b_n->equate_kill(eq_aliases);
@@ -1654,6 +1661,8 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
     tie(alias_a, alias_b) = eq_alias;
     rename_rk(b_input, alias_b->get_id(), alias_a->get_id());
     rename_rk(b_output, alias_b->get_id(), alias_a->get_id());
+    delete alias_a;
+    delete alias_b;
   }
 
 //  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
