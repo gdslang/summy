@@ -35,6 +35,8 @@ std::ostream &operator<<(std::ostream &out, ptr const &_this);
 
 typedef std::set<ptr> ptr_set_t;
 
+std::ostream &operator<<(std::ostream &out, ptr_set_t &_this);
+
 //bool operator==(ptr_set_t const &a, ptr_set_t const &b);
 
 

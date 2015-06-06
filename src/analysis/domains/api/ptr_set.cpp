@@ -31,3 +31,17 @@ std::ostream& analysis::api::operator <<(std::ostream &out, const ptr &_this) {
 //bool analysis::api::operator ==(const ptr_set_t &a, const ptr_set_t &b) {
 //  return a == b;
 //}
+
+std::ostream& analysis::api::operator <<(std::ostream& out, ptr_set_t &_this) {
+  out << "{";
+  bool first = true;
+  for(auto &ptr : _this) {
+    if(first)
+      first = false;
+    else
+      out << ", ";
+    out << ptr;
+  }
+  out << "}";
+  return out;
+}
