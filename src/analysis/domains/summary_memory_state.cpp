@@ -1361,12 +1361,20 @@ api::ptr_set_t analysis::summary_memory_state::queryAls(api::num_var *v) {
 
 num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, relation &a_out, numeric_state *a_n,
     relation &b_in, relation &b_out, numeric_state *b_n) {
+  /*
+   * Find aliases for a specific region of the given summaries. We need both
+   * input and output here in order to be able to add pointers that are missing
+   * in one of the regions.
+   */
   function<num_var_pairs_t(io_region &io_ra, io_region &io_rb)> equate_region;
   equate_region = [&](io_region &io_ra, io_region &io_rb) {
     num_var_pairs_t upcoming;
 
     vector<function<void()>> insertions;
 
+    /*
+     * We first check for missing pointers in ther region...
+     */
     merge_region_iterator mri(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
@@ -1389,9 +1397,17 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
       ++mri;
     }
 
+    /*
+     * ... insert them...
+     */
     for(auto inserter : insertions)
       inserter();
 
+    /*
+     * and finally retrieve all matching pointer variables. Keep in mind
+     * that there is always at most one alias per numeric variable in
+     * the input.
+     */
     mri = merge_region_iterator(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
@@ -1438,6 +1454,11 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
   };
   queue<region_pair> worklist;
 
+  /*
+   * We first need to add all pointers referenced in the register part of the
+   * state (that is, the regions map). Since the names of the region identifiers are global,
+   * we only need to iterate both inputs.
+   */
   auto init_from_regions = [&](region_map_t &first_in, region_map_t &first_out,
       region_map_t &second_in, region_map_t &second_out, bool a_b) {
     for(auto regions_first_it = first_in.begin(); regions_first_it != first_in.end(); regions_first_it++) {
@@ -1462,15 +1483,29 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
   init_from_regions(b_in.regions, b_out.regions, a_in.regions, a_out.regions, false);
 
 
+  /*
+   * After collecting all matching pointers of the register, we need to match
+   * the memory. Here, we need to recursively visit all referenced memory and
+   * subsequently collect equalities in memory referenced by pointers that are
+   * already known to be equal. Newly found memory regions are added to a work
+   * list, we only finish when the worklist is empty.
+   */
   while(!worklist.empty()) {
     region_pair rp = worklist.front();
     worklist.pop();
 
+    /*
+     * We first collect all equalities of the current region.
+     */
     num_var_pairs_t upcoming = equate_region(rp.io_ra, rp.io_rb);
     for(auto upc : upcoming) {
       num_var *a;
       num_var *b;
       tie(a, b) = upc;
+      /*
+       * If the pointer variables have distinct names, we add them to the
+       * result set of distinct pointers that need to be considered equal.
+       */
       if(!(*a->get_id() == *b->get_id()))
         result.push_back(make_tuple(a->copy(), b->copy()));
     }
