@@ -1510,6 +1510,11 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
         result.push_back(make_tuple(a->copy(), b->copy()));
     }
 
+    /*
+     * We add all corresponding memory regions as identified by the
+     * respective pointers to the worklist. This way, their fields
+     * will be matched at a later iteration.
+     */
     for(auto vpair : upcoming) {
       num_var *va;
       num_var *vb;
@@ -1517,11 +1522,22 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
 
       auto deref_a_in_it = a_in.deref.find(va->get_id());
       auto deref_b_in_it = b_in.deref.find(vb->get_id());
+      /*
+       * If both pointers are not found in the deref map, they both have not
+       * been deferenced. In this case, there is
+       * nothing to match and we continue to the next item in the worklist.
+       */
       if(deref_a_in_it == a_in.deref.end() && deref_b_in_it == b_in.deref.end()) {
         delete va;
         delete vb;
         continue;
       }
+      /*
+       * If only one pointer p_1 is found in its respective deref map, the other has
+       * not been dereferenced. There may be fields in the dereferenced memory of
+       * p_1 which need to be copied to other i/o relation. Therefore, we add the
+       * missing memory region to the other relation.
+       */
       else if(deref_a_in_it == a_in.deref.end()) {
         tie(deref_a_in_it, ignore) = a_in.deref.insert(make_pair(va->get_id(), region_t()));
         a_out.deref.insert(make_pair(va->get_id(), region_t()));
@@ -1570,6 +1586,67 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
 //    cout << *b << endl;
 //  }
 
+  /*
+   * Making two summary memory states compatible consists of two major steps: first, the structure of the
+   * respective relations is matched. Second, one compatible relation is built from the modified relations
+   * of the two states. Both steps also involve updating the numeric state, e.g. when introducing new
+   * variables.
+   */
+
+  relation a_input = a->input;
+  relation a_output = a->output;
+  relation b_input = b->input;
+  relation b_output = b->output;
+
+  auto rename_rk = [&](relation &rel, id_shared_t from, id_shared_t to) {
+//    cout << "rename_rk " << *from << " / " << *to << endl;
+
+    auto rel_it = rel.deref.find(from);
+    if(rel_it != rel.deref.end()) {
+      region_t region = rel_it->second;
+      rel.deref.erase(rel_it);
+      rel.deref.insert(make_pair(to, region));
+    }
+  };
+
+  /*
+   * The first step is implemented by finding corresponding pointer variables...
+   */
+  num_var_pairs_t eq_aliases = equate_aliases(a_input, a_output, a_n, b_input, b_output, b_n);
+
+//  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
+//  cout << "before_rename: " << *before_rename << endl;
+
+  /*
+   * ... and equating them in the respective numeric state. Additionally, the keys of the memory regions
+   * in the deref map need to be replaced.
+   */
+  b_n->equate_kill(eq_aliases);
+  for(auto &eq_alias : eq_aliases) {
+    num_var *alias_a;
+    num_var *alias_b;
+    tie(alias_a, alias_b) = eq_alias;
+    rename_rk(b_input, alias_b->get_id(), alias_a->get_id());
+    rename_rk(b_output, alias_b->get_id(), alias_a->get_id());
+    delete alias_a;
+    delete alias_b;
+  }
+
+//  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
+//  cout << "after_rename, b: " << *after_rename_b << endl;
+//  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
+//  cout << "after_rename, a: " << *after_rename_a << endl;
+
+  /*
+   * In the second step, all corresponding regions already have got the same region key. Thus,
+   * in order to built a compatible relation we only need to iterate the regions in the deref and
+   * regions map. For each pair of regions, the fields are matched. If a field perfectly overlaps
+   * a field in the other region, the field is added to the compatible region. Otherwise, if there
+   * is a conflict, a new field is created in the compatible region that contains a newly created
+   * numeric variable and spans the whole range of the conflicting fields. It is not possible that
+   * we find a field that neither conflicts nor perfectly overlaps since in that case the previous
+   * step would have already added perfectly overlapping field in the other relation.
+   */
   auto join_region_map = [&](region_map_t const &a_map, region_map_t const &b_map, bool input) {
     region_map_t result_map;
 
@@ -1667,43 +1744,6 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
     }
     return result_map;
   };
-
-  relation a_input = a->input;
-  relation a_output = a->output;
-  relation b_input = b->input;
-  relation b_output = b->output;
-
-  auto rename_rk = [&](relation &rel, id_shared_t from, id_shared_t to) {
-//    cout << "rename_rk " << *from << " / " << *to << endl;
-
-    auto rel_it = rel.deref.find(from);
-    if(rel_it != rel.deref.end()) {
-      region_t region = rel_it->second;
-      rel.deref.erase(rel_it);
-      rel.deref.insert(make_pair(to, region));
-    }
-  };
-
-  num_var_pairs_t eq_aliases = equate_aliases(a_input, a_output, a_n, b_input, b_output, b_n);
-
-//  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
-//  cout << "before_rename: " << *before_rename << endl;
-
-  b_n->equate_kill(eq_aliases);
-  for(auto &eq_alias : eq_aliases) {
-    num_var *alias_a;
-    num_var *alias_b;
-    tie(alias_a, alias_b) = eq_alias;
-    rename_rk(b_input, alias_b->get_id(), alias_a->get_id());
-    rename_rk(b_output, alias_b->get_id(), alias_a->get_id());
-    delete alias_a;
-    delete alias_b;
-  }
-
-//  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
-//  cout << "after_rename, b: " << *after_rename_b << endl;
-//  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
-//  cout << "after_rename, a: " << *after_rename_a << endl;
 
   memory_head head;
 //  cout << "input_regions" << endl;
