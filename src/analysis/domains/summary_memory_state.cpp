@@ -1446,8 +1446,6 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
     return upcoming;
   };
 
-  num_var_pairs_t result;
-
   struct region_pair {
     io_region io_ra;
     io_region io_rb;
@@ -1482,6 +1480,7 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
   init_from_regions(a_in.regions, a_out.regions, b_in.regions, b_out.regions, true);
   init_from_regions(b_in.regions, b_out.regions, a_in.regions, a_out.regions, false);
 
+  num_var_pairs_t result;
 
   /*
    * After collecting all matching pointers of the register, we need to match
