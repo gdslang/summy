@@ -4,8 +4,8 @@ ret
 
 f:
 //mov %r11, %r11
-mov %rcx, %rcx
-mov %rdx, %rdx
+//mov %rcx, %rcx
+//mov %rdx, %rdx
 je else
 mov %rcx, %r11
 jmp end

@@ -637,7 +637,6 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
       alias_map[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
 
-      ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
       num_var *nv_s = new num_var(f_s.num_id);
       ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
 
@@ -649,6 +648,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         delete nv_s;
         continue;
       }
+      ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
 
       assert(aliases_s.size() == 1);
 
@@ -660,14 +660,14 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       if(aliases_me.size() > 0) {
         alias_queue_next.insert(p_s.id);
         alias_map[p_s.id].insert(aliases_me.begin(), aliases_me.end());
-      }
+      } else if(summary->input.deref.find(p_s.id) != summary->input.deref.end())
+        cout << "Warning: Found invalid pointer during summary application";
 
       delete nv_me;
       delete nv_s;
     }
 
 //    delete region_key_var;
-
   }
 
   /*
@@ -1359,15 +1359,14 @@ api::ptr_set_t analysis::summary_memory_state::queryAls(api::num_var *v) {
 //  return regions[id];
 //}
 
-num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, relation &a_out, numeric_state *a_n,
+num_var_pairs_t analysis::summary_memory_state::matchPointers(relation &a_in, relation &a_out, numeric_state *a_n,
     relation &b_in, relation &b_out, numeric_state *b_n) {
   /*
    * Find aliases for a specific region of the given summaries. We need both
    * input and output here in order to be able to add pointers that are missing
    * in one of the regions.
    */
-  function<num_var_pairs_t(io_region &io_ra, io_region &io_rb)> equate_region;
-  equate_region = [&](io_region &io_ra, io_region &io_rb) {
+  auto matchPointersRegion = [&](io_region &io_ra, io_region &io_rb) {
     num_var_pairs_t upcoming;
 
     vector<function<void()>> insertions;
@@ -1496,7 +1495,7 @@ num_var_pairs_t analysis::summary_memory_state::equate_aliases(relation &a_in, r
     /*
      * We first collect all equalities of the current region.
      */
-    num_var_pairs_t upcoming = equate_region(rp.io_ra, rp.io_rb);
+    num_var_pairs_t upcoming = matchPointersRegion(rp.io_ra, rp.io_rb);
     for(auto upc : upcoming) {
       num_var *a;
       num_var *b;
@@ -1611,7 +1610,7 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
   /*
    * The first step is implemented by finding corresponding pointer variables...
    */
-  num_var_pairs_t eq_aliases = equate_aliases(a_input, a_output, a_n, b_input, b_output, b_n);
+  num_var_pairs_t eq_aliases = matchPointers(a_input, a_output, a_n, b_input, b_output, b_n);
 
 //  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
 //  cout << "before_rename: " << *before_rename << endl;

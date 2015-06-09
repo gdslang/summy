@@ -161,7 +161,7 @@ public:
    *
    * @return pair of variables that correspond to each other in the respective memory states
    */
-  static num_var_pairs_t equate_aliases(relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in,
+  static num_var_pairs_t matchPointers(relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in,
       relation &b_out, numeric_state *b_n);
   struct memory_head {
     relation input;

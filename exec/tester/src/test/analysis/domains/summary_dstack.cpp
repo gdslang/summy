@@ -318,8 +318,8 @@ mov %r13, %r14\n\
 ret\n\
 \n\
 f:\n\
-mov %rcx, %rcx\n\
-mov %rdx, %rdx\n\
+//mov %rcx, %rcx\n\
+//mov %rdx, %rdx\n\
 je else\n\
 mov %rcx, %r11\n\
 jmp ite_end\n\
@@ -360,8 +360,8 @@ mov %r13, %r14\n\
 ret\n\
 \n\
 f:\n\
-mov %rcx, %rcx\n\
-mov %rdx, %rdx\n\
+//mov %rcx, %rcx\n\
+//mov %rdx, %rdx\n\
 je else\n\
 mov %rcx, %r11\n\
 jmp ite_end\n\
