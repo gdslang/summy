@@ -709,24 +709,13 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         continue;
 
       ptr_set_t const &next_me_set = alias_map.at(next_s);
-//      assert(next_me_set.size() == 1);
-      if(next_me_set.size() != 1)
-        continue;
 
-      id_shared_t next_me = next_me_set.begin()->id;
       /*
-       * Todo: ^--- offset?
+       * Todo: offsets of the pointers in next_me_set
+       * Todo: no pointers in next_me_set?
        */
-      auto next_odme = me_copy->output.deref.find(next_me);
-      if(next_odme == me_copy->output.deref.end()) {
-        /*
-         * Todo: ...
-         */
-        continue;
-      }
 
       region_t &region_s = next_ids->second;
-//      region_t &region_me = next_odme->second;
 
       /*
        * Todo: uncopy
