@@ -210,8 +210,8 @@ static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string
 //  equal_structure(cmp, rr);
 //}
 
-static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
-  SCOPED_TRACE("query_deref_als()");
+static void mstate_from_label(summary_memory_state **mstate, _analysis_result &ar, string label) {
+  SCOPED_TRACE("mstate_from_label()");
 
   auto analy_r = ar.ds_analyzed->result();
 
@@ -225,17 +225,29 @@ static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string lab
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  summary_memory_state *mstate = analy_r.result[ar.addr_node_map[e.address]]->get_mstate();
+  *mstate = analy_r.result[ar.addr_node_map[e.address]]->get_mstate();
+}
 
-  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
-  ptr_set_t addresses = mstate->queryAls(a);
-  ASSERT_EQ(addresses.size(), 1);
-  ptr const &p = *addresses.begin();
-  ASSERT_EQ(*p.offset, vs_finite::zero);
-  num_var *ptr_var = new num_var(p.id);
+static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, summary_memory_state *mstate, ptr _ptr) {
+  SCOPED_TRACE("query_deref_als()");
 
-  num_linear *derefed = mstate->dereference(ptr_var, 0, 64);
+  int64_t offset;
+  value_set_visitor vsv;
+  vsv._([&](vs_finite *vsf) {
+    if(!vsf->is_singleton())
+      throw string("query_deref_als(): need singleton alias set :-/");
+    offset = *vsf->get_elements().begin();
+  });
+  _ptr.offset->accept(vsv);
+
+  num_var *ptr_var = new num_var(_ptr.id);
+
+  num_linear *derefed = mstate->dereference(ptr_var, 8*offset, 64);
   delete ptr_var;
+
+//  if(*derefed == *value_set::top) {
+//    FAIL() << "mstate->dereference yielded top :-(";
+//  }
 
   num_var *derefed_var;
   num_visitor nv;
@@ -252,9 +264,32 @@ static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string lab
 
   aliases = mstate->queryAls(derefed_var);
   delete derefed;
+}
+
+static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, summary_memory_state *mstate, string arch_id_name) {
+  SCOPED_TRACE("query_deref_als()");
+
+  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
+  ptr_set_t addresses = mstate->queryAls(a);
+  ptr const &p = *addresses.begin();
+
+  query_deref_als(aliases, ar, mstate, p);
 
   delete a;
+}
 
+static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
+  SCOPED_TRACE("query_deref_als()");
+  summary_memory_state *mstate;
+  mstate_from_label(&mstate, ar, label);
+  query_deref_als(aliases, ar, mstate, arch_id_name);
+}
+
+static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string label, ptr _ptr) {
+  SCOPED_TRACE("query_deref_als()");
+  summary_memory_state *mstate;
+  mstate_from_label(&mstate, ar, label);
+  query_deref_als(aliases, ar, mstate, _ptr);
 }
 
 static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
@@ -394,6 +429,109 @@ end: ret", false));
   ptr_set_t aliases_ac_r12_deref;
   ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_ac_r12_deref, ar, "after_call", "R12"));
   ASSERT_EQ(aliases_ac_r12_deref, aliases_ac_c_d);
+}
+
+TEST_F(summary_dstack_test, Call_2AliasesForOneVariableCaller) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+"g:\n\
+mov %r13, %r14\n\
+ret\n\
+\n\
+f:\n\
+mov %rax, (%rdx)\n\
+ret\n\
+\n\
+main:\n\
+mov %rcx, %rcx\n\
+mov %rdx, %rdx\n\
+start:\n\
+je if_end\n\
+mov %rcx, %rdx\n\
+if_end:\n\
+call f\n\
+end:\n\
+ret", false));
+
+  ptr_set_t aliases_start_c;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_c, ar, "start", "C"));
+  ASSERT_EQ(aliases_start_c.size(), 1);
+
+  ptr_set_t aliases_start_d;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_d, ar, "start", "D"));
+  ASSERT_EQ(aliases_start_d.size(), 1);
+
+  ptr_set_t aliases_end_a;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
+  ASSERT_EQ(aliases_end_a.size(), 1);
+
+  ptr_set_t aliases_start_c_end_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_c_end_deref, ar, "end", *aliases_start_c.begin()));
+  ASSERT_EQ(aliases_start_c_end_deref.size(), 2);
+  ASSERT_NE(aliases_start_c_end_deref.find(*aliases_end_a.begin()), aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.find(*aliases_start_d.begin()), aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.find(*aliases_start_c.begin()), aliases_start_c_end_deref.end());
+
+  ptr_set_t aliases_start_d_end_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_d_end_deref, ar, "end", *aliases_start_d.begin()));
+  ASSERT_EQ(aliases_start_d_end_deref.size(), 2);
+  ASSERT_NE(aliases_start_d_end_deref.find(*aliases_end_a.begin()), aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.find(*aliases_start_d.begin()), aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.find(*aliases_start_c.begin()), aliases_start_d_end_deref.end());
+}
+
+TEST_F(summary_dstack_test, Call_2AliasesForOneVariableCallerWithOffsetInCaller) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+"g:\n\
+mov %r13, %r14\n\
+ret\n\
+\n\
+f:\n\
+mov %rax, (%rdx)\n\
+ret\n\
+\n\
+main:\n\
+mov %rcx, %rcx\n\
+mov %rdx, %rdx\n\
+start:\n\
+je if_end\n\
+mov %rcx, %rdx\n\
+if_end:\n\
+add $8, %rdx\n\
+call f\n\
+end:\n\
+ret", false));
+
+  ptr_set_t aliases_start_c;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_c, ar, "start", "C"));
+  ASSERT_EQ(aliases_start_c.size(), 1);
+  ptr aliases_start_c_only = *aliases_start_c.begin();
+  ptr aliases_start_c_only_plus_8 = ptr(aliases_start_c_only.id, *aliases_start_c_only.offset + vs_finite::single(8));
+
+  ptr_set_t aliases_start_d;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_d, ar, "start", "D"));
+  ASSERT_EQ(aliases_start_d.size(), 1);
+  ptr aliases_start_d_only = *aliases_start_d.begin();
+  ptr aliases_start_d_only_plus_8 = ptr(aliases_start_d_only.id, *aliases_start_d_only.offset + vs_finite::single(8));
+
+  ptr_set_t aliases_end_a;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
+  ASSERT_EQ(aliases_end_a.size(), 1);
+
+  ptr_set_t aliases_start_c_end_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_c_end_deref, ar, "end", aliases_start_c_only_plus_8));
+  ASSERT_EQ(aliases_start_c_end_deref.size(), 2);
+  ASSERT_NE(aliases_start_c_end_deref.find(*aliases_end_a.begin()), aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.find(aliases_start_d_only_plus_8), aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.find(aliases_start_c_only_plus_8), aliases_start_c_end_deref.end());
+
+  ptr_set_t aliases_start_d_end_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_d_end_deref, ar, "end", aliases_start_d_only_plus_8));
+  ASSERT_EQ(aliases_start_d_end_deref.size(), 2);
+  ASSERT_NE(aliases_start_d_end_deref.find(*aliases_end_a.begin()), aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.find(aliases_start_d_only_plus_8), aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.find(aliases_start_c_only_plus_8), aliases_start_d_end_deref.end());
 }
 
 TEST_F(summary_dstack_test, StructuralCompat) {
