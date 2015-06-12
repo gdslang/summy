@@ -611,79 +611,97 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
   alias_queue_t alias_queue_next;
 
+  auto handle_region = [&](id_shared_t region_key_summary, ptr_set_t const &region_keys_me, regions_getter_t rgetter) {
+    auto next_ids = (summary->input.*rgetter)().find(region_key_summary);
+    if(next_ids == (summary->input.*rgetter)().end())
+      return;
+
+    region_t &region_s = next_ids->second;
+
+    for(auto &field_mapping_s : region_s) {
+      field &f_s = field_mapping_s.second;
+      num_var *nv_s = new num_var(f_s.num_id);
+      ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
+
+      assert(aliases_s.size() <= 1);
+
+      /*
+       * Todo: Warning if an alias is found in the summary plus this alias has a region in the deref map
+       * and no alias is found in 'me'
+       * Todo: What about an alias in 'me' with no alias the summary? We should somehow remove the alias in 'me'
+       * then
+       */
+
+      bool update = false;
+      ptr_set_t aliases_me_current;
+      for(auto &p_s : aliases_s) {
+        ptr_set_t &aliases_me = variable_mapping[p_s.id];
+        aliases_me_current.insert(aliases_me.begin(), aliases_me.end());
+      }
+
+      updater_t strong = [&](num_var *nv_me) {
+//          cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
+
+        variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
+
+        ptr_set_t aliases_me_new = me_copy->child_state->queryAls(nv_me);
+
+        /*
+         * Handle aliases
+         */
+
+        if(!includes(aliases_me_current.begin(), aliases_me_current.end(),
+            aliases_me_new.begin(), aliases_me_new.end())) {
+          update = true;
+          aliases_me_current.insert(aliases_me_new.begin(), aliases_me_new.end());
+        }
+      };
+
+      me_copy->update_multiple(region_keys_me, rgetter, f_s.size, strong, strong);
+      delete nv_s;
+
+      if(update) {
+        for(auto &p_s : aliases_s) {
+          alias_queue_next.insert(p_s.id);
+          variable_mapping[p_s.id].insert(aliases_me_current.begin(), aliases_me_current.end());
+        }
+      }
+    }
+
+    /*
+     * Second, we match field names, but no aliases from the
+     * memory (deref) output
+     */
+
+    auto next_ods = (summary->output.*rgetter)().find(region_key_summary);
+    assert(next_ods != (summary->output.*rgetter)().end());
+
+    region_s = next_ods->second;
+
+    for(auto &field_mapping_s : region_s) {
+      field &f_s = field_mapping_s.second;
+      num_var *nv_s = new num_var(f_s.num_id);
+
+      updater_t strong = [&](num_var *nv_me) {
+        variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
+      };
+
+      me_copy->update_multiple(region_keys_me, rgetter, f_s.size, strong, strong);
+
+      delete nv_s;
+    }
+  };
+
   /*
    * Build the variable mapping from the input. Here, we consider the regions
    * from the 'regions' part of the memory only.
    */
 
-  /*
-   * Todo: Why is a region from regions handled differently from a region
-   * in deref?!
-   */
-
   for(auto &region_mapping_si : summary->input.regions) {
-    id_shared_t region_key = region_mapping_si.first;
+    id_shared_t region_key_summary = region_mapping_si.first;
+    ptr_set_t region_keys_me = ptr_set_t({ptr(region_key_summary, vs_finite::zero)});
 
-    for(auto &field_mapping_s : region_mapping_si.second) {
-      field &f_s = field_mapping_s.second;
-      id_shared_t id_me = me_copy->transVar(region_key, field_mapping_s.first, f_s.size);
-      num_var *nv_me = new num_var(id_me);
-
-//      cout << "New mapping in region " << *region_key << " from " << *f_s.num_id << " to " << *id_me << endl;
-
-      variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
-
-      num_var *nv_s = new num_var(f_s.num_id);
-      ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
-
-//      assert(aliases_me.size() == 1);
-//      cout << "aliases_s: " << aliases_s << endl;
-
-      if(aliases_s.size() == 0) {
-        delete nv_me;
-        delete nv_s;
-        continue;
-      }
-      ptr_set_t aliases_me = me_copy->child_state->queryAls(nv_me);
-
-      assert(aliases_s.size() == 1);
-
-      ptr const &p_s = *aliases_s.begin();
-      assert(*p_s.offset == vs_finite::zero);
-
-//      cout << "\tAlias mapping from " << p_s << " to " << aliases_me << endl;
-
-      if(aliases_me.size() > 0) {
-        alias_queue_next.insert(p_s.id);
-        variable_mapping[p_s.id].insert(aliases_me.begin(), aliases_me.end());
-      } else if(summary->input.deref.find(p_s.id) != summary->input.deref.end())
-        cout << "Warning: Found invalid pointer during summary application";
-
-      delete nv_me;
-      delete nv_s;
-    }
-
-//    delete region_key_var;
-  }
-
-  /*
-   * Build caller id map from output, no aliases
-   */
-  for(auto &region_mapping_so : summary->output.regions) {
-    id_shared_t region_key = region_mapping_so.first;
-//    num_var *region_key_var = new num_var(region_key);
-
-    for(auto &field_mapping_s : region_mapping_so.second) {
-      field &f_s = field_mapping_s.second;
-      id_shared_t id_me = me_copy->transVar(region_key, field_mapping_s.first, f_s.size);
-      num_var *nv_me = new num_var(id_me);
-
-//      cout << "New mapping in region " << *region_key << " from " << *f_s.num_id << " to " << *id_me << endl;
-
-      variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
-
-      delete nv_me;
-    }
+    handle_region(region_key_summary, region_keys_me, &relation::get_regions);
   }
 
   /*
@@ -698,7 +716,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     alias_queue_next.clear();
     while(!alias_queue.empty()) {
       auto aq_first_it = alias_queue.begin();
-      id_shared_t next_s = *aq_first_it;
+      id_shared_t region_key_summary = *aq_first_it;
       alias_queue.erase(aq_first_it);
 
 //      cout << "next_s: " << *next_s << endl;
@@ -707,87 +725,10 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
        * First, we match field names and alias from the
        * memory (deref) input
        */
+      ptr_set_t const &region_keys_me = variable_mapping.at(region_key_summary);
 
-      auto next_ids = summary->input.deref.find(next_s);
-      if(next_ids == summary->input.deref.end())
-        continue;
+      handle_region(region_key_summary, region_keys_me, &relation::get_deref);
 
-      ptr_set_t const &next_me_set = variable_mapping.at(next_s);
-
-      region_t &region_s = next_ids->second;
-
-      for(auto &field_mapping_s : region_s) {
-        field &f_s = field_mapping_s.second;
-        num_var *nv_s = new num_var(f_s.num_id);
-        ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
-
-        assert(aliases_s.size() <= 1);
-
-        /*
-         * Todo: Warning if an alias is found in the summary plus this alias has a region in the deref map
-         * and no alias is found in 'me'
-         * Todo: What about an alias in 'me' with no alias the summary? We should somehow remove the alias in 'me'
-         * then
-         */
-
-        bool update = false;
-        ptr_set_t aliases_me_current;
-        for(auto &p_s : aliases_s) {
-          ptr_set_t &aliases_me = variable_mapping[p_s.id];
-          aliases_me_current.insert(aliases_me.begin(), aliases_me.end());
-        }
-
-        updater_t strong = [&](num_var *nv_me) {
-//          cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
-
-          variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
-
-          ptr_set_t aliases_me_new = me_copy->child_state->queryAls(nv_me);
-
-          /*
-           * Handle aliases
-           */
-
-          if(!includes(aliases_me_current.begin(), aliases_me_current.end(),
-              aliases_me_new.begin(), aliases_me_new.end())) {
-            update = true;
-            aliases_me_current.insert(aliases_me_new.begin(), aliases_me_new.end());
-          }
-        };
-
-        me_copy->update_multiple(next_me_set, &relation::get_deref, f_s.size, strong, strong);
-        delete nv_s;
-
-        if(update) {
-          for(auto &p_s : aliases_s) {
-            alias_queue_next.insert(p_s.id);
-            variable_mapping[p_s.id].insert(aliases_me_current.begin(), aliases_me_current.end());
-          }
-        }
-      }
-
-      /*
-       * Second, we match field names, but no aliases from the
-       * memory (deref) output
-       */
-
-      auto next_ods = summary->output.deref.find(next_s);
-      assert(next_ods != summary->output.deref.end());
-
-      region_s = next_ods->second;
-
-      for(auto &field_mapping_s : region_s) {
-        field &f_s = field_mapping_s.second;
-        num_var *nv_s = new num_var(f_s.num_id);
-
-        updater_t strong = [&](num_var *nv_me) {
-          variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
-        };
-
-        me_copy->update_multiple(next_me_set, &relation::get_deref, f_s.size, strong, strong);
-
-        delete nv_s;
-      }
     }
 
   } while(!alias_queue_next.empty());
