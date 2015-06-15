@@ -599,19 +599,12 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
    * certain offsets. The mapping is established from the structure of the memory
    * of the summary.
    */
-  map<id_shared_t, ptr_set_t, id_less_no_version> variable_mapping;
-
-  /*
-   * Idee:
-   *  - Man nehme einen Alias, für den man einen Match hat
-   *  - Gleiche Prozedur wie unten für die entsprechende Region
-   *  - Wiederholen, bis keine solcher Alias mehr gefunden werden kann
-   */
+  map<id_shared_t, ptr_set_t, id_less_no_version> ptr_mapping;
 
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
   alias_queue_t alias_queue_next;
 
-  auto handle_region = [&](id_shared_t region_key_summary, ptr_set_t const &region_keys_me, regions_getter_t rgetter) {
+  auto build_pmap_region = [&](id_shared_t region_key_summary, ptr_set_t const &region_keys_me, regions_getter_t rgetter) {
     auto next_ids = (summary->input.*rgetter)().find(region_key_summary);
     if(next_ids == (summary->input.*rgetter)().end())
       return;
@@ -628,21 +621,21 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       /*
        * Todo: Warning if an alias is found in the summary plus this alias has a region in the deref map
        * and no alias is found in 'me'
-       * Todo: What about an alias in 'me' with no alias the summary? We should somehow remove the alias in 'me'
+       * Todo: What about an alias in 'me' with no alias in the summary? We should somehow remove the alias in 'me'
        * then
        */
 
       bool update = false;
       ptr_set_t aliases_me_current;
       for(auto &p_s : aliases_s) {
-        ptr_set_t &aliases_me = variable_mapping[p_s.id];
+        ptr_set_t &aliases_me = ptr_mapping[p_s.id];
         aliases_me_current.insert(aliases_me.begin(), aliases_me.end());
       }
 
       updater_t strong = [&](num_var *nv_me) {
 //          cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
 
-        variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
+//        variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
 
         ptr_set_t aliases_me_new = me_copy->child_state->queryAls(nv_me);
 
@@ -663,7 +656,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       if(update) {
         for(auto &p_s : aliases_s) {
           alias_queue_next.insert(p_s.id);
-          variable_mapping[p_s.id].insert(aliases_me_current.begin(), aliases_me_current.end());
+          ptr_mapping[p_s.id].insert(aliases_me_current.begin(), aliases_me_current.end());
         }
       }
     }
@@ -673,23 +666,23 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
      * memory (deref) output
      */
 
-    auto next_ods = (summary->output.*rgetter)().find(region_key_summary);
-    assert(next_ods != (summary->output.*rgetter)().end());
-
-    region_s = next_ods->second;
-
-    for(auto &field_mapping_s : region_s) {
-      field &f_s = field_mapping_s.second;
-      num_var *nv_s = new num_var(f_s.num_id);
-
-      updater_t strong = [&](num_var *nv_me) {
-        variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
-      };
-
-      me_copy->update_multiple(region_keys_me, rgetter, f_s.size, strong, strong);
-
-      delete nv_s;
-    }
+//    auto next_ods = (summary->output.*rgetter)().find(region_key_summary);
+//    assert(next_ods != (summary->output.*rgetter)().end());
+//
+//    region_s = next_ods->second;
+//
+//    for(auto &field_mapping_s : region_s) {
+//      field &f_s = field_mapping_s.second;
+//      num_var *nv_s = new num_var(f_s.num_id);
+//
+//      updater_t strong = [&](num_var *nv_me) {
+////        variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
+//      };
+//
+//      me_copy->update_multiple(region_keys_me, rgetter, f_s.size, strong, strong);
+//
+//      delete nv_s;
+//    }
   };
 
   /*
@@ -701,7 +694,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     id_shared_t region_key_summary = region_mapping_si.first;
     ptr_set_t region_keys_me = ptr_set_t({ptr(region_key_summary, vs_finite::zero)});
 
-    handle_region(region_key_summary, region_keys_me, &relation::get_regions);
+    build_pmap_region(region_key_summary, region_keys_me, &relation::get_regions);
   }
 
   /*
@@ -725,9 +718,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
        * First, we match field names and alias from the
        * memory (deref) input
        */
-      ptr_set_t const &region_keys_me = variable_mapping.at(region_key_summary);
+      ptr_set_t const &region_keys_me = ptr_mapping.at(region_key_summary);
 
-      handle_region(region_key_summary, region_keys_me, &relation::get_deref);
+      build_pmap_region(region_key_summary, region_keys_me, &relation::get_deref);
 
     }
 
@@ -754,11 +747,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
       ptr_set_t aliases_me;
       for(auto &_ptr : aliases_s) {
-        auto aliases_mapped_it = variable_mapping.find(_ptr.id);
+        auto aliases_mapped_it = ptr_mapping.find(_ptr.id);
         ptr_set_t const &aliases_me_ptr = aliases_mapped_it->second;
 //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
 //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) << endl;
-        if(aliases_mapped_it != variable_mapping.end())
+        if(aliases_mapped_it != ptr_mapping.end())
           aliases_me.insert(aliases_me_ptr.begin(), aliases_me_ptr.end());
       }
 
@@ -793,7 +786,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
   for(auto &deref_mapping_so : summary->output.deref) {
     id_shared_t region_key = deref_mapping_so.first;
-    ptr_set_t &region_aliases_me = variable_mapping.at(region_key);
+    ptr_set_t &region_aliases_me = ptr_mapping.at(region_key);
     process_region(&relation::get_deref, region_aliases_me, deref_mapping_so.second);
   }
   delete _top;
