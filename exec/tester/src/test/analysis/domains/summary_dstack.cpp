@@ -307,6 +307,8 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
+//  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
+
   address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
   aliases = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryAls(a);
   delete a;
@@ -343,6 +345,94 @@ end: ret", false));
   ptr_set_t aliases_ac_d;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_ac_d, ar, "after_call", "D"));
   ASSERT_EQ(aliases_ac_a_deref, aliases_ac_d);
+}
+
+TEST_F(summary_dstack_test, CallOffsets) {
+  //test21.as using aliases
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+"g:\n\
+mov %r13, %r14\n\
+ret\n\
+\n\
+f:\n\
+//add $1, %r12\n\
+add $1, %r11\n\
+mov %r11, %r12\n\
+add $8, %r12\n\
+//add $8, %r11\n\
+ret\n\
+\n\
+main:\n\
+add $2, %r11\n\
+before_call:\n\
+call f\n\
+end: ret", false));
+
+  ptr_set_t aliases_before_call_r11;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_before_call_r11, ar, "before_call", "R11"));
+  ASSERT_EQ(aliases_before_call_r11.size(), 1);
+  ptr alias_before_call_r11 = *aliases_before_call_r11.begin();
+
+  ptr_set_t aliases_r11;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r11, ar, "end", "R11"));
+  ASSERT_EQ(aliases_r11.size(), 1);
+  ASSERT_EQ(aliases_r11, ptr_set_t({ptr(alias_before_call_r11.id, vs_finite::single(3))}));
+
+  ptr_set_t aliases_r12;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r11, ar, "end", "R12"));
+  ASSERT_EQ(aliases_r11.size(), 1);
+  ASSERT_EQ(*aliases_r11.begin()->offset, vs_finite::single(11));
+}
+
+TEST_F(summary_dstack_test, 2Calls) {
+  //test20.as using aliases
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+"g:\n\
+mov %r13, %r14\n\
+ret\n\
+\n\
+f:\n\
+mov %r11, %r12\n\
+ret\n\
+\n\
+main:\n\
+mov %r14, %r14\n\
+mov %r15, %r15\n\
+start:\n\
+mov %r15, %r11\n\
+call f\n\
+mov %r12, %rax\n\
+mov %r14, %r11\n\
+call f\n\
+mov %r12, %rbx\n\
+end: ret", false));
+
+  ptr_set_t aliases_start_r14;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_r14, ar, "start", "R14"));
+  ASSERT_EQ(aliases_start_r14.size(), 1);
+
+  ptr_set_t aliases_start_r15;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_r15, ar, "start", "R15"));
+  ASSERT_EQ(aliases_start_r15.size(), 1);
+
+  ptr_set_t aliases_end_r14;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_r14, ar, "end", "R14"));
+  ASSERT_EQ(aliases_end_r14, aliases_start_r14);
+
+  ptr_set_t aliases_end_r15;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_r15, ar, "end", "R15"));
+  ASSERT_EQ(aliases_end_r15, aliases_start_r15);
+
+  ptr_set_t aliases_end_rax;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_rax, ar, "end", "A"));
+  ASSERT_EQ(aliases_end_rax, aliases_start_r15);
+
+  ptr_set_t aliases_end_rbx;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_rbx, ar, "end", "B"));
+  ASSERT_EQ(aliases_end_rbx, aliases_start_r14);
+
 }
 
 TEST_F(summary_dstack_test, Call_2AliasesCallee_1AliasesCaller) {
