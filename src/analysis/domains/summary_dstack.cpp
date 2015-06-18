@@ -25,6 +25,7 @@
 #include <summy/value_set/value_set_visitor.h>
 #include <functional>
 #include <assert.h>
+#include <experimental/optional>
 
 using cfg::address_node;
 using cfg::cond_edge;
@@ -44,7 +45,7 @@ using namespace analysis::value_sets;
 using namespace api;
 using namespace summy::rreil;
 using namespace summy;
-
+using namespace std::experimental;
 
 bool analysis::summary_dstack::unpack_f_addr(void *&r, summy::vs_shared_t f_addr) {
   bool single = false;
@@ -247,15 +248,19 @@ dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {
   return dependency { from, to };
 }
 
-void analysis::summary_dstack::init_state() {
+void analysis::summary_dstack::init_state(summy::vs_shared_t f_addr) {
 //  cout << "init_state()" << endl;
 
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<global_state>(start_value());
+    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<global_state>(start_value(f_addr));
     else state[i] = dynamic_pointer_cast<global_state>(bottom());
   }
+}
+
+void analysis::summary_dstack::init_state() {
+  init_state(value_set::bottom);
 }
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm) :
@@ -263,8 +268,20 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
   /*
    * Todo: Use correct start address here
    */
-  function_desc_map.insert(make_pair((void*)NULL, function_desc(summary_t(sms_bottom()), 0, 0)));
   init();
+
+  /*
+   * Simulate initial call to node zero
+   */
+  node *n = cfg->get_node_payload(0);
+  optional<size_t> addr;
+  node_visitor nv;
+  nv._([&](address_node *an) {
+    addr = an->get_address();
+  });
+  n->accept(nv);
+  function_desc_map.insert(make_pair((void*)addr.value(), function_desc(summary_t(sms_bottom()), 0, n->get_id())));
+  state[n->get_id()]->set_f_addr(vs_finite::single(addr.value()));
 }
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg) :
@@ -292,9 +309,9 @@ std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t 
   return shared_ptr<domain_state>(new global_state(sms_top(), f_addr, callers));
 }
 
-std::shared_ptr<domain_state> analysis::summary_dstack::start_value() {
+std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t f_addr) {
 //  cout << "start_value()" << endl;
-  return start_value(vs_finite::zero, callers_t {});
+  return start_value(f_addr, callers_t {});
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {

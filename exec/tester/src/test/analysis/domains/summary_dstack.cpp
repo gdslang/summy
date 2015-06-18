@@ -318,10 +318,7 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
 TEST_F(summary_dstack_test, Call) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
-"g:\n\
-mov %r13, %r14\n\
-ret\n\
-f:\n\
+"f:\n\
 mov (%r11), %r12\n\
 mov %r12, %rax\n\
 ret\n\
@@ -389,11 +386,7 @@ TEST_F(summary_dstack_test, 2Calls) {
   //test20.as using aliases
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
-"g:\n\
-mov %r13, %r14\n\
-ret\n\
-\n\
-f:\n\
+"f:\n\
 mov %r11, %r12\n\
 ret\n\
 \n\
@@ -573,11 +566,7 @@ ret", false));
 TEST_F(summary_dstack_test, Call_2AliasesForOneVariableCallerWithOffsetInCaller) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
-"g:\n\
-mov %r13, %r14\n\
-ret\n\
-\n\
-f:\n\
+"f:\n\
 mov %rax, (%rdx)\n\
 ret\n\
 \n\

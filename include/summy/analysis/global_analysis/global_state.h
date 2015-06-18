@@ -36,6 +36,10 @@ public:
     return f_addr;
   }
 
+  void set_f_addr(summy::vs_shared_t f_addr) {
+    this->f_addr = f_addr;
+  }
+
   callers_t &get_callers() {
     return callers;
   }
