@@ -625,12 +625,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
        * then
        */
 
-      bool update = false;
       ptr_set_t aliases_me_current;
-      for(auto &p_s : aliases_s) {
-        ptr_set_t &aliases_me = ptr_mapping[p_s.id];
-        aliases_me_current.insert(aliases_me.begin(), aliases_me.end());
-      }
+//      for(auto &p_s : aliases_s) {
+//        ptr_set_t &aliases_me = ptr_mapping[p_s.id];
+//        aliases_me_current.insert(aliases_me.begin(), aliases_me.end());
+//      }
 
       updater_t strong = [&](num_var *nv_me) {
 //          cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
@@ -643,20 +642,22 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
          * Handle aliases
          */
 
-        if(!includes(aliases_me_current.begin(), aliases_me_current.end(),
-            aliases_me_new.begin(), aliases_me_new.end())) {
-          update = true;
-          aliases_me_current.insert(aliases_me_new.begin(), aliases_me_new.end());
-        }
+//        if(!includes(aliases_me_current.begin(), aliases_me_current.end(),
+//            aliases_me_new.begin(), aliases_me_new.end())) {
+//          update = true;
+//          aliases_me_current.insert(aliases_me_new.begin(), aliases_me_new.end());
+//        }
+        aliases_me_current.insert(aliases_me_new.begin(), aliases_me_new.end());
       };
 
       me_copy->update_multiple(region_keys_me, rgetter, f_s.size, strong, strong);
       delete nv_s;
 
-      if(update) {
-        for(auto &p_s : aliases_s) {
+      for(auto &p_s : aliases_s) {
+        ptr_set_t &aliases_me = ptr_mapping[p_s.id];
+        if(!includes(aliases_me.begin(), aliases_me.end(), aliases_me_current.begin(), aliases_me_current.end())) {
+          aliases_me.insert(aliases_me_current.begin(), aliases_me_current.end());
           alias_queue_next.insert(p_s.id);
-          ptr_mapping[p_s.id].insert(aliases_me_current.begin(), aliases_me_current.end());
         }
       }
     }
@@ -751,12 +752,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         ptr_set_t const &aliases_me_ptr = aliases_mapped_it->second;
 //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
 //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) << endl;
-        if(aliases_mapped_it != ptr_mapping.end()) {
-          for(auto alias_me_ptr : aliases_me_ptr) {
+        if(aliases_mapped_it != ptr_mapping.end())
+          for(auto alias_me_ptr : aliases_me_ptr)
             aliases_me.insert(ptr(alias_me_ptr.id, *alias_me_ptr.offset + _ptr.offset));
-          }
-
-        }
       }
 
       field_processor(f_s, aliases_me);
