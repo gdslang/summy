@@ -751,8 +751,12 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         ptr_set_t const &aliases_me_ptr = aliases_mapped_it->second;
 //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
 //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) << endl;
-        if(aliases_mapped_it != ptr_mapping.end())
-          aliases_me.insert(aliases_me_ptr.begin(), aliases_me_ptr.end());
+        if(aliases_mapped_it != ptr_mapping.end()) {
+          for(auto alias_me_ptr : aliases_me_ptr) {
+            aliases_me.insert(ptr(alias_me_ptr.id, *alias_me_ptr.offset + _ptr.offset));
+          }
+
+        }
       }
 
       field_processor(f_s, aliases_me);
