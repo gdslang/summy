@@ -593,7 +593,7 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
 }
 
 summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
-  summary_memory_state *me_copy = copy();
+  summary_memory_state *return_site = copy();
   /*
    * Each of the variables of the summary maps to a number of variables in the caller at
    * certain offsets. The mapping is established from the structure of the memory
@@ -602,9 +602,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   map<id_shared_t, ptr_set_t, id_less_no_version> ptr_mapping;
 
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
-  alias_queue_t alias_queue_next;
+  alias_queue_t ptr_worklist;
 
-  auto build_pmap_region = [&](id_shared_t region_key_summary, ptr_set_t const &region_keys_me, regions_getter_t rgetter) {
+  auto build_pmap_region = [&](id_shared_t region_key_summary, ptr_set_t const &region_keys_c, regions_getter_t rgetter) {
     auto next_ids = (summary->input.*rgetter)().find(region_key_summary);
     if(next_ids == (summary->input.*rgetter)().end())
       return;
@@ -613,77 +613,41 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
     for(auto &field_mapping_s : region_s) {
       field &f_s = field_mapping_s.second;
-      num_var *nv_s = new num_var(f_s.num_id);
-      ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
+      num_var *nv_field_s = new num_var(f_s.num_id);
+      ptr_set_t aliases_fld_s = summary->child_state->queryAls(nv_field_s);
 
-      assert(aliases_s.size() <= 1);
+      assert(aliases_fld_s.size() <= 1);
 
       /*
        * Todo: Warning if an alias is found in the summary plus this alias has a region in the deref map
-       * and no alias is found in 'me'
-       * Todo: What about an alias in 'me' with no alias in the summary? We should somehow remove the alias in 'me'
+       * and no alias is found in 'c'
+       * Todo: What about an alias in 'me' with no alias in the summary? We should somehow remove the alias in 'c'
        * then
        */
 
-      ptr_set_t aliases_me_current;
-//      for(auto &p_s : aliases_s) {
-//        ptr_set_t &aliases_me = ptr_mapping[p_s.id];
-//        aliases_me_current.insert(aliases_me.begin(), aliases_me.end());
-//      }
+      ptr_set_t aliases_fld_c;
 
-      updater_t strong = [&](num_var *nv_me) {
+      updater_t record_aliases = [&](num_var *nv_flc_c) {
 //          cout << "New mapping in region " << *next_me << " from " << *f_s.num_id << " to " << *id_me << endl;
-
 //        variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
-
-        ptr_set_t aliases_me_new = me_copy->child_state->queryAls(nv_me);
-
+        ptr_set_t aliases_fld_c_next = return_site->child_state->queryAls(nv_flc_c);
         /*
-         * Handle aliases
+         * Record new aliases...
          */
-
-//        if(!includes(aliases_me_current.begin(), aliases_me_current.end(),
-//            aliases_me_new.begin(), aliases_me_new.end())) {
-//          update = true;
-//          aliases_me_current.insert(aliases_me_new.begin(), aliases_me_new.end());
-//        }
-        aliases_me_current.insert(aliases_me_new.begin(), aliases_me_new.end());
+        aliases_fld_c.insert(aliases_fld_c_next.begin(), aliases_fld_c_next.end());
       };
 
-      me_copy->update_multiple(region_keys_me, rgetter, f_s.size, strong, strong);
-      delete nv_s;
+      return_site->update_multiple(region_keys_c, rgetter, f_s.size, record_aliases, record_aliases);
+      delete nv_field_s;
 
-      for(auto &p_s : aliases_s) {
-        ptr_set_t &aliases_me = ptr_mapping[p_s.id];
-        if(!includes(aliases_me.begin(), aliases_me.end(), aliases_me_current.begin(), aliases_me_current.end())) {
-          aliases_me.insert(aliases_me_current.begin(), aliases_me_current.end());
-          alias_queue_next.insert(p_s.id);
+      for(auto &p_s : aliases_fld_s) {
+        ptr_set_t &aliases_c = ptr_mapping[p_s.id];
+        if(!includes(aliases_c.begin(), aliases_c.end(), aliases_fld_c.begin(), aliases_fld_c.end())) {
+          aliases_c.insert(aliases_fld_c.begin(), aliases_fld_c.end());
+          ptr_worklist.insert(p_s.id);
         }
       }
     }
-
-    /*
-     * Second, we match field names, but no aliases from the
-     * memory (deref) output
-     */
-
-//    auto next_ods = (summary->output.*rgetter)().find(region_key_summary);
-//    assert(next_ods != (summary->output.*rgetter)().end());
-//
-//    region_s = next_ods->second;
-//
-//    for(auto &field_mapping_s : region_s) {
-//      field &f_s = field_mapping_s.second;
-//      num_var *nv_s = new num_var(f_s.num_id);
-//
-//      updater_t strong = [&](num_var *nv_me) {
-////        variable_mapping[f_s.num_id].insert(ptr(nv_me->get_id(), vs_finite::zero));
-//      };
-//
-//      me_copy->update_multiple(region_keys_me, rgetter, f_s.size, strong, strong);
-//
-//      delete nv_s;
-//    }
   };
 
   /*
@@ -693,9 +657,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
   for(auto &region_mapping_si : summary->input.regions) {
     id_shared_t region_key_summary = region_mapping_si.first;
-    ptr_set_t region_keys_me = ptr_set_t({ptr(region_key_summary, vs_finite::zero)});
+    ptr_set_t region_keys_c = ptr_set_t({ptr(region_key_summary, vs_finite::zero)});
 
-    build_pmap_region(region_key_summary, region_keys_me, &relation::get_regions);
+    build_pmap_region(region_key_summary, region_keys_c, &relation::get_regions);
   }
 
   /*
@@ -706,8 +670,8 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
    */
 
   do {
-    alias_queue_t alias_queue = alias_queue_next;
-    alias_queue_next.clear();
+    alias_queue_t alias_queue = ptr_worklist;
+    ptr_worklist.clear();
     while(!alias_queue.empty()) {
       auto aq_first_it = alias_queue.begin();
       id_shared_t region_key_summary = *aq_first_it;
@@ -719,13 +683,13 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
        * First, we match field names and alias from the
        * memory (deref) input
        */
-      ptr_set_t const &region_keys_me = ptr_mapping.at(region_key_summary);
+      ptr_set_t const &region_keys_c = ptr_mapping.at(region_key_summary);
 
-      build_pmap_region(region_key_summary, region_keys_me, &relation::get_deref);
+      build_pmap_region(region_key_summary, region_keys_c, &relation::get_deref);
 
     }
 
-  } while(!alias_queue_next.empty());
+  } while(!ptr_worklist.empty());
 
   /*
    * Having built the relation between variable and pointers names of the caller state and the summary,
@@ -735,7 +699,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   /*
    * Application in regions, one alias
    */
-  auto for_field = [&](region_t &region, function<void(field &ff, ptr_set_t &aliases_me)> field_processor) {
+
+  num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
+  auto process_region = [&](regions_getter_t getter, ptr_set_t &region_aliases_c, region_t &region) {
     for(auto &field_mapping_s : region) {
       field &f_s = field_mapping_s.second;
 //      id_shared_t id_me = me_copy->transVar(region_key, field_mapping_s.first, f_s.size);
@@ -746,58 +712,51 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
       delete nv_s;
 
-      ptr_set_t aliases_me;
-      for(auto &_ptr : aliases_s) {
-        auto aliases_mapped_it = ptr_mapping.find(_ptr.id);
-        ptr_set_t const &aliases_me_ptr = aliases_mapped_it->second;
+      ptr_set_t aliases_c;
+      for(auto &alias_s : aliases_s) {
+        auto aliases_mapped_it = ptr_mapping.find(alias_s.id);
+        ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
 //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
 //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) << endl;
         if(aliases_mapped_it != ptr_mapping.end())
-          for(auto alias_me_ptr : aliases_me_ptr)
-            aliases_me.insert(ptr(alias_me_ptr.id, *alias_me_ptr.offset + _ptr.offset));
+          for(auto alias_c_next : aliases_c_next)
+            aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
       }
 
-      field_processor(f_s, aliases_me);
-    }
-  };
-
-  num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
-  auto process_region = [&](regions_getter_t getter, ptr_set_t &region_aliases_me, region_t &region) {
-    for_field(region, [&](field &ff, ptr_set_t &aliases_me) {
-      updater_t strong = [&](api::num_var *nv_me) {
+      updater_t strong = [&](api::num_var *nv_fld_c) {
 //        cout << "strong for " << *nv_me << ": " << aliases_me << endl;
-        me_copy->child_state->assign(nv_me, _top);
-        me_copy->child_state->assume(nv_me, aliases_me);
+        return_site->child_state->assign(nv_fld_c, _top);
+        return_site->child_state->assume(nv_fld_c, aliases_c);
       };
-      updater_t weak = [&](api::num_var *nv_me) {
+      updater_t weak = [&](api::num_var *nv_fld_c) {
 //        cout << "weak for " << *nv_me << ": " << aliases_me << endl;
-        ptr_set_t aliases_joined_me = me_copy->child_state->queryAls(nv_me);
-        me_copy->child_state->assign(nv_me, _top);
-        aliases_joined_me.insert(aliases_me.begin(), aliases_me.end());
-        me_copy->child_state->assume(nv_me, aliases_joined_me);
+        ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
+        return_site->child_state->assign(nv_fld_c, _top);
+        aliases_joined_c.insert(aliases_c.begin(), aliases_c.end());
+        return_site->child_state->assume(nv_fld_c, aliases_joined_c);
       };
-      me_copy->update_multiple(region_aliases_me, getter, ff.size, strong, weak);
-    });
+      return_site->update_multiple(region_aliases_c, getter, f_s.size, strong, weak);
+    }
   };
 
   for(auto &region_mapping_so : summary->output.regions) {
     id_shared_t region_key = region_mapping_so.first;
-    ptr_set_t region_aliases_me = ptr_set_t({ ptr(region_key, vs_finite::zero) });
-    process_region(&relation::get_regions, region_aliases_me, region_mapping_so.second);
+    ptr_set_t region_aliases_c = ptr_set_t({ ptr(region_key, vs_finite::zero) });
+    process_region(&relation::get_regions, region_aliases_c, region_mapping_so.second);
   }
 
   for(auto &deref_mapping_so : summary->output.deref) {
     id_shared_t region_key = deref_mapping_so.first;
-    ptr_set_t &region_aliases_me = ptr_mapping.at(region_key);
-    process_region(&relation::get_deref, region_aliases_me, deref_mapping_so.second);
+    ptr_set_t &region_aliases_c = ptr_mapping.at(region_key);
+    process_region(&relation::get_deref, region_aliases_c, deref_mapping_so.second);
   }
   delete _top;
 
-  num_vars *_vars = me_copy->vars_relations();
-  me_copy->project(_vars);
+  num_vars *_vars = return_site->vars_relations();
+  return_site->project(_vars);
   delete _vars;
 
-  return me_copy;
+  return return_site;
 }
 
 void analysis::summary_memory_state::update(gdsl::rreil::assign *assign) {
