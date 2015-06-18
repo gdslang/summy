@@ -189,26 +189,36 @@ static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string
 //  }
 //}
 
-//static void equal_structure(region_t const& cmp, _analysis_result &ar, string label, string arch_id_name) {
-//  SCOPED_TRACE("equal_structure()");
-//
-//  auto analy_r = ar.ds_analyzed->result();
-//
-//  bool found;
-//  binary_provider::entry_t e;
-//  tie(found, e) = ar.elfp->symbol(label);
-//  ASSERT_TRUE(found);
-//
-//  auto addr_it = ar.addr_node_map.find(e.address);
-//  ASSERT_NE(addr_it, ar.addr_node_map.end());
-//
-//  ASSERT_GT(analy_r.result.size(), addr_it->second);
-//
-//  id_shared_t id = shared_ptr<gdsl::rreil::id>(new arch_id(arch_id_name));
-//  region_t const& rr = analy_r.result[ar.addr_node_map[e.address]]->query_region(id);
-//
-//  equal_structure(cmp, rr);
-//}
+static void equal_structure(region_t const &a, region_t const &b) {
+  SCOPED_TRACE("equal_structure()");
+  ASSERT_EQ(a.size(), b.size());
+  for(auto &a_it : a) {
+    auto b_it = b.find(a_it.first);
+    ASSERT_NE(b_it, b.end());
+    ASSERT_EQ(a_it.second.size, b_it->second.size);
+  }
+}
+
+static void equal_structure(region_t const& cmp, _analysis_result &ar, string label, string arch_id_name) {
+  SCOPED_TRACE("equal_structure()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->symbol(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+  id_shared_t id = shared_ptr<gdsl::rreil::id>(new arch_id(arch_id_name));
+  region_t const& rr = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->query_region_output(id);
+
+  equal_structure(cmp, rr);
+}
 
 static void mstate_from_label(summary_memory_state **mstate, _analysis_result &ar, string label) {
   SCOPED_TRACE("mstate_from_label()");
@@ -314,6 +324,45 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
   delete a;
 }
 
+TEST_F(summary_dstack_test, FromDstack_Basics) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $99, %rax\n\
+   first: mov $20, %rax\n\
+   second: nop\n"));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(99));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(20));
+}
+
+TEST_F(summary_dstack_test, FromDstack_OneFieldReplacesTwoFields) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $99, %eax\n\
+   first: mov $20, %rax\n\
+   second: nop\n"));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(99));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(20));
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 32, numeric_id::generate() }));
+    cmp.insert(make_pair(32, field { 32, numeric_id::generate() }));
+    equal_structure(cmp, ar, "first", "A");
+  }
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 64, numeric_id::generate() }));
+    equal_structure(cmp, ar, "second", "A");
+  }
+}
 
 TEST_F(summary_dstack_test, Call) {
   _analysis_result ar;

@@ -146,7 +146,7 @@ public:
   std::set<summy::vs_shared_t> queryPts(std::unique_ptr<managed_temporary> &address);
   api::ptr_set_t queryAls(gdsl::rreil::address *a);
   api::ptr_set_t queryAls(api::num_var *a);
-//  region_t const& query_region(id_shared_t id);
+  region_t const& query_region_output(id_shared_t id);
 
   summary_memory_state *copy() const;
 

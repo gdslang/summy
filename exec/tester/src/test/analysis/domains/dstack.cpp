@@ -236,8 +236,6 @@ TEST_F(dstack_test, Basics) {
    first: mov $20, %rax\n\
    second: nop\n"));
 
-
-
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
   ASSERT_EQ(*r, vs_finite::single(99));

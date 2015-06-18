@@ -399,7 +399,7 @@ region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &regio
         replacements.push_back(make_tuple(offset_next, first_size));
         if(f_next.size > size + first_size)
           replacements.push_back(make_tuple(offset + size, f_next.size - size - first_size));
-      } else
+      } else if(f_next.size > size)
         replacements.push_back(make_tuple(offset + size, f_next.size - size));
 
       dead_num_vars.push_back(new num_var(f_next.num_id));
@@ -1142,9 +1142,9 @@ api::ptr_set_t analysis::summary_memory_state::queryAls(api::num_var *v) {
   return aliases;
 }
 
-//const region_t &analysis::summary_memory_state::query_region(id_shared_t id) {
-//  return regions[id];
-//}
+const region_t &analysis::summary_memory_state::query_region_output(id_shared_t id) {
+  return output.regions[id];
+}
 
 num_var_pairs_t analysis::summary_memory_state::matchPointers(relation &a_in, relation &a_out, numeric_state *a_n,
     relation &b_in, relation &b_out, numeric_state *b_n) {
