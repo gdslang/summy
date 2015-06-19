@@ -395,7 +395,7 @@ region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &regio
       break;
     } else if(overlap(offset_next, f_next.size, offset, size)) {
       if(offset_next < offset) {
-        size_t first_size = offset - offset_next + 1;
+        size_t first_size = offset - offset_next;
         replacements.push_back(make_tuple(offset_next, first_size));
         if(f_next.size > size + first_size)
           replacements.push_back(make_tuple(offset + size, f_next.size - size - first_size));

@@ -364,6 +364,118 @@ TEST_F(summary_dstack_test, FromDstack_OneFieldReplacesTwoFields) {
   }
 }
 
+TEST_F(summary_dstack_test, FieldSplitSameOffset) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $20, %rax\n\
+   first: mov $99, %eax\n\
+   second: nop\n"));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(20));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(99));
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 64, numeric_id::generate() }));
+    equal_structure(cmp, ar, "first", "A");
+  }
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 32, numeric_id::generate() }));
+    cmp.insert(make_pair(32, field { 32, numeric_id::generate() }));
+    equal_structure(cmp, ar, "second", "A");
+  }
+}
+
+TEST_F(summary_dstack_test, FieldSplitSameOffset2) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $20, %rax\n\
+   first: mov $99, %al\n\
+   second: nop\n"));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(20));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 8));
+  ASSERT_EQ(*r, vs_finite::single(99));
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 64, numeric_id::generate() }));
+    equal_structure(cmp, ar, "first", "A");
+  }
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 8, numeric_id::generate() }));
+    cmp.insert(make_pair(8, field { 56, numeric_id::generate() }));
+    equal_structure(cmp, ar, "second", "A");
+  }
+}
+
+TEST_F(summary_dstack_test, FieldSplitMiddle) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $20, %rax\n\
+   first: mov $99, %ah\n\
+   second: nop\n"));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(20));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
+  ASSERT_EQ(*r, value_set::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 8));
+  ASSERT_EQ(*r, vs_finite::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 16));
+  ASSERT_EQ(*r, vs_finite::top);
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 8, 8));
+  ASSERT_EQ(*r, vs_finite::single(99));
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 64, numeric_id::generate() }));
+    equal_structure(cmp, ar, "first", "A");
+  }
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 8, numeric_id::generate() }));
+    cmp.insert(make_pair(8, field { 8, numeric_id::generate() }));
+    cmp.insert(make_pair(16, field { 48, numeric_id::generate() }));
+    equal_structure(cmp, ar, "second", "A");
+  }
+}
+
+TEST_F(summary_dstack_test, OverlappingFieldMiddle) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+   "mov $99, %ah\n\
+   first: mov $20, %rax\n\
+   second: nop\n"));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "first", "A", 8, 8));
+  ASSERT_EQ(*r, vs_finite::single(99));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "second", "A", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(20));
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(8, field { 8, numeric_id::generate() }));
+    equal_structure(cmp, ar, "first", "A");
+  }
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 64, numeric_id::generate() }));
+    equal_structure(cmp, ar, "second", "A");
+  }
+}
+
 TEST_F(summary_dstack_test, Call) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar,
