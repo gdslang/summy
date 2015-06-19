@@ -1037,29 +1037,71 @@ void analysis::summary_memory_state::cleanup() {
 void analysis::summary_memory_state::project(api::num_vars *vars) {
   /*
    * Todo: Check for additional vars in memory regions
+   * ...?
    */
+  auto project_regions = [&](region_map_t &regions) {
+    for(auto regions_it = regions.begin(); regions_it != regions.end();) {
+      if(vars->get_ids().find(regions_it->first) == vars->get_ids().end())
+        regions.erase(regions_it++);
+      else
+        regions_it++;
+    }
+  };
+  project_regions(input.deref);
+  project_regions(output.deref);
   child_state->project(vars);
 }
 
 api::num_vars *analysis::summary_memory_state::vars_relations() {
   id_set_t known_ids;
+  id_set_t worklist;
 
-  auto _inner = [&](auto &regions) {
+  auto for_region = [&](region_t &region) {
+    auto field_it = region.begin();
+    while(field_it != region.end()) {
+      id_shared_t field_id = field_it->second.num_id;
+      known_ids.insert(field_id);
+
+      num_var *nv_id = new num_var(field_id);
+      ptr_set_t aliases = child_state->queryAls(nv_id);
+      delete nv_id;
+
+      for(ptr const &p : aliases)
+        worklist.insert(p.id);
+
+      field_it++;
+    }
+  };
+
+  auto for_regions = [&](region_map_t &regions) {
     auto region_it = regions.begin();
     while(region_it != regions.end()) {
-      auto field_it = region_it->second.begin();
-      while(field_it != region_it->second.end()) {
-        known_ids.insert(field_it->second.num_id);
-//        cout << "adding " << *field_it->second.num_id << endl;
-        field_it++;
-      }
+      known_ids.insert(region_it->first);
+      for_region(region_it->second);
       region_it++;
     }
   };
-  _inner(input.regions);
-  _inner(input.deref);
-  _inner(output.regions);
-  _inner(output.deref);
+
+  for_regions(input.regions);
+  for_regions(output.regions);
+
+  while(!worklist.empty()) {
+    id_shared_t next = *worklist.begin();
+    worklist.erase(next);
+    if(known_ids.find(next) != known_ids.end())
+      continue;
+
+    auto next_region = [&](region_map_t &regions) {
+      auto regions_it = regions.find(next);
+      if(regions_it != regions.end()) {
+        for_region(regions_it->second);
+      }
+    };
+    next_region(input.deref);
+    next_region(output.deref);
+
+    known_ids.insert(next);
+  }
 
   return new num_vars(known_ids);
 }
