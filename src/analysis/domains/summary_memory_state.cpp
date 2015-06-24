@@ -600,6 +600,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
    * of the summary.
    */
   map<id_shared_t, ptr_set_t, id_less_no_version> ptr_mapping;
+//  map<id_shared_t, ptr_set_t, id_less_no_version> ptr_rev_mapping;
 
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
   alias_queue_t ptr_worklist;
