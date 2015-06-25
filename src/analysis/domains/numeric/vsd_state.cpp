@@ -368,8 +368,8 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     return ptr_set_t { };
 //  cout << "Returing alias..." << endl;
   vs_shared_t offset_bytes = *nv_val - vs_finite::single((int64_t)symb.address);
-  vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
-  return ptr_set_t { ptr(sm_id::from_symbol(symb), offset_bits ) };
+//  vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
+  return ptr_set_t { ptr(sm_id::from_symbol(symb), offset_bytes ) };
 }
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(num_linear *lin) {
