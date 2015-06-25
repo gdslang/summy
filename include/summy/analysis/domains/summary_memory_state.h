@@ -131,7 +131,7 @@ public:
 
   typedef std::function<void(api::num_var*)> updater_t;
   void update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak,
-      bool handle_conflicts = true);
+      bool bit_offsets, bool handle_conflicts = true);
   void store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs);
 
   void update(gdsl::rreil::assign *assign);

@@ -763,7 +763,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         return_site->child_state->assume(nv_fld_c, aliases_joined_c);
       };
       ptr_set_t region_aliases_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_aliases_c);
-      return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak);
+      return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak, true);
     }
   };
 
@@ -893,9 +893,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
 }
 
 void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size,
-    updater_t strong, updater_t weak, bool handle_conflicts) {
+    updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
   for(auto &alias : aliases) {
-
     io_region io = region_by_id(getter, alias.id);
 
     bool is_static = false;
@@ -960,8 +959,12 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
       _continue = true;
       singleton = false;
     });
-    vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
-    alias.offset->accept(vsv);
+    vs_shared_t offset_bits;
+    if(!bit_offsets)
+      offset_bits = *vs_finite::single(8)*alias.offset;
+    else
+      offset_bits = alias.offset;
+    offset_bits->accept(vsv);
     /*
      * Erasing from regions is tricky now...
      */
@@ -987,14 +990,11 @@ void analysis::summary_memory_state::store(api::ptr_set_t aliases, size_t size, 
   /*
    * Todo: Use bits in als_state and vsd_state
    */
-  api::ptr_set_t aliases_bits;
-  for(auto &_ptr : aliases)
-    aliases_bits.insert(ptr(_ptr.id, *vs_finite::single(8)*_ptr.offset));
-  update_multiple(aliases_bits, &relation::get_deref, size, [&](num_var *lhs) {
+  update_multiple(aliases, &relation::get_deref, size, [&](num_var *lhs) {
     child_state->assign(lhs, rhs);
   }, [&](num_var *lhs) {
     child_state->weak_assign(lhs, rhs);
-  });
+  }, false);
 }
 
 void analysis::summary_memory_state::update(gdsl::rreil::store *store) {
