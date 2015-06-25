@@ -1229,6 +1229,10 @@ const region_t &analysis::summary_memory_state::query_region_output(id_shared_t 
   return output.regions[id];
 }
 
+const region_t &analysis::summary_memory_state::query_deref_output(id_shared_t id) {
+  return output.deref[id];
+}
+
 num_var_pairs_t analysis::summary_memory_state::matchPointers(relation &a_in, relation &a_out, numeric_state *a_n,
     relation &b_in, relation &b_out, numeric_state *b_n) {
   /*

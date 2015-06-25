@@ -155,6 +155,7 @@ public:
   api::ptr_set_t queryAls(gdsl::rreil::address *a);
   api::ptr_set_t queryAls(api::num_var *a);
   region_t const& query_region_output(id_shared_t id);
+  region_t const& query_deref_output(id_shared_t id);
 
   summary_memory_state *copy() const;
 

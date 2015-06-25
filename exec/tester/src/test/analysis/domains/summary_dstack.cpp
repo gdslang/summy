@@ -199,7 +199,7 @@ static void equal_structure(region_t const &a, region_t const &b) {
   }
 }
 
-static void equal_structure(region_t const& cmp, _analysis_result &ar, string label, string arch_id_name) {
+static void equal_structure(region_t const& cmp, _analysis_result &ar, string label, id_shared_t id) {
   SCOPED_TRACE("equal_structure()");
 
   auto analy_r = ar.ds_analyzed->result();
@@ -214,10 +214,18 @@ static void equal_structure(region_t const& cmp, _analysis_result &ar, string la
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  id_shared_t id = shared_ptr<gdsl::rreil::id>(new arch_id(arch_id_name));
-  region_t const& rr = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->query_region_output(id);
+  region_t const& rr =
+      analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->query_region_output(
+          id);
 
   equal_structure(cmp, rr);
+}
+
+static void equal_structure(region_t const& cmp, _analysis_result &ar, string label, string arch_id_name) {
+  SCOPED_TRACE("equal_structure()");
+
+  id_shared_t id = shared_ptr<gdsl::rreil::id>(new arch_id(arch_id_name));
+  equal_structure(cmp, ar, label, id);
 }
 
 static void mstate_from_label(summary_memory_state **mstate, _analysis_result &ar, string label) {
@@ -238,8 +246,8 @@ static void mstate_from_label(summary_memory_state **mstate, _analysis_result &a
   *mstate = analy_r.result[ar.addr_node_map[e.address]]->get_mstate();
 }
 
-static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, summary_memory_state *mstate, ptr _ptr) {
-  SCOPED_TRACE("query_deref_als()");
+static void query_deref(id_shared_t &id, _analysis_result &ar, summary_memory_state *mstate, ptr _ptr, size_t size) {
+  SCOPED_TRACE("query_deref()");
 
   int64_t offset;
   value_set_visitor vsv;
@@ -252,28 +260,42 @@ static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, summary_me
 
   num_var *ptr_var = new num_var(_ptr.id);
 
-  num_linear *derefed = mstate->dereference(ptr_var, 8*offset, 64);
+  num_linear *derefed = mstate->dereference(ptr_var, 8*offset, size);
   delete ptr_var;
 
 //  if(*derefed == *value_set::top) {
 //    FAIL() << "mstate->dereference yielded top :-(";
 //  }
 
-  num_var *derefed_var;
+  num_var *derefed_var = NULL;
   num_visitor nv;
   nv._([&](num_linear_term *nt) {
     ASSERT_EQ(nt->get_scale(), 1);
     num_visitor nv_inner;
+    bool success = false;
     nv_inner._([&](num_linear_vs *vs) {
       ASSERT_EQ(*vs->get_value_set(), vs_finite::zero);
+      success = true;
     });
     nt->get_next()->accept(nv_inner);
-    derefed_var = nt->get_var();
+    if(success)
+      derefed_var = nt->get_var();
   });
   derefed->accept(nv);
+  ASSERT_NE(derefed_var, (void*)NULL);
 
-  aliases = mstate->queryAls(derefed_var);
+  id = derefed_var->get_id();
   delete derefed;
+}
+
+static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, summary_memory_state *mstate, ptr _ptr) {
+  SCOPED_TRACE("query_deref_als()");
+
+  id_shared_t id;
+  query_deref(id, ar, mstate, _ptr, 64);
+  num_var *derefed_var = new num_var(id);
+  aliases = mstate->queryAls(derefed_var);
+  delete derefed_var;
 }
 
 static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, summary_memory_state *mstate, string arch_id_name) {
@@ -300,6 +322,35 @@ static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string lab
   summary_memory_state *mstate;
   mstate_from_label(&mstate, ar, label);
   query_deref_als(aliases, ar, mstate, _ptr);
+}
+
+static void query_deref_region(region_t &region, _analysis_result &ar, string label, string arch_id_name) {
+  SCOPED_TRACE("query_deref_region()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->symbol(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+//  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
+
+  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
+  ptr_set_t aliases = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryAls(a);
+
+  ASSERT_EQ(aliases.size(), 1);
+  ptr const& _ptr = *aliases.begin();
+  ASSERT_EQ(*_ptr.offset, vs_finite::zero);
+
+  region = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->query_deref_output(_ptr.id);
+
+  delete a;
 }
 
 static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
@@ -831,11 +882,76 @@ end: ret", false));
 
   ASSERT_EQ(aliases_r13_deref, aliases_r12);
 
-  ptr_set_t aliases_a_deref;
-  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_a_deref, ar, "end", "A"));
-  ASSERT_EQ(aliases_a_deref.size(), 0);
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 8, numeric_id::generate() }));
+    cmp.insert(make_pair(8, field { 56, numeric_id::generate() }));
 
-//  ptr_set_t aliases_b_deref;
-//  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_b_deref, ar, "end", "B"));
-//  ASSERT_EQ(aliases_b_deref.size(), 0);
+    region_t region;
+    query_deref_region(region, ar, "end", "A");
+
+    equal_structure(cmp, region);
+  }
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 8, numeric_id::generate() }));
+    cmp.insert(make_pair(8, field { 56, numeric_id::generate() }));
+
+    region_t region;
+    query_deref_region(region, ar, "end", "B");
+
+    equal_structure(cmp, region);
+  }
 }
+
+TEST_F(summary_dstack_test, SummaryAppStructuralConflict2) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+"\n\
+f:\n\
+mov (%rbx), %r11\n\
+mov %r12, (%r11)\n\
+movb $22, (%rax)\n\
+ret\n\
+\n\
+main:\n\
+mov %rcx, %rax\n\
+mov %rcx, %rbx\n\
+mov %r13, (%rbx)\n\
+call f\n\
+end: ret", false));
+
+  ptr_set_t aliases_r13_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_r13_deref, ar, "end", "R13"));
+  ASSERT_EQ(aliases_r13_deref.size(), 1);
+
+  ptr_set_t aliases_r12;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r12, ar, "end", "R12"));
+  ASSERT_EQ(aliases_r12.size(), 1);
+
+  ASSERT_EQ(aliases_r13_deref, aliases_r12);
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 8, numeric_id::generate() }));
+    cmp.insert(make_pair(8, field { 56, numeric_id::generate() }));
+
+    region_t region;
+    query_deref_region(region, ar, "end", "A");
+
+    equal_structure(cmp, region);
+  }
+
+  {
+    region_t cmp;
+    cmp.insert(make_pair(0, field { 8, numeric_id::generate() }));
+    cmp.insert(make_pair(8, field { 56, numeric_id::generate() }));
+
+    region_t region;
+    query_deref_region(region, ar, "end", "B");
+
+    equal_structure(cmp, region);
+  }
+}
+
