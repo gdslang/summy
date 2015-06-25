@@ -623,7 +623,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
     vs_shared_t vs_f_offset_s = vs_finite::single(base);
     ptr_set_t region_keys_c_offset_bits;
     for(auto &_ptr : region_keys_c) {
-      vs_shared_t offset_new = *(*vs_finite::single(8)*_ptr.offset) + vs_f_offset_s;
+      vs_shared_t offset_new = *(/**vs_finite::single(8)**/_ptr.offset) + vs_f_offset_s;
       region_keys_c_offset_bits.insert(ptr(_ptr.id, offset_new));
     }
     return region_keys_c_offset_bits;

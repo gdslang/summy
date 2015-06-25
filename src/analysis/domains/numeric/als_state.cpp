@@ -348,8 +348,8 @@ api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   for(auto alias : aliases) {
 //    num_var *nv = new num_var(alias);
     vs_shared_t offset_bytes = child_state->queryVal(nv);
-//    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
-    result.insert(ptr(alias, offset_bytes));
+    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
+    result.insert(ptr(alias, offset_bits));
 //    delete nv;
   }
   return result;

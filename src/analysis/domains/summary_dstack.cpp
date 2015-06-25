@@ -126,6 +126,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               value_set_visitor vsv;
               vsv._([&](vs_finite *vsf) {
                 for(int64_t offset : vsf->get_elements()) {
+                  offset /= 8;
                   void *address = (char*)text_address + offset;
                   auto fd_it = function_desc_map.find(address);
                   if(fd_it != function_desc_map.end()) {
