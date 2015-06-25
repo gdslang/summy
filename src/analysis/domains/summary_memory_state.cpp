@@ -619,6 +619,16 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
   alias_queue_t ptr_worklist;
 
+  auto offsets_bytes_to_bits_base = [&](int64_t base, ptr_set_t const &region_keys_c) {
+    vs_shared_t vs_f_offset_s = vs_finite::single(base);
+    ptr_set_t region_keys_c_offset_bits;
+    for(auto &_ptr : region_keys_c) {
+      vs_shared_t offset_new = *(*vs_finite::single(8)*_ptr.offset) + vs_f_offset_s;
+      region_keys_c_offset_bits.insert(ptr(_ptr.id, offset_new));
+    }
+    return region_keys_c_offset_bits;
+  };
+
   auto build_pmap_region = [&](id_shared_t region_key_summary, ptr_set_t const &region_keys_c, regions_getter_t rgetter) {
     auto next_ids = (summary->input.*rgetter)().find(region_key_summary);
     if(next_ids == (summary->input.*rgetter)().end())
@@ -633,13 +643,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
       assert(aliases_fld_s.size() <= 1);
 
-      int64_t f_offset_s = field_mapping_s.first;
-      vs_shared_t vs_f_offset_s = vs_finite::single(f_offset_s);
-      ptr_set_t region_keys_c_offset;
-      for(auto &_ptr : region_keys_c) {
-        vs_shared_t offset_new = *_ptr.offset + vs_f_offset_s;
-        region_keys_c_offset.insert(ptr(_ptr.id, offset_new));
-      }
+      ptr_set_t region_keys_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_keys_c);
 
       /*
        * Todo: Warning if an alias is found in the summary plus this alias has a region in the deref map
@@ -660,7 +664,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         aliases_fld_c.insert(aliases_fld_c_next.begin(), aliases_fld_c_next.end());
       };
 
-      return_site->update_multiple(region_keys_c_offset, rgetter, f_s.size, record_aliases, record_aliases, false);
+      return_site->update_multiple(region_keys_c_offset_bits, rgetter, f_s.size, record_aliases, record_aliases, false);
       delete nv_field_s;
 
       for(auto &p_s : aliases_fld_s) {
@@ -758,7 +762,8 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         aliases_joined_c.insert(aliases_c.begin(), aliases_c.end());
         return_site->child_state->assume(nv_fld_c, aliases_joined_c);
       };
-      return_site->update_multiple(region_aliases_c, getter, f_s.size, strong, weak);
+      ptr_set_t region_aliases_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_aliases_c);
+      return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak);
     }
   };
 
@@ -851,8 +856,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
     });
     vsv._([&](vs_top *t) {
     });
-    vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
-    offset_bits->accept(vsv);
+//    vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
+    alias.offset->accept(vsv);
   }
 
   num_var *lhs = new num_var(
@@ -955,7 +960,7 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
       _continue = true;
       singleton = false;
     });
-//    vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
+    vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
     alias.offset->accept(vsv);
     /*
      * Erasing from regions is tricky now...
@@ -979,7 +984,13 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
 }
 
 void analysis::summary_memory_state::store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs) {
-  update_multiple(aliases, &relation::get_deref, size, [&](num_var *lhs) {
+  /*
+   * Todo: Use bits in als_state and vsd_state
+   */
+  api::ptr_set_t aliases_bits;
+  for(auto &_ptr : aliases)
+    aliases_bits.insert(ptr(_ptr.id, *vs_finite::single(8)*_ptr.offset));
+  update_multiple(aliases_bits, &relation::get_deref, size, [&](num_var *lhs) {
     child_state->assign(lhs, rhs);
   }, [&](num_var *lhs) {
     child_state->weak_assign(lhs, rhs);

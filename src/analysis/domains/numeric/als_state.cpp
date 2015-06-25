@@ -347,7 +347,9 @@ api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   singleton_value_t &aliases = id_it->second;
   for(auto alias : aliases) {
 //    num_var *nv = new num_var(alias);
-    result.insert(ptr(alias, child_state->queryVal(nv)));
+    vs_shared_t offset_bytes = child_state->queryVal(nv);
+//    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
+    result.insert(ptr(alias, offset_bytes));
 //    delete nv;
   }
   return result;
