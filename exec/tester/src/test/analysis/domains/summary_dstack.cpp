@@ -803,3 +803,39 @@ ret", false));
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_ip, ar, "end", "IP"));
   ASSERT_EQ(aliases_ip.size(), 1);
 }
+
+TEST_F(summary_dstack_test, SummaryAppStructuralConflict1) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+"\n\
+f:\n\
+mov (%rax), %r11\n\
+mov %r12, (%r11)\n\
+movb $22, (%rbx)\n\
+ret\n\
+\n\
+main:\n\
+mov %rcx, %rax\n\
+mov %rcx, %rbx\n\
+mov %r13, (%rax)\n\
+call f\n\
+end: ret", false));
+
+  ptr_set_t aliases_r13_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_r13_deref, ar, "end", "R13"));
+  ASSERT_EQ(aliases_r13_deref.size(), 1);
+
+  ptr_set_t aliases_r12;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r12, ar, "end", "R12"));
+  ASSERT_EQ(aliases_r12.size(), 1);
+
+  ASSERT_EQ(aliases_r13_deref, aliases_r12);
+
+  ptr_set_t aliases_a_deref;
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_a_deref, ar, "end", "A"));
+  ASSERT_EQ(aliases_a_deref.size(), 0);
+
+//  ptr_set_t aliases_b_deref;
+//  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_b_deref, ar, "end", "B"));
+//  ASSERT_EQ(aliases_b_deref.size(), 0);
+}
