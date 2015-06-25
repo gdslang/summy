@@ -368,10 +368,11 @@ bool analysis::summary_memory_state::overlap_region(region_t& region, int64_t of
 /*
  * Todo: Work on io_region, keep more relations between input and output
  */
-region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &region, int64_t offset,
-    size_t size) {
+summary_memory_state::rt_result_t analysis::summary_memory_state::retrieve_kill(region_t &region, int64_t offset,
+    size_t size, bool handle_conflict) {
 //  cout << "retrieve_kill() " << offset << " / " << size << endl;
 
+  bool conflict = false;
   bool found = false;
   id_shared_t num_id;
   vector<num_var*> dead_num_vars;
@@ -394,6 +395,9 @@ region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &regio
       num_id = f_next.num_id;
       break;
     } else if(overlap(offset_next, f_next.size, offset, size)) {
+      conflict = true;
+      if(!handle_conflict)
+        break;
       if(offset_next < offset) {
         size_t first_size = offset - offset_next;
         replacements.push_back(make_tuple(offset_next, first_size));
@@ -422,8 +426,12 @@ region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &regio
 //  cout << "Found: " << found << endl;
 
   if(!found)
-    return region.end();
-  return field_it;
+    return rt_result_t { conflict, region.end() };
+  return rt_result_t { conflict, field_it };
+}
+
+region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &region, int64_t offset, size_t size) {
+  return retrieve_kill(region, offset, size, true).region_it;
 }
 
 void analysis::summary_memory_state::topify(region_t &region, int64_t offset,
@@ -439,19 +447,26 @@ void analysis::summary_memory_state::topify(region_t &region, int64_t offset,
   }
 }
 
-id_shared_t analysis::summary_memory_state::transVarReg(io_region io, int64_t offset, size_t size) {
-  auto field_in_it = retrieve_kill(io.in_r, offset, size);
-  auto field_out_it = retrieve_kill(io.out_r, offset, size);
-  id_shared_t r;
-  if(field_in_it == io.in_r.end()) {
-    assert(field_out_it == io.out_r.end());
+optional<id_shared_t> analysis::summary_memory_state::transVarReg(io_region io, int64_t offset, size_t size, bool handle_conflict) {
+  rt_result_t in = retrieve_kill(io.in_r, offset, size, handle_conflict);
+  rt_result_t out = retrieve_kill(io.out_r, offset, size, handle_conflict);
+  assert(in.conflict == out.conflict);
+  if(in.conflict && !handle_conflict)
+    return nullopt;
+  optional<id_shared_t> r;
+  if(in.region_it == io.in_r.end()) {
+    assert(out.region_it == io.out_r.end());
     field &f = io.insert(child_state, offset, size);
     r = f.num_id;
   } else {
-    assert(field_out_it != io.out_r.end());
-    r = field_out_it->second.num_id;
+    assert(out.region_it != io.out_r.end());
+    r = out.region_it->second.num_id;
   }
   return r;
+}
+
+id_shared_t analysis::summary_memory_state::transVarReg(io_region io, int64_t offset, size_t size) {
+  return transVarReg(io, offset, size, true).value();
 }
 
 id_shared_t analysis::summary_memory_state::transVar(id_shared_t var_id, int64_t offset, size_t size) {
@@ -600,7 +615,6 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
    * of the summary.
    */
   map<id_shared_t, ptr_set_t, id_less_no_version> ptr_mapping;
-//  map<id_shared_t, ptr_set_t, id_less_no_version> ptr_rev_mapping;
 
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
   alias_queue_t ptr_worklist;
@@ -618,6 +632,14 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       ptr_set_t aliases_fld_s = summary->child_state->queryAls(nv_field_s);
 
       assert(aliases_fld_s.size() <= 1);
+
+      int64_t f_offset_s = field_mapping_s.first;
+      vs_shared_t vs_f_offset_s = vs_finite::single(f_offset_s);
+      ptr_set_t region_keys_c_offset;
+      for(auto &_ptr : region_keys_c) {
+        vs_shared_t offset_new = *_ptr.offset + vs_f_offset_s;
+        region_keys_c_offset.insert(ptr(_ptr.id, offset_new));
+      }
 
       /*
        * Todo: Warning if an alias is found in the summary plus this alias has a region in the deref map
@@ -638,7 +660,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         aliases_fld_c.insert(aliases_fld_c_next.begin(), aliases_fld_c_next.end());
       };
 
-      return_site->update_multiple(region_keys_c, rgetter, f_s.size, record_aliases, record_aliases);
+      return_site->update_multiple(region_keys_c_offset, rgetter, f_s.size, record_aliases, record_aliases, false);
       delete nv_field_s;
 
       for(auto &p_s : aliases_fld_s) {
@@ -865,7 +887,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   cleanup();
 }
 
-void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak) {
+void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size,
+    updater_t strong, updater_t weak, bool handle_conflicts) {
   for(auto &alias : aliases) {
 
     io_region io = region_by_id(getter, alias.id);
@@ -897,12 +920,18 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
       tie(overlapping, non_overlapping) = overlappings(v, size);
 
       for(auto oo : overlapping)
-        topify(io.out_r, oo, size);
-      for(auto noo : non_overlapping)
-        ids.push_back(transVarReg(io, noo, size));
+        if(handle_conflicts)
+          topify(io.out_r, oo, size);
+      for(auto noo : non_overlapping) {
+        optional<id_shared_t> next_id = transVarReg(io, noo, size, handle_conflicts);
+        if(next_id)
+          ids.push_back(next_id.value());
+      }
     });
     vsv._([&](vs_open *o) {
       singleton = false;
+      if(!handle_conflicts)
+        return;
       switch(o->get_open_dir()) {
         case UPWARD: {
           for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++)
@@ -926,8 +955,8 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
       _continue = true;
       singleton = false;
     });
-    vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
-    offset_bits->accept(vsv);
+//    vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
+    alias.offset->accept(vsv);
     /*
      * Erasing from regions is tricky now...
      */

@@ -26,6 +26,7 @@
 #include <set>
 #include <tuple>
 #include <functional>
+#include <experimental/optional>
 
 namespace analysis {
 
@@ -87,8 +88,14 @@ protected:
 
 //  region_t merge_memory(id_shared_t addr_a, region_t &r);
 //  region_t merge_memory(id_shared_t addr_a, id_shared_t addr_b);
+  struct rt_result_t {
+    bool conflict;
+    region_t::iterator region_it;
+  };
+  rt_result_t retrieve_kill(region_t &region, int64_t offset, size_t size, bool handle_conflict);
   region_t::iterator retrieve_kill(region_t &region, int64_t offset, size_t size);
   void topify(region_t &region, int64_t offset, size_t size);
+  std::experimental::optional<id_shared_t> transVarReg(io_region io, int64_t offset, size_t size, bool handle_conflict);
   id_shared_t transVarReg(io_region io, int64_t offset, size_t size);
   id_shared_t transVar(id_shared_t var_id, int64_t offset, size_t size);
   id_shared_t transDeref(id_shared_t var_id, int64_t offset, size_t size);
@@ -123,7 +130,8 @@ public:
   summary_memory_state *apply_summary(summary_memory_state *summary);
 
   typedef std::function<void(api::num_var*)> updater_t;
-  void update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak);
+  void update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak,
+      bool handle_conflicts = true);
   void store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs);
 
   void update(gdsl::rreil::assign *assign);
