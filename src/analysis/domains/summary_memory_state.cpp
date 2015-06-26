@@ -1560,7 +1560,7 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
       while(mri != merge_region_iterator::end(region_a, region_b)) {
         region_pair_desc_t rpd = *mri;
         if(!rpd.ending_last)
-        assert(false);
+          assert(false);
         if(rpd.collision) {
           field_desc_t fd_ending_first = rpd.ending_first;
           field_desc_t fd_ending_last = rpd.ending_last.value();
