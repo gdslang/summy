@@ -34,6 +34,6 @@ void summy::rreil::numeric_id::accept(gdsl::rreil::id_visitor &v) {
 }
 
 std::shared_ptr<gdsl::rreil::id> summy::rreil::numeric_id::generate() {
-  static int_t counter = 0;
+  static int_t counter = 66;
   return shared_ptr<gdsl::rreil::id>(new numeric_id(counter++));
 }

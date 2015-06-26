@@ -124,7 +124,7 @@ merge_region_iterator &merge_region_iterator::operator ++() {
   } else if(r1_it == r1_it_end && r2_it != r2_it_end) r2_it++;
   else if(r1_it != r1_it_end && r2_it == r2_it_end) r1_it++;
   else
-  assert(false);
+    assert(false);
   return *this;
 }
 

@@ -265,9 +265,6 @@ void analysis::summary_dstack::init_state() {
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm) :
   fp_analysis(cfg), sm(sm) {
-  /*
-   * Todo: Use correct start address here
-   */
   init();
 
   /*

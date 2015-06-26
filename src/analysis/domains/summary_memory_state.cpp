@@ -44,7 +44,7 @@ void analysis::relation::clear() {
   deref.clear();
 }
 
-field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size) {
+field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
   id_shared_t nid_in = numeric_id::generate();
   id_shared_t nid_out = numeric_id::generate();
 
@@ -55,7 +55,8 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
 //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero) << endl;
 
-  child_state->assume(n_in, {ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero)});
+  if(!replacement)
+    child_state->assume(n_in, {ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero)});
 //  child_state->assume(in_out_eq);
   child_state->assign(n_out, ass_e);
 
@@ -456,7 +457,7 @@ optional<id_shared_t> analysis::summary_memory_state::transVarReg(io_region io, 
   optional<id_shared_t> r;
   if(in.region_it == io.in_r.end()) {
     assert(out.region_it == io.out_r.end());
-    field &f = io.insert(child_state, offset, size);
+    field &f = io.insert(child_state, offset, size, in.conflict);
     r = f.num_id;
   } else {
     assert(out.region_it != io.out_r.end());
@@ -537,7 +538,7 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
     if(overlap_region(io.out_r, offset, size))
       return new num_linear_vs(value_set::top);
     else {
-      field &f = io.insert(child_state, offset, size);
+      field &f = io.insert(child_state, offset, size, false);
       return new num_linear_term(new num_var(f.num_id));
     }
   } else return assemble_fields(fields);
@@ -664,7 +665,8 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         aliases_fld_c.insert(aliases_fld_c_next.begin(), aliases_fld_c_next.end());
       };
 
-      return_site->update_multiple(region_keys_c_offset_bits, rgetter, f_s.size, record_aliases, record_aliases, false);
+//      cout << region_keys_c_offset_bits << ":" << f_s.size << endl;
+      return_site->update_multiple(region_keys_c_offset_bits, rgetter, f_s.size, record_aliases, record_aliases, true, false);
       delete nv_field_s;
 
       for(auto &p_s : aliases_fld_s) {
@@ -763,7 +765,9 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         return_site->child_state->assume(nv_fld_c, aliases_joined_c);
       };
       ptr_set_t region_aliases_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_aliases_c);
-      return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak, true);
+
+//      cout << "~~~" << region_aliases_c_offset_bits << ":" << f_s.size << endl;
+      return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak, true, true);
     }
   };
 
@@ -783,6 +787,8 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   num_vars *_vars = return_site->vars_relations();
   return_site->project(_vars);
   delete _vars;
+
+//  cout << *return_site << endl;
 
   return return_site;
 }
@@ -994,7 +1000,7 @@ void analysis::summary_memory_state::store(api::ptr_set_t aliases, size_t size, 
     child_state->assign(lhs, rhs);
   }, [&](num_var *lhs) {
     child_state->weak_assign(lhs, rhs);
-  }, false);
+  }, false, true);
 }
 
 void analysis::summary_memory_state::update(gdsl::rreil::store *store) {
@@ -1259,11 +1265,11 @@ num_var_pairs_t analysis::summary_memory_state::matchPointers(relation &a_in, re
           if(ending_first.region_first)
             insertions.push_back([&io_rb, &b_n, ending_first]() {
 //            cout << "Insertion into io_rb at " << ending_first.offset << endl;
-              io_rb.insert(b_n, ending_first.offset, ending_first.f.size);
+              io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
             });
           else
             insertions.push_back([&io_ra, &a_n, ending_first]() {
-              io_ra.insert(a_n, ending_first.offset, ending_first.f.size);
+              io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
             });
         }
       }
@@ -1543,24 +1549,11 @@ std::tuple<summary_memory_state::memory_head, numeric_state*, numeric_state*> an
           fn_to = nullopt;
         }
       };
-//      auto nsync = [&](id_shared_t id, numeric_state *from, numeric_state *to) {
-//        assert(false);
-////        if(!input)
-////          return;
-////        cout << "**id: " << *id << endl;
-////        num_var *id_nv = new num_var(id);
-////        ptr_set_t aliases = from->queryAls(id_nv);
-////        for(auto a : aliases)
-////          cout << "**alias: " << a << endl;
-////        to->assume(id_nv, aliases);
-////        delete id_nv;
-//      };
 
       merge_region_iterator mri(region_a, region_b);
       while(mri != merge_region_iterator::end(region_a, region_b)) {
         region_pair_desc_t rpd = *mri;
-        if(!rpd.ending_last)
-          assert(false);
+        assert(rpd.ending_last);
         if(rpd.collision) {
           field_desc_t fd_ending_first = rpd.ending_first;
           field_desc_t fd_ending_last = rpd.ending_last.value();

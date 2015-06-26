@@ -953,40 +953,40 @@ end: ret", false));
   }
 }
 
-TEST_F(summary_dstack_test, SummaryAppStructuralConflict3) {
-  _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
-"\f:\n\
-mov %r11, (%rax)\n\
-mov %r12, 4(%rbx)\n\
-ret\n\
-\n\
-main:\n\
-mov %rcx, %rax\n\
-mov %rcx, %rbx\n\
-call f\n\
-end: ret", false));
-
-  {
-    region_t cmp;
-    cmp.insert(make_pair(0, field { 32, numeric_id::generate() }));
-    cmp.insert(make_pair(32, field { 64, numeric_id::generate() }));
-
-    region_t region;
-    query_deref_region(region, ar, "end", "A");
-
-    equal_structure(cmp, region);
-  }
-
-  {
-    region_t cmp;
-    cmp.insert(make_pair(0, field { 32, numeric_id::generate() }));
-    cmp.insert(make_pair(32, field { 64, numeric_id::generate() }));
-
-    region_t region;
-    query_deref_region(region, ar, "end", "B");
-
-    equal_structure(cmp, region);
-  }
-}
+//TEST_F(summary_dstack_test, SummaryAppStructuralConflict3) {
+//  _analysis_result ar;
+//  ASSERT_NO_FATAL_FAILURE(state_asm(ar,
+//"\f:\n\
+//mov %r11, (%rax)\n\
+//mov %r12, 4(%rbx)\n\
+//ret\n\
+//\n\
+//main:\n\
+//mov %rcx, %rax\n\
+//mov %rcx, %rbx\n\
+//call f\n\
+//end: ret", false));
+//
+//  {
+//    region_t cmp;
+//    cmp.insert(make_pair(0, field { 32, numeric_id::generate() }));
+//    cmp.insert(make_pair(32, field { 64, numeric_id::generate() }));
+//
+//    region_t region;
+//    query_deref_region(region, ar, "end", "A");
+//
+//    equal_structure(cmp, region);
+//  }
+//
+//  {
+//    region_t cmp;
+//    cmp.insert(make_pair(0, field { 32, numeric_id::generate() }));
+//    cmp.insert(make_pair(32, field { 64, numeric_id::generate() }));
+//
+//    region_t region;
+//    query_deref_region(region, ar, "end", "B");
+//
+//    equal_structure(cmp, region);
+//  }
+//}
 
