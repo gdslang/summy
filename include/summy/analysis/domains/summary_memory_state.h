@@ -127,6 +127,8 @@ public:
   summary_memory_state *join(domain_state *other, size_t current_node);
   summary_memory_state *widen(domain_state *other, size_t current_node);
   summary_memory_state *narrow(domain_state *other, size_t current_node);
+
+  region_t join_region(region_t const &r1, region_t const &r2);
   summary_memory_state *apply_summary(summary_memory_state *summary);
 
   typedef std::function<void(api::num_var*)> updater_t;

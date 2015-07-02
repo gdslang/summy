@@ -608,6 +608,24 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
   return domop(other, current_node, &numeric_state::narrow);
 }
 
+region_t analysis::summary_memory_state::join_region(region_t const &r1, region_t const &r2) {
+  region_t result;
+  merge_region_iterator mri(r1, r2);
+  while(mri != merge_region_iterator::end(r1, r2)) {
+    region_pair_desc_t rpd = *mri;
+    field_desc_t const &f_first = rpd.ending_first;
+    if(rpd.collision) {
+
+    } else {
+      if(rpd.ending_last) {
+        field_desc_t const &f_sec = rpd.ending_last.value();
+      }
+    }
+    ++mri;
+  }
+  return result;
+}
+
 summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
   summary_memory_state *return_site = copy();
   /*
@@ -615,7 +633,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
    * certain offsets. The mapping is established from the structure of the memory
    * of the summary.
    */
-  map<id_shared_t, ptr_set_t, id_less_no_version> ptr_mapping;
+  map<id_shared_t, ptr_set_t, id_less_no_version> ptr_map;
 
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
   alias_queue_t ptr_worklist;
@@ -670,7 +688,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
       delete nv_field_s;
 
       for(auto &p_s : aliases_fld_s) {
-        ptr_set_t &aliases_c = ptr_mapping[p_s.id];
+        ptr_set_t &aliases_c = ptr_map[p_s.id];
         if(!includes(aliases_c.begin(), aliases_c.end(), aliases_fld_c.begin(), aliases_fld_c.end())) {
           aliases_c.insert(aliases_fld_c.begin(), aliases_fld_c.end());
           ptr_worklist.insert(p_s.id);
@@ -712,7 +730,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
        * First, we match field names and alias from the
        * memory (deref) input
        */
-      ptr_set_t const &region_keys_c = ptr_mapping.at(region_key_summary);
+      ptr_set_t const &region_keys_c = ptr_map.at(region_key_summary);
 
       build_pmap_region(region_key_summary, region_keys_c, &relation::get_deref);
 
@@ -726,8 +744,17 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
    */
 
   /*
-   * Application in regions, one alias
+   * Application
    */
+  map<id_shared_t, id_set_t, id_less_no_version> ptr_map_rev;
+  id_set_t conflict_ptrs;
+  for (auto &ptr_mapping : ptr_map)
+    for(auto &p : ptr_mapping.second) {
+      ptr_map_rev[p.id].insert(ptr_mapping.first);
+      if(ptr_map_rev.at(p.id).size() > 1)
+        conflict_ptrs.insert(p.id);
+    }
+
 
   num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
   auto process_region = [&](regions_getter_t getter, ptr_set_t &region_aliases_c, region_t &region) {
@@ -743,11 +770,11 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
       ptr_set_t aliases_c;
       for(auto &alias_s : aliases_s) {
-        auto aliases_mapped_it = ptr_mapping.find(alias_s.id);
+        auto aliases_mapped_it = ptr_map.find(alias_s.id);
         ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
 //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
 //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) << endl;
-        if(aliases_mapped_it != ptr_mapping.end())
+        if(aliases_mapped_it != ptr_map.end())
           for(auto alias_c_next : aliases_c_next)
             aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
       }
@@ -779,7 +806,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
 
   for(auto &deref_mapping_so : summary->output.deref) {
     id_shared_t region_key = deref_mapping_so.first;
-    ptr_set_t &region_aliases_c = ptr_mapping.at(region_key);
+    ptr_set_t &region_aliases_c = ptr_map.at(region_key);
     process_region(&relation::get_deref, region_aliases_c, deref_mapping_so.second);
   }
   delete _top;
