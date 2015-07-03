@@ -55,39 +55,40 @@ struct io_region {
 /**
  * Summary-based memory domain state
  */
-class summary_memory_state: public domain_state, public memory_state_base {
+class summary_memory_state : public domain_state, public memory_state_base {
 private:
   shared_ptr<static_memory> sm;
 
   relation input;
   relation output;
 
-  typedef numeric_state*(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
+  typedef numeric_state *(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
   summary_memory_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
 
-  std::unique_ptr<managed_temporary> assign_temporary(int_t size,
-      std::function<analysis::api::num_expr*(analysis::api::converter&)> cvc);
+  std::unique_ptr<managed_temporary> assign_temporary(
+    int_t size, std::function<analysis::api::num_expr *(analysis::api::converter &)> cvc);
 
-  typedef region_map_t&(relation::*regions_getter_t)();
+  typedef region_map_t &(relation::*regions_getter_t)();
   io_region region_by_id(regions_getter_t getter, id_shared_t id);
 
   void bottomify();
   io_region dereference(id_shared_t id);
+
 protected:
   void put(std::ostream &out) const;
-//  region_t &region(id_shared_t id);
+  //  region_t &region(id_shared_t id);
 
   /*
    * Static memory
    */
-  std::tuple<bool, void*> static_address(id_shared_t id);
+  std::tuple<bool, void *> static_address(id_shared_t id);
   void initialize_static(io_region io, void *address, size_t offset, size_t size);
 
   std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
   bool overlap_region(region_t &region, int64_t offset, size_t size);
 
-//  region_t merge_memory(id_shared_t addr_a, region_t &r);
-//  region_t merge_memory(id_shared_t addr_a, id_shared_t addr_b);
+  //  region_t merge_memory(id_shared_t addr_a, region_t &r);
+  //  region_t merge_memory(id_shared_t addr_a, id_shared_t addr_b);
   struct rt_result_t {
     bool conflict;
     region_t::iterator region_it;
@@ -105,17 +106,16 @@ protected:
   api::num_linear *transLE(regions_getter_t rget, id_shared_t var_id, int64_t offset, size_t size);
   api::num_linear *transLE(id_shared_t var_id, int64_t offset, size_t size);
   api::num_linear *transLEInput(id_shared_t var_id, int64_t offset, size_t size);
+
 public:
-  summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, relation input, relation output) :
-      memory_state_base(child_state), sm(sm), input(input), output(output) {
-  }
+  summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, relation input, relation output)
+      : memory_state_base(child_state), sm(sm), input(input), output(output) {}
   /**
    * @param start_bottom: true => start value, false => bottom
    */
   summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom);
-  summary_memory_state(summary_memory_state const &o) :
-      memory_state_base(o.child_state->copy()), sm(o.sm), input(o.input), output(o.output) {
-  }
+  summary_memory_state(summary_memory_state const &o)
+      : memory_state_base(o.child_state->copy()), sm(o.sm), input(o.input), output(o.output) {}
   ~summary_memory_state() {
     delete child_state;
   }
@@ -131,9 +131,9 @@ public:
   region_t join_region(region_t const &r1, region_t const &r2);
   summary_memory_state *apply_summary(summary_memory_state *summary);
 
-  typedef std::function<void(api::num_var*)> updater_t;
+  typedef std::function<void(api::num_var *)> updater_t;
   void update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak,
-      bool bit_offsets, bool handle_conflicts);
+    bool bit_offsets, bool handle_conflicts);
   void store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs);
 
   void update(gdsl::rreil::assign *assign);
@@ -156,8 +156,8 @@ public:
   std::set<summy::vs_shared_t> queryPts(std::unique_ptr<managed_temporary> &address);
   api::ptr_set_t queryAls(gdsl::rreil::address *a);
   api::ptr_set_t queryAls(api::num_var *a);
-  region_t const& query_region_output(id_shared_t id);
-  region_t const& query_deref_output(id_shared_t id);
+  region_t const &query_region_output(id_shared_t id);
+  region_t const &query_deref_output(id_shared_t id);
 
   summary_memory_state *copy() const;
 
@@ -172,14 +172,13 @@ public:
    *
    * @return pair of variables that correspond to each other in the respective memory states
    */
-  static num_var_pairs_t matchPointers(relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in,
-      relation &b_out, numeric_state *b_n);
+  static num_var_pairs_t matchPointers(
+    relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n);
   struct memory_head {
     relation input;
     relation output;
   };
-  static std::tuple<memory_head, numeric_state*, numeric_state*> compat(summary_memory_state const *a,
-      summary_memory_state const *b);
+  static std::tuple<memory_head, numeric_state *, numeric_state *> compat(
+    summary_memory_state const *a, summary_memory_state const *b);
 };
-
 }
