@@ -611,17 +611,39 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
   return domop(other, current_node, &numeric_state::narrow);
 }
 
-region_t analysis::summary_memory_state::join_region(region_t const &r1, region_t const &r2) {
+region_t analysis::summary_memory_state::join_region_aliases(region_t const &r1, region_t const &r2, numeric_state *n) {
   region_t result;
   merge_region_iterator mri(r1, r2);
   while(mri != merge_region_iterator::end(r1, r2)) {
     region_pair_desc_t rpd = *mri;
     field_desc_t const &f_first = rpd.ending_first;
+    num_var *f_first_v = new num_var(f_first.f.num_id);
+    id_shared_t id_r = numeric_id::generate();
+    num_var *v_r = new num_var(id_r);
     if(rpd.collision) {
 
     } else {
       if(rpd.ending_last) {
         field_desc_t const &f_sec = rpd.ending_last.value();
+        num_var *f_sec_v = new num_var(f_sec.f.num_id);
+
+        ptr_set_t f_first_aliases = n->queryAls(f_first_v);
+        ptr_set_t f_sec_aliases = n->queryAls(f_first_v);
+
+        ptr_set_t f_r_aliases = f_first_aliases;
+        f_r_aliases.insert(f_sec_aliases.begin(), f_sec_aliases.end());
+        n->assume(v_r, f_r_aliases);
+
+        result.insert(make_pair(f_first.offset, field{f_first.f.size, id_r}));
+
+        delete f_sec_v;
+      } else {
+        ptr_set_t f_first_aliases = n->queryAls(f_first_v);
+
+        ptr_set_t f_r_aliases = f_first_aliases;
+        n->assume(v_r, f_r_aliases);
+
+        result.insert(make_pair(f_first.offset, field{f_first.f.size, id_r}));
       }
     }
     ++mri;
@@ -1259,8 +1281,14 @@ num_var_pairs_t analysis::summary_memory_state::matchPointers(
     vector<function<void()>> insertions;
 
     /*
-     * We first check for missing pointers in ther region...
+     * We first check for missing pointers in the region...
      */
+
+    /*
+     * Todo: Können Konflikte übersehen werden, wenn weitergegangen wird zu einem
+     * nicht überlappenden Element?
+     */
+
     merge_region_iterator mri(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;

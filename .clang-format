@@ -6,10 +6,10 @@ UseTab: Never
 ---
 Language: Cpp
 Standard: Cpp11
+ColumnLimit: 120
 IndentCaseLabels: true
 DerivePointerAlignment: false
 BreakBeforeBraces: Attach
-ColumnLimit: 120
 AllowShortIfStatementsOnASingleLine: true
 AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
@@ -20,5 +20,6 @@ AlignAfterOpenBracket: false
 SpaceBeforeParens: Never
 IndentCaseLabels: true
 ContinuationIndentWidth: 2
+Cpp11BracedListStyle: true
 ---
 
