@@ -1588,7 +1588,7 @@ std::tuple<summary_memory_state::memory_head, numeric_state *, numeric_state *> 
         assert(rpd.ending_last);
         if(rpd.collision) {
           field_desc_t fd_ending_first = rpd.ending_first;
-          field_desc_t fd_ending_last = rpd.ending_last.value();
+          field_desc_t fd_ending_last = rpd.ending_last.value_or(rpd.ending_first);
 
           fn_to = fd_ending_last.offset + fd_ending_last.f.size;
           if(!fn_from) fn_from = fd_ending_first.offset;

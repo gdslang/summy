@@ -36,10 +36,12 @@ std::experimental::optional<field_desc_t> region_pair_desc_t::field_second_regio
 
 merge_region_iterator::merge_region_iterator(region_t::const_iterator r1_it, region_t::const_iterator r1_it_end,
   region_t::const_iterator r2_it, region_t::const_iterator r2_it_end)
-    : r1_it(r1_it), r1_it_end(r1_it_end), r2_it(r2_it), r2_it_end(r2_it_end) {}
+    : r1_it(r1_it), r1_it_end(r1_it_end), r1_collision(false), r2_it(r2_it), r2_it_end(r2_it_end), r2_collision(false) {
+}
 
 merge_region_iterator::merge_region_iterator(region_t const &r1, region_t const &r2)
-    : r1_it(r1.begin()), r1_it_end(r1.end()), r2_it(r2.begin()), r2_it_end(r2.end()) {}
+    : r1_it(r1.begin()), r1_it_end(r1.end()), r1_collision(false), r2_it(r2.begin()), r2_it_end(r2.end()),
+      r2_collision(false) {}
 
 merge_region_iterator merge_region_iterator::end(region_t const &r1, region_t const &r2) {
   return merge_region_iterator(r1.end(), r1.end(), r2.end(), r2.end());
@@ -57,26 +59,28 @@ region_pair_desc_t merge_region_iterator::operator*() {
     field_desc_t f_b_off = field_desc_t{false, offset_b, f_b};
     int64_t end_b = offset_b + f_b.size;
 
-    bool collision = false;
+    bool collision_local = false;
     bool perfect_overlap = false;
     if(offset_a < offset_b) {
-      if(end_a > offset_b) collision = true;
+      if(end_a > offset_b) collision_local = true;
     } else if(offset_b > offset_a) {
-      if(end_b > offset_a) collision = true;
+      if(end_b > offset_a) collision_local = true;
     } else {
       if(end_a != end_b)
-        collision = true;
+        collision_local = true;
       else
         perfect_overlap = true;
     }
 
+    this->r1_collision = this->r1_collision || collision_local;
+    this->r2_collision = this->r2_collision || collision_local;
+    bool collision = this->r1_collision || this->r2_collision;
+
     if(collision) {
-      if(end_a < end_b)
-        return region_pair_desc_t{true, f_a_off, f_b_off};
-      else {
-        assert(end_b > end_a);
-        return region_pair_desc_t{true, f_b_off, f_a_off};
-      }
+      if(end_a <= end_b)
+        return region_pair_desc_t{true, f_a_off, collision_local ? optional<field_desc_t>(f_b_off) : nullopt};
+      else
+        return region_pair_desc_t{true, f_b_off, collision_local ? optional<field_desc_t>(f_a_off) : nullopt};
     } else {
       if(perfect_overlap)
         return region_pair_desc_t{false, f_a_off, f_b_off};
@@ -103,6 +107,15 @@ region_pair_desc_t merge_region_iterator::operator*() {
 }
 
 merge_region_iterator &merge_region_iterator::operator++() {
+  auto inc_r1 = [&]() {
+    r1_it++;
+    r1_collision = false;
+  };
+  auto inc_r2 = [&]() {
+    r2_it++;
+    r2_collision = false;
+  };
+
   if(r1_it != r1_it_end && r2_it != r2_it_end) {
     int64_t offset_a = r1_it->first;
     field const &f_a = r1_it->second;
@@ -112,16 +125,16 @@ merge_region_iterator &merge_region_iterator::operator++() {
     int64_t end_b = offset_b + f_b.size;
 
     if(offset_a == offset_b && end_a == end_b) {
-      r1_it++;
-      r2_it++;
-    } else if(end_a < end_b)
-      r1_it++;
+      inc_r1();
+      inc_r2();
+    } else if(end_a <= end_b)
+      inc_r1();
     else
-      r2_it++;
+      inc_r2();
   } else if(r1_it == r1_it_end && r2_it != r2_it_end)
-    r2_it++;
+    inc_r2();
   else if(r1_it != r1_it_end && r2_it == r2_it_end)
-    r1_it++;
+    inc_r1();
   else
     assert(false);
   return *this;
