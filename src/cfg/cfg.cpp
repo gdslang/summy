@@ -74,7 +74,7 @@ void cfg::cfg::add_program(translated_program_t &translated_binary) {
   }
 }
 
-size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*>* statements, size_t from_node) {
+size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*> const *statements, size_t from_node) {
   size_t to_node = from_node;
   for(auto stmt : *statements) {
     to_node = create_node([&](size_t id) {

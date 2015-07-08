@@ -95,7 +95,7 @@ public:
   ~cfg();
 
   void add_program(translated_program_t &translated_binary);
-  size_t add_nodes(std::vector<gdsl::rreil::statement*> *statements, size_t from_node);
+  size_t add_nodes(std::vector<gdsl::rreil::statement*> const *statements, size_t from_node);
 
   size_t next_node_id();
   size_t node_count();

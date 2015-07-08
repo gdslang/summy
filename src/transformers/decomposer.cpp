@@ -36,7 +36,7 @@ void decomposer::transform() {
         statement_visitor v;
         v._([&](ite *i) {
           replace = true;
-          auto branch = [&](vector<statement*> *branch, bool positive) {
+          auto branch = [&](vector<statement*> const *branch, bool positive) {
             size_t branch_node_id = cfg->create_node([&](size_t id) {
               return new (class node)(id);
             });
