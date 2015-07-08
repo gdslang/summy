@@ -1585,16 +1585,16 @@ std::tuple<summary_memory_state::memory_head, numeric_state *, numeric_state *> 
       merge_region_iterator mri(region_a, region_b);
       while(mri != merge_region_iterator::end(region_a, region_b)) {
         region_pair_desc_t rpd = *mri;
-        assert(rpd.ending_last);
         if(rpd.collision) {
           field_desc_t fd_ending_first = rpd.ending_first;
           field_desc_t fd_ending_last = rpd.ending_last.value_or(rpd.ending_first);
 
           fn_to = fd_ending_last.offset + fd_ending_last.f.size;
           if(!fn_from) fn_from = fd_ending_first.offset;
-          a_kill_ids.insert(rpd.field_first_region().value().f.num_id);
-          b_kill_ids.insert(rpd.field_second_region().value().f.num_id);
+          if(rpd.field_first_region()) a_kill_ids.insert(rpd.field_first_region().value().f.num_id);
+          if(rpd.field_second_region()) b_kill_ids.insert(rpd.field_second_region().value().f.num_id);
         } else {
+          assert(rpd.ending_last);
           insert_f();
 
           field_desc_t fd_first = rpd.field_first_region().value();
