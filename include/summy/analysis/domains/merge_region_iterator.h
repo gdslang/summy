@@ -46,6 +46,7 @@ public:
     region_t::const_iterator r2_it, region_t::const_iterator r2_it_end);
   merge_region_iterator(region_t const &r1, region_t const &r2);
   static merge_region_iterator end(region_t const &r1, region_t const &r2);
+  merge_region_iterator end();
 
   region_pair_desc_t operator*();
   merge_region_iterator &operator++();

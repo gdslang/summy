@@ -26,6 +26,7 @@
 #include <tuple>
 #include <vector>
 #include <assert.h>
+#include <summy/analysis/domains/cr_merge_region_iterator.h>
 #include <queue>
 #include <experimental/optional>
 
@@ -613,16 +614,14 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
 
 region_t analysis::summary_memory_state::join_region_aliases(region_t const &r1, region_t const &r2, numeric_state *n) {
   region_t result;
-  merge_region_iterator mri(r1, r2);
-  while(mri != merge_region_iterator::end(r1, r2)) {
+  cr_merge_region_iterator mri(r1, r2, result);
+  while(mri != cr_merge_region_iterator::end(r1, r2)) {
     region_pair_desc_t rpd = *mri;
     field_desc_t const &f_first = rpd.ending_first;
     num_var *f_first_v = new num_var(f_first.f.num_id);
     id_shared_t id_r = numeric_id::generate();
     num_var *v_r = new num_var(id_r);
-    if(rpd.collision) {
-
-    } else {
+    if(!rpd.collision) {
       if(rpd.ending_last) {
         field_desc_t const &f_sec = rpd.ending_last.value();
         num_var *f_sec_v = new num_var(f_sec.f.num_id);
@@ -653,6 +652,7 @@ region_t analysis::summary_memory_state::join_region_aliases(region_t const &r1,
 
 summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
   summary_memory_state *return_site = copy();
+  summary = summary->copy();
   /*
    * Each of the variables of the summary maps to a number of variables in the caller at
    * certain offsets. The mapping is established from the structure of the memory
@@ -773,12 +773,21 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
    * Application
    */
   map<id_shared_t, id_set_t, id_less_no_version> ptr_map_rev;
-  id_set_t conflict_ptrs;
   for(auto &ptr_mapping : ptr_map)
-    for(auto &p : ptr_mapping.second) {
+    for(auto &p : ptr_mapping.second)
       ptr_map_rev[p.id].insert(ptr_mapping.first);
-      if(ptr_map_rev.at(p.id).size() > 1) conflict_ptrs.insert(p.id);
+
+  map<id_shared_t, region_t, id_less_no_version> conflict_regions;
+  for(auto &rev_mapping : ptr_map_rev) {
+    id_set_t &ptrs_s = rev_mapping.second;
+    if(ptrs_s.size() > 0) {
+      auto ptrs_it = ptrs_s.begin();
+      region_t cr = summary->output.deref.at(*ptrs_it);
+      while(++ptrs_it != ptrs_s.end())
+        cr = join_region_aliases(cr, summary->output.deref.at(*ptrs_it), summary->child_state);
+      conflict_regions[rev_mapping.first] = cr;
     }
+  }
 
 
   num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
@@ -1571,31 +1580,16 @@ std::tuple<summary_memory_state::memory_head, numeric_state *, numeric_state *> 
 
       region_t region;
 
-      optional<int64_t> fn_from;
-      optional<int64_t> fn_to;
-      auto insert_f = [&]() {
-        if(fn_from && fn_to) {
-          field f = field{(size_t)(fn_to.value() - fn_from.value()), numeric_id::generate()};
-          region.insert(make_pair(fn_from.value(), f));
-          fn_from = nullopt;
-          fn_to = nullopt;
-        }
-      };
-
-      merge_region_iterator mri(region_a, region_b);
-      while(mri != merge_region_iterator::end(region_a, region_b)) {
+      cr_merge_region_iterator mri(region_a, region_b, region);
+      while(mri != cr_merge_region_iterator::end(region_a, region_b)) {
         region_pair_desc_t rpd = *mri;
         if(rpd.collision) {
-          field_desc_t fd_ending_first = rpd.ending_first;
-          field_desc_t fd_ending_last = rpd.ending_last.value_or(rpd.ending_first);
-
-          fn_to = fd_ending_last.offset + fd_ending_last.f.size;
-          if(!fn_from) fn_from = fd_ending_first.offset;
-          if(rpd.field_first_region()) a_kill_ids.insert(rpd.field_first_region().value().f.num_id);
-          if(rpd.field_second_region()) b_kill_ids.insert(rpd.field_second_region().value().f.num_id);
+          if(rpd.ending_last) {
+            a_kill_ids.insert(rpd.field_first_region().value().f.num_id);
+            b_kill_ids.insert(rpd.field_second_region().value().f.num_id);
+          }
         } else {
           assert(rpd.ending_last);
-          insert_f();
 
           field_desc_t fd_first = rpd.field_first_region().value();
           field_desc_t fd_second = rpd.field_second_region().value();

@@ -47,6 +47,10 @@ merge_region_iterator merge_region_iterator::end(region_t const &r1, region_t co
   return merge_region_iterator(r1.end(), r1.end(), r2.end(), r2.end());
 }
 
+merge_region_iterator analysis::merge_region_iterator::end() {
+  return merge_region_iterator(r1_it_end, r1_it_end, r2_it_end, r2_it_end);
+}
+
 region_pair_desc_t merge_region_iterator::operator*() {
   if(r1_it != r1_it_end && r2_it != r2_it_end) {
     int64_t offset_a = r1_it->first;
