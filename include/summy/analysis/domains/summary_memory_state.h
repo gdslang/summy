@@ -128,7 +128,13 @@ public:
   summary_memory_state *widen(domain_state *other, size_t current_node);
   summary_memory_state *narrow(domain_state *other, size_t current_node);
 
-  region_t join_region_aliases(region_t const &r1, region_t const &r2, numeric_state *n);
+  //  region_t join_region_aliases(region_t const &r1, region_t const &r2, numeric_state *n);
+  struct summary_application_t {
+    summary_memory_state *return_site;
+    /*
+     * Todo: Information about unexpected aliases?
+     */
+  };
   summary_memory_state *apply_summary(summary_memory_state *summary);
 
   typedef std::function<void(api::num_var *)> updater_t;
@@ -161,6 +167,12 @@ public:
 
   summary_memory_state *copy() const;
 
+  /*
+   * Transform the current state into top; this results in a memory state
+   * that contains the same regions in both input and output, but only contains
+   * top as numeric state.
+   */
+  void topify();
   static summary_memory_state *start_value(shared_ptr<static_memory> sm, numeric_state *start_num);
   static summary_memory_state *bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num);
 

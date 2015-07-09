@@ -612,47 +612,54 @@ summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other
   return domop(other, current_node, &numeric_state::narrow);
 }
 
-region_t analysis::summary_memory_state::join_region_aliases(region_t const &r1, region_t const &r2, numeric_state *n) {
-  region_t result;
-  cr_merge_region_iterator mri(r1, r2, result);
-  while(mri != cr_merge_region_iterator::end(r1, r2)) {
-    region_pair_desc_t rpd = *mri;
-    field_desc_t const &f_first = rpd.ending_first;
-    num_var *f_first_v = new num_var(f_first.f.num_id);
-    id_shared_t id_r = numeric_id::generate();
-    num_var *v_r = new num_var(id_r);
-    if(!rpd.collision) {
-      if(rpd.ending_last) {
-        field_desc_t const &f_sec = rpd.ending_last.value();
-        num_var *f_sec_v = new num_var(f_sec.f.num_id);
-
-        ptr_set_t f_first_aliases = n->queryAls(f_first_v);
-        ptr_set_t f_sec_aliases = n->queryAls(f_first_v);
-
-        ptr_set_t f_r_aliases = f_first_aliases;
-        f_r_aliases.insert(f_sec_aliases.begin(), f_sec_aliases.end());
-        n->assume(v_r, f_r_aliases);
-
-        result.insert(make_pair(f_first.offset, field{f_first.f.size, id_r}));
-
-        delete f_sec_v;
-      } else {
-        ptr_set_t f_first_aliases = n->queryAls(f_first_v);
-
-        ptr_set_t f_r_aliases = f_first_aliases;
-        n->assume(v_r, f_r_aliases);
-
-        result.insert(make_pair(f_first.offset, field{f_first.f.size, id_r}));
-      }
-    }
-    ++mri;
-  }
-  return result;
-}
+// region_t analysis::summary_memory_state::join_region_aliases(region_t const &r1, region_t const &r2, numeric_state
+// *n) {
+//  region_t result;
+//  cr_merge_region_iterator mri(r1, r2, result);
+//  while(mri != cr_merge_region_iterator::end(r1, r2)) {
+//    region_pair_desc_t rpd = *mri;
+//    field_desc_t const &f_first = rpd.ending_first;
+//    num_var *f_first_v = new num_var(f_first.f.num_id);
+//    id_shared_t id_r = numeric_id::generate();
+//    num_var *v_r = new num_var(id_r);
+//    if(!rpd.collision) {
+//      if(rpd.ending_last) {
+//        field_desc_t const &f_sec = rpd.ending_last.value();
+//        num_var *f_sec_v = new num_var(f_sec.f.num_id);
+//
+//        ptr_set_t f_first_aliases = n->queryAls(f_first_v);
+//        ptr_set_t f_sec_aliases = n->queryAls(f_first_v);
+//
+//        ptr_set_t f_r_aliases = f_first_aliases;
+//        f_r_aliases.insert(f_sec_aliases.begin(), f_sec_aliases.end());
+//        n->assume(v_r, f_r_aliases);
+//
+//        result.insert(make_pair(f_first.offset, field{f_first.f.size, id_r}));
+//
+//        delete f_sec_v;
+//      } else {
+//        ptr_set_t f_first_aliases = n->queryAls(f_first_v);
+//
+//        ptr_set_t f_r_aliases = f_first_aliases;
+//        n->assume(v_r, f_r_aliases);
+//
+//        result.insert(make_pair(f_first.offset, field{f_first.f.size, id_r}));
+//      }
+//    }
+//    ++mri;
+//  }
+//  return result;
+//}
 
 summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memory_state *summary) {
   summary_memory_state *return_site = copy();
-  summary = summary->copy();
+
+  /*
+   * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
+   * situations
+   */
+  //  summary = summary->copy();
+
   /*
    * Each of the variables of the summary maps to a number of variables in the caller at
    * certain offsets. The mapping is established from the structure of the memory
@@ -710,8 +717,13 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
         };
 
         //      cout << region_keys_c_offset_bits << ":" << f_s.size << endl;
+
+        /*
+         * We do not 'handle_conflicts' here in order to deal with unexpected aliasing situations
+         */
         return_site->update_multiple(
           region_keys_c_offset_bits, rgetter, f_s.size, record_aliases, record_aliases, true, false);
+
         delete nv_field_s;
 
         for(auto &p_s : aliases_fld_s) {
@@ -772,21 +784,36 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   /*
    * Application
    */
+
+  /*
+   * We build a ptr_map_rev and a conflict region map in order to deal with unexpected aliasing situations
+   */
   map<id_shared_t, id_set_t, id_less_no_version> ptr_map_rev;
   for(auto &ptr_mapping : ptr_map)
     for(auto &p : ptr_mapping.second)
-      ptr_map_rev[p.id].insert(ptr_mapping.first);
+      if(summary->output.deref.find(ptr_mapping.first) != summary->output.deref.end())
+        ptr_map_rev[p.id].insert(ptr_mapping.first);
 
+  bool dirty = false;
   map<id_shared_t, region_t, id_less_no_version> conflict_regions;
   for(auto &rev_mapping : ptr_map_rev) {
     id_set_t &ptrs_s = rev_mapping.second;
-    if(ptrs_s.size() > 0) {
-      auto ptrs_it = ptrs_s.begin();
-      region_t cr = summary->output.deref.at(*ptrs_it);
-      while(++ptrs_it != ptrs_s.end())
-        cr = join_region_aliases(cr, summary->output.deref.at(*ptrs_it), summary->child_state);
-      conflict_regions[rev_mapping.first] = cr;
+    if(ptrs_s.size() > 1) {
+      dirty = true;
+      /*
+       * Handling of unexpected aliases...
+       */
+      //      auto ptrs_it = ptrs_s.begin();
+      //      region_t cr = summary->output.deref.at(*ptrs_it);
+      //      while(++ptrs_it != ptrs_s.end())
+      //        cr = join_region_aliases(cr, summary->output.deref.at(*ptrs_it), summary->child_state);
+      //      conflict_regions[rev_mapping.first] = cr;
     }
+  }
+  if(dirty) {
+    return_site->topify();
+    cout << *return_site << endl;
+    return return_site;
   }
 
 
@@ -850,6 +877,7 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   delete _vars;
 
   //  cout << *return_site << endl;
+  //  delete summary;
 
   return return_site;
 }
@@ -872,6 +900,14 @@ void analysis::summary_memory_state::update(gdsl::rreil::assign *assign) {
 
 summary_memory_state *analysis::summary_memory_state::copy() const {
   return new summary_memory_state(*this);
+}
+
+void summary_memory_state::topify() {
+  num_vars *nvs = new num_vars({});
+  child_state->project(nvs);
+  input.deref.clear();
+  output.deref.clear();
+  delete nvs;
 }
 
 summary_memory_state *analysis::summary_memory_state::start_value(
