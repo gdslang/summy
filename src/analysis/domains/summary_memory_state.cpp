@@ -903,11 +903,25 @@ summary_memory_state *analysis::summary_memory_state::copy() const {
 }
 
 void summary_memory_state::topify() {
-  num_vars *nvs = new num_vars({});
-  child_state->project(nvs);
-  input.deref.clear();
-  output.deref.clear();
-  delete nvs;
+  vector<num_var *> vars;
+
+  cout << "foo" << endl;
+
+  auto collect_regions = [&](region_map_t &regions) {
+    for(auto regions_it = regions.begin(); regions_it != regions.end(); regions_it++) {
+      for(auto &field_mapping : regions_it->second)
+        vars.push_back(new num_var(field_mapping.second.num_id));
+    }
+  };
+  collect_regions(output.regions);
+  collect_regions(output.deref);
+
+  child_state->kill(vars);
+
+  for(num_var *var : vars)
+    delete var;
+
+  cout << "foo" << endl;
 }
 
 summary_memory_state *analysis::summary_memory_state::start_value(
@@ -1329,11 +1343,6 @@ num_var_pairs_t analysis::summary_memory_state::matchPointers(
      * We first check for missing pointers in the region...
      */
 
-    /*
-     * Todo: Können Konflikte übersehen werden, wenn weitergegangen wird zu einem
-     * nicht überlappenden Element?
-     */
-
     merge_region_iterator mri(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
@@ -1344,12 +1353,14 @@ num_var_pairs_t analysis::summary_memory_state::matchPointers(
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first)
             insertions.push_back([&io_rb, &b_n, ending_first]() {
-              //            cout << "Insertion into io_rb at " << ending_first.offset << endl;
+              cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " << ending_first.offset << endl;
               io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
             });
           else
-            insertions.push_back(
-              [&io_ra, &a_n, ending_first]() { io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false); });
+            insertions.push_back([&io_ra, &a_n, ending_first]() {
+              cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " << ending_first.offset << endl;
+              io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
+            });
         }
       }
       ++mri;
@@ -1533,13 +1544,13 @@ std::tuple<summary_memory_state::memory_head, numeric_state *, numeric_state *> 
   }
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-  //    cout << "++++++++++++++++++++++++++++++" << endl;
-  //    cout << "++++++++++++++++++++++++++++++" << endl;
-  //    cout << "++++++++++++++++++++++++++++++" << endl;
-  //    cout << "compat OF" << endl;
-  //    cout << *a << endl;
-  //    cout << "WITH" << endl;
-  //    cout << *b << endl;
+  //  cout << "++++++++++++++++++++++++++++++" << endl;
+  //  cout << "++++++++++++++++++++++++++++++" << endl;
+  //  cout << "++++++++++++++++++++++++++++++" << endl;
+  //  cout << "compat OF" << endl;
+  //  cout << *a << endl;
+  //  cout << "WITH" << endl;
+  //  cout << *b << endl;
   //  }
 
   /*
@@ -1588,10 +1599,10 @@ std::tuple<summary_memory_state::memory_head, numeric_state *, numeric_state *> 
     delete alias_b;
   }
 
-  //  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
-  //  cout << "after_rename, b: " << *after_rename_b << endl;
-  //  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
-  //  cout << "after_rename, a: " << *after_rename_a << endl;
+  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
+  cout << "after_rename, b: " << *after_rename_b << endl;
+  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
+  cout << "after_rename, a: " << *after_rename_a << endl;
 
   /*
    * In the second step, all corresponding regions already have got the same region key. Thus,
@@ -1625,6 +1636,10 @@ std::tuple<summary_memory_state::memory_head, numeric_state *, numeric_state *> 
             b_kill_ids.insert(rpd.field_second_region().value().f.num_id);
           }
         } else {
+          if(!rpd.ending_last) {
+            cout << *id << endl;
+            cout << *rpd.ending_first.f.num_id << endl;
+          }
           assert(rpd.ending_last);
 
           field_desc_t fd_first = rpd.field_first_region().value();
