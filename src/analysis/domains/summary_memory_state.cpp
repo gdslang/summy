@@ -812,7 +812,6 @@ summary_memory_state *analysis::summary_memory_state::apply_summary(summary_memo
   }
   if(dirty) {
     return_site->topify();
-    cout << *return_site << endl;
     return return_site;
   }
 
@@ -905,8 +904,6 @@ summary_memory_state *analysis::summary_memory_state::copy() const {
 void summary_memory_state::topify() {
   vector<num_var *> vars;
 
-  cout << "foo" << endl;
-
   auto collect_regions = [&](region_map_t &regions) {
     for(auto regions_it = regions.begin(); regions_it != regions.end(); regions_it++) {
       for(auto &field_mapping : regions_it->second)
@@ -920,8 +917,6 @@ void summary_memory_state::topify() {
 
   for(num_var *var : vars)
     delete var;
-
-  cout << "foo" << endl;
 }
 
 summary_memory_state *analysis::summary_memory_state::start_value(
@@ -1353,12 +1348,14 @@ num_var_pairs_t analysis::summary_memory_state::matchPointers(
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first)
             insertions.push_back([&io_rb, &b_n, ending_first]() {
-              cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " << ending_first.offset << endl;
+              //              cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
+              //              ending_first.offset << endl;
               io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
             });
           else
             insertions.push_back([&io_ra, &a_n, ending_first]() {
-              cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " << ending_first.offset << endl;
+              //              cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
+              //              ending_first.offset << endl;
               io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
             });
         }
@@ -1599,10 +1596,10 @@ std::tuple<summary_memory_state::memory_head, numeric_state *, numeric_state *> 
     delete alias_b;
   }
 
-  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
-  cout << "after_rename, b: " << *after_rename_b << endl;
-  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
-  cout << "after_rename, a: " << *after_rename_a << endl;
+  //  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
+  //  cout << "after_rename, b: " << *after_rename_b << endl;
+  //  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
+  //  cout << "after_rename, a: " << *after_rename_a << endl;
 
   /*
    * In the second step, all corresponding regions already have got the same region key. Thus,

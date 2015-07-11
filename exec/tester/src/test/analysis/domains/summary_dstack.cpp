@@ -365,6 +365,31 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
   delete a;
 }
 
+static void isTop(bool &result, _analysis_result &ar, string label) {
+  SCOPED_TRACE("isTop()");
+
+  auto analy_r = ar.ds_analyzed->result();
+
+  bool found;
+  binary_provider::entry_t e;
+  tie(found, e) = ar.elfp->symbol(label);
+  ASSERT_TRUE(found);
+
+  auto addr_it = ar.addr_node_map.find(e.address);
+  ASSERT_NE(addr_it, ar.addr_node_map.end());
+
+  ASSERT_GT(analy_r.result.size(), addr_it->second);
+
+  summary_memory_state *state = analy_r.result[ar.addr_node_map[e.address]]->get_mstate();
+
+  summary_memory_state *top = state->copy();
+  top->topify();
+
+  result = (*state <= *top) && (*top <= *state);
+
+  delete top;
+}
+
 TEST_F(summary_dstack_test, FromDstack_Basics) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar, "mov $99, %rax\n\
@@ -852,40 +877,49 @@ mov %rcx, %rax\n\
 mov %rcx, %rbx\n\
 mov %r13, (%rax)\n\
 call f\n\
+ac: mov $42, %rax\n\
 end: ret",
     false));
 
-  ptr_set_t aliases_r13_deref;
-  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_r13_deref, ar, "end", "R13"));
-  ASSERT_EQ(aliases_r13_deref.size(), 1);
+  bool ac_top;
+  isTop(ac_top, ar, "ac");
+  ASSERT_TRUE(ac_top);
 
-  ptr_set_t aliases_r12;
-  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r12, ar, "end", "R12"));
-  ASSERT_EQ(aliases_r12.size(), 1);
+  bool end_top;
+  isTop(end_top, ar, "end");
+  ASSERT_FALSE(end_top);
 
-  ASSERT_EQ(aliases_r13_deref, aliases_r12);
-
-  {
-    region_t cmp;
-    cmp.insert(make_pair(0, field{8, numeric_id::generate()}));
-    cmp.insert(make_pair(8, field{56, numeric_id::generate()}));
-
-    region_t region;
-    query_deref_region(region, ar, "end", "A");
-
-    equal_structure(cmp, region);
-  }
-
-  {
-    region_t cmp;
-    cmp.insert(make_pair(0, field{8, numeric_id::generate()}));
-    cmp.insert(make_pair(8, field{56, numeric_id::generate()}));
-
-    region_t region;
-    query_deref_region(region, ar, "end", "B");
-
-    equal_structure(cmp, region);
-  }
+  //  ptr_set_t aliases_r13_deref;
+  //  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_r13_deref, ar, "end", "R13"));
+  //  ASSERT_EQ(aliases_r13_deref.size(), 1);
+  //
+  //  ptr_set_t aliases_r12;
+  //  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r12, ar, "end", "R12"));
+  //  ASSERT_EQ(aliases_r12.size(), 1);
+  //
+  //  ASSERT_EQ(aliases_r13_deref, aliases_r12);
+  //
+  //  {
+  //    region_t cmp;
+  //    cmp.insert(make_pair(0, field{8, numeric_id::generate()}));
+  //    cmp.insert(make_pair(8, field{56, numeric_id::generate()}));
+  //
+  //    region_t region;
+  //    query_deref_region(region, ar, "end", "A");
+  //
+  //    equal_structure(cmp, region);
+  //  }
+  //
+  //  {
+  //    region_t cmp;
+  //    cmp.insert(make_pair(0, field{8, numeric_id::generate()}));
+  //    cmp.insert(make_pair(8, field{56, numeric_id::generate()}));
+  //
+  //    region_t region;
+  //    query_deref_region(region, ar, "end", "B");
+  //
+  //    equal_structure(cmp, region);
+  //  }
 }
 
 TEST_F(summary_dstack_test, SummaryAppStructuralConflict2) {
@@ -904,37 +938,41 @@ call f\n\
 end: ret",
     false));
 
-  ptr_set_t aliases_r13_deref;
-  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_r13_deref, ar, "end", "R13"));
-  ASSERT_EQ(aliases_r13_deref.size(), 1);
+  bool end_top;
+  isTop(end_top, ar, "end");
+  ASSERT_TRUE(end_top);
 
-  ptr_set_t aliases_r12;
-  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r12, ar, "end", "R12"));
-  ASSERT_EQ(aliases_r12.size(), 1);
-
-  ASSERT_EQ(aliases_r13_deref, aliases_r12);
-
-  {
-    region_t cmp;
-    cmp.insert(make_pair(0, field{8, numeric_id::generate()}));
-    cmp.insert(make_pair(8, field{56, numeric_id::generate()}));
-
-    region_t region;
-    query_deref_region(region, ar, "end", "A");
-
-    equal_structure(cmp, region);
-  }
-
-  {
-    region_t cmp;
-    cmp.insert(make_pair(0, field{8, numeric_id::generate()}));
-    cmp.insert(make_pair(8, field{56, numeric_id::generate()}));
-
-    region_t region;
-    query_deref_region(region, ar, "end", "B");
-
-    equal_structure(cmp, region);
-  }
+  //  ptr_set_t aliases_r13_deref;
+  //  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_r13_deref, ar, "end", "R13"));
+  //  ASSERT_EQ(aliases_r13_deref.size(), 1);
+  //
+  //  ptr_set_t aliases_r12;
+  //  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r12, ar, "end", "R12"));
+  //  ASSERT_EQ(aliases_r12.size(), 1);
+  //
+  //  ASSERT_EQ(aliases_r13_deref, aliases_r12);
+  //
+  //  {
+  //    region_t cmp;
+  //    cmp.insert(make_pair(0, field{8, numeric_id::generate()}));
+  //    cmp.insert(make_pair(8, field{56, numeric_id::generate()}));
+  //
+  //    region_t region;
+  //    query_deref_region(region, ar, "end", "A");
+  //
+  //    equal_structure(cmp, region);
+  //  }
+  //
+  //  {
+  //    region_t cmp;
+  //    cmp.insert(make_pair(0, field{8, numeric_id::generate()}));
+  //    cmp.insert(make_pair(8, field{56, numeric_id::generate()}));
+  //
+  //    region_t region;
+  //    query_deref_region(region, ar, "end", "B");
+  //
+  //    equal_structure(cmp, region);
+  //  }
 }
 
 // TEST_F(summary_dstack_test, SummaryAppStructuralConflict3) {
