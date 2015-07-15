@@ -15,6 +15,7 @@
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/gdsl.h>
+#include <cppgdsl/rreil/rreil.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/cfg/bfs_iterator.h>

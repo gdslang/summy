@@ -56,6 +56,7 @@ struct io_region {
  * Summary-based memory domain state
  */
 class summary_memory_state : public domain_state, public memory_state_base {
+
 private:
   shared_ptr<static_memory> sm;
 
@@ -129,13 +130,6 @@ public:
   summary_memory_state *narrow(domain_state *other, size_t current_node);
 
   //  region_t join_region_aliases(region_t const &r1, region_t const &r2, numeric_state *n);
-  struct summary_application_t {
-    summary_memory_state *return_site;
-    /*
-     * Todo: Information about unexpected aliases?
-     */
-  };
-  summary_memory_state *apply_summary(summary_memory_state *summary);
 
   typedef std::function<void(api::num_var *)> updater_t;
   void update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak,
@@ -192,5 +186,7 @@ public:
   };
   static std::tuple<memory_head, numeric_state *, numeric_state *> compat(
     summary_memory_state const *a, summary_memory_state const *b);
+
+  friend summary_memory_state *apply_summary(summary_memory_state *caller, summary_memory_state *summary);
 };
 }

@@ -7,7 +7,7 @@
 
 #include <summy/analysis/domains/summary_dstack.h>
 #include <summy/cfg/edge/edge_visitor.h>
-#include <cppgdsl/rreil/statement/statement.h>
+#include <cppgdsl/rreil/rreil.h>
 #include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/analysis/domains/numeric/equality_state.h>
 #include <summy/analysis/domains/numeric/vsd_state.h>
@@ -25,6 +25,7 @@
 #include <summy/value_set/value_set_visitor.h>
 #include <functional>
 #include <assert.h>
+#include <summy/analysis/domains/sms_op.h>
 #include <experimental/optional>
 
 using cfg::address_node;
@@ -54,7 +55,7 @@ bool analysis::summary_dstack::unpack_f_addr(void *&r, summy::vs_shared_t f_addr
     vs_finite::elements_t const &elems = vsf->get_elements();
     if(elems.size() == 1) {
       single = true;
-      r = (void*)*elems.begin();
+      r = (void *)*elems.begin();
     }
   });
   f_addr->accept(vsv);
@@ -62,39 +63,28 @@ bool analysis::summary_dstack::unpack_f_addr(void *&r, summy::vs_shared_t f_addr
 }
 
 void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-//  cout << "Adding constraint from " << from << " to " << to << endl;
+  //  cout << "Adding constraint from " << from << " to " << to << endl;
 
-  function<shared_ptr<global_state>()> transfer_f = [=]() {
-    return state[from];
-  };
-  auto for_mutable = [&](function<void(summary_memory_state*)> cb) {
+  function<shared_ptr<global_state>()> transfer_f = [=]() { return state[from]; };
+  auto for_mutable = [&](function<void(summary_memory_state *)> cb) {
     transfer_f = [=]() {
       shared_ptr<global_state> &state_c = this->state[from];
       summary_memory_state *mstate_new = state_c->get_mstate()->copy();
       cb(mstate_new);
-      shared_ptr<global_state> global_new = shared_ptr<global_state>(
-          new global_state(mstate_new, state_c->get_f_addr(), state_c->get_callers()));
+      shared_ptr<global_state> global_new =
+        shared_ptr<global_state>(new global_state(mstate_new, state_c->get_f_addr(), state_c->get_callers()));
       return global_new;
     };
   };
-  auto for_update = [&](auto *update) {
-    for_mutable([=](summary_memory_state *state_new) {
-      state_new->update(update);
-    });
-  };
+  auto for_update =
+    [&](auto *update) { for_mutable([=](summary_memory_state *state_new) { state_new->update(update); }); };
   edge_visitor ev;
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
     statement_visitor v;
-    v._([&](assign *a) {
-      for_update(a);
-    });
-    v._([&](load *l) {
-      for_update(l);
-    });
-    v._([&](store *s) {
-      for_update(s);
-    });
+    v._([&](assign *a) { for_update(a); });
+    v._([&](load *l) { for_update(l); });
+    v._([&](store *s) { for_update(s); });
     v._([&](branch *b) {
       switch(b->get_hint()) {
         case gdsl::rreil::BRANCH_HINT_CALL: {
@@ -114,19 +104,18 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               summy::rreil::id_visitor idv;
               bool is_text = false;
               void *text_address;
-              idv._([&] (sm_id *sid) {
+              idv._([&](sm_id *sid) {
                 if(sid->get_symbol() == ".text") {
                   is_text = true;
                   text_address = sid->get_address();
                 }
               });
               ptr.id->accept(idv);
-              if(!is_text)
-                continue;
+              if(!is_text) continue;
               value_set_visitor vsv;
               vsv._([&](vs_finite *vsf) {
                 for(int64_t offset : vsf->get_elements()) {
-                  void *address = (char*)text_address + offset;
+                  void *address = (char *)text_address + offset;
                   auto fd_it = function_desc_map.find(address);
                   if(fd_it != function_desc_map.end()) {
                     auto &f_desc = fd_it->second;
@@ -136,29 +125,30 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     size_t head_id = fd_it->second.head_id;
                     cfg::in_edges_t const &head_in = cfg->in_edges(head_id);
                     if(head_in.find(to) == head_in.end()) {
-//                      cout << "New edge from " << to << " to " << head_id << endl;
+                      //                      cout << "New edge from " << to << " to " << head_id << endl;
                       cfg->update_edge(to, head_id, new call_edge(true));
                     }
                   } else {
-                    size_t an_id = cfg->create_node([&](size_t id) {
-                      return new address_node(id, (size_t)address, cfg::DECODABLE);
-                    });
-                    function_desc_map.insert(make_pair(address, function_desc(summary_t(sms_bottom()), current_min_calls_sz + 1, an_id)));
-//                    cout << "New edge from " << to << " to " << an_id << endl;
+                    size_t an_id = cfg->create_node(
+                      [&](size_t id) { return new address_node(id, (size_t)address, cfg::DECODABLE); });
+                    function_desc_map.insert(
+                      make_pair(address, function_desc(summary_t(sms_bottom()), current_min_calls_sz + 1, an_id)));
+                    //                    cout << "New edge from " << to << " to " << an_id << endl;
                     cfg->update_edge(to, an_id, new call_edge(true));
                   }
                 }
               });
               ptr.offset->accept(vsv);
-//              cout << ptr << endl;
+              //              cout << ptr << endl;
             }
             cfg->commit_updates();
 
-//            cout << "Need to apply the following summary: " << endl;
-//            cout << *summary << endl;
+            //            cout << "Need to apply the following summary: " << endl;
+            //            cout << *summary << endl;
 
-            summary_memory_state *summarized = mstate->apply_summary(summary.get());
-            return shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr(), state_c->get_callers()));
+            summary_memory_state *summarized = apply_summary(mstate, summary.get());
+            return shared_ptr<global_state>(
+              new global_state(summarized, state_c->get_f_addr(), state_c->get_callers()));
           };
           break;
         }
@@ -169,10 +159,12 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             bool unpackable_a = unpack_f_addr(f_addr, state_c->get_f_addr());
             assert(unpackable_a);
             auto fd_it = function_desc_map.find(f_addr);
-//            if(summary_it == summary_map.end())
-//              summary_map[state_c->get_f_addr()] = shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
-//            else
-            fd_it->second.summary = shared_ptr<summary_memory_state>(fd_it->second.summary->join(state_c->get_mstate(), to));
+            //            if(summary_it == summary_map.end())
+            //              summary_map[state_c->get_f_addr()] =
+            //              shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
+            //            else
+            fd_it->second.summary =
+              shared_ptr<summary_memory_state>(fd_it->second.summary->join(state_c->get_mstate(), to));
             for(auto caller : state_c->get_callers())
               assert_dependency(gen_dependency(to, caller));
             return state_c;
@@ -204,11 +196,12 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         node_visitor nv;
         nv._([&](address_node *an) {
           is_addr_node = true;
-          address = (void*)an->get_address();
+          address = (void *)an->get_address();
         });
         dest->accept(nv);
         assert(is_addr_node);
-        state_new = dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address),  callers_t {from}));
+        state_new =
+          dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address), callers_t{from}));
       } else {
         state_new = state[from];
         if(!state_new->get_mstate()->is_bottom()) {
@@ -244,18 +237,20 @@ void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
 }
 
 dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {
-//  cout << "Generating dep. " << from << " to " << to << endl;
-  return dependency { from, to };
+  //  cout << "Generating dep. " << from << " to " << to << endl;
+  return dependency{from, to};
 }
 
 void analysis::summary_dstack::init_state(summy::vs_shared_t f_addr) {
-//  cout << "init_state()" << endl;
+  //  cout << "init_state()" << endl;
 
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end()) state[i] = dynamic_pointer_cast<global_state>(start_value(f_addr));
-    else state[i] = dynamic_pointer_cast<global_state>(bottom());
+    if(fixpoint_pending.find(i) != fixpoint_pending.end())
+      state[i] = dynamic_pointer_cast<global_state>(start_value(f_addr));
+    else
+      state[i] = dynamic_pointer_cast<global_state>(bottom());
   }
 }
 
@@ -263,8 +258,7 @@ void analysis::summary_dstack::init_state() {
   init_state(value_set::bottom);
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm) :
-  fp_analysis(cfg), sm(sm) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm) : fp_analysis(cfg), sm(sm) {
   init();
 
   /*
@@ -273,33 +267,31 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
   node *n = cfg->get_node_payload(0);
   optional<size_t> addr;
   node_visitor nv;
-  nv._([&](address_node *an) {
-    addr = an->get_address();
-  });
+  nv._([&](address_node *an) { addr = an->get_address(); });
   n->accept(nv);
-  function_desc_map.insert(make_pair((void*)addr.value(), function_desc(summary_t(sms_bottom()), 0, n->get_id())));
+  function_desc_map.insert(make_pair((void *)addr.value(), function_desc(summary_t(sms_bottom()), 0, n->get_id())));
   state[n->get_id()]->set_f_addr(vs_finite::single(addr.value()));
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg) :
-    summary_dstack(cfg, make_shared<static_dummy>()) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg) : summary_dstack(cfg, make_shared<static_dummy>()) {
   init();
 }
 
-analysis::summary_dstack::~summary_dstack() {
-}
+analysis::summary_dstack::~summary_dstack() {}
 
 summary_memory_state *analysis::summary_dstack::sms_bottom() {
-  return summary_memory_state::bottom(sm, new equality_state(new als_state(vsd_state::bottom(sm))));;
+  return summary_memory_state::bottom(sm, new equality_state(new als_state(vsd_state::bottom(sm))));
+  ;
 }
 
 summary_memory_state *analysis::summary_dstack::sms_top() {
-  summary_memory_state *sms_start = summary_memory_state::start_value(sm, new equality_state(new als_state(vsd_state::top(sm))));
+  summary_memory_state *sms_start =
+    summary_memory_state::start_value(sm, new equality_state(new als_state(vsd_state::top(sm))));
   return sms_start;
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::bottom() {
-  return shared_ptr<domain_state>(new global_state(sms_bottom(), value_set::bottom, callers_t {}));
+  return shared_ptr<domain_state>(new global_state(sms_bottom(), value_set::bottom, callers_t{}));
 }
 
 std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t f_addr, callers_t callers) {
@@ -307,13 +299,13 @@ std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t 
 }
 
 std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t f_addr) {
-//  cout << "start_value()" << endl;
-  return start_value(f_addr, callers_t {});
+  //  cout << "start_value()" << endl;
+  return start_value(f_addr, callers_t{});
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
-//  if(node >= state.size())
-//    return bottom();
+  //  if(node >= state.size())
+  //    return bottom();
   return state[node];
 }
 
@@ -329,7 +321,7 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
   return [=](size_t a, size_t b) {
     shared_ptr<global_state> state_a = this->state[a];
     shared_ptr<global_state> state_b = this->state[b];
-//    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
+    //    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
 
     void *f_addr_a;
     bool unpackable_a = unpack_f_addr(f_addr_a, state_a->get_f_addr());
@@ -337,7 +329,7 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
     void *f_addr_b;
     bool unpackable_b = unpack_f_addr(f_addr_b, state_b->get_f_addr());
 
-//    cout << a << " < " << b << " ~~~ " << *state_a->get_f_addr() << " //// " << *state_b->get_f_addr() << endl;
+    //    cout << a << " < " << b << " ~~~ " << *state_a->get_f_addr() << " //// " << *state_b->get_f_addr() << endl;
 
     if(unpackable_a && !unpackable_b)
       return true;
@@ -346,19 +338,20 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
     else if(unpackable_a && unpackable_b) {
       size_t min_calls_sz_a = function_desc_map.at(f_addr_a).min_calls_sz;
       size_t min_calls_sz_b = function_desc_map.at(f_addr_b).min_calls_sz;
-//      cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
+      //      cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
       if(min_calls_sz_a > min_calls_sz_b)
         return true;
       else if(min_calls_sz_a < min_calls_sz_b)
         return false;
       else
         return a < b;
-    }
-    else return a < b;
+    } else
+      return a < b;
   };
 }
 
 void analysis::summary_dstack::put(std::ostream &out) {
   for(size_t i = 0; i < state.size(); i++)
-    out << "Node " << i << ": " << endl << *state[i] << endl;
+    out << "Node " << i << ": " << endl
+        << *state[i] << endl;
 }
