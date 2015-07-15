@@ -52,6 +52,11 @@ struct io_region {
   field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement);
 };
 
+struct memory_head {
+  relation input;
+  relation output;
+};
+
 /**
  * Summary-based memory domain state
  */
@@ -170,23 +175,11 @@ public:
   static summary_memory_state *start_value(shared_ptr<static_memory> sm, numeric_state *start_num);
   static summary_memory_state *bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num);
 
-  /**
-   * This function tries to establish a mapping between pointers by structurally matching
-   * the input of the given summaries. If a pointer is only found in one of the summaries,
-   * the respective pointer is added to the other summary. This way, all pointers are matched
-   * as long as there are no conflicts, that is, partially overlapping fields.
-   *
-   * @return pair of variables that correspond to each other in the respective memory states
-   */
-  static num_var_pairs_t matchPointers(
-    relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n);
-  struct memory_head {
-    relation input;
-    relation output;
-  };
-  static std::tuple<memory_head, numeric_state *, numeric_state *> compat(
-    summary_memory_state const *a, summary_memory_state const *b);
-
   friend summary_memory_state *apply_summary(summary_memory_state *caller, summary_memory_state *summary);
+  friend num_var_pairs_t matchPointers(
+    relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n);
+
+  friend std::tuple<memory_head, numeric_state *, numeric_state *> compat(
+    summary_memory_state const *a, summary_memory_state const *b);
 };
 }
