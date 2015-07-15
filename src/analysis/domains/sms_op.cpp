@@ -30,6 +30,12 @@ using namespace summy;
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
+  cout << "apply_summary" << endl;
+  cout << "caller:" << endl
+       << *caller << endl;
+  cout << "summary: " << endl
+       << *summary << endl;
+
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
    * situations
@@ -176,6 +182,10 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
     id_set_t &ptrs_s = rev_mapping.second;
     if(ptrs_s.size() > 1) {
       dirty = true;
+
+      for(auto &__ptr : ptrs_s)
+        cout << *__ptr << ", ";
+      cout << endl;
       /*
        * Handling of unexpected aliases...
        */
@@ -187,8 +197,9 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
     }
   }
   if(dirty) {
-    return_site->topify();
-    return return_site;
+    cout << "Dirty :-(." << endl;
+    //    return_site->topify();
+    //    return return_site;
   }
 
   num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
@@ -253,6 +264,9 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
   //  cout << *return_site << endl;
   //  delete summary;
+
+  cout << "return_site: " << endl
+       << *return_site << endl;
 
   return return_site;
 }

@@ -30,13 +30,14 @@ void fixpoint::iterate() {
         postprocess_worklist.clear();
         return false;
       }
-    } else return false;
+    } else
+      return false;
   };
 
   while(!end()) {
     size_t node_id = worklist.pop();
 
-//    cout << "Next node: " << node_id << endl;
+    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<domain_state> accumulator;
@@ -45,14 +46,14 @@ void fixpoint::iterate() {
     if(constraints.size() > 0) {
       shared_ptr<domain_state> current = analysis->get(node_id);
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
-//        cout << "Constraint from " << node_other << " to " << node_id << endl;
+        //        cout << "Constraint from " << node_other << " to " << node_id << endl;
 
         /*
          * Evaluate constraint
          */
         auto evaluated = constraint();
 
-//        cout << "Evaluated: " << *evaluated << endl;
+        //        cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -63,15 +64,14 @@ void fixpoint::iterate() {
         /*
          * Todo: Backward analysis?
          */
-//        cout << "Current: " << *current << endl;
+        //        cout << "Current: " << *current << endl;
         if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
           domain_state *boxed;
           bool needs_postprocessing;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
-          if(needs_postprocessing)
-            postprocess_worklist.push(node_id);
-//          cout << "Boxed: " << *evaluated << endl;
+          if(needs_postprocessing) postprocess_worklist.push(node_id);
+          //          cout << "Boxed: " << *evaluated << endl;
         }
 
         if(accumulator_set)
@@ -87,24 +87,24 @@ void fixpoint::iterate() {
         process_constraint(constraint_it->first, constraint_it->second);
       analysis->record_stop_commit();
 
-//      cout << "Current: " << *current << endl;
-//      cout << "Acc: " << *accumulator << endl;
+      //      cout << "Current: " << *current << endl;
+      //      cout << "Acc: " << *accumulator << endl;
 
-//      propagate = !(*current >= *accumulator);
+      //      propagate = !(*current >= *accumulator);
       /*
        * No monotonicity because of the box operator
        */
       propagate = !(*current == *accumulator);
 
-//      cout << "prop: " << propagate << endl;
+      //      cout << "prop: " << propagate << endl;
     } else
-    /*
-     * If the node has no incoming analysis dependency edges, we keep its default
-     * state.
-     */
-    propagate = false;
+      /*
+       * If the node has no incoming analysis dependency edges, we keep its default
+       * state.
+       */
+      propagate = false;
 
-//    cout << "Propagate: " << propagate << endl;
+    //    cout << "Propagate: " << propagate << endl;
 
     if(propagate) {
       analysis->update(node_id, accumulator);
