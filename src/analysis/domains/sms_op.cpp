@@ -15,12 +15,17 @@
 #include <summy/analysis/domains/cr_merge_region_iterator.h>
 #include <summy/analysis/domains/merge_region_iterator.h>
 #include <summy/analysis/domains/summary_memory_state.h>
+#include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/sm_id.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <cppgdsl/rreil/rreil.h>
 #include <map>
 #include <queue>
 #include <algorithm>
+
+using gdsl::rreil::id;
+using summy::rreil::sm_id;
 
 using namespace std;
 using namespace analysis;
@@ -202,6 +207,9 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
     //    return return_site;
   }
 
+  cout << "return_site, before app: " << endl
+       << *return_site << endl;
+
   num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
   auto process_region =
     [&](summary_memory_state::regions_getter_t getter, ptr_set_t &region_aliases_c, region_t &region) {
@@ -213,17 +221,26 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
         num_var *nv_s = new num_var(f_s.num_id);
         ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
+
+        cout << "aliases_s: " << aliases_s << endl;
+
         delete nv_s;
 
         ptr_set_t aliases_c;
         for(auto &alias_s : aliases_s) {
-          auto aliases_mapped_it = ptr_map.find(alias_s.id);
-          ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
-          //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
-          //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) << endl;
-          if(aliases_mapped_it != ptr_map.end())
-            for(auto alias_c_next : aliases_c_next)
-              aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
+          summy::rreil::id_visitor idv;
+          idv._([&](sm_id *_sm_id) { aliases_c.insert(alias_s); });
+          idv._default([&](id *_) {
+            auto aliases_mapped_it = ptr_map.find(alias_s.id);
+            ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
+            //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
+            //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) <<
+            //        endl;
+            if(aliases_mapped_it != ptr_map.end())
+              for(auto alias_c_next : aliases_c_next)
+                aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
+          });
+          alias_s.id->accept(idv);
         }
 
         summary_memory_state::updater_t strong = [&](api::num_var *nv_fld_c) {
@@ -247,6 +264,9 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
   for(auto &region_mapping_so : summary->output.regions) {
     id_shared_t region_key = region_mapping_so.first;
+
+    cout << "Processing " << *region_key << endl;
+
     ptr_set_t region_aliases_c = ptr_set_t({ptr(region_key, vs_finite::zero)});
     process_region(&relation::get_regions, region_aliases_c, region_mapping_so.second);
   }
@@ -262,11 +282,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return_site->project(_vars);
   delete _vars;
 
-  //  cout << *return_site << endl;
-  //  delete summary;
-
-  cout << "return_site: " << endl
-       << *return_site << endl;
+  //  cout << "return_site: " << endl
+  //       << *return_site << endl;
 
   return return_site;
 }
