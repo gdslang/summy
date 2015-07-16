@@ -242,10 +242,6 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
           //          alias_s.id->accept(idv);
         }
 
-        /*
-         * Restore value only if no caller pointers?
-         */
-
         vs_shared_t value_summary = summary->child_state->queryVal(nv_s);
         num_expr *value_summary_expr = new num_expr_lin(new num_linear_vs(value_summary));
 

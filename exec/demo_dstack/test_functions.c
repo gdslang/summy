@@ -13,12 +13,22 @@ f_t __attribute__ ((noinline)) f(char x) {
 //     "mov    $0x4004f6,%%rax\n"
 //         : 
 //         : );
-  return h;
+  if(x)
+    return h;
+  else
+    return g;
 }
 
 int main(int argc, char **argv) {
   int (*fp)();
   fp = f(argc);
 
-  return fp();
+  long long x = fp();
+
+  asm volatile ( "mov %0, %%r11\n"
+    : "=a" (x)
+    : "a" (x)
+    : "r11");
+
+  return x;
 }

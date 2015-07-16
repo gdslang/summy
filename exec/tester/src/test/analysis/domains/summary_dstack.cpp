@@ -73,16 +73,23 @@ struct _analysis_result {
   }
 };
 
-static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = false) {
-  SCOPED_TRACE("state_asm()");
+static void state(_analysis_result &r, string program, bool is_c, bool gdsl_optimize) {
+  SCOPED_TRACE("state()");
 
-  r.elfp = asm_compile_elfp(_asm);
+  if(is_c) {
+    string filename = c_compile(program, 1);
+    r.elfp = new elf_provider(filename.c_str());
+  } else {
+    string ___asm = program;
+    r.elfp = asm_compile_elfp(___asm);
+  }
+
 
   //  binary_provider::entry_t e;
   //  tie(ignore, e) = elfp->entry("foo");
   //  cout << e.address << " " << e.offset << " " << e.size << endl;
 
-  auto compiled = asm_compile(_asm);
+  //  auto compiled = asm_compile(___asm);
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
@@ -127,6 +134,14 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
   }
 }
 
+static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = false) {
+  state(r, _asm, false, gdsl_optimize);
+}
+
+static void state_c(_analysis_result &r, string c, bool gdsl_optimize = false) {
+  state(r, c, true, gdsl_optimize);
+}
+
 static void query_val(
   vs_shared_t &r, _analysis_result &ar, string label, string arch_id_name, size_t offset, size_t size) {
   SCOPED_TRACE("query_val()");
@@ -145,6 +160,9 @@ static void query_val(
 
   lin_var *lv = new lin_var(new variable(new arch_id(arch_id_name), offset));
   //  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
+
+  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
+
   r = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryVal(lv, size);
   delete lv;
 }
@@ -1012,3 +1030,42 @@ end: ret",
 //    equal_structure(cmp, region);
 //  }
 //}
+
+TEST_F(summary_dstack_test, CReturnFunctionPointers) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_c(ar, "int g() {\n\
+  return 42;\n\
+}\n\
+\n\
+int h() {\n\
+  return 99;\n\
+}\n\
+\n\
+typedef int (*f_t)();\n\
+\n\
+f_t __attribute__ ((noinline)) f(char x) {\n\
+  if(x)\n\
+    return h;\n\
+  else\n\
+    return g;\n\
+}\n\
+\n\
+int main(int argc, char **argv) {\n\
+  int (*fp)();\n\
+  fp = f(argc);\n\
+\n\
+  long long x = fp();\n\
+\n\
+  __asm volatile ( \"mov %0, %%r11\"\n\
+    : \"=a\" (x)\n\
+    : \"a\" (x)\n\
+    : \"r11\");\n\
+  __asm volatile ( \"end:\");\n\
+  return x;\n\
+}",
+    false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, shared_ptr<vs_finite>(new vs_finite({42, 99})));
+}

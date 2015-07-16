@@ -81,7 +81,7 @@ static void targets_for_asm(set<size_t> &targets, string _asm) {
 }
 
 static void targets_for_c(set<size_t> &targets, string program) {
-  string filename = c_compile(program);
+  string filename = c_compile(program, 0);
 
   gdsl::bare_frontend f("current");
   bj_gdsl bjg = gdsl_init_elf(&f, filename, ".text", "main");

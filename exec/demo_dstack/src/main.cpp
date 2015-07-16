@@ -52,30 +52,30 @@ using namespace analysis::api;
 
 
 int main(int argc, char **argv) {
-//  int a, b, c;
-//  tie(a, b, c) = tsort(9, 2, 10);
-//
-//  cout << a << endl;
-//  cout << b << endl;
-//  cout << c << endl;
-//
-////  auto v = foo(9, 2, 10);
-////  for(auto x : v)
-////    cout << x << endl;
-//
-//  exit(0);
+  //  int a, b, c;
+  //  tie(a, b, c) = tsort(9, 2, 10);
+  //
+  //  cout << a << endl;
+  //  cout << b << endl;
+  //  cout << c << endl;
+  //
+  ////  auto v = foo(9, 2, 10);
+  ////  for(auto x : v)
+  ////    cout << x << endl;
+  //
+  //  exit(0);
 
-//  set<int, function<bool (int, int)>> s([&](int a, int b) {
-//    return a > b;
-//  });
-//
-//  s.insert(10);
-//  s.insert(20);
-//
-//  for(int x : s)
-//    cout << x << endl;
-//
-//  exit(0);
+  //  set<int, function<bool (int, int)>> s([&](int a, int b) {
+  //    return a > b;
+  //  });
+  //
+  //  s.insert(10);
+  //  s.insert(20);
+  //
+  //  for(int x : s)
+  //    cout << x << endl;
+  //
+  //  exit(0);
 
 
   gdsl::bare_frontend f("current");
@@ -85,18 +85,16 @@ int main(int argc, char **argv) {
   binary_provider::entry_t section;
   bool success;
   tie(success, section) = elfp.section(".text");
-  if(!success)
-    throw string("Invalid section .text");
+  if(!success) throw string("Invalid section .text");
 
   binary_provider::entry_t function;
   tie(ignore, function) = elfp.symbol("main");
 
-  unsigned char *buffer = (unsigned char*)malloc(section.size);
+  unsigned char *buffer = (unsigned char *)malloc(section.size);
   memcpy(buffer, elfp.get_data().data + section.offset, section.size);
 
   size_t size = (function.offset - section.offset) + function.size + 1000;
-  if(size > section.size)
-    size = section.size;
+  if(size > section.size) size = section.size;
 
   g.set_code(buffer, size, section.address);
   if(g.seek(function.address)) {
@@ -104,37 +102,40 @@ int main(int argc, char **argv) {
   }
 
   try {
-//  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-  dectran dt(g, false);
+    //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
+    dectran dt(g, false);
 
-  dt.transduce();
-  dt.register_();
+    dt.transduce();
+    dt.register_();
 
-  auto &cfg = dt.get_cfg();
-  cfg.commit_updates();
+    auto &cfg = dt.get_cfg();
+    cfg.commit_updates();
 
-  shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-  summary_dstack ds(&cfg, se);
-  jd_manager jd_man(&cfg);
-  fixpoint fp(&ds, jd_man);
+    shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
+    summary_dstack ds(&cfg, se);
+    jd_manager jd_man(&cfg);
+    fixpoint fp(&ds, jd_man);
 
-  fp.iterate();
+    fp.iterate();
 
-  ofstream dot_noa_fs;
-  dot_noa_fs.open("output_noa.dot", ios::out);
-  cfg.dot(dot_noa_fs);
-  dot_noa_fs.close();
+    ofstream dot_noa_fs;
+    dot_noa_fs.open("output_noa.dot", ios::out);
+    cfg.dot(dot_noa_fs);
+    dot_noa_fs.close();
 
-//  cout << "++++++++++" << endl;
-//  ds.put(cout);
-//  cout << "++++++++++" << endl;
+    //  cout << "++++++++++" << endl;
+    //  ds.put(cout);
+    //  cout << "++++++++++" << endl;
 
-  ofstream dot_fs;
-  dot_fs.open("output.dot", ios::out);
-  cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-    out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-  });
-  dot_fs.close();
+    ofstream dot_fs;
+    dot_fs.open("output.dot", ios::out);
+    cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
+      if(n.get_id() == 146)
+        out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+      else
+        n.dot(out);
+    });
+    dot_fs.close();
 
   } catch(string s) {
     cout << "Exception: " << s << endl;
