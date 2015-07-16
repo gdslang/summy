@@ -177,34 +177,55 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   /*
    * We build a ptr_map_rev and a conflict region map in order to deal with unexpected aliasing situations
    */
-  map<id_shared_t, id_set_t, id_less_no_version> ptr_map_rev;
+  map<id_shared_t, ptr_set_t, id_less_no_version> ptr_map_rev;
   for(auto &ptr_mapping : ptr_map)
-    for(auto &p : ptr_mapping.second)
+    for(auto &p_c : ptr_mapping.second)
       if(summary->output.deref.find(ptr_mapping.first) != summary->output.deref.end())
-        ptr_map_rev[p.id].insert(ptr_mapping.first);
+        ptr_map_rev[p_c.id].insert(ptr(ptr_mapping.first, p_c.offset));
+
+  cout << "dirt check..." << endl;
 
   bool dirty = false;
-  map<id_shared_t, region_t, id_less_no_version> conflict_regions;
   for(auto &rev_mapping : ptr_map_rev) {
-    id_set_t &ptrs_s = rev_mapping.second;
+    ptr_set_t &ptrs_s = rev_mapping.second;
     if(ptrs_s.size() > 1) {
       map<int64_t, size_t> dirty_bits;
 
-      for(auto &ptr_id : ptrs_s) {
+      for(auto &ptr : ptrs_s) {
+        id_shared_t ptr_id = ptr.id;
+        vs_shared_t offset = ptr.offset;
+        optional<int64_t> offset_int;
+        value_set_visitor vsv;
+        vsv._([&](vs_finite *vsf) {
+          if(vsf->is_singleton()) offset_int = vsf->min();
+        });
+        offset->accept(vsv);
+        if(!offset_int) {
+          dirty = true;
+          break;
+        }
+        int64_t offset_int_bits = offset_int.value() * 8;
+
         region_t &r = summary->output.deref.at(ptr_id);
         for(auto field_mapping : r) {
-          if(dirty_bits.find(field_mapping.first) != dirty_bits.end()) {
+          int64_t offset_f = field_mapping.first + offset_int_bits;
+
+          if(dirty_bits.find(offset_f) != dirty_bits.end()) {
             dirty = true;
             goto _collect_end;
           }
-          if(field_mapping.second.size != 0) dirty_bits[field_mapping.first] = field_mapping.second.size;
+          if(field_mapping.second.size != 0) dirty_bits[offset_f] = field_mapping.second.size;
         }
       }
     _collect_end:
       if(dirty) break;
 
+      cout << "Still not dirty :-)" << endl;
+
       optional<int64_t> offset;
       for(auto dirty_mapping : dirty_bits) {
+        cout << "next dirt bag: " << dirty_mapping.first << ", with size: " << dirty_mapping.second << endl;
+
         if(offset) {
           int offset_next = dirty_mapping.first;
           if(offset.value() >= offset_next) {
@@ -213,11 +234,13 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
           }
         }
         offset = dirty_mapping.first + dirty_mapping.second - 1;
+
+        cout << "end offset: " << offset.value() << endl;
       }
 
-      for(auto &__ptr : ptrs_s)
-        cout << *__ptr << ", ";
-      cout << endl;
+      //      for(auto &__ptr : ptrs_s)
+      //        cout << *__ptr << ", ";
+      //      cout << endl;
       /*
        * Handling of unexpected aliases...
        */
@@ -229,13 +252,13 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
     }
   }
   if(dirty) {
-    cout << "Dirty :-(." << endl;
+    cout << "dirty :-(." << endl;
     return_site->topify();
     return return_site;
   }
 
-  cout << "return_site, before app: " << endl
-       << *return_site << endl;
+  //  cout << "return_site, before app: " << endl
+  //       << *return_site << endl;
 
   num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
   auto process_region =
@@ -325,8 +348,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return_site->project(_vars);
   delete _vars;
 
-  //  cout << "return_site: " << endl
-  //       << *return_site << endl;
+  cout << "return_site: " << endl
+       << *return_site << endl;
 
   return return_site;
 }
