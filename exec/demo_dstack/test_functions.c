@@ -9,11 +9,11 @@ int h() {
 typedef int (*f_t)();
 
 f_t __attribute__ ((noinline)) f(char x) {
-     __asm (
-     "mov    $0x4004f6,%%rax\n"
-         : 
-         : );
-//  return h;
+//     __asm (
+//     "mov    $0x4004f6,%%rax\n"
+//         : 
+//         : );
+  return h;
 }
 
 int main(int argc, char **argv) {

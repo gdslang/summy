@@ -224,41 +224,61 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
         cout << "aliases_s: " << aliases_s << endl;
 
-        delete nv_s;
 
         ptr_set_t aliases_c;
         for(auto &alias_s : aliases_s) {
-          summy::rreil::id_visitor idv;
-          idv._([&](sm_id *_sm_id) { aliases_c.insert(alias_s); });
-          idv._default([&](id *_) {
-            auto aliases_mapped_it = ptr_map.find(alias_s.id);
-            ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
-            //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
-            //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) <<
-            //        endl;
-            if(aliases_mapped_it != ptr_map.end())
-              for(auto alias_c_next : aliases_c_next)
-                aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
-          });
-          alias_s.id->accept(idv);
+          //          summy::rreil::id_visitor idv;
+          //          idv._([&](sm_id *_sm_id) { aliases_c.insert(alias_s); });
+          //          idv._default([&](id *_) {
+          auto aliases_mapped_it = ptr_map.find(alias_s.id);
+          ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
+          //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
+          //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) <<
+          //        endl;
+          if(aliases_mapped_it != ptr_map.end())
+            for(auto alias_c_next : aliases_c_next)
+              aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
+          //          });
+          //          alias_s.id->accept(idv);
         }
+
+        /*
+         * Restore value only if no caller pointers?
+         */
+
+        vs_shared_t value_summary = summary->child_state->queryVal(nv_s);
+        num_expr *value_summary_expr = new num_expr_lin(new num_linear_vs(value_summary));
 
         summary_memory_state::updater_t strong = [&](api::num_var *nv_fld_c) {
           //        cout << "strong for " << *nv_me << ": " << aliases_me << endl;
-          return_site->child_state->assign(nv_fld_c, _top);
-          return_site->child_state->assume(nv_fld_c, aliases_c);
+          return_site->child_state->kill({nv_fld_c});
+          if(aliases_c.size() > 0)
+            return_site->child_state->assume(nv_fld_c, aliases_c);
+          else
+            return_site->child_state->assign(nv_fld_c, value_summary_expr);
         };
         summary_memory_state::updater_t weak = [&](api::num_var *nv_fld_c) {
           //        cout << "weak for " << *nv_me << ": " << aliases_me << endl;
-          ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
-          return_site->child_state->assign(nv_fld_c, _top);
-          aliases_joined_c.insert(aliases_c.begin(), aliases_c.end());
-          return_site->child_state->assume(nv_fld_c, aliases_joined_c);
+          if(aliases_c.size() > 0) {
+            ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
+            return_site->child_state->kill({nv_fld_c});
+            aliases_joined_c.insert(aliases_c.begin(), aliases_c.end());
+            return_site->child_state->assume(nv_fld_c, aliases_joined_c);
+          } else {
+            vs_shared_t value_caller = return_site->child_state->queryVal(nv_fld_c);
+            return_site->child_state->kill({nv_fld_c});
+            num_expr *value_joined_expr =
+              new num_expr_lin(new num_linear_vs(value_set::join(value_summary, value_caller)));
+            return_site->child_state->assign(nv_fld_c, value_joined_expr);
+          }
         };
         ptr_set_t region_aliases_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_aliases_c);
 
         //      cout << "~~~" << region_aliases_c_offset_bits << ":" << f_s.size << endl;
         return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak, true, true);
+
+        delete value_summary_expr;
+        delete nv_s;
       }
     };
 
