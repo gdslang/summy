@@ -23,8 +23,10 @@
 #include <map>
 #include <queue>
 #include <algorithm>
+#include <experimental/optional>
 
 using gdsl::rreil::id;
+using std::experimental::optional;
 using summy::rreil::sm_id;
 
 using namespace std;
@@ -186,7 +188,32 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   for(auto &rev_mapping : ptr_map_rev) {
     id_set_t &ptrs_s = rev_mapping.second;
     if(ptrs_s.size() > 1) {
-      dirty = true;
+      map<int64_t, size_t> dirty_bits;
+
+      for(auto &ptr_id : ptrs_s) {
+        region_t &r = summary->output.deref.at(ptr_id);
+        for(auto field_mapping : r) {
+          if(dirty_bits.find(field_mapping.first) != dirty_bits.end()) {
+            dirty = true;
+            goto _collect_end;
+          }
+          if(field_mapping.second.size != 0) dirty_bits[field_mapping.first] = field_mapping.second.size;
+        }
+      }
+    _collect_end:
+      if(dirty) break;
+
+      optional<int64_t> offset;
+      for(auto dirty_mapping : dirty_bits) {
+        if(offset) {
+          int offset_next = dirty_mapping.first;
+          if(offset.value() >= offset_next) {
+            dirty = true;
+            break;
+          }
+        }
+        offset = dirty_mapping.first + dirty_mapping.second - 1;
+      }
 
       for(auto &__ptr : ptrs_s)
         cout << *__ptr << ", ";
@@ -203,8 +230,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   }
   if(dirty) {
     cout << "Dirty :-(." << endl;
-    //    return_site->topify();
-    //    return return_site;
+    return_site->topify();
+    return return_site;
   }
 
   cout << "return_site, before app: " << endl
