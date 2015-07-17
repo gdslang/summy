@@ -1069,3 +1069,33 @@ int main(int argc, char **argv) {\n\
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
   ASSERT_EQ(*r, shared_ptr<vs_finite>(new vs_finite({42, 99})));
 }
+
+TEST_F(summary_dstack_test, CSetFunctionPointerRef) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_c(ar, "\n\
+int h() {\n\
+  return 122;\n\
+}\n\
+\n\
+int __attribute__ ((noinline)) f(int (**fp)()) {\n\
+  *fp = h;\n\
+}\n\
+\n\
+int main(void) {\n\
+  int (*fp)();\n\
+  f(&fp);\n\
+  long long x = fp();\n\
+\n\
+  __asm volatile ( \"mov %0, %%r11\"\n\
+    : \"=a\" (x)\n\
+    : \"a\" (x)\n\
+    : \"r11\");\n\
+  __asm volatile ( \"end:\");\n\
+  return 0;\n\
+}",
+    false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(122));
+}

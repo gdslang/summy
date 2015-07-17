@@ -705,7 +705,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   vector<num_linear *> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
-    //    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
+    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
     io_region io = dereference(alias.id);
 
     bool is_static = false;
@@ -731,10 +731,10 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
         lins.push_back(transLEReg(io, noo, load->get_size()));
       }
     });
-    vsv._([&](vs_open *o) {});
-    vsv._([&](vs_top *t) {});
-    //    vs_shared_t offset_bits = *vs_finite::single(8)*alias.offset;
-    alias.offset->accept(vsv);
+    vsv._([&](vs_open *o) { assert(false); });
+    vsv._([&](vs_top *t) { assert(false); });
+    vs_shared_t offset_bits = *vs_finite::single(8) * alias.offset;
+    offset_bits->accept(vsv);
   }
 
   num_var *lhs =
@@ -771,6 +771,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
 
 void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size,
   updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
+  cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
+
   for(auto &alias : aliases) {
     io_region io = region_by_id(getter, alias.id);
 
