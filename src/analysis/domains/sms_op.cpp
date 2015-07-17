@@ -37,11 +37,11 @@ using namespace summy;
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-  //  cout << "apply_summary" << endl;
-  //  cout << "caller:" << endl
-  //       << *caller << endl;
-  //  cout << "summary: " << endl
-  //       << *summary << endl;
+  cout << "apply_summary" << endl;
+  cout << "caller:" << endl
+       << *caller << endl;
+  cout << "summary: " << endl
+       << *summary << endl;
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -337,8 +337,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return_site->project(_vars);
   delete _vars;
 
-  //  cout << "return_site: " << endl
-  //       << *return_site << endl;
+  cout << "return_site: " << endl
+       << *return_site << endl;
 
   return return_site;
 }

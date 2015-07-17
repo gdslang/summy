@@ -24,15 +24,18 @@ int main(int argc, char **argv) {
     : "a" (addr)
     : );
 
-  //hugo *h = new (addr) inge();
-  hugo *h = new (addr) hugo();
+  hugo *h = new (addr) inge();
+  //hugo *h = new (addr) hugo();
+
+  __asm volatile ( "jmp after_new\n" );
+  __asm volatile ( "after_new:\n" );
 
   long long x = h->foo();
 
-  //__asm volatile ( "mov %0, %%r11\n"
-  //  : "=a" (x)
-  //  : "a" (x)
-  //  : "r11");
+  __asm volatile ( "mov %0, %%r11\n"
+    : "=a" (x)
+    : "a" (x)
+    : "r11");
 
-  //return x;
+  return x;
 }
