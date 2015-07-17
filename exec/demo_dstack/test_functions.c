@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
   long long x = fp();
 
-  asm volatile ( "mov %0, %%r11\n"
+  __asm volatile ( "mov %0, %%r11\n"
     : "=a" (x)
     : "a" (x)
     : "r11");

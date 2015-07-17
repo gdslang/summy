@@ -161,8 +161,6 @@ static void query_val(
   lin_var *lv = new lin_var(new variable(new arch_id(arch_id_name), offset));
   //  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
 
-  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
-
   r = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryVal(lv, size);
   delete lv;
 }

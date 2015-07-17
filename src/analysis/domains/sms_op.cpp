@@ -37,11 +37,11 @@ using namespace summy;
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-  cout << "apply_summary" << endl;
-  cout << "caller:" << endl
-       << *caller << endl;
-  cout << "summary: " << endl
-       << *summary << endl;
+  //  cout << "apply_summary" << endl;
+  //  cout << "caller:" << endl
+  //       << *caller << endl;
+  //  cout << "summary: " << endl
+  //       << *summary << endl;
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -183,8 +183,6 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       if(summary->output.deref.find(ptr_mapping.first) != summary->output.deref.end())
         ptr_map_rev[p_c.id].insert(ptr(ptr_mapping.first, p_c.offset));
 
-  cout << "dirt check..." << endl;
-
   bool dirty = false;
   for(auto &rev_mapping : ptr_map_rev) {
     ptr_set_t &ptrs_s = rev_mapping.second;
@@ -220,11 +218,9 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
     _collect_end:
       if(dirty) break;
 
-      cout << "Still not dirty :-)" << endl;
-
       optional<int64_t> offset;
       for(auto dirty_mapping : dirty_bits) {
-        cout << "next dirt bag: " << dirty_mapping.first << ", with size: " << dirty_mapping.second << endl;
+        //        cout << "next dirt bag: " << dirty_mapping.first << ", with size: " << dirty_mapping.second << endl;
 
         if(offset) {
           int offset_next = dirty_mapping.first;
@@ -234,8 +230,6 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
           }
         }
         offset = dirty_mapping.first + dirty_mapping.second - 1;
-
-        cout << "end offset: " << offset.value() << endl;
       }
 
       //      for(auto &__ptr : ptrs_s)
@@ -252,7 +246,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
     }
   }
   if(dirty) {
-    cout << "dirty :-(." << endl;
+    //    cout << "dirty :-(." << endl;
     return_site->topify();
     return return_site;
   }
@@ -271,9 +265,6 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
         num_var *nv_s = new num_var(f_s.num_id);
         ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
-
-        cout << "aliases_s: " << aliases_s << endl;
-
 
         ptr_set_t aliases_c;
         for(auto &alias_s : aliases_s) {
@@ -331,8 +322,6 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   for(auto &region_mapping_so : summary->output.regions) {
     id_shared_t region_key = region_mapping_so.first;
 
-    cout << "Processing " << *region_key << endl;
-
     ptr_set_t region_aliases_c = ptr_set_t({ptr(region_key, vs_finite::zero)});
     process_region(&relation::get_regions, region_aliases_c, region_mapping_so.second);
   }
@@ -348,8 +337,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return_site->project(_vars);
   delete _vars;
 
-  cout << "return_site: " << endl
-       << *return_site << endl;
+  //  cout << "return_site: " << endl
+  //       << *return_site << endl;
 
   return return_site;
 }
@@ -628,10 +617,10 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     delete alias_b;
   }
 
-  //  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
-  //  cout << "after_rename, b: " << *after_rename_b << endl;
-  //  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
-  //  cout << "after_rename, a: " << *after_rename_a << endl;
+  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
+  cout << "after_rename, a: " << *after_rename_a << endl;
+  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
+  cout << "after_rename, b: " << *after_rename_b << endl;
 
   /*
    * In the second step, all corresponding regions already have got the same region key. Thus,
@@ -653,6 +642,8 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
       };
       id_set_t a_kill_ids;
       id_set_t b_kill_ids;
+
+      cout << "region_b.size: " << region_b.size() << endl;
 
       region_t region;
 
@@ -703,14 +694,14 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     };
     for(auto &region_it : a_map) {
       auto region_b_it = b_map.find(region_it.first);
-      if(region_b_it != b_map.end())
-        handle_region(region_it.first, region_it.second, region_b_it->second);
-      else
-        handle_region(region_it.first, region_it.second, region_t());
+      if(region_b_it != b_map.end()) handle_region(region_it.first, region_it.second, region_b_it->second);
+      //      else
+      //        handle_region(region_it.first, region_it.second, region_t());
     }
-    for(auto &region_b_it : b_map) {
-      if(a_map.find(region_b_it.first) == a_map.end()) handle_region(region_b_it.first, region_t(), region_b_it.second);
-    }
+    //    for(auto &region_b_it : b_map) {
+    //      if(a_map.find(region_b_it.first) == a_map.end()) handle_region(region_b_it.first, region_t(),
+    //      region_b_it.second);
+    //    }
     return result_map;
   };
 
