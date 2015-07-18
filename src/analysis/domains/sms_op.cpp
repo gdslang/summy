@@ -643,8 +643,6 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
       id_set_t a_kill_ids;
       id_set_t b_kill_ids;
 
-      cout << "region_b.size: " << region_b.size() << endl;
-
       region_t region;
 
       cr_merge_region_iterator mri(region_a, region_b, region);

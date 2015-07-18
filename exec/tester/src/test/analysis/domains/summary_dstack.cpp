@@ -555,7 +555,8 @@ TEST_F(summary_dstack_test, OverlappingFieldMiddle) {
 
 TEST_F(summary_dstack_test, Call) {
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "f:\n\
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
+f:\n\
 mov (%r11), %r12\n\
 mov %r12, %rax\n\
 ret\n\
@@ -585,7 +586,8 @@ end: ret",
 TEST_F(summary_dstack_test, CallOffsets) {
   // test21.as using aliases
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "g:\n\
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
+g:\n\
 mov %r13, %r14\n\
 ret\n\
 \n\
@@ -623,7 +625,8 @@ end: ret",
 TEST_F(summary_dstack_test, 2Calls) {
   // test20.as using aliases
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "f:\n\
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
+f:\n\
 mov %r11, %r12\n\
 ret\n\
 \n\
@@ -667,7 +670,8 @@ end: ret",
 
 TEST_F(summary_dstack_test, Call_2AliasesCallee_1AliasesCaller) {
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "g:\n\
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
+g:\n\
 mov %r13, %r14\n\
 ret\n\
 \n\
@@ -754,7 +758,8 @@ end: ret",
 
 TEST_F(summary_dstack_test, Call_2AliasesForOneVariableCaller) {
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "g:\n\
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
+g:\n\
 mov %r13, %r14\n\
 ret\n\
 \n\
@@ -803,7 +808,8 @@ ret",
 
 TEST_F(summary_dstack_test, Call_2AliasesForOneVariableCallerWithOffsetInCaller) {
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "f:\n\
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
+f:\n\
 mov %rax, (%rdx)\n\
 ret\n\
 \n\
@@ -883,7 +889,8 @@ ret",
 
 TEST_F(summary_dstack_test, SummaryAppStructuralConflict1) {
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "f:\n\
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
+f:\n\
 mov (%rax), %r11\n\
 mov %r12, (%r11)\n\
 movb $22, (%rbx)\n\
@@ -941,7 +948,8 @@ end: ret",
 
 TEST_F(summary_dstack_test, SummaryAppStructuralConflict2) {
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "f:\n\
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
+f:\n\
 mov (%rbx), %r11\n\
 mov %r12, (%r11)\n\
 movb $22, (%rax)\n\

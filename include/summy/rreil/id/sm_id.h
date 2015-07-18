@@ -19,16 +19,15 @@ using analysis::symbol;
 namespace summy {
 namespace rreil {
 
-class sm_id: public gdsl::rreil::id {
+class sm_id : public gdsl::rreil::id {
 private:
   std::string symbol;
   void *address;
 
   void put(std::ostream &out);
+
 public:
-  sm_id(std::string symbol, void *address) :
-    symbol(symbol), address(address) {
-  }
+  sm_id(std::string symbol, void *address) : symbol(symbol), address(address) {}
   ~sm_id();
 
   std::string get_symbol() {
@@ -39,11 +38,12 @@ public:
     return address;
   }
 
-  bool operator== (gdsl::rreil::id &other);
+  bool operator==(gdsl::rreil::id &other);
   void accept(gdsl::rreil::id_visitor &v);
 
   static std::shared_ptr<gdsl::rreil::id> from_symbol(analysis::symbol symb);
-};
 
+  static std::shared_ptr<gdsl::rreil::id> _nullptr;
+};
 }
 }
