@@ -37,11 +37,11 @@ using namespace summy;
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-  cout << "apply_summary" << endl;
-  cout << "caller:" << endl
-       << *caller << endl;
-  cout << "summary: " << endl
-       << *summary << endl;
+  //  cout << "apply_summary" << endl;
+  //  cout << "caller:" << endl
+  //       << *caller << endl;
+  //  cout << "summary: " << endl
+  //       << *summary << endl;
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -337,8 +337,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return_site->project(_vars);
   delete _vars;
 
-  cout << "return_site: " << endl
-       << *return_site << endl;
+  //  cout << "return_site: " << endl
+  //       << *return_site << endl;
 
   return return_site;
 }
@@ -617,10 +617,10 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     delete alias_b;
   }
 
-  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
-  cout << "after_rename, a: " << *after_rename_a << endl;
-  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
-  cout << "after_rename, b: " << *after_rename_b << endl;
+  //  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
+  //  cout << "after_rename, a: " << *after_rename_a << endl;
+  //  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
+  //  cout << "after_rename, b: " << *after_rename_b << endl;
 
   /*
    * In the second step, all corresponding regions already have got the same region key. Thus,

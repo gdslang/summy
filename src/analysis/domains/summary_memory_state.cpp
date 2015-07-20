@@ -240,6 +240,16 @@ tuple<bool, void *> analysis::summary_memory_state::static_address(id_shared_t i
   return make_tuple(is_static, symbol_address);
 }
 
+bool analysis::summary_memory_state::static_nullptr(id_shared_t id) {
+  bool is_nullptr = false;
+  summy::rreil::id_visitor idv;
+  idv._([&](sm_id *sid) {
+    if(sid->get_address() == NULL) is_nullptr = true;
+  });
+  id->accept(idv);
+  return is_nullptr;
+}
+
 void analysis::summary_memory_state::initialize_static(io_region io, void *address, size_t offset, size_t size) {
   id_shared_t mem_id = transVarReg(io, offset, size);
   if(size > 64) throw string("analysis::summary_memory_state::initialize_static(region_t,void*,size_t): size > 64");
@@ -706,6 +716,11 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
     //    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
+    if(static_nullptr(alias.id)) {
+      cout << "Warning (load): Ignoring possible null pointer dereference" << endl;
+      continue;
+    }
+
     io_region io = dereference(alias.id);
 
     bool is_static = false;
@@ -774,6 +789,11 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
   //  cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
 
   for(auto &alias : aliases) {
+    if(static_nullptr(alias.id)) {
+      cout << "Warning (store): Ignoring possible null pointer dereference" << endl;
+      continue;
+    }
+
     io_region io = region_by_id(getter, alias.id);
 
     bool is_static = false;

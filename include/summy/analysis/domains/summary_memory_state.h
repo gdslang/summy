@@ -88,6 +88,7 @@ protected:
    * Static memory
    */
   std::tuple<bool, void *> static_address(id_shared_t id);
+  bool static_nullptr(id_shared_t id);
   void initialize_static(io_region io, void *address, size_t offset, size_t size);
 
   std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
