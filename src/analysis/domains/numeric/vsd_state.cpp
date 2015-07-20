@@ -352,30 +352,42 @@ vsd_state *analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> s
 
 api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
   //  cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
-  bool success = false;
-  void *address;
+  ptr_set_t result;
   vs_shared_t nv_val = queryVal(nv);
+
+  bool all = true;
+
+  cout << "queryAls()" << endl;
+  cout << *nv_val << endl;
+
   value_set_visitor vsv(true);
   vsv._([&](vs_finite *vf) {
-    success = true;
-    /*
-     * Todo
-     */
-    if(!vf->is_singleton()) cout << "Warning: non-singleton constant pointer sets not yet implemented." << endl;
-    address = (void *)*vf->get_elements().begin();
+    //      if(elements.size() > 100) cout << "Warning in queryAls(): Ignoring some pointers" << endl;
+    auto &elements = vf->get_elements();
+    for(auto &e : elements) {
+      void *address = (void *)e;
+      if(address == NULL) result.insert(ptr(sm_id::_nullptr, vs_finite::single(0)));
+      symbol symb;
+      bool success;
+      tie(success, symb) = sm->lookup(address);
+      if(!success) {
+        all = false;
+        return;
+      };
+      //  cout << "Returing alias..." << endl;
+      vs_shared_t offset_bytes = *nv_val - vs_finite::single((int64_t)symb.address);
+      //  vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
+      result.insert(ptr(sm_id::from_symbol(symb), offset_bytes));
+    }
   });
   nv_val->accept(vsv);
-  if(!success) return ptr_set_t{};
-  if(address == NULL) return ptr_set_t{ptr(sm_id::_nullptr, vs_finite::single(0))};
-  symbol symb;
-  tie(success, symb) = sm->lookup(address);
-  if(!success) {
-    return ptr_set_t{};
-  }
-  //  cout << "Returing alias..." << endl;
-  vs_shared_t offset_bytes = *nv_val - vs_finite::single((int64_t)symb.address);
-  //  vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
-  return ptr_set_t{ptr(sm_id::from_symbol(symb), offset_bytes)};
+
+  cout << "+++" << result << endl;
+  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
+
+  cout << "/queryAls()" << endl;
+
+  return result;
 }
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(num_linear *lin) {
