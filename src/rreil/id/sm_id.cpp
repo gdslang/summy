@@ -5,8 +5,8 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/sm_id.h>
+#include <summy/rreil/id/id_visitor.h>
 
 using namespace std;
 
@@ -32,5 +32,3 @@ void summy::rreil::sm_id::accept(gdsl::rreil::id_visitor &v) {
 std::shared_ptr<gdsl::rreil::id> summy::rreil::sm_id::from_symbol(analysis::symbol symb) {
   return shared_ptr<gdsl::rreil::id>(new sm_id(symb.symbol_name, symb.address));
 }
-
-shared_ptr<gdsl::rreil::id> summy::rreil::sm_id::_nullptr = shared_ptr<gdsl::rreil::id>(new sm_id("nullptr", 0));

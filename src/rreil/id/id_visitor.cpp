@@ -10,25 +10,41 @@
 #include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/ssa_id.h>
 #include <summy/rreil/id/sm_id.h>
+#include <summy/rreil/id/special_ptr.h>
 
 namespace sr = summy::rreil;
 
 void sr::id_visitor::visit(sr::ssa_id *a) {
-  if(ssa_id_callback != NULL) ssa_id_callback(a);
-  else _default(a);
+  if(ssa_id_callback != NULL)
+    ssa_id_callback(a);
+  else
+    _default(a);
 }
 
 void sr::id_visitor::visit(sr::numeric_id *a) {
-  if(numeric_id_callback != NULL) numeric_id_callback(a);
-  else _default(a);
+  if(numeric_id_callback != NULL)
+    numeric_id_callback(a);
+  else
+    _default(a);
 }
 
 void sr::id_visitor::visit(sr::memory_id *a) {
-  if(memory_id_callback != NULL) memory_id_callback(a);
-  else _default(a);
+  if(memory_id_callback != NULL)
+    memory_id_callback(a);
+  else
+    _default(a);
 }
 
 void sr::id_visitor::visit(sr::sm_id *a) {
-  if(sm_id_callback != NULL) sm_id_callback(a);
-  else _default(a);
+  if(sm_id_callback != NULL)
+    sm_id_callback(a);
+  else
+    _default(a);
+}
+
+void sr::id_visitor::visit(sr::special_ptr *a) {
+  if(spcial_ptr_callback != NULL)
+    spcial_ptr_callback(a);
+  else
+    _default(a);
 }

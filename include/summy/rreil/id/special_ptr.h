@@ -1,7 +1,7 @@
 /*
- * sm_id.h
+ * special_ptr.h
  *
- *  Created on: Apr 16, 2015
+ *  Created on: Jul 27, 2015
  *      Author: Julian Kranz
  */
 
@@ -19,29 +19,27 @@ using analysis::symbol;
 namespace summy {
 namespace rreil {
 
-class sm_id : public gdsl::rreil::id {
+enum special_ptr_kind { NULL_PTR, BAD_PTR };
+
+class special_ptr : public gdsl::rreil::id {
 private:
-  std::string symbol;
-  void *address;
+  special_ptr_kind kind;
+
+  special_ptr_kind get_kind() {
+    return kind;
+  }
 
   void put(std::ostream &out);
 
 public:
-  sm_id(std::string symbol, void *address) : symbol(symbol), address(address) {}
-  ~sm_id();
-
-  std::string get_symbol() {
-    return symbol;
-  }
-
-  void *get_address() {
-    return address;
-  }
+  special_ptr(special_ptr_kind kind) : kind(kind) {}
+  ~special_ptr();
 
   bool operator==(gdsl::rreil::id &other);
   void accept(gdsl::rreil::id_visitor &v);
 
-  static std::shared_ptr<gdsl::rreil::id> from_symbol(analysis::symbol symb);
+  static std::shared_ptr<gdsl::rreil::id> _nullptr;
+  static std::shared_ptr<gdsl::rreil::id> badptr;
 };
 }
 }

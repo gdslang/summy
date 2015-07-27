@@ -14,10 +14,12 @@
 #include <string>
 #include <memory>
 #include <assert.h>
+#include <summy/rreil/id/special_ptr.h>
 #include <experimental/optional>
 
 using summy::rreil::sm_id;
 using std::experimental::optional;
+using summy::rreil::special_ptr;
 
 using namespace summy;
 using namespace analysis;
@@ -366,7 +368,7 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     auto &elements = vf->get_elements();
     for(auto &e : elements) {
       void *address = (void *)e;
-      if(address == NULL) symbol_offsets[sm_id::_nullptr].push_back(vs_finite::single(0));
+      if(address == NULL) symbol_offsets[special_ptr::_nullptr].push_back(vs_finite::single(0));
       symbol symb;
       bool success;
       tie(success, symb) = sm->lookup(address);
