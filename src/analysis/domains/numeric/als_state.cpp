@@ -11,8 +11,13 @@
 #include <summy/value_set/value_set.h>
 #include <algorithm>
 #include <assert.h>
+#include <cppgdsl/rreil/rreil.h>
+#include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/sm_id.h>
+#include <summy/rreil/id/special_ptr.h>
 #include <experimental/optional>
 
+using gdsl::rreil::id;
 using std::experimental::optional;
 
 using namespace analysis;
@@ -50,23 +55,35 @@ void analysis::als_state::kill(id_shared_t id) {
   delete id_var;
 }
 
-ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> pointers) {
+ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers) {
+  if(!pointers.size()) return ptr(special_ptr::badptr, vs_finite::single(0));
   optional<ptr> result;
-  for(auto ptr : pointers) {
+  for(auto const &_ptr : pointers) {
     summy::rreil::id_visitor idv;
-    idv._(sm_id *sid) {
-
-    }
+    idv._([&](sm_id *sid) {
+      if(!result)
+        result = ptr(special_ptr::_nullptr, vs_finite::single((int64_t)sid->get_address()));
+      else
+        result = ptr(special_ptr::badptr, vs_finite::single(0));
+    });
     idv._([&](special_ptr *sptr) {
-
+      switch(sptr->get_kind()) {
+        case NULL_PTR: {
+          break;
+        }
+        case BAD_PTR: {
+          result = ptr(special_ptr::badptr, vs_finite::single(0));
+          break;
+        }
+      }
     });
     idv._default([&](id *__) {
 
     });
-    ptr->accept(idv);
+    _ptr->accept(idv);
   }
   if(!result)
-    return ptr(special_ptr::badptr, vs_finite::single(0));
+    return ptr(special_ptr::_nullptr, vs_finite::single(0));
   else
     return result.value();
 }
@@ -220,17 +237,47 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   nv._([&](num_expr_lin *le) { linear = true; });
   rhs->accept(nv);
   if(linear) {
-    set<num_var *> _vars = ::vars(rhs);
-    id_set_t aliases_rhs;
-    for(auto &var : _vars) {
+    set<num_var *> _vars_rhs = ::vars(rhs);
+
+    vector<id_set_t> aliases_vars_rhs;
+    for(auto &var : _vars_rhs) {
       auto var_it = elements.find(var->get_id());
-      if(var_it != elements.end()) aliases_rhs.insert(var_it->second.begin(), var_it->second.end());
+      if(var_it == elements.end() || var_it->second.size() == 0)
+        /*
+         * Todo: Should this happen?
+         */
+        aliases_vars_rhs.push_back(id_set_t{special_ptr::_nullptr});
+      else
+        aliases_vars_rhs.push_back(var_it->second);
+      //      auto var_it = elements.find(var->get_id());
+      //      if(var_it != elements.end()) aliases_rhs.insert(var_it->second.begin(), var_it->second.end());
     }
-    if(aliases_rhs.size() > 0)
-      elements[lhs->get_id()] = aliases_rhs;
-    else
-      elements.erase(lhs->get_id());
-    child_state->assign(lhs, rhs);
+    if(aliases_vars_rhs.size() == 0) aliases_vars_rhs.push_back({special_ptr::_nullptr});
+
+    vector<id_set_t::iterator> alias_iterators;
+    for(size_t i = 0; i < aliases_vars_rhs.size(); i++)
+      alias_iterators.push_back(aliases_vars_rhs[i].begin());
+
+    vector<ptr> aliases_new;
+    while(alias_iterators[0] != aliases_vars_rhs[0].end()) {
+      // do something
+      vector<id_shared_t> aliases_current;
+      for(auto &aliases_it : alias_iterators)
+        aliases_current.push_back(*aliases_it);
+      aliases_new.push_back(simplify_ptr_sum(aliases_current));
+
+      for(size_t i = 1; i < alias_iterators.size(); i++) {
+        alias_iterators[i]++;
+        if(alias_iterators[i] == aliases_vars_rhs[i].end()) alias_iterators[i] = aliases_vars_rhs[i].begin();
+      }
+      alias_iterators[0]++;
+    }
+
+    //    if(aliases_rhs.size() > 0)
+    //      elements[lhs->get_id()] = aliases_rhs;
+    //    else
+    //      elements.erase(lhs->get_id());
+    //    child_state->assign(lhs, rhs);
   } else {
     elements.erase(lhs->get_id());
     /*
@@ -500,4 +547,3 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
   }
   return make_tuple(als_a_ge_b, r, a_, b_);
 }
-

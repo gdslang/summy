@@ -30,30 +30,28 @@ typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> element
 /**
  * Alias domain state
  */
-class als_state: public numeric_state {
+class als_state : public numeric_state {
 private:
   numeric_state *child_state;
   elements_t elements;
 
   void kill(id_shared_t id);
-  api::ptr simplify_ptr_sum(std::vector<id_shared_t> pointers);
+  api::ptr simplify_ptr_sum(std::vector<id_shared_t> const &pointers);
   api::num_expr *replace_pointers(api::num_expr *e);
   api::num_linear *replace_pointers(api::num_linear *l);
   /*
    * Todo: Remove (siehe als_state.cpp oben)
    */
-  typedef numeric_state*(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
+  typedef numeric_state *(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
   als_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
+
 protected:
   void put(std::ostream &out) const;
+
 public:
   als_state(numeric_state *child_state, elements_t elements);
-  als_state(numeric_state *child_state) :
-      als_state(child_state, elements_t { }) {
-  }
-  als_state(als_state const&o) :
-      als_state(o.child_state->copy(), o.elements) {
-  }
+  als_state(numeric_state *child_state) : als_state(child_state, elements_t{}) {}
+  als_state(als_state const &o) : als_state(o.child_state->copy(), o.elements) {}
   ~als_state();
 
   const elements_t &get_elements() const {
@@ -74,7 +72,7 @@ public:
   void weak_assign(api::num_var *lhs, api::num_expr *rhs);
   void assume(api::num_expr_cmp *cmp);
   void assume(api::num_var *lhs, api::ptr_set_t aliases);
-  void kill(std::vector<api::num_var*> vars);
+  void kill(std::vector<api::num_var *> vars);
   void equate_kill(num_var_pairs_t vars);
   void fold(num_var_pairs_t vars);
 
@@ -88,7 +86,6 @@ public:
 
   als_state *copy() const;
 
-  static std::tuple<bool, elements_t, numeric_state*, numeric_state*> compat(als_state const *a, als_state const *b);
+  static std::tuple<bool, elements_t, numeric_state *, numeric_state *> compat(als_state const *a, als_state const *b);
 };
-
 }
