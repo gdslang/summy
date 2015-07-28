@@ -25,15 +25,15 @@ class special_ptr : public gdsl::rreil::id {
 private:
   special_ptr_kind kind;
 
-  special_ptr_kind get_kind() {
-    return kind;
-  }
-
   void put(std::ostream &out);
 
 public:
   special_ptr(special_ptr_kind kind) : kind(kind) {}
   ~special_ptr();
+
+  special_ptr_kind get_kind() {
+    return kind;
+  }
 
   bool operator==(gdsl::rreil::id &other);
   void accept(gdsl::rreil::id_visitor &v);

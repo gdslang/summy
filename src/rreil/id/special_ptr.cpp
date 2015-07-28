@@ -21,6 +21,7 @@ bool summy::rreil::special_ptr::operator==(gdsl::rreil::id &other) {
   summy::rreil::id_visitor iv;
   iv._([&](special_ptr *sp) { equals = sp->kind == kind; });
   other.accept(iv);
+
   return equals;
 }
 

@@ -9,15 +9,21 @@
 #include <summy/analysis/domains/api/numeric/num_visitor.h>
 #include <summy/value_set/value_set.h>
 #include <include/summy/value_set/vs_finite.h>
+#include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/sm_id.h>
+#include <summy/rreil/id/special_ptr.h>
 #include <iostream>
+#include <experimental/optional>
 
 using summy::value_set;
 using summy::vs_finite;
 using summy::vs_shared_t;
+using std::experimental::optional;
 
 using namespace std;
 using namespace analysis;
 using namespace analysis::api;
+using namespace summy::rreil;
 
 
 summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_linear *lin) {
@@ -25,9 +31,30 @@ summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_linear *lin) {
   vs_shared_t result;
   nv._([&](num_linear_term *lt) {
     vs_shared_t scale = vs_finite::single(lt->get_scale());
-    vs_shared_t id = query_var(lt->get_var());
+
+    optional<vs_shared_t> id_value;
+    summy::rreil::id_visitor idv;
+    idv._([&](sm_id *sid) {
+      id_value = vs_finite::single((int64_t)sid->get_address());
+    });
+    idv._([&](special_ptr *sp) {
+      switch(sp->get_kind()) {
+        case NULL_PTR: {
+          id_value = vs_finite::single(0);
+          break;
+        }
+        case BAD_PTR: {
+          id_value = value_set::top;
+          break;
+        }
+      }
+    });
+    lt->get_var()->get_id()->accept(idv);
+
+    if(!id_value)
+      id_value = query_var(lt->get_var());
     vs_shared_t next = queryVal(lt->get_next());
-    result = *(*scale * id) + next;
+    result = *(*scale * id_value.value()) + next;
   });
   nv._([&](num_linear_vs *lvs) {
     result = lvs->get_value_set();
