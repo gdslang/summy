@@ -11,6 +11,9 @@
 #include <summy/value_set/value_set.h>
 #include <algorithm>
 #include <assert.h>
+#include <experimental/optional>
+
+using std::experimental::optional;
 
 using namespace analysis;
 using namespace analysis::api;
@@ -45,6 +48,27 @@ void analysis::als_state::kill(id_shared_t id) {
     elements.erase(id_it);
   }
   delete id_var;
+}
+
+ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> pointers) {
+  optional<ptr> result;
+  for(auto ptr : pointers) {
+    summy::rreil::id_visitor idv;
+    idv._(sm_id *sid) {
+
+    }
+    idv._([&](special_ptr *sptr) {
+
+    });
+    idv._default([&](id *__) {
+
+    });
+    ptr->accept(idv);
+  }
+  if(!result)
+    return ptr(special_ptr::badptr, vs_finite::single(0));
+  else
+    return result.value();
 }
 
 api::num_expr *analysis::als_state::replace_pointers(api::num_expr *e) {
