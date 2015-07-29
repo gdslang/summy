@@ -36,7 +36,7 @@ private:
   elements_t elements;
 
   void kill(id_shared_t id);
-  api::ptr simplify_ptr_sum(std::vector<id_shared_t> const &pointers);
+  api::ptr simplify_ptr_sum(std::vector<id_shared_t> const &pointers, bool for_linear);
   api::num_expr *replace_pointers(api::num_expr *e);
   api::num_linear *replace_pointers(api::num_linear *l);
   /*

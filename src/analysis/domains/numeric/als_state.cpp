@@ -55,17 +55,18 @@ void analysis::als_state::kill(id_shared_t id) {
   delete id_var;
 }
 
-ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers) {
+ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers, bool for_linear) {
   if(!pointers.size()) return ptr(special_ptr::badptr, vs_finite::single(0));
   optional<ptr> result;
   for(auto const &_ptr : pointers) {
-    summy::rreil::id_visitor idv;
-    idv._([&](sm_id *sid) {
-      if(!result)
-        result = ptr(special_ptr::_nullptr, vs_finite::single((int64_t)sid->get_address()));
+    auto set_ptr = [&]() {
+      if(!result && for_linear)
+        result = ptr(_ptr, vs_finite::single(0));
       else
         result = ptr(special_ptr::badptr, vs_finite::single(0));
-    });
+    };
+    summy::rreil::id_visitor idv;
+    idv._([&](sm_id *sid) { set_ptr(); });
     idv._([&](special_ptr *sptr) {
       switch(sptr->get_kind()) {
         case NULL_PTR: {
@@ -77,9 +78,7 @@ ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers) {
         }
       }
     });
-    idv._default([&](id *__) {
-
-    });
+    idv._default([&](id *__) { set_ptr(); });
     _ptr->accept(idv);
   }
   if(!result)
@@ -236,65 +235,47 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   num_visitor nv(true);
   nv._([&](num_expr_lin *le) { linear = true; });
   rhs->accept(nv);
-  if(linear) {
-    set<num_var *> _vars_rhs = ::vars(rhs);
+  set<num_var *> _vars_rhs = ::vars(rhs);
 
-    vector<id_set_t> aliases_vars_rhs;
-    for(auto &var : _vars_rhs) {
-      auto var_it = elements.find(var->get_id());
-      if(var_it == elements.end() || var_it->second.size() == 0)
-        /*
-         * Todo: Should this happen?
-         */
-        aliases_vars_rhs.push_back(id_set_t{special_ptr::_nullptr});
-      else
-        aliases_vars_rhs.push_back(var_it->second);
-      //      auto var_it = elements.find(var->get_id());
-      //      if(var_it != elements.end()) aliases_rhs.insert(var_it->second.begin(), var_it->second.end());
-    }
-    if(aliases_vars_rhs.size() == 0) aliases_vars_rhs.push_back({special_ptr::_nullptr});
-
-    vector<id_set_t::iterator> alias_iterators;
-    for(size_t i = 0; i < aliases_vars_rhs.size(); i++)
-      alias_iterators.push_back(aliases_vars_rhs[i].begin());
-
-    vector<id_shared_t> aliases_new;
-    optional<vs_shared_t> offset;
-    while(alias_iterators[0] != aliases_vars_rhs[0].end()) {
-      // do something
-      vector<id_shared_t> aliases_current;
-      for(auto &aliases_it : alias_iterators)
-        aliases_current.push_back(*aliases_it);
-
-      ptr alias_new_next = simplify_ptr_sum(aliases_current);
-      if(offset)
-        offset = value_set::join(offset.value(), alias_new_next.offset);
-      else
-        offset = alias_new_next.offset;
-      aliases_new.push_back(alias_new_next.id);
-
-      for(size_t i = 1; i < alias_iterators.size(); i++) {
-        alias_iterators[i]++;
-        if(alias_iterators[i] == aliases_vars_rhs[i].end()) alias_iterators[i] = aliases_vars_rhs[i].begin();
-      }
-      alias_iterators[0]++;
-    }
-
-    //    if(aliases_rhs.size() > 0)
-    //      elements[lhs->get_id()] = aliases_rhs;
-    //    else
-    //      elements.erase(lhs->get_id());
-    //    child_state->assign(lhs, rhs);
-  } else {
-    elements.erase(lhs->get_id());
-    /*
-     * Uncool: The expression should be handed down transparently... (Lösung siehe oben)
-     */
-    num_expr *assignee = replace_pointers(rhs);
-    //    cout << "assign expression in als_state after queryVal: " << *lhs << " <- " << *assignee << endl;
-    child_state->assign(lhs, assignee);
-    delete assignee;
+  vector<id_set_t> aliases_vars_rhs;
+  for(auto &var : _vars_rhs) {
+    auto var_it = elements.find(var->get_id());
+    if(var_it == elements.end() || var_it->second.size() == 0)
+      /*
+       * Todo: Should this happen?
+       */
+      aliases_vars_rhs.push_back(id_set_t{special_ptr::_nullptr});
+    else
+      aliases_vars_rhs.push_back(var_it->second);
+    //      auto var_it = elements.find(var->get_id());
+    //      if(var_it != elements.end()) aliases_rhs.insert(var_it->second.begin(), var_it->second.end());
   }
+  if(aliases_vars_rhs.size() == 0) aliases_vars_rhs.push_back({special_ptr::_nullptr});
+
+  vector<id_set_t::iterator> alias_iterators;
+  for(size_t i = 0; i < aliases_vars_rhs.size(); i++)
+    alias_iterators.push_back(aliases_vars_rhs[i].begin());
+
+  id_set_t aliases_new;
+  while(alias_iterators[0] != aliases_vars_rhs[0].end()) {
+    // do something
+    vector<id_shared_t> aliases_current;
+    for(auto &aliases_it : alias_iterators)
+      aliases_current.push_back(*aliases_it);
+
+    ptr alias_new_next = simplify_ptr_sum(aliases_current, linear);
+    assert(*alias_new_next.offset == vs_finite::single(0));
+    aliases_new.insert(alias_new_next.id);
+
+    for(size_t i = 1; i < alias_iterators.size(); i++) {
+      alias_iterators[i]++;
+      if(alias_iterators[i] == aliases_vars_rhs[i].end()) alias_iterators[i] = aliases_vars_rhs[i].begin();
+    }
+    alias_iterators[0]++;
+  }
+
+  elements[lhs->get_id()] = aliases_new;
+  child_state->assign(lhs, rhs);
 }
 
 void als_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
