@@ -258,13 +258,20 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
     for(size_t i = 0; i < aliases_vars_rhs.size(); i++)
       alias_iterators.push_back(aliases_vars_rhs[i].begin());
 
-    vector<ptr> aliases_new;
+    vector<id_shared_t> aliases_new;
+    optional<vs_shared_t> offset;
     while(alias_iterators[0] != aliases_vars_rhs[0].end()) {
       // do something
       vector<id_shared_t> aliases_current;
       for(auto &aliases_it : alias_iterators)
         aliases_current.push_back(*aliases_it);
-      aliases_new.push_back(simplify_ptr_sum(aliases_current));
+
+      ptr alias_new_next = simplify_ptr_sum(aliases_current);
+      if(offset)
+        offset = value_set::join(offset.value(), alias_new_next.offset);
+      else
+        offset = alias_new_next.offset;
+      aliases_new.push_back(alias_new_next.id);
 
       for(size_t i = 1; i < alias_iterators.size(); i++) {
         alias_iterators[i]++;
