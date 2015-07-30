@@ -229,7 +229,7 @@ als_state *als_state::narrow(domain_state *other, size_t current_node) {
   return domop(other, current_node, &numeric_state::narrow);
 }
 
-void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
+void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
   //  cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
   bool linear = false;
   num_visitor nv(true);
@@ -274,50 +274,25 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
     alias_iterators[0]++;
   }
 
-  elements[lhs->get_id()] = aliases_new;
-  child_state->assign(lhs, rhs);
-}
-
-void als_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
-  bool linear = false;
-  num_visitor nv(true);
-  nv._([&](num_expr_lin *le) { linear = true; });
-  rhs->accept(nv);
-
-  if(linear) {
-    set<num_var *> _vars = ::vars(rhs);
-    id_set_t ids_erase;
-
-    auto ids_mine_it = elements.find(lhs->get_id());
-    if(ids_mine_it != elements.end()) {
-      id_set_t &ids_mine = ids_mine_it->second;
-      id_set_t rest;
-
-      for(auto &var : _vars) {
-        auto var_it = elements.find(var->get_id());
-        id_set_t const &ids_var = var_it->second;
-        if(var_it != elements.end())
-          set_intersection(
-            ids_mine.begin(), ids_mine.end(), ids_var.begin(), ids_var.end(), inserter(rest, rest.begin()));
-      }
-      if(rest.size() > 0)
-        ids_mine = rest;
-      else
-        elements.erase(ids_mine_it);
-    }
-    child_state->weak_assign(lhs, rhs);
+  if(strong) {
+    elements[lhs->get_id()] = aliases_new;
+    child_state->assign(lhs, rhs);
   } else {
-    elements.erase(lhs->get_id());
-    /*
-     * Uncool: The expression should be handed down transparently... (Lösung siehe oben)
-     */
-    num_expr *assignee = replace_pointers(rhs);
-    child_state->weak_assign(lhs, assignee);
-    delete assignee;
+    elements[lhs->get_id()].insert(aliases_new.begin(), aliases_new.end());
+    child_state->weak_assign(lhs, rhs);
   }
 }
 
+void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
+  assign(lhs, rhs, true);
+}
+
+void als_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
+  assign(lhs, rhs, false);
+}
+
 void als_state::assume(api::num_expr_cmp *cmp) {
+  if(is_bottom()) return;
   /*
    * Todo: Allow pointer comparisons; current implementation looses
    * aliasing information...
@@ -325,13 +300,52 @@ void als_state::assume(api::num_expr_cmp *cmp) {
    * Todo: Update paper: Ignoring assumtions in case they contain pointers
    * is not a viable option since now variables are pointers 'by default'
    */
+
+  /*
+   * Todo: Unsound / Uncool?!
+   */
   auto _vars = ::vars(cmp);
-  for(auto &var : _vars)
-    kill(var->get_id());
-  child_state->assume(cmp);
+  bool killed = false;
+  for(auto &var : _vars) {
+    auto const &v_elems_it = elements.find(var->get_id());
+    if(v_elems_it != elements.end()) {
+      auto &v_elems = v_elems_it->second;
+      /*
+       * Todo: size() == 0?
+       */
+      if(v_elems.size() == 1 && (**v_elems.begin() == *special_ptr::_nullptr)) {
+      } else {
+        //              elements[var->get_id()] = {special_ptr::_nullptr};
+        //              child_state->kill({var});
+        switch(cmp->get_op()) {
+          case NEQ: {
+            break;
+          }
+          default: {
+            kill({var});
+            killed = true;
+            break;
+          }
+        }
+      }
+    }
+  }
+  switch(cmp->get_op()) {
+    case NEQ: {
+      if(!killed) child_state->assume(cmp);
+      break;
+    }
+    default: {
+      child_state->assume(cmp);
+      break;
+    }
+  }
 }
 
 void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
+  /*
+   * Todo: This is wrong, assume != assign
+   */
   if(is_bottom()) return;
   elements[lhs->get_id()].clear();
   for(auto &alias : aliases) {
@@ -400,11 +414,16 @@ api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   if(id_it == elements.end()) return child_state->queryAls(nv);
   singleton_value_t &aliases = id_it->second;
   for(auto alias : aliases) {
-    //    num_var *nv = new num_var(alias);
-    vs_shared_t offset_bytes = child_state->queryVal(nv);
-    //    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
-    result.insert(ptr(alias, offset_bytes));
-    //    delete nv;
+    if(*alias == *special_ptr::_nullptr) {
+      auto child_aliases = child_state->queryAls(nv);
+      result.insert(child_aliases.begin(), child_aliases.end());
+    } else {
+      //    num_var *nv = new num_var(alias);
+      vs_shared_t offset_bytes = child_state->queryVal(nv);
+      //    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
+      result.insert(ptr(alias, offset_bytes));
+      //    delete nv;
+    }
   }
   return result;
 }

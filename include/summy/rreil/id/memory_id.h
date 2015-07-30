@@ -35,7 +35,7 @@ public:
     return inner;
   }
 
-  bool operator==(gdsl::rreil::id &other);
+  bool operator==(gdsl::rreil::id &other) const;
   void accept(gdsl::rreil::id_visitor &v);
 };
 

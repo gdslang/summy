@@ -355,7 +355,7 @@ vsd_state *analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> s
 }
 
 api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
-  //  cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
+  //    cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
   vs_shared_t nv_val = queryVal(nv);
 
   bool all = true;
@@ -399,7 +399,7 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     result.insert(ptr(so_it.first, offsets_vs.value()));
   }
 
-  //  if(result.size() > 0) cout << "+++" << result << endl;
+  //    if(result.size() > 0) cout << "+++" << result << endl;
   if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
 
   return result;

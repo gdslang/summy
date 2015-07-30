@@ -19,7 +19,7 @@ void summy::rreil::memory_id::put(std::ostream &out) {
 summy::rreil::memory_id::~memory_id() {
 }
 
-bool summy::rreil::memory_id::operator ==(gdsl::rreil::id &other) {
+bool summy::rreil::memory_id::operator ==(gdsl::rreil::id &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
   iv._([&](memory_id *m) {

@@ -25,7 +25,7 @@ void ssa_id::accept(gdsl::rreil::id_visitor &v) {
   summy_v.visit(this);
 }
 
-bool summy::rreil::ssa_id::operator ==(gdsl::rreil::id &other) {
+bool summy::rreil::ssa_id::operator ==(gdsl::rreil::id &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
   iv._([&](ssa_id *aid) {

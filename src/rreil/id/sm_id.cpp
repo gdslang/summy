@@ -16,7 +16,7 @@ void summy::rreil::sm_id::put(std::ostream &out) {
 
 summy::rreil::sm_id::~sm_id() {}
 
-bool summy::rreil::sm_id::operator==(gdsl::rreil::id &other) {
+bool summy::rreil::sm_id::operator==(gdsl::rreil::id &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
   iv._([&](sm_id *sid) { equals = this->symbol == sid->symbol && this->address == sid->address; });

@@ -30,7 +30,7 @@ public:
     return counter;
   }
 
-  bool operator== (gdsl::rreil::id &other);
+  bool operator== (gdsl::rreil::id &other) const;
   void accept(gdsl::rreil::id_visitor &v);
 
   static std::shared_ptr<gdsl::rreil::id> generate();

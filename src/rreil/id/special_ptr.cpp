@@ -16,7 +16,7 @@ void summy::rreil::special_ptr::put(std::ostream &out) {
 
 summy::rreil::special_ptr::~special_ptr() {}
 
-bool summy::rreil::special_ptr::operator==(gdsl::rreil::id &other) {
+bool summy::rreil::special_ptr::operator==(gdsl::rreil::id &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
   iv._([&](special_ptr *sp) { equals = sp->kind == kind; });

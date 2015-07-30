@@ -33,6 +33,12 @@ typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> element
 class als_state : public numeric_state {
 private:
   numeric_state *child_state;
+
+  /*
+   * - If a variable is not contained in elements, this is equivalent to an alias
+   * set containing the null pointer only
+   * - If an alias set of a variable is empty, the state of this variable is bottom
+   */
   elements_t elements;
 
   void kill(id_shared_t id);
@@ -68,6 +74,7 @@ public:
   als_state *widen(domain_state *other, size_t current_node);
   als_state *narrow(domain_state *other, size_t current_node);
 
+  void assign(api::num_var *lhs, api::num_expr *rhs, bool weak);
   void assign(api::num_var *lhs, api::num_expr *rhs);
   void weak_assign(api::num_var *lhs, api::num_expr *rhs);
   void assume(api::num_expr_cmp *cmp);
