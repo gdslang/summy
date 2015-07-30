@@ -915,8 +915,6 @@ void analysis::summary_memory_state::assume(gdsl::rreil::sexpr *cond) {
   converter cv(
     0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
   expr_cmp_result_t ecr = cv.conv_expr_cmp(cond);
-  cout << *ecr.primary << endl;
-  cout << *this << endl;
   child_state->assume(ecr.primary);
   for(auto add : ecr.additional)
     child_state->assume(add);
