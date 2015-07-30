@@ -562,13 +562,13 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   }
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-  //  cout << "++++++++++++++++++++++++++++++" << endl;
-  //  cout << "++++++++++++++++++++++++++++++" << endl;
-  //  cout << "++++++++++++++++++++++++++++++" << endl;
-  //  cout << "compat OF" << endl;
-  //  cout << *a << endl;
-  //  cout << "WITH" << endl;
-  //  cout << *b << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "compat OF" << endl;
+    cout << *a << endl;
+    cout << "WITH" << endl;
+    cout << *b << endl;
   //  }
 
   /*

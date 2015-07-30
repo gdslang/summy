@@ -297,7 +297,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
    * Todo: Allow pointer comparisons; current implementation looses
    * aliasing information...
    *
-   * Todo: Update paper: Ignoring assumtions in case they contain pointers
+   * Todo: Update paper: Ignoring assumptions in case they contain pointers
    * is not a viable option since now variables are pointers 'by default'
    */
 

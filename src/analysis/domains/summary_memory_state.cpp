@@ -50,23 +50,30 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   num_var *n_in = new num_var(nid_in);
   num_var *n_out = new num_var(nid_out);
-  //  num_expr_cmp *in_out_eq = num_expr_cmp::equals(n_in, n_out);
-  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
+
+  /*
+   * We do not assign from the input to the output so that there is no equality relation between the input
+   * and output. Equality relations result in tests to apply to all equal variables which, in turn, may result
+   * in input variables to get their aliasing relations or offsets constrained.
+   */
+//  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
 
   //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)),
   //  vs_finite::zero) << endl;
 
-  if(!replacement)
-    child_state->assume(n_in, {ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero)});
-  //  child_state->assume(in_out_eq);
-  child_state->assign(n_out, ass_e);
+  if(!replacement) {
+    ptr p = ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero);
+    child_state->assume(n_in, {p});
+    child_state->assume(n_out, {p});
+  }
+//  child_state->assign(n_out, ass_e);
 
   in_r.insert(make_pair(offset, field{size, nid_in}));
   region_t::iterator field_out_it;
   tie(field_out_it, ignore) = out_r.insert(make_pair(offset, field{size, nid_out}));
 
   delete n_out;
-  delete ass_e;
+//  delete ass_e;
 
   return field_out_it->second;
 }
@@ -908,6 +915,8 @@ void analysis::summary_memory_state::assume(gdsl::rreil::sexpr *cond) {
   converter cv(
     0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
   expr_cmp_result_t ecr = cv.conv_expr_cmp(cond);
+  cout << *ecr.primary << endl;
+  cout << *this << endl;
   child_state->assume(ecr.primary);
   for(auto add : ecr.additional)
     child_state->assume(add);
