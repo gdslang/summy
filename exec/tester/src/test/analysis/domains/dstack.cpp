@@ -563,7 +563,6 @@ TEST_F(dstack_test, Equalities) {
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "first", "A", "B"));
-  cout << *r << endl;
   ASSERT_EQ(*r, vs_finite::_true);
   ASSERT_NO_FATAL_FAILURE(query_eq(r, ar, "first", "B", "C"));
   ASSERT_EQ(*r, vs_finite::_true);

@@ -56,7 +56,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
    * and output. Equality relations result in tests to apply to all equal variables which, in turn, may result
    * in input variables to get their aliasing relations or offsets constrained.
    */
-//  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
+  //  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
 
   //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)),
   //  vs_finite::zero) << endl;
@@ -66,14 +66,14 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     child_state->assume(n_in, {p});
     child_state->assume(n_out, {p});
   }
-//  child_state->assign(n_out, ass_e);
+  //  child_state->assign(n_out, ass_e);
 
   in_r.insert(make_pair(offset, field{size, nid_in}));
   region_t::iterator field_out_it;
   tie(field_out_it, ignore) = out_r.insert(make_pair(offset, field{size, nid_out}));
 
   delete n_out;
-//  delete ass_e;
+  //  delete ass_e;
 
   return field_out_it->second;
 }
@@ -247,14 +247,32 @@ tuple<bool, void *> analysis::summary_memory_state::static_address(id_shared_t i
   return make_tuple(is_static, symbol_address);
 }
 
-bool analysis::summary_memory_state::static_nullptr(id_shared_t id) {
-  bool is_nullptr = false;
+bool analysis::summary_memory_state::handle_special_dereference(id_shared_t alias_id) {
+  bool force_weak = false;
+  auto spt = _special_ptr_kind(alias_id);
+  if(spt) {
+    switch(spt.value()) {
+      case NULL_PTR: {
+        cout << "Warning (load): Ignoring possible null pointer dereference" << endl;
+        break;
+      }
+      case BAD_PTR: {
+        cout << "Warning (load): Ignoring possible bad pointer dereference" << endl;
+        force_weak = true;
+        break;
+      }
+    }
+  }
+  return force_weak;
+}
+
+std::experimental::optional<summy::rreil::special_ptr_kind> analysis::summary_memory_state::_special_ptr_kind(
+  id_shared_t id) {
+  std::experimental::optional<summy::rreil::special_ptr_kind> ptr_kind;
   summy::rreil::id_visitor idv;
-  idv._([&](sm_id *sid) {
-    if(sid->get_address() == NULL) is_nullptr = true;
-  });
+  idv._([&](special_ptr *sp) { ptr_kind = sp->get_kind(); });
   id->accept(idv);
-  return is_nullptr;
+  return ptr_kind;
 }
 
 void analysis::summary_memory_state::initialize_static(io_region io, void *address, size_t offset, size_t size) {
@@ -721,12 +739,10 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   auto temp = assign_temporary(addr->get_lin(), addr->get_size());
   vector<num_linear *> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
+  bool force_weak = false;
   for(auto &alias : aliases) {
     //    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
-    if(static_nullptr(alias.id)) {
-      cout << "Warning (load): Ignoring possible null pointer dereference" << endl;
-      continue;
-    }
+    force_weak = force_weak || handle_special_dereference(alias.id);
 
     io_region io = dereference(alias.id);
 
@@ -765,7 +781,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
     num_expr *rhs_expr = new num_expr_lin(new num_linear_vs(value_set::top));
     child_state->assign(lhs, rhs_expr);
     delete rhs_expr;
-  } else if(lins.size() == 1) {
+  } else if(lins.size() == 1 && !force_weak) {
     num_expr *rhs_expr = new num_expr_lin(lins[0]);
     child_state->assign(lhs, rhs_expr);
     delete rhs_expr;
@@ -795,11 +811,9 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
   updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
   //  cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
 
+  bool force_weak = false;
   for(auto &alias : aliases) {
-    if(static_nullptr(alias.id)) {
-      cout << "Warning (store): Ignoring possible null pointer dereference" << endl;
-      continue;
-    }
+    force_weak = force_weak || handle_special_dereference(alias.id);
 
     io_region io = region_by_id(getter, alias.id);
 
@@ -878,7 +892,7 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
 
     for(auto id : ids) {
       num_var *lhs = new num_var(id);
-      if(singleton)
+      if(singleton && !force_weak)
         strong(lhs);
       else
         weak(lhs);

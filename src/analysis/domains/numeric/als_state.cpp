@@ -220,7 +220,6 @@ als_state *als_state::meet(domain_state *other, size_t current_node) {
   return new als_state(child_met, elements_new);
 }
 
-
 als_state *als_state::widen(domain_state *other, size_t current_node) {
   return domop(other, current_node, &numeric_state::widen);
 }

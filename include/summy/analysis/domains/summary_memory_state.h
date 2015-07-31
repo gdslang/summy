@@ -19,6 +19,7 @@
 #include <summy/analysis/util.h>
 #include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/static_memory.h>
+#include <summy/rreil/id/special_ptr.h>
 
 #include <cppgdsl/rreil/statement/assign.h>
 #include <memory>
@@ -88,7 +89,13 @@ protected:
    * Static memory
    */
   std::tuple<bool, void *> static_address(id_shared_t id);
-  bool static_nullptr(id_shared_t id);
+  /**
+   * Warn the user if null or bad pointer is dereferenced
+   *
+   * @return 'true' if the memory access should be weak, 'false' otherwise
+   */
+  bool handle_special_dereference(id_shared_t id);
+  std::experimental::optional<summy::rreil::special_ptr_kind> _special_ptr_kind(id_shared_t id);
   void initialize_static(io_region io, void *address, size_t offset, size_t size);
 
   std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
