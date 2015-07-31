@@ -240,13 +240,15 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
     vector<id_set_t> aliases_vars_rhs;
     for(auto &var : _vars_rhs) {
       auto var_it = elements.find(var->get_id());
-      if(var_it == elements.end() || var_it->second.size() == 0)
+      if(var_it == elements.end())
         /*
-         * Todo: Should this happen?
+         * Todo: Useless?
          */
         aliases_vars_rhs.push_back(id_set_t{special_ptr::_nullptr});
-      else
+      else {
+        assert(var_it->second.size() != 0);
         aliases_vars_rhs.push_back(var_it->second);
+      }
       //      auto var_it = elements.find(var->get_id());
       //      if(var_it != elements.end()) aliases_rhs.insert(var_it->second.begin(), var_it->second.end());
     }
@@ -458,7 +460,8 @@ summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
   //  cout << "als_state::queryVal(" << *nv << ")" << endl;
   vs_shared_t child_value = child_state->queryVal(nv);
   auto alias_set_it = elements.find(nv->get_id());
-  if(alias_set_it == elements.end() || alias_set_it->second.size() == 0) return child_value;
+  if(alias_set_it == elements.end()) return child_value;
+  assert(alias_set_it->second.size() > 0);
   /*
    * Todo: no bottom                   ^------------------------
    */
