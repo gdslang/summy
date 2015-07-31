@@ -230,7 +230,7 @@ als_state *als_state::narrow(domain_state *other, size_t current_node) {
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
-//    cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
+  //    cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
   bool linear = false;
   num_visitor nv(true);
   nv._([&](num_expr_lin *le) { linear = true; });
@@ -289,7 +289,7 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
      */
 
     num_expr *rhs_replaced = replace_pointers(rhs);
-    id_set_t aliases_new = id_set_t {special_ptr::_nullptr};
+    id_set_t aliases_new = id_set_t{special_ptr::_nullptr};
 
     if(strong) {
       elements[lhs->get_id()] = aliases_new;
@@ -325,7 +325,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
    * Todo: Unsound / Uncool?!
    */
   auto _vars = ::vars(cmp);
-  bool killed = false;
+  bool all_null = true;
   for(auto &var : _vars) {
     auto const &v_elems_it = elements.find(var->get_id());
     if(v_elems_it != elements.end()) {
@@ -335,6 +335,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
        */
       if(v_elems.size() == 1 && (**v_elems.begin() == *special_ptr::_nullptr)) {
       } else {
+        all_null = false;
         //              elements[var->get_id()] = {special_ptr::_nullptr};
         //              child_state->kill({var});
         switch(cmp->get_op()) {
@@ -343,7 +344,6 @@ void als_state::assume(api::num_expr_cmp *cmp) {
           }
           default: {
             kill({var});
-            killed = true;
             break;
           }
         }
@@ -352,7 +352,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
   }
   switch(cmp->get_op()) {
     case NEQ: {
-      if(!killed) child_state->assume(cmp);
+      if(all_null) child_state->assume(cmp);
       break;
     }
     default: {
@@ -456,15 +456,15 @@ summy::vs_shared_t analysis::als_state::queryVal(api::num_linear *lin) {
 }
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
-//  cout << "als_state::queryVal(" << *nv << ")" << endl;
+  //  cout << "als_state::queryVal(" << *nv << ")" << endl;
   vs_shared_t child_value = child_state->queryVal(nv);
   auto alias_set_it = elements.find(nv->get_id());
   if(alias_set_it == elements.end() || alias_set_it->second.size() == 0) return child_value;
   /*
    * Todo: no bottom                   ^------------------------
    */
-//  if(id_set_it->second.size() == 0)
-//    return value_set::bottom;
+  //  if(id_set_it->second.size() == 0)
+  //    return value_set::bottom;
   vs_shared_t acc;
   bool first = true;
   for(auto alias : alias_set_it->second) {
@@ -539,23 +539,30 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
   numeric_state *a_ = a->child_state->copy();
   numeric_state *b_ = b->child_state->copy();
   elements_t r;
-  auto single = [&](id_shared_t id, numeric_state *n) {
-    num_var *nv = new num_var(id);
-    num_expr *top_expr = new num_expr_lin(new num_linear_vs(value_set::top));
-    /*
-     * Todo: more precision
-     */
-    n->assign(nv, top_expr);
-    delete nv;
-    delete top_expr;
-  };
-  for(auto &x : a->elements) {
-    if(x.second.size() == 0) continue;
-    auto x_b_it = b->elements.find(x.first);
-    if(x_b_it == b->elements.end() || x_b_it->second.size() == 0) {
-      single(x.first, a_);
-      als_a_ge_b = false;
-    } else {
+  //  auto single = [&](id_shared_t id, numeric_state *n) {
+  //    num_var *nv = new num_var(id);
+  //    num_expr *top_expr = new num_expr_lin(new num_linear_vs(value_set::top));
+  //    /*
+  //     * Todo: more precision
+  //     */
+  //    n->assign(nv, top_expr);
+  //    delete nv;
+  //    delete top_expr;
+  //  };
+  auto compat_elements = [&](elements_t const &a_elements, elements_t const &b_elements,
+    function<void(id_set_t const &, id_set_t const &, id_set_t const &)> joined_cb) {
+    for(auto &x : a_elements) {
+      assert(x.second.size() != 0);
+      auto x_b_it = b_elements.find(x.first);
+
+      id_set_t aliases_b;
+      if(x_b_it == b_elements.end())
+        aliases_b.insert(special_ptr::_nullptr);
+      else {
+        assert(x_b_it->second.size() > 0);
+        aliases_b = x_b_it->second;
+      }
+
       //      cout << "Join of" << endl;
       //      for(auto &u : x.second)
       //        cout << *u << " ";
@@ -564,19 +571,21 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
       //        cout << *u << " ";
       //      cout << endl << "is" << endl;
       id_set_t joined;
-      set_union(x.second.begin(), x.second.end(), x_b_it->second.begin(), x_b_it->second.end(),
-        inserter(joined, joined.begin()));
+      set_union(x.second.begin(), x.second.end(), aliases_b.begin(), aliases_b.end(), inserter(joined, joined.begin()));
       //      for(auto &u : joined)
       //        cout << *u << " ";
       //      cout << endl;
       r.insert(make_pair(x.first, joined));
-      if(joined.size() > x.second.size()) als_a_ge_b = false;
+      joined_cb(joined, x.second, aliases_b);
     }
-  }
-  for(auto &x : b->elements) {
-    if(x.second.size() == 0) continue;
-    auto x_a_it = a->elements.find(x.first);
-    if(x_a_it == a->elements.end() || x_a_it->second.size() == 0) single(x.first, b_);
-  }
+  };
+  compat_elements(
+    a->get_elements(), b->get_elements(), [&](id_set_t const &joined, id_set_t const &a, id_set_t const &b) {
+      if(joined.size() > a.size()) als_a_ge_b = false;
+    });
+  compat_elements(
+    b->get_elements(), a->get_elements(), [&](id_set_t const &joined, id_set_t const &a, id_set_t const &b) {
+      if(joined.size() > b.size()) als_a_ge_b = false;
+    });
   return make_tuple(als_a_ge_b, r, a_, b_);
 }
