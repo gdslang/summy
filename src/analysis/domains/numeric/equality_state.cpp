@@ -365,10 +365,12 @@ equality_state *analysis::equality_state::narrow(domain_state *other, size_t cur
 }
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-//  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
+  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
   num_expr *rhs_simplified = simplify(rhs);
+  cout << *rhs_simplified << endl;
   assign_expr(lhs, rhs_simplified, &equality_state::assign_var);
   child_state->assign(lhs, rhs_simplified);
+  cout << *this << endl;
   delete rhs_simplified;
 }
 
