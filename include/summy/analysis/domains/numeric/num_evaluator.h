@@ -23,6 +23,7 @@ public:
   num_evaluator(query_var_t query_var) : query_var(query_var) {
   }
 
+  summy::vs_shared_t queryVal(api::num_var *var);
   summy::vs_shared_t queryVal(api::num_linear *lin);
   summy::vs_shared_t queryVal(api::num_expr *exp);
 };

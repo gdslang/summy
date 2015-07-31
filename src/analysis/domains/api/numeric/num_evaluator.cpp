@@ -25,6 +25,31 @@ using namespace analysis;
 using namespace analysis::api;
 using namespace summy::rreil;
 
+summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_var *var) {
+  optional<vs_shared_t> id_value;
+  summy::rreil::id_visitor idv;
+  idv._([&](sm_id *sid) {
+    id_value = vs_finite::single((int64_t)sid->get_address());
+  });
+  idv._([&](special_ptr *sp) {
+    switch(sp->get_kind()) {
+      case NULL_PTR: {
+        id_value = vs_finite::single(0);
+        break;
+      }
+      case BAD_PTR: {
+        id_value = value_set::top;
+        break;
+      }
+    }
+  });
+  var->get_id()->accept(idv);
+
+  if(!id_value)
+    id_value = query_var(var);
+
+  return id_value.value();
+}
 
 summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_linear *lin) {
   num_visitor nv;
@@ -32,29 +57,10 @@ summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_linear *lin) {
   nv._([&](num_linear_term *lt) {
     vs_shared_t scale = vs_finite::single(lt->get_scale());
 
-    optional<vs_shared_t> id_value;
-    summy::rreil::id_visitor idv;
-    idv._([&](sm_id *sid) {
-      id_value = vs_finite::single((int64_t)sid->get_address());
-    });
-    idv._([&](special_ptr *sp) {
-      switch(sp->get_kind()) {
-        case NULL_PTR: {
-          id_value = vs_finite::single(0);
-          break;
-        }
-        case BAD_PTR: {
-          id_value = value_set::top;
-          break;
-        }
-      }
-    });
-    lt->get_var()->get_id()->accept(idv);
+    vs_shared_t id_value = queryVal(lt->get_var());
 
-    if(!id_value)
-      id_value = query_var(lt->get_var());
     vs_shared_t next = queryVal(lt->get_next());
-    result = *(*scale * id_value.value()) + next;
+    result = *(*scale * id_value) + next;
   });
   nv._([&](num_linear_vs *lvs) {
     result = lvs->get_value_set();

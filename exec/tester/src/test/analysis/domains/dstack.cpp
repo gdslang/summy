@@ -168,9 +168,6 @@ static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string 
   lin_var *lv_second = new lin_var(new variable(new arch_id(arch_id_second), 0));
   expr *ec = new expr_sexpr(new sexpr_cmp(64, new expr_cmp(CMP_EQ, lv_first, lv_second)));
   r = analy_r.result[ar.addr_node_map[e.address]]->queryVal(ec, 64);
-
-  cout << *analy_r.result[ar.addr_node_map[e.address]] << endl;
-
   delete ec;
 }
 

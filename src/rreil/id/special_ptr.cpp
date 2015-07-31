@@ -11,7 +11,18 @@
 using namespace std;
 
 void summy::rreil::special_ptr::put(std::ostream &out) {
-  out << "<" << kind << ">";
+  out << "<";
+  switch(kind) {
+    case NULL_PTR: {
+      out << "null";
+      break;
+    }
+    case BAD_PTR: {
+      out << "bad";
+      break;
+    }
+  }
+  out << ">";
 }
 
 summy::rreil::special_ptr::~special_ptr() {}

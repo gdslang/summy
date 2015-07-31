@@ -55,12 +55,12 @@ void analysis::als_state::kill(id_shared_t id) {
   delete id_var;
 }
 
-ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers, bool for_linear) {
+ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers) {
   if(!pointers.size()) return ptr(special_ptr::badptr, vs_finite::single(0));
   optional<ptr> result;
   for(auto const &_ptr : pointers) {
     auto set_ptr = [&]() {
-      if(!result && for_linear)
+      if(!result)
         result = ptr(_ptr, vs_finite::single(0));
       else
         result = ptr(special_ptr::badptr, vs_finite::single(0));
@@ -230,56 +230,76 @@ als_state *als_state::narrow(domain_state *other, size_t current_node) {
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
-  //  cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
+//    cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
   bool linear = false;
   num_visitor nv(true);
   nv._([&](num_expr_lin *le) { linear = true; });
   rhs->accept(nv);
   set<num_var *> _vars_rhs = ::vars(rhs);
 
-  vector<id_set_t> aliases_vars_rhs;
-  for(auto &var : _vars_rhs) {
-    auto var_it = elements.find(var->get_id());
-    if(var_it == elements.end() || var_it->second.size() == 0)
-      /*
-       * Todo: Should this happen?
-       */
-      aliases_vars_rhs.push_back(id_set_t{special_ptr::_nullptr});
-    else
-      aliases_vars_rhs.push_back(var_it->second);
-    //      auto var_it = elements.find(var->get_id());
-    //      if(var_it != elements.end()) aliases_rhs.insert(var_it->second.begin(), var_it->second.end());
-  }
-  if(aliases_vars_rhs.size() == 0) aliases_vars_rhs.push_back({special_ptr::_nullptr});
-
-  vector<id_set_t::iterator> alias_iterators;
-  for(size_t i = 0; i < aliases_vars_rhs.size(); i++)
-    alias_iterators.push_back(aliases_vars_rhs[i].begin());
-
-  id_set_t aliases_new;
-  while(alias_iterators[0] != aliases_vars_rhs[0].end()) {
-    // do something
-    vector<id_shared_t> aliases_current;
-    for(auto &aliases_it : alias_iterators)
-      aliases_current.push_back(*aliases_it);
-
-    ptr alias_new_next = simplify_ptr_sum(aliases_current, linear);
-    assert(*alias_new_next.offset == vs_finite::single(0));
-    aliases_new.insert(alias_new_next.id);
-
-    for(size_t i = 1; i < alias_iterators.size(); i++) {
-      alias_iterators[i]++;
-      if(alias_iterators[i] == aliases_vars_rhs[i].end()) alias_iterators[i] = aliases_vars_rhs[i].begin();
+  if(linear) {
+    vector<id_set_t> aliases_vars_rhs;
+    for(auto &var : _vars_rhs) {
+      auto var_it = elements.find(var->get_id());
+      if(var_it == elements.end() || var_it->second.size() == 0)
+        /*
+         * Todo: Should this happen?
+         */
+        aliases_vars_rhs.push_back(id_set_t{special_ptr::_nullptr});
+      else
+        aliases_vars_rhs.push_back(var_it->second);
+      //      auto var_it = elements.find(var->get_id());
+      //      if(var_it != elements.end()) aliases_rhs.insert(var_it->second.begin(), var_it->second.end());
     }
-    alias_iterators[0]++;
-  }
+    if(aliases_vars_rhs.size() == 0) aliases_vars_rhs.push_back({special_ptr::_nullptr});
 
-  if(strong) {
-    elements[lhs->get_id()] = aliases_new;
-    child_state->assign(lhs, rhs);
+    vector<id_set_t::iterator> alias_iterators;
+    for(size_t i = 0; i < aliases_vars_rhs.size(); i++)
+      alias_iterators.push_back(aliases_vars_rhs[i].begin());
+
+    id_set_t aliases_new;
+    while(alias_iterators[0] != aliases_vars_rhs[0].end()) {
+      // do something
+      vector<id_shared_t> aliases_current;
+      for(auto &aliases_it : alias_iterators)
+        aliases_current.push_back(*aliases_it);
+
+      ptr alias_new_next = simplify_ptr_sum(aliases_current);
+      assert(*alias_new_next.offset == vs_finite::single(0));
+      aliases_new.insert(alias_new_next.id);
+
+      for(size_t i = 1; i < alias_iterators.size(); i++) {
+        alias_iterators[i]++;
+        if(alias_iterators[i] == aliases_vars_rhs[i].end()) alias_iterators[i] = aliases_vars_rhs[i].begin();
+      }
+      alias_iterators[0]++;
+    }
+
+    if(strong) {
+      elements[lhs->get_id()] = aliases_new;
+      child_state->assign(lhs, rhs);
+    } else {
+      elements[lhs->get_id()].insert(aliases_new.begin(), aliases_new.end());
+      child_state->weak_assign(lhs, rhs);
+    }
   } else {
-    elements[lhs->get_id()].insert(aliases_new.begin(), aliases_new.end());
-    child_state->weak_assign(lhs, rhs);
+    /*
+     * If the expression is not a linear expression, the result is a number and not a pointer. Therefore,
+     * we replace pointers in the expression and re-offset the result to the null pointer.
+     */
+
+    num_expr *rhs_replaced = replace_pointers(rhs);
+    id_set_t aliases_new = id_set_t {special_ptr::_nullptr};
+
+    if(strong) {
+      elements[lhs->get_id()] = aliases_new;
+      child_state->assign(lhs, rhs_replaced);
+    } else {
+      elements[lhs->get_id()].insert(aliases_new.begin(), aliases_new.end());
+      child_state->weak_assign(lhs, rhs_replaced);
+    }
+
+    delete rhs_replaced;
   }
 }
 
@@ -436,16 +456,22 @@ summy::vs_shared_t analysis::als_state::queryVal(api::num_linear *lin) {
 }
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
+//  cout << "als_state::queryVal(" << *nv << ")" << endl;
   vs_shared_t child_value = child_state->queryVal(nv);
-  auto id_set_it = elements.find(nv->get_id());
-  if(id_set_it == elements.end() || id_set_it->second.size() == 0) return child_value;
+  auto alias_set_it = elements.find(nv->get_id());
+  if(alias_set_it == elements.end() || alias_set_it->second.size() == 0) return child_value;
+  /*
+   * Todo: no bottom                   ^------------------------
+   */
+//  if(id_set_it->second.size() == 0)
+//    return value_set::bottom;
   vs_shared_t acc;
   bool first = true;
-  for(auto id : id_set_it->second) {
-    num_var *child_var = new num_var(id);
-    vs_shared_t offset = child_state->queryVal(child_var);
-    delete child_var;
-    vs_shared_t next = *child_value + offset;
+  for(auto alias : alias_set_it->second) {
+    num_var *alias_var = new num_var(alias);
+    vs_shared_t ptr_value = child_state->queryVal(alias_var);
+    delete alias_var;
+    vs_shared_t next = *child_value + ptr_value;
     if(first) {
       acc = next;
       first = false;

@@ -48,7 +48,8 @@ void value_sets::vsd_state::put(std::ostream &out) const {
 }
 
 analysis::value_sets::vsd_state::vsd_state(std::shared_ptr<static_memory> sm, bool is_bottom, elements_t elements)
-    : numeric_state(sm), _is_bottom(is_bottom), elements(elements), num_ev([&](num_var *nv) { return queryVal(nv); }) {}
+    : numeric_state(sm), _is_bottom(is_bottom), elements(elements),
+      num_ev([&](num_var *nv) { return lookup(nv->get_id()); }) {}
 
 void analysis::value_sets::vsd_state::bottomify() {
   elements.clear();
@@ -467,7 +468,8 @@ summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(num_linear *lin) {
 //}
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(api::num_var *nv) {
-  return lookup(nv->get_id());
+  return num_ev.queryVal(nv);
+  ;
 }
 
 numeric_state *analysis::value_sets::vsd_state::copy() const {
