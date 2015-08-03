@@ -349,7 +349,8 @@ void als_state::assume(api::num_expr_cmp *cmp) {
           }
         }
       }
-    }
+    } else
+      all_null = false;
   }
   switch(cmp->get_op()) {
     case NEQ: {
@@ -364,35 +365,36 @@ void als_state::assume(api::num_expr_cmp *cmp) {
 }
 
 void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
-  /*
-   * Todo: This is wrong, assume != assign
-   */
   if(is_bottom()) return;
+
   if(aliases.size() == 0) {
     bottomify();
     return;
   }
 
-  id_set_t aliases_lhs;
-  auto aliases_iter = elements.find(lhs->get_id());
-  if(aliases_iter == elements.end())
-    aliases_lhs = {special_ptr::_nullptr};
-  else
-    aliases_lhs = aliases_iter->second;
-
   id_set_t aliases_ids;
   for(auto &alias : aliases)
     aliases_ids.insert(alias.id);
 
-  id_set_t aliases_new;
-  set_intersection(
-      aliases_ids.begin(), aliases_ids.end(), aliases_lhs.begin(), aliases_lhs.end(), inserter(aliases_new, aliases_new.begin()));
+  auto aliases_iter = elements.find(lhs->get_id());
+  if(aliases_iter == elements.end()) {
+    /*
+     * Top
+     */
+    elements[lhs->get_id()] = aliases_ids;
+  } else {
+    id_set_t aliases_lhs = aliases_iter->second;
 
-  if(aliases_new.size() == 0) {
-    bottomify();
-    return;
-  } else
-    elements[lhs->get_id()] = aliases_new;
+    id_set_t aliases_new;
+    set_intersection(aliases_ids.begin(), aliases_ids.end(), aliases_lhs.begin(), aliases_lhs.end(),
+      inserter(aliases_new, aliases_new.begin()));
+
+    if(aliases_new.size() == 0) {
+      bottomify();
+      return;
+    } else
+      elements[lhs->get_id()] = aliases_new;
+  }
 
   optional<vs_shared_t> offset_aliases;
   for(auto &alias : aliases)
@@ -401,19 +403,9 @@ void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
     else
       offset_aliases = alias.offset;
 
-
   num_expr_cmp *e = num_expr_cmp::equals(new num_linear_term(lhs->copy()), new num_linear_vs(offset_aliases.value()));
   child_state->assume(e);
   delete e;
-
-//    elements[lhs->get_id()].clear();
-//    for(auto &alias : aliases) {
-//      elements[lhs->get_id()].insert(alias.id);
-//      num_expr *e = new num_expr_lin(new num_linear_vs(alias.offset));
-//      //    cout << "Assign " << *lhs << " := " << *e << endl;
-//      child_state->assign(lhs, e);
-//      delete e;
-//    }
 }
 
 void als_state::kill(std::vector<api::num_var *> vars) {
@@ -597,7 +589,7 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
 
       id_set_t aliases_b;
       if(x_b_it == b_elements.end())
-        aliases_b.insert(special_ptr::_nullptr);
+        aliases_b.insert(special_ptr::badptr);
       else {
         assert(x_b_it->second.size() > 0);
         aliases_b = x_b_it->second;

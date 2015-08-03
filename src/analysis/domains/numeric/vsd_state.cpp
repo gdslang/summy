@@ -166,6 +166,7 @@ void value_sets::vsd_state::weak_assign(num_var *lhs, num_expr *rhs) {
 }
 
 void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
+//  cout << "vsd_state::assume(" << *cmp << ")" << endl;
   auto assume_zero = [&](vector<num_linear *> lins) {
     vector<vector<num_expr *>> fp_exprss;
     struct fp_lin {
