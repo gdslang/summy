@@ -360,6 +360,8 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
   //    cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
   vs_shared_t nv_val = queryVal(nv);
 
+//  cout << *nv_val << endl;
+
   bool all = true;
 
   map<id_shared_t, vector<vs_shared_t>, id_less_no_version> symbol_offsets;
@@ -370,20 +372,23 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     auto &elements = vf->get_elements();
     for(auto &e : elements) {
       void *address = (void *)e;
-      if(address == NULL) symbol_offsets[special_ptr::_nullptr].push_back(vs_finite::single(0));
+      if(address == NULL) symbol_offsets[special_ptr::_nullptr].push_back(vs_finite::zero);
       symbol symb;
       bool success;
       tie(success, symb) = sm->lookup(address);
-      if(!success) {
+      if(address != NULL && !success)
         all = false;
+      if(!success)
         return;
-      };
       //  cout << "Returing alias..." << endl;
       //      vs_shared_t offset_bytes = *nv_val - vs_finite::single((int64_t)symb.address);
       vs_shared_t offset_bytes = vs_finite::single(e - (int64_t)symb.address);
       //  vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
       symbol_offsets[sm_id::from_symbol(symb)].push_back(offset_bytes);
     }
+  });
+  vsv._default([&](value_set *v) {
+    all = false;
   });
   nv_val->accept(vsv);
 
@@ -401,8 +406,10 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     result.insert(ptr(so_it.first, offsets_vs.value()));
   }
 
-  //    if(result.size() > 0) cout << "+++" << result << endl;
-  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
+//      if(result.size() > 0) cout << "+++" << result << endl;
+//  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
+  if(!all)
+    result.insert(ptr(special_ptr::badptr, vs_finite::zero));
 
   return result;
 }

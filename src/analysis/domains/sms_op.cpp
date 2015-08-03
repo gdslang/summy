@@ -17,6 +17,7 @@
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/sm_id.h>
+#include <summy/rreil/id/special_ptr.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <cppgdsl/rreil/rreil.h>
@@ -24,10 +25,12 @@
 #include <queue>
 #include <algorithm>
 #include <experimental/optional>
+#include <utility>
 
 using gdsl::rreil::id;
 using std::experimental::optional;
 using summy::rreil::sm_id;
+using summy::rreil::special_ptr;
 
 using namespace std;
 using namespace analysis;
@@ -55,6 +58,12 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
    * of the summary.
    */
   map<id_shared_t, ptr_set_t, id_less_no_version> ptr_map;
+
+  /*
+   * Todo: Handling of null pointer and bad pointer?
+   */
+//  ptr_map.insert(make_pair(special_ptr::_nullptr, ptr_set_t {ptr(special_ptr::_nullptr, vs_finite::zero)}));
+//  ptr_map.insert(make_pair(special_ptr::badptr, ptr_set_t {ptr(special_ptr::badptr, vs_finite::zero)}));
 
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
   alias_queue_t ptr_worklist;
