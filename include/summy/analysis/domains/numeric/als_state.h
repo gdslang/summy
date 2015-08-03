@@ -36,7 +36,7 @@ private:
 
   /*
    * - If a variable is not contained in elements, this is equivalent to an alias
-   * set containing the bad pointer only
+   * set containing the bad pointer only, i.e. top
    * - If an alias set of a variable is empty, the state of this variable is bottom
    */
   elements_t elements;

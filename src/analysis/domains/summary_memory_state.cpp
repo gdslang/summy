@@ -72,6 +72,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   region_t::iterator field_out_it;
   tie(field_out_it, ignore) = out_r.insert(make_pair(offset, field{size, nid_out}));
 
+  delete n_in;
   delete n_out;
   //  delete ass_e;
 

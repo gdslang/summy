@@ -698,7 +698,6 @@ end: ret",
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R13", 0, 64));
-  cout << *r << endl;
   ASSERT_EQ(*r, vs_finite::single(41000));
 
   ptr_set_t aliases_ac_c;
