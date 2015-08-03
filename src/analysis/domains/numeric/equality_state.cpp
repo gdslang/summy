@@ -422,93 +422,98 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
     if(back_it != back_map.end()) {
       auto &equalities = elements[back_it->second];
       for(auto equality : equalities) {
-        if(*equality == *var->get_id())
-          continue;
+        if(*equality == *var->get_id()) continue;
+        /*
+         * Assume or assign?
+         */
         num_var *eq_var = new num_var(equality);
-        num_expr_cmp *eq_expr = num_expr_cmp::equals(var->copy(), eq_var->copy());
-        child_state->assume(eq_expr);
+        //        num_expr_cmp *eq_expr = num_expr_cmp::equals(var->copy(), eq_var->copy());
+        //        child_state->assume(eq_expr);
+        //        delete eq_expr;
+        num_expr *var_e = new num_expr_lin(new num_linear_term(var->copy()));
+        child_state->assign(eq_var, var_e);
+        delete var_e;
         delete eq_var;
-        delete eq_expr;
       }
     }
   }
 
-//  /*
-//   * Besser: Statt quadratisch alle Kombinationen zu testen,
-//   * sollte man besser zunächst die Reps begrenzen und alle
-//   * anderen Variablen dann lediglich noch gegen diese begrenzen...
-//   */
-//  struct gen {
-//    id_set_t ids;
-//    gen *rest;
-//    function<num_linear *(gen &_this)> _;
-//
-//    id_set_t::iterator ids_it;
-//
-//    gen(id_set_t ids, gen *rest, function<num_linear *(gen &_this)> _) : ids(ids), rest(rest), _(_) {
-//      ids_it = this->ids.begin();
-//    }
-//    ~gen() {
-//      delete rest;
-//    }
-//
-//    bool end() {
-//      return ids_it == ids.end();
-//    }
-//
-//    void next() {
-//      if(!rest) return;
-//      //      rest->next();
-//      if(rest->end()) {
-//        if(ids_it == ids.end()) ids_it = ids.begin();
-//        ids_it++;
-//        rest->next();
-//      }
-//    }
-//
-//    num_linear *generate() {
-//      num_linear *r = _(*this);
-//      next();
-//      return r;
-//    }
-//  };
-//
-//  /*
-//   * Todo: Memory error?
-//   */
-//
-//  function<gen *(num_linear * lin)> generate_gen;
-//  generate_gen = [&](num_linear *lin) {
-//    gen *g;
-//    num_visitor nv;
-//    nv._([&](num_linear_term *nt) {
-//      id_set_t ids;
-//      auto back_map_it = back_map.find(nt->get_var()->get_id());
-//      if(back_map_it == back_map.end())
-//        ids.insert(nt->get_var()->get_id());
-//      else
-//        ids = elements[back_map_it->second];
-//      g = new gen(ids, generate_gen(nt->get_next()), [=](gen &_this) {
-//        return new num_linear_term(nt->get_scale(), new num_var(*_this.ids_it), _this.rest->generate());
-//      });
-//    });
-//    nv._([&](num_linear_vs *ns) {
-//      g = new gen(id_set_t(), NULL, [=](gen &_this) { return new num_linear_vs(ns->get_value_set()); });
-//    });
-//    lin->accept(nv);
-//    return g;
-//  };
-//
-//  gen *g = generate_gen(cmp->get_opnd());
-//
-//  cout << "Warning: broken assume() in equality_state..." << endl;
-//  while(!g->end()) {
-//    num_expr_cmp *ec = new num_expr_cmp(g->generate(), cmp->get_op());
-//    child_state->assume(ec);
-//    delete ec;
-//  }
-//
-//  delete g;
+  //  /*
+  //   * Besser: Statt quadratisch alle Kombinationen zu testen,
+  //   * sollte man besser zunächst die Reps begrenzen und alle
+  //   * anderen Variablen dann lediglich noch gegen diese begrenzen...
+  //   */
+  //  struct gen {
+  //    id_set_t ids;
+  //    gen *rest;
+  //    function<num_linear *(gen &_this)> _;
+  //
+  //    id_set_t::iterator ids_it;
+  //
+  //    gen(id_set_t ids, gen *rest, function<num_linear *(gen &_this)> _) : ids(ids), rest(rest), _(_) {
+  //      ids_it = this->ids.begin();
+  //    }
+  //    ~gen() {
+  //      delete rest;
+  //    }
+  //
+  //    bool end() {
+  //      return ids_it == ids.end();
+  //    }
+  //
+  //    void next() {
+  //      if(!rest) return;
+  //      //      rest->next();
+  //      if(rest->end()) {
+  //        if(ids_it == ids.end()) ids_it = ids.begin();
+  //        ids_it++;
+  //        rest->next();
+  //      }
+  //    }
+  //
+  //    num_linear *generate() {
+  //      num_linear *r = _(*this);
+  //      next();
+  //      return r;
+  //    }
+  //  };
+  //
+  //  /*
+  //   * Todo: Memory error?
+  //   */
+  //
+  //  function<gen *(num_linear * lin)> generate_gen;
+  //  generate_gen = [&](num_linear *lin) {
+  //    gen *g;
+  //    num_visitor nv;
+  //    nv._([&](num_linear_term *nt) {
+  //      id_set_t ids;
+  //      auto back_map_it = back_map.find(nt->get_var()->get_id());
+  //      if(back_map_it == back_map.end())
+  //        ids.insert(nt->get_var()->get_id());
+  //      else
+  //        ids = elements[back_map_it->second];
+  //      g = new gen(ids, generate_gen(nt->get_next()), [=](gen &_this) {
+  //        return new num_linear_term(nt->get_scale(), new num_var(*_this.ids_it), _this.rest->generate());
+  //      });
+  //    });
+  //    nv._([&](num_linear_vs *ns) {
+  //      g = new gen(id_set_t(), NULL, [=](gen &_this) { return new num_linear_vs(ns->get_value_set()); });
+  //    });
+  //    lin->accept(nv);
+  //    return g;
+  //  };
+  //
+  //  gen *g = generate_gen(cmp->get_opnd());
+  //
+  //  cout << "Warning: broken assume() in equality_state..." << endl;
+  //  while(!g->end()) {
+  //    num_expr_cmp *ec = new num_expr_cmp(g->generate(), cmp->get_op());
+  //    child_state->assume(ec);
+  //    delete ec;
+  //  }
+  //
+  //  delete g;
 }
 
 void analysis::equality_state::assume(api::num_var *lhs, api::ptr_set_t aliases) {

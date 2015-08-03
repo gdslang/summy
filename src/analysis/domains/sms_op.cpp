@@ -40,11 +40,11 @@ using namespace summy;
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-  //  cout << "apply_summary" << endl;
-  //  cout << "caller:" << endl
-  //       << *caller << endl;
-  //  cout << "summary: " << endl
-  //       << *summary << endl;
+    cout << "apply_summary" << endl;
+    cout << "caller:" << endl
+         << *caller << endl;
+    cout << "summary: " << endl
+         << *summary << endl;
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -62,8 +62,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   /*
    * Todo: Handling of null pointer and bad pointer?
    */
-//  ptr_map.insert(make_pair(special_ptr::_nullptr, ptr_set_t {ptr(special_ptr::_nullptr, vs_finite::zero)}));
-//  ptr_map.insert(make_pair(special_ptr::badptr, ptr_set_t {ptr(special_ptr::badptr, vs_finite::zero)}));
+  ptr_map.insert(make_pair(special_ptr::_nullptr, ptr_set_t {ptr(special_ptr::_nullptr, vs_finite::zero)}));
+  ptr_map.insert(make_pair(special_ptr::badptr, ptr_set_t {ptr(special_ptr::badptr, vs_finite::zero)}));
 
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
   alias_queue_t ptr_worklist;
@@ -178,6 +178,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
    * Having built the relation between variable and pointers names of the caller state and the summary,
    * we apply the summary by updating the caller using the summary state.
    */
+
+  cout << "middle: " << *return_site << endl;
 
   /*
    * Application

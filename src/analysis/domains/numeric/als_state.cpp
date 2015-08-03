@@ -325,6 +325,20 @@ void als_state::assume(api::num_expr_cmp *cmp) {
   /*
    * Todo: Unsound / Uncool?!
    */
+  cout << "bef: " << *this << endl;
+
+  /*
+   * Equality hack:
+   *  - One variable: Something like 'A == 99', re-offset to null pointer
+   *  - Todo: Two variables: Equate alias sets
+   *  - Not one variable: Ignore test
+   *
+   * Future work:
+   *  - Unhacking
+   *  - If two alias sets with different addresses are assumed to be equal,
+   *  the respective memeory regions need to be merged?!
+   */
+
   auto _vars = ::vars(cmp);
   bool all_null = true;
   for(auto &var : _vars) {
@@ -337,14 +351,18 @@ void als_state::assume(api::num_expr_cmp *cmp) {
       if(v_elems.size() == 1 && (**v_elems.begin() == *special_ptr::_nullptr)) {
       } else {
         all_null = false;
-        //              elements[var->get_id()] = {special_ptr::_nullptr};
-        //              child_state->kill({var});
+
         switch(cmp->get_op()) {
           case NEQ: {
             break;
           }
+          case EQ: {
+            if(_vars.size() != 1)
+              break;
+          }
           default: {
-            kill({var});
+            elements[var->get_id()] = {special_ptr::_nullptr};
+            child_state->kill({var});
             break;
           }
         }
@@ -357,11 +375,19 @@ void als_state::assume(api::num_expr_cmp *cmp) {
       if(all_null) child_state->assume(cmp);
       break;
     }
+    case EQ: {
+      if(_vars.size() != 1) {
+        if(all_null) child_state->assume(cmp);
+        break;
+      }
+    }
     default: {
       child_state->assume(cmp);
       break;
     }
   }
+
+  cout << "after: " << *this << endl;
 }
 
 void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
@@ -403,9 +429,13 @@ void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
     else
       offset_aliases = alias.offset;
 
-  num_expr_cmp *e = num_expr_cmp::equals(new num_linear_term(lhs->copy()), new num_linear_vs(offset_aliases.value()));
+  num_linear *lhs_lin = new num_linear_term(lhs->copy());
+  num_linear *oa_lin = new num_linear_vs(offset_aliases.value());
+  num_expr_cmp *e = num_expr_cmp::equals(lhs_lin, oa_lin);
   child_state->assume(e);
   delete e;
+  delete oa_lin;
+  delete lhs_lin;
 }
 
 void als_state::kill(std::vector<api::num_var *> vars) {

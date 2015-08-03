@@ -248,32 +248,30 @@ tuple<bool, void *> analysis::summary_memory_state::static_address(id_shared_t i
   return make_tuple(is_static, symbol_address);
 }
 
-bool analysis::summary_memory_state::handle_special_dereference(id_shared_t alias_id) {
+summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handle_special_dereference(
+  id_shared_t alias_id) {
   bool force_weak = false;
-  auto spt = _special_ptr_kind(alias_id);
-  if(spt) {
-    switch(spt.value()) {
+  bool ignore = false;
+  std::experimental::optional<summy::rreil::special_ptr_kind> ptr_kind;
+  summy::rreil::id_visitor idv;
+  idv._([&](special_ptr *sp) { ptr_kind = sp->get_kind(); });
+  alias_id->accept(idv);
+  if(ptr_kind) {
+    switch(ptr_kind.value()) {
       case NULL_PTR: {
         cout << "Warning (load): Ignoring possible null pointer dereference" << endl;
+        ignore = true;
         break;
       }
       case BAD_PTR: {
         cout << "Warning (load): Ignoring possible bad pointer dereference" << endl;
+        ignore = true;
         force_weak = true;
         break;
       }
     }
   }
-  return force_weak;
-}
-
-std::experimental::optional<summy::rreil::special_ptr_kind> analysis::summary_memory_state::_special_ptr_kind(
-  id_shared_t id) {
-  std::experimental::optional<summy::rreil::special_ptr_kind> ptr_kind;
-  summy::rreil::id_visitor idv;
-  idv._([&](special_ptr *sp) { ptr_kind = sp->get_kind(); });
-  id->accept(idv);
-  return ptr_kind;
+  return special_deref_desc_t{force_weak, ignore};
 }
 
 void analysis::summary_memory_state::initialize_static(io_region io, void *address, size_t offset, size_t size) {
@@ -743,7 +741,9 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   bool force_weak = false;
   for(auto &alias : aliases) {
     //    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
-    force_weak = force_weak || handle_special_dereference(alias.id);
+    special_deref_desc_t spdd = handle_special_dereference(alias.id);
+    force_weak = force_weak || spdd.force_weak;
+    if(spdd.ignore) continue;
 
     io_region io = dereference(alias.id);
 
@@ -814,7 +814,9 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
 
   bool force_weak = false;
   for(auto &alias : aliases) {
-    force_weak = force_weak || handle_special_dereference(alias.id);
+    special_deref_desc_t spdd = handle_special_dereference(alias.id);
+    force_weak = force_weak || spdd.force_weak;
+    if(spdd.ignore) continue;
 
     io_region io = region_by_id(getter, alias.id);
 
