@@ -237,6 +237,10 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
   set<num_var *> _vars_rhs = ::vars(rhs);
 
   if(linear) {
+    /*
+     * Todo: What about scaled pointers? We need 'slice' from the paper
+     */
+
     vector<id_set_t> aliases_vars_rhs;
     for(auto &var : _vars_rhs) {
       auto var_it = elements.find(var->get_id());
@@ -260,7 +264,6 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
 
     id_set_t aliases_new;
     while(alias_iterators[0] != aliases_vars_rhs[0].end()) {
-      // do something
       vector<id_shared_t> aliases_current;
       for(auto &aliases_it : alias_iterators)
         aliases_current.push_back(*aliases_it);
