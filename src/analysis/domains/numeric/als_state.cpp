@@ -307,6 +307,23 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
   }
 }
 
+void als_state::assign(api::num_var *lhs, api::ptr_set_t aliases) {
+  optional<vs_shared_t> offset_joined;
+  for(auto alias : aliases)
+    if(offset_joined)
+      offset_joined = value_set::join(offset_joined.value(), alias.offset);
+    else
+      offset_joined = alias.offset;
+  num_expr *offset_e = new num_expr_lin(new num_linear_vs(offset_joined.value()));
+  child_state->assign(lhs, offset_e);
+  delete offset_e;
+
+  id_set_t alias_set;
+  for(auto alias : aliases)
+    alias_set.insert(alias.id);
+  elements[lhs->get_id()] = alias_set;
+}
+
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   assign(lhs, rhs, true);
 }

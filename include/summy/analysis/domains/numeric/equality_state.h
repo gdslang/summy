@@ -79,6 +79,7 @@ public:
   equality_state *narrow(domain_state *other, size_t current_node);
 
   void assign(api::num_var *lhs, api::num_expr *rhs);
+  void assign(api::num_var *lhs, api::ptr_set_t aliases);
   void weak_assign(api::num_var *lhs, api::num_expr *rhs);
   void assume(api::num_expr_cmp *cmp);
   void assume(api::num_var *lhs, api::ptr_set_t aliases);

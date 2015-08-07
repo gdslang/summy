@@ -100,6 +100,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             shared_ptr<summary_memory_state> summary = shared_ptr<summary_memory_state>(sms_bottom());
 
             ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
+            cout << *b->get_target() << endl;
+            cout << callee_aliases << endl;
             for(auto ptr : callee_aliases) {
               summy::rreil::id_visitor idv;
               bool is_text = false;

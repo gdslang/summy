@@ -37,6 +37,7 @@ public:
   virtual bool is_bottom() const = 0;
 
   virtual void assign(api::num_var *lhs, api::num_expr *rhs) = 0;
+  virtual void assign(api::num_var *lhs, api::ptr_set_t aliases) = 0;
   virtual void weak_assign(api::num_var *lhs, api::num_expr *rhs) = 0;
   virtual void assume(api::num_expr_cmp *cmp) = 0;
   virtual void assume(api::num_var *lhs, api::ptr_set_t aliases) = 0;

@@ -363,6 +363,10 @@ void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   delete rhs_simplified;
 }
 
+void analysis::equality_state::assign(api::num_var *lhs, api::ptr_set_t aliases) {
+  child_state->assign(lhs, aliases);
+}
+
 void analysis::equality_state::weak_assign(api::num_var *lhs, api::num_expr *rhs) {
   num_expr *rhs_simplified = simplify(rhs);
   assign_expr(lhs, rhs_simplified, &equality_state::weak_assign_var);

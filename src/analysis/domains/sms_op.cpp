@@ -301,7 +301,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
           //        cout << "strong for " << *nv_me << ": " << aliases_me << endl;
           return_site->child_state->kill({nv_fld_c});
           if(aliases_c.size() > 0)
-            return_site->child_state->assume(nv_fld_c, aliases_c);
+            return_site->child_state->assign(nv_fld_c, aliases_c);
           else
             return_site->child_state->assign(nv_fld_c, value_summary_expr);
         };
@@ -311,7 +311,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
             ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
             return_site->child_state->kill({nv_fld_c});
             aliases_joined_c.insert(aliases_c.begin(), aliases_c.end());
-            return_site->child_state->assume(nv_fld_c, aliases_joined_c);
+            return_site->child_state->assign(nv_fld_c, aliases_joined_c);
           } else {
             vs_shared_t value_caller = return_site->child_state->queryVal(nv_fld_c);
             return_site->child_state->kill({nv_fld_c});

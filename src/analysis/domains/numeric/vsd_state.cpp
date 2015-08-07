@@ -154,6 +154,10 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
   elements[lhs->get_id()] = er;
 }
 
+void value_sets::vsd_state::assign(api::num_var *lhs, api::ptr_set_t aliases) {
+  throw string("value_sets::vsd_state::assign(): Operation not supported");
+}
+
 void value_sets::vsd_state::weak_assign(num_var *lhs, num_expr *rhs) {
   //  cout << "Weak Assign " << *rhs << " to " << *lhs << endl;
   vs_shared_t er = num_ev.queryVal(rhs);

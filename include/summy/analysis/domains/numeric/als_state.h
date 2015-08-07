@@ -75,6 +75,7 @@ public:
   als_state *narrow(domain_state *other, size_t current_node);
 
   void assign(api::num_var *lhs, api::num_expr *rhs, bool weak);
+  void assign(api::num_var *lhs, api::ptr_set_t aliases);
   void assign(api::num_var *lhs, api::num_expr *rhs);
   void weak_assign(api::num_var *lhs, api::num_expr *rhs);
   void assume(api::num_expr_cmp *cmp);
