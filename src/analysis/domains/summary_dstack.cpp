@@ -313,6 +313,7 @@ shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
 
 void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> state) {
   this->state[node] = dynamic_pointer_cast<global_state>(state);
+  this->state[node]->get_mstate()->check_consistency();
 }
 
 summary_dstack_result analysis::summary_dstack::result() {

@@ -81,7 +81,7 @@ std::string c_compile(std::string program, unsigned int opt) {
     c_file.close();
 
     stringstream ss;
-    ss << "gcc -O" << opt << " -std=c11 -w program.c -o program.elf";
+    ss << "clang -O" << opt << " -std=c11 -w program.c -o program.elf";
 
     exit([&]() { system("rm program.c"); });
 

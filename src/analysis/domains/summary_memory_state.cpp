@@ -622,6 +622,28 @@ bool analysis::summary_memory_state::is_bottom() const {
   return child_state->is_bottom();
 }
 
+void analysis::summary_memory_state::check_consistency() {
+  cout << "check_consistency..." << endl;
+  cout << *this << endl;
+  auto check_regions = [&](region_map_t &regions) {
+    for(auto &region_it : regions) {
+      for(auto &f_it : region_it.second) {
+        num_var *nv = new num_var(f_it.second.num_id);
+        ptr_set_t aliases = child_state->queryAls(nv);
+        cout << aliases << endl;
+        assert(aliases.size() == 1);
+        if(aliases.size() == 1) {
+          ptr const &p = *aliases.begin();
+//          assert(p.id != special_ptr::badptr);
+          assert(*p.offset == vs_finite::zero);
+        }
+      }
+    }
+  };
+  check_regions(input.regions);
+  check_regions(input.deref);
+}
+
 bool analysis::summary_memory_state::operator>=(const domain_state &other) const {
   summary_memory_state const &other_casted = dynamic_cast<summary_memory_state const &>(other);
   numeric_state *me_compat;

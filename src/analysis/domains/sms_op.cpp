@@ -415,21 +415,24 @@ num_var_pairs_t(::analysis::matchPointers)(
           field const &f_b = rpd.ending_last.value().f;
           if(f_a.size == f_b.size) {
             num_var *f_a_nv = new num_var(f_a.num_id);
+            cout << *f_a_nv << endl;
             ptr_set_t als_a = a_n->queryAls(f_a_nv);
-            assert(als_a.size() <= 1);
+            cout << als_a << endl;
+            assert(als_a.size() == 1);
             delete f_a_nv;
 
             num_var *f_b_nv = new num_var(f_b.num_id);
             ptr_set_t als_b = b_n->queryAls(f_b_nv);
-            assert(als_b.size() <= 1);
+            assert(als_b.size() == 1);
             delete f_b_nv;
 
-            if(als_a.size() == 1 && als_b.size() == 1) {
+            ptr p_a = *als_a.begin();
+            ptr p_b = *als_b.begin();
+            if(!(*p_a.id == *special_ptr::badptr) && !((*p_b.id == *special_ptr::badptr))) {
               //              cout << "pushing aliases... " << endl;
 
-              ptr p_a = *als_a.begin();
+              cout << p_a << endl;
               assert(*p_a.offset == vs_finite::zero);
-              ptr p_b = *als_b.begin();
               assert(*p_b.offset == vs_finite::zero);
 
               upcoming.push_back(make_tuple(new num_var(p_a.id), new num_var(p_b.id)));
@@ -531,7 +534,7 @@ num_var_pairs_t(::analysis::matchPointers)(
       /*
        * If only one pointer p_1 is found in its respective deref map, the other has
        * not been dereferenced. There may be fields in the dereferenced memory of
-       * p_1 which need to be copied to other i/o relation. Therefore, we add the
+       * p_1 which need to be copied to the other i/o relation. Therefore, we add the
        * missing memory region to the other relation.
        */
       else if(deref_a_in_it == a_in.deref.end()) {
@@ -573,13 +576,13 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   }
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "compat OF" << endl;
-//    cout << *a << endl;
-//    cout << "WITH" << endl;
-//    cout << *b << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++++++++" << endl;
+    cout << "compat OF" << endl;
+    cout << *a << endl;
+    cout << "WITH" << endl;
+    cout << *b << endl;
   //  }
 
   /*

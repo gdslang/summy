@@ -139,7 +139,7 @@ public:
   }
 
   bool is_bottom() const;
-
+  void check_consistency();
   bool operator>=(domain_state const &other) const;
 
   summary_memory_state *join(domain_state *other, size_t current_node);
