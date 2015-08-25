@@ -40,11 +40,11 @@ using namespace summy;
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-    cout << "apply_summary" << endl;
-    cout << "caller:" << endl
-         << *caller << endl;
-    cout << "summary: " << endl
-         << *summary << endl;
+  //    cout << "apply_summary" << endl;
+  //    cout << "caller:" << endl
+  //         << *caller << endl;
+  //    cout << "summary: " << endl
+  //         << *summary << endl;
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -62,8 +62,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   /*
    * Todo: Handling of null pointer and bad pointer?
    */
-  ptr_map.insert(make_pair(special_ptr::_nullptr, ptr_set_t {ptr(special_ptr::_nullptr, vs_finite::zero)}));
-  ptr_map.insert(make_pair(special_ptr::badptr, ptr_set_t {ptr(special_ptr::badptr, vs_finite::zero)}));
+  ptr_map.insert(make_pair(special_ptr::_nullptr, ptr_set_t{ptr(special_ptr::_nullptr, vs_finite::zero)}));
+  ptr_map.insert(make_pair(special_ptr::badptr, ptr_set_t{ptr(special_ptr::badptr, vs_finite::zero)}));
 
   typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
   alias_queue_t ptr_worklist;
@@ -179,7 +179,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
    * we apply the summary by updating the caller using the summary state.
    */
 
-  cout << "middle: " << *return_site << endl;
+  //  cout << "middle: " << *return_site << endl;
 
   /*
    * Application
@@ -415,9 +415,9 @@ num_var_pairs_t(::analysis::matchPointers)(
           field const &f_b = rpd.ending_last.value().f;
           if(f_a.size == f_b.size) {
             num_var *f_a_nv = new num_var(f_a.num_id);
-            cout << *f_a_nv << endl;
+            //            cout << *f_a_nv << endl;
             ptr_set_t als_a = a_n->queryAls(f_a_nv);
-            cout << als_a << endl;
+            //            cout << als_a << endl;
             assert(als_a.size() == 1);
             delete f_a_nv;
 
@@ -431,7 +431,7 @@ num_var_pairs_t(::analysis::matchPointers)(
             if(!(*p_a.id == *special_ptr::badptr) && !((*p_b.id == *special_ptr::badptr))) {
               //              cout << "pushing aliases... " << endl;
 
-              cout << p_a << endl;
+              //              cout << p_a << endl;
               assert(*p_a.offset == vs_finite::zero);
               assert(*p_b.offset == vs_finite::zero);
 
@@ -576,13 +576,13 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   }
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-    cout << "++++++++++++++++++++++++++++++" << endl;
-    cout << "++++++++++++++++++++++++++++++" << endl;
-    cout << "++++++++++++++++++++++++++++++" << endl;
-    cout << "compat OF" << endl;
-    cout << *a << endl;
-    cout << "WITH" << endl;
-    cout << *b << endl;
+  //  cout << "++++++++++++++++++++++++++++++" << endl;
+  //  cout << "++++++++++++++++++++++++++++++" << endl;
+  //  cout << "++++++++++++++++++++++++++++++" << endl;
+  //  cout << "compat OF" << endl;
+  //  cout << *a << endl;
+  //  cout << "WITH" << endl;
+  //  cout << *b << endl;
   //  }
 
   /*
@@ -669,8 +669,8 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
           }
         } else {
           if(!rpd.ending_last) {
-            cout << *id << endl;
-            cout << *rpd.ending_first.f.num_id << endl;
+            //            cout << *id << endl;
+            //            cout << *rpd.ending_first.f.num_id << endl;
           }
           assert(rpd.ending_last);
 

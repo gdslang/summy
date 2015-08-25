@@ -345,7 +345,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
   /*
    * Todo: Unsound / Uncool?!
    */
-  cout << "bef: " << *this << endl;
+  //  cout << "bef: " << *this << endl;
 
   /*
    * Equality hack:
@@ -377,8 +377,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
             break;
           }
           case EQ: {
-            if(_vars.size() != 1)
-              break;
+            if(_vars.size() != 1) break;
           }
           default: {
             elements[var->get_id()] = {special_ptr::_nullptr};
@@ -407,7 +406,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
     }
   }
 
-  cout << "after: " << *this << endl;
+  //  cout << "after: " << *this << endl;
 }
 
 void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
