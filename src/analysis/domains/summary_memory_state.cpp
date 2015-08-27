@@ -260,12 +260,12 @@ summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handl
   if(ptr_kind) {
     switch(ptr_kind.value()) {
       case NULL_PTR: {
-        cout << "Warning (load): Ignoring possible null pointer dereference" << endl;
+        cout << "Warning (load/store): Ignoring possible null pointer dereference" << endl;
         ignore = true;
         break;
       }
       case BAD_PTR: {
-        cout << "Warning (load): Ignoring possible bad pointer dereference" << endl;
+        cout << "Warning (load/store): Ignoring possible bad pointer dereference" << endl;
         ignore = true;
         force_weak = true;
         break;
@@ -631,6 +631,7 @@ void analysis::summary_memory_state::check_consistency() {
       for(auto &f_it : region_it.second) {
         num_var *nv = new num_var(f_it.second.num_id);
         ptr_set_t aliases = child_state->queryAls(nv);
+        delete nv;
         //        cout << aliases << endl;
         //        assert(aliases.size() == 2);
         //        if(aliases.size() == 1) {
@@ -833,14 +834,17 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
 
 void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size,
   updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
-  //  cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
+//    cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
 
   bool force_weak = false;
+  ptr_set_t aliases_cleaned;
   for(auto &alias : aliases) {
     special_deref_desc_t spdd = handle_special_dereference(alias.id);
     force_weak = force_weak || spdd.force_weak;
-    if(spdd.ignore) continue;
+    if(!spdd.ignore) aliases_cleaned.insert(alias);
+  }
 
+  for(auto &alias : aliases_cleaned) {
     io_region io = region_by_id(getter, alias.id);
 
     bool is_static = false;
@@ -852,7 +856,7 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
 
     vector<id_shared_t> ids;
 
-    bool singleton = aliases.size() == 1;
+    bool singleton = aliases_cleaned.size() == 1;
     bool _continue = false;
     value_set_visitor vsv;
     vsv._([&](vs_finite *v) {

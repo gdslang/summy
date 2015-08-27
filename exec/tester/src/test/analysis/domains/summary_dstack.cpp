@@ -8,6 +8,7 @@
 #include <bjutil/binary/elf_provider.h>
 #include <summy/analysis/domains/summary_dstack.h>
 #include <summy/analysis/domains/summary_memory_state.h>
+#include <summy/analysis/domains/sms_op.h>
 #include <summy/test/compile.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/big_step/dectran.h>
@@ -309,8 +310,7 @@ static void query_deref_als(
 
   address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
   ptr_set_t addresses = mstate->queryAls(a);
-  ASSERT_EQ(addresses.size(), 1);
-  ptr const &p = *addresses.begin();
+  ptr const &p = unpack_singleton(addresses);
 
   query_deref_als(aliases, ar, mstate, p);
 

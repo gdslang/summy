@@ -376,7 +376,10 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     auto &elements = vf->get_elements();
     for(auto &e : elements) {
       void *address = (void *)e;
-      if(address == NULL) symbol_offsets[special_ptr::_nullptr].push_back(vs_finite::zero);
+      if(address == NULL) {
+        symbol_offsets[special_ptr::_nullptr].push_back(vs_finite::zero);
+        break;
+      }
       symbol symb;
       bool success;
       tie(success, symb) = sm->lookup(address);

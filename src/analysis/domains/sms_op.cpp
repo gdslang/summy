@@ -37,14 +37,27 @@ using namespace analysis;
 using namespace analysis::api;
 using namespace summy;
 
+api::ptr analysis::unpack_singleton(api::ptr_set_t aliases) {
+  assert(aliases.size() <= 2);
+  optional<ptr> opt_result;
+  for(auto &alias : aliases) {
+    if(*alias.id == *special_ptr::_nullptr)
+      continue;
+    assert(!opt_result);
+    opt_result = alias;
+  }
+  assert(opt_result);
+  return opt_result.value();
+}
+
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-  //    cout << "apply_summary" << endl;
-  //    cout << "caller:" << endl
-  //         << *caller << endl;
-  //    cout << "summary: " << endl
-  //         << *summary << endl;
+      cout << "apply_summary" << endl;
+      cout << "caller:" << endl
+           << *caller << endl;
+      cout << "summary: " << endl
+           << *summary << endl;
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -90,7 +103,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       num_var *nv_field_s = new num_var(f_s.num_id);
       ptr_set_t aliases_fld_s = summary->child_state->queryAls(nv_field_s);
 
-      assert(aliases_fld_s.size() <= 1);
+      cout << aliases_fld_s << endl;
+      assert(aliases_fld_s.size() <= 2);
 
       ptr_set_t region_keys_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_keys_c);
 
@@ -125,6 +139,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       delete nv_field_s;
 
       for(auto &p_s : aliases_fld_s) {
+        if(*p_s.id == *special_ptr::_nullptr)
+          continue;
         ptr_set_t &aliases_c = ptr_map[p_s.id];
         if(!includes(aliases_c.begin(), aliases_c.end(), aliases_fld_c.begin(), aliases_fld_c.end())) {
           aliases_c.insert(aliases_fld_c.begin(), aliases_fld_c.end());
@@ -418,16 +434,17 @@ num_var_pairs_t(::analysis::matchPointers)(
             //            cout << *f_a_nv << endl;
             ptr_set_t als_a = a_n->queryAls(f_a_nv);
             //            cout << als_a << endl;
-            assert(als_a.size() == 1);
             delete f_a_nv;
+            ptr p_a = unpack_singleton(als_a);
 
             num_var *f_b_nv = new num_var(f_b.num_id);
             ptr_set_t als_b = b_n->queryAls(f_b_nv);
-            assert(als_b.size() == 1);
             delete f_b_nv;
+            ptr p_b = unpack_singleton(als_b);
 
-            ptr p_a = *als_a.begin();
-            ptr p_b = *als_b.begin();
+            /*
+             * Todo: Check for badptr?
+             */
             if(!(*p_a.id == *special_ptr::badptr) && !((*p_b.id == *special_ptr::badptr))) {
               //              cout << "pushing aliases... " << endl;
 
