@@ -514,16 +514,16 @@ api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   if(id_it == elements.end()) return child_state->queryAls(nv);
   singleton_value_t &aliases = id_it->second;
   for(auto alias : aliases) {
-    if(*alias == *special_ptr::_nullptr) {
-      auto child_aliases = child_state->queryAls(nv);
-      result.insert(child_aliases.begin(), child_aliases.end());
-    } else {
-      //    num_var *nv = new num_var(alias);
-      vs_shared_t offset_bytes = child_state->queryVal(nv);
-      //    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
-      result.insert(ptr(alias, offset_bytes));
-      //    delete nv;
-    }
+    //    if(*alias == *special_ptr::_nullptr) {
+    //      auto child_aliases = child_state->queryAls(nv);
+    //      result.insert(child_aliases.begin(), child_aliases.end());
+    //    } else {
+    //    num_var *nv = new num_var(alias);
+    vs_shared_t offset_bytes = child_state->queryVal(nv);
+    //    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
+    result.insert(ptr(alias, offset_bytes));
+    //    delete nv;
+    //    }
   }
   return result;
 }
