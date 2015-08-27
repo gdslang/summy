@@ -41,8 +41,7 @@ api::ptr analysis::unpack_singleton(api::ptr_set_t aliases) {
   assert(aliases.size() <= 2);
   optional<ptr> opt_result;
   for(auto &alias : aliases) {
-    if(*alias.id == *special_ptr::_nullptr)
-      continue;
+    if(*alias.id == *special_ptr::_nullptr) continue;
     assert(!opt_result);
     opt_result = alias;
   }
@@ -53,11 +52,11 @@ api::ptr analysis::unpack_singleton(api::ptr_set_t aliases) {
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-      cout << "apply_summary" << endl;
-      cout << "caller:" << endl
-           << *caller << endl;
-      cout << "summary: " << endl
-           << *summary << endl;
+  cout << "apply_summary" << endl;
+  cout << "caller:" << endl
+       << *caller << endl;
+  cout << "summary: " << endl
+       << *summary << endl;
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -139,8 +138,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       delete nv_field_s;
 
       for(auto &p_s : aliases_fld_s) {
-        if(*p_s.id == *special_ptr::_nullptr)
-          continue;
+        if(*p_s.id == *special_ptr::_nullptr) continue;
         ptr_set_t &aliases_c = ptr_map[p_s.id];
         if(!includes(aliases_c.begin(), aliases_c.end(), aliases_fld_c.begin(), aliases_fld_c.end())) {
           aliases_c.insert(aliases_fld_c.begin(), aliases_fld_c.end());
