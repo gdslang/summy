@@ -19,6 +19,10 @@ using analysis::symbol;
 namespace summy {
 namespace rreil {
 
+/**
+ * This class is used to represent pointers to static memory. Maybe
+ * they should be removed and replaced by null pointer + offset.
+ */
 class sm_id : public gdsl::rreil::id {
 private:
   std::string symbol;

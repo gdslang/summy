@@ -14,6 +14,7 @@
 #include <summy/analysis/domains/api/ptr_set.h>
 #include <summy/analysis/domains/cr_merge_region_iterator.h>
 #include <summy/analysis/domains/merge_region_iterator.h>
+#include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/sm_id.h>
@@ -38,6 +39,7 @@ using namespace analysis::api;
 using namespace summy;
 
 api::ptr analysis::unpack_singleton(api::ptr_set_t aliases) {
+  aliases = als_state::normalise(aliases);
   assert(aliases.size() <= 2);
   optional<ptr> opt_result;
   for(auto &alias : aliases) {
@@ -52,11 +54,11 @@ api::ptr analysis::unpack_singleton(api::ptr_set_t aliases) {
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-  cout << "apply_summary" << endl;
-  cout << "caller:" << endl
-       << *caller << endl;
-  cout << "summary: " << endl
-       << *summary << endl;
+//  cout << "apply_summary" << endl;
+//  cout << "caller:" << endl
+//       << *caller << endl;
+//  cout << "summary: " << endl
+//       << *summary << endl;
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -102,7 +104,6 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       num_var *nv_field_s = new num_var(f_s.num_id);
       ptr_set_t aliases_fld_s = summary->child_state->queryAls(nv_field_s);
 
-      cout << aliases_fld_s << endl;
       assert(aliases_fld_s.size() <= 2);
 
       ptr_set_t region_keys_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_keys_c);

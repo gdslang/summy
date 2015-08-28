@@ -94,6 +94,11 @@ public:
 
   als_state *copy() const;
 
+  /**
+   * Re-offset static memory aliases to the null pointer. Static memory ids
+   * may in general be a bad idea; maybe, they should be removed.
+   */
+  static api::ptr_set_t normalise(api::ptr_set_t aliases);
   static std::tuple<bool, elements_t, numeric_state *, numeric_state *> compat(als_state const *a, als_state const *b);
 };
 }

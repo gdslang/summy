@@ -308,6 +308,7 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
 }
 
 void als_state::assign(api::num_var *lhs, api::ptr_set_t aliases) {
+  aliases = normalise(aliases);
   optional<vs_shared_t> offset_joined;
   for(auto alias : aliases)
     if(offset_joined)
@@ -412,6 +413,8 @@ void als_state::assume(api::num_expr_cmp *cmp) {
 void als_state::assume(api::num_var *lhs, ptr_set_t aliases) {
   if(is_bottom()) return;
 
+  aliases = normalise(aliases);
+
   if(aliases.size() == 0) {
     bottomify();
     return;
@@ -506,24 +509,23 @@ void als_state::fold(num_var_pairs_t vars) {
 }
 
 api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
-  //  cout << "queryALS for " << *nv << endl;
-  //  cout << "offset: " << *child_state->queryVal(nv) << endl;
-
+//    cout << "queryALS for " << *nv << endl;
+//    cout << "offset: " << *child_state->queryVal(nv) << endl;
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
   if(id_it == elements.end()) return child_state->queryAls(nv);
   singleton_value_t &aliases = id_it->second;
   for(auto alias : aliases) {
-    //    if(*alias == *special_ptr::_nullptr) {
-    //      auto child_aliases = child_state->queryAls(nv);
-    //      result.insert(child_aliases.begin(), child_aliases.end());
-    //    } else {
-    //    num_var *nv = new num_var(alias);
-    vs_shared_t offset_bytes = child_state->queryVal(nv);
-    //    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
-    result.insert(ptr(alias, offset_bytes));
-    //    delete nv;
-    //    }
+    if(*alias == *special_ptr::_nullptr) {
+      auto child_aliases = child_state->queryAls(nv);
+      result.insert(child_aliases.begin(), child_aliases.end());
+    } else {
+//      num_var *nv = new num_var(alias);
+      vs_shared_t offset_bytes = child_state->queryVal(nv);
+      //    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
+      result.insert(ptr(alias, offset_bytes));
+//      delete nv;
+    }
   }
   return result;
 }
@@ -560,10 +562,6 @@ summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
       acc = value_set::join(next, acc);
   }
   return acc;
-}
-
-als_state *als_state::copy() const {
-  return new als_state(*this);
 }
 
 bool analysis::als_state::cleanup(api::num_var *var) {
@@ -612,6 +610,25 @@ api::num_vars *analysis::als_state::vars() {
   child_vars->add(known_aliases);
 
   return child_vars;
+}
+
+als_state *als_state::copy() const {
+  return new als_state(*this);
+}
+
+api::ptr_set_t analysis::als_state::normalise(api::ptr_set_t aliases) {
+  ptr_set_t result;
+  for(auto &alias : aliases) {
+    summy::rreil::id_visitor idv;
+    idv._([&](sm_id *sid) {
+      result.insert(ptr(special_ptr::_nullptr, *vs_finite::single((int64_t)sid->get_address()) + alias.offset));
+    });
+    idv._default([&](id *_id) {
+      result.insert(alias);
+    });
+    alias.id->accept(idv);
+  }
+  return result;
 }
 
 std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_state::compat(

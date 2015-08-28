@@ -608,18 +608,18 @@ end: ret",
 
   ptr_set_t aliases_before_call_r11;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_before_call_r11, ar, "before_call", "R11"));
-  ASSERT_EQ(aliases_before_call_r11.size(), 1);
-  ptr alias_before_call_r11 = *aliases_before_call_r11.begin();
+  ASSERT_EQ(aliases_before_call_r11.size(), 2);
+  ptr alias_before_call_r11 = unpack_singleton(aliases_before_call_r11);
 
   ptr_set_t aliases_r11;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_r11, ar, "end", "R11"));
-  ASSERT_EQ(aliases_r11.size(), 1);
-  ASSERT_EQ(aliases_r11, ptr_set_t({ptr(alias_before_call_r11.id, vs_finite::single(3))}));
+  ASSERT_EQ(aliases_r11.size(), 2);
+  ASSERT_EQ(unpack_singleton(aliases_r11), ptr(alias_before_call_r11.id, vs_finite::single(3)));
 
   ptr_set_t aliases_r12;
-  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r11, ar, "end", "R12"));
-  ASSERT_EQ(aliases_r11.size(), 1);
-  ASSERT_EQ(*aliases_r11.begin()->offset, vs_finite::single(11));
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_r12, ar, "end", "R12"));
+  ASSERT_EQ(aliases_r12.size(), 2);
+  ASSERT_EQ(*unpack_singleton(aliases_r12).offset, vs_finite::single(11));
 }
 
 TEST_F(summary_dstack_test, 2Calls) {
@@ -645,11 +645,11 @@ end: ret",
 
   ptr_set_t aliases_start_r14;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_r14, ar, "start", "R14"));
-  ASSERT_EQ(aliases_start_r14.size(), 1);
+  ASSERT_EQ(aliases_start_r14.size(), 2);
 
   ptr_set_t aliases_start_r15;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_r15, ar, "start", "R15"));
-  ASSERT_EQ(aliases_start_r15.size(), 1);
+  ASSERT_EQ(aliases_start_r15.size(), 2);
 
   ptr_set_t aliases_end_r14;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_r14, ar, "end", "R14"));
@@ -781,29 +781,29 @@ ret",
 
   ptr_set_t aliases_start_c;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_c, ar, "start", "C"));
-  ASSERT_EQ(aliases_start_c.size(), 1);
+  ASSERT_EQ(aliases_start_c.size(), 2);
 
   ptr_set_t aliases_start_d;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_d, ar, "start", "D"));
-  ASSERT_EQ(aliases_start_d.size(), 1);
+  ASSERT_EQ(aliases_start_d.size(), 2);
 
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
-  ASSERT_EQ(aliases_end_a.size(), 1);
+  ASSERT_EQ(aliases_end_a.size(), 2);
 
   ptr_set_t aliases_start_c_end_deref;
   ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_c_end_deref, ar, "end", *aliases_start_c.begin()));
-  ASSERT_EQ(aliases_start_c_end_deref.size(), 2);
-  ASSERT_NE(aliases_start_c_end_deref.find(*aliases_end_a.begin()), aliases_start_c_end_deref.end());
-  ASSERT_EQ(aliases_start_c_end_deref.find(*aliases_start_d.begin()), aliases_start_c_end_deref.end());
-  ASSERT_EQ(aliases_start_c_end_deref.find(*aliases_start_c.begin()), aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.size(), 3);
+  ASSERT_NE(aliases_start_c_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.find(unpack_singleton(aliases_start_d)), aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.find(unpack_singleton(aliases_start_c)), aliases_start_c_end_deref.end());
 
   ptr_set_t aliases_start_d_end_deref;
   ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_d_end_deref, ar, "end", *aliases_start_d.begin()));
-  ASSERT_EQ(aliases_start_d_end_deref.size(), 2);
-  ASSERT_NE(aliases_start_d_end_deref.find(*aliases_end_a.begin()), aliases_start_d_end_deref.end());
-  ASSERT_EQ(aliases_start_d_end_deref.find(*aliases_start_d.begin()), aliases_start_d_end_deref.end());
-  ASSERT_EQ(aliases_start_d_end_deref.find(*aliases_start_c.begin()), aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.size(), 3);
+  ASSERT_NE(aliases_start_d_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.find(unpack_singleton(aliases_start_d)), aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.find(unpack_singleton(aliases_start_c)), aliases_start_d_end_deref.end());
 }
 
 TEST_F(summary_dstack_test, Call_2AliasesForOneVariableCallerWithOffsetInCaller) {
@@ -828,31 +828,31 @@ ret",
 
   ptr_set_t aliases_start_c;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_c, ar, "start", "C"));
-  ASSERT_EQ(aliases_start_c.size(), 1);
-  ptr aliases_start_c_only = *aliases_start_c.begin();
+  ASSERT_EQ(aliases_start_c.size(), 2);
+  ptr aliases_start_c_only = unpack_singleton(aliases_start_c);
   ptr aliases_start_c_only_plus_8 = ptr(aliases_start_c_only.id, *aliases_start_c_only.offset + vs_finite::single(8));
 
   ptr_set_t aliases_start_d;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_d, ar, "start", "D"));
-  ASSERT_EQ(aliases_start_d.size(), 1);
-  ptr aliases_start_d_only = *aliases_start_d.begin();
+  ASSERT_EQ(aliases_start_d.size(), 2);
+  ptr aliases_start_d_only = unpack_singleton(aliases_start_d);
   ptr aliases_start_d_only_plus_8 = ptr(aliases_start_d_only.id, *aliases_start_d_only.offset + vs_finite::single(8));
 
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
-  ASSERT_EQ(aliases_end_a.size(), 1);
+  ASSERT_EQ(aliases_end_a.size(), 2);
 
   ptr_set_t aliases_start_c_end_deref;
   ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_c_end_deref, ar, "end", aliases_start_c_only_plus_8));
-  ASSERT_EQ(aliases_start_c_end_deref.size(), 2);
-  ASSERT_NE(aliases_start_c_end_deref.find(*aliases_end_a.begin()), aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.size(), 3);
+  ASSERT_NE(aliases_start_c_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_c_end_deref.end());
   ASSERT_EQ(aliases_start_c_end_deref.find(aliases_start_d_only_plus_8), aliases_start_c_end_deref.end());
   ASSERT_EQ(aliases_start_c_end_deref.find(aliases_start_c_only_plus_8), aliases_start_c_end_deref.end());
 
   ptr_set_t aliases_start_d_end_deref;
   ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_d_end_deref, ar, "end", aliases_start_d_only_plus_8));
-  ASSERT_EQ(aliases_start_d_end_deref.size(), 2);
-  ASSERT_NE(aliases_start_d_end_deref.find(*aliases_end_a.begin()), aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.size(), 3);
+  ASSERT_NE(aliases_start_d_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_d_end_deref.end());
   ASSERT_EQ(aliases_start_d_end_deref.find(aliases_start_d_only_plus_8), aliases_start_d_end_deref.end());
   ASSERT_EQ(aliases_start_d_end_deref.find(aliases_start_c_only_plus_8), aliases_start_d_end_deref.end());
 }
@@ -871,16 +871,16 @@ ret",
 
   ptr_set_t aliases_b;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_b, ar, "end", "B"));
-  ASSERT_EQ(aliases_b.size(), 1);
+  ASSERT_EQ(aliases_b.size(), 2);
   ptr_set_t aliases_c;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_c, ar, "end", "C"));
-  ASSERT_EQ(aliases_c.size(), 1);
+  ASSERT_EQ(aliases_c.size(), 2);
 
   ptr_set_t aliases_a_deref;
   ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_a_deref, ar, "end", "A"));
-  ASSERT_EQ(aliases_a_deref.size(), 2);
-  ASSERT_NE(aliases_a_deref.find(*aliases_b.begin()), aliases_a_deref.end());
-  ASSERT_NE(aliases_a_deref.find(*aliases_c.begin()), aliases_a_deref.end());
+  ASSERT_EQ(aliases_a_deref.size(), 3);
+  ASSERT_NE(aliases_a_deref.find(unpack_singleton(aliases_b)), aliases_a_deref.end());
+  ASSERT_NE(aliases_a_deref.find(unpack_singleton(aliases_c)), aliases_a_deref.end());
 
   ptr_set_t aliases_ip;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_ip, ar, "end", "IP"));
