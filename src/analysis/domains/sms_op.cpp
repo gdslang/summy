@@ -40,6 +40,8 @@ using namespace summy;
 
 api::ptr analysis::unpack_singleton(api::ptr_set_t aliases) {
   aliases = als_state::normalise(aliases);
+  if(aliases.size() > 2)
+    __builtin_trap();
   assert(aliases.size() <= 2);
   optional<ptr> opt_result;
   for(auto &alias : aliases) {
@@ -430,10 +432,10 @@ num_var_pairs_t(::analysis::matchPointers)(
           field const &f_b = rpd.ending_last.value().f;
           if(f_a.size == f_b.size) {
             num_var *f_a_nv = new num_var(f_a.num_id);
-            //            cout << *f_a_nv << endl;
             ptr_set_t als_a = a_n->queryAls(f_a_nv);
-            //            cout << als_a << endl;
+//            cout << "************" << *f_a_nv << ": " << als_a << endl;
             delete f_a_nv;
+
             ptr p_a = unpack_singleton(als_a);
 
             num_var *f_b_nv = new num_var(f_b.num_id);
@@ -592,13 +594,13 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   }
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-  //  cout << "++++++++++++++++++++++++++++++" << endl;
-  //  cout << "++++++++++++++++++++++++++++++" << endl;
-  //  cout << "++++++++++++++++++++++++++++++" << endl;
-  //  cout << "compat OF" << endl;
-  //  cout << *a << endl;
-  //  cout << "WITH" << endl;
-  //  cout << *b << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "compat OF" << endl;
+//    cout << *a << endl;
+//    cout << "WITH" << endl;
+//    cout << *b << endl;
   //  }
 
   /*

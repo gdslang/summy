@@ -8,6 +8,7 @@
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/fp_analysis.h>
+#include <summy/analysis/global_analysis/global_state.h>
 #include <summy/cfg/jd_manager.h>
 #include <queue>
 #include <iostream>
@@ -74,12 +75,21 @@ void fixpoint::iterate() {
           //          cout << "Boxed: " << *evaluated << endl;
         }
 
-        if(accumulator_set)
+        cout << "============================" << endl;
+        cout << "evaluated:" << endl << *evaluated << endl;
+
+        if(accumulator_set) {
+          cout << "accumulator:" << endl << *accumulator << endl;
+
           accumulator = shared_ptr<domain_state>(evaluated->join(accumulator.get(), node_id));
-        else {
+        } else {
           accumulator = evaluated;
           accumulator_set = true;
         }
+
+        cout << "accumulator (after):" << endl << *accumulator << endl;
+
+        dynamic_pointer_cast<global_state>(accumulator)->get_mstate()->check_consistency();
       };
 
       analysis->record_updates();
@@ -94,6 +104,7 @@ void fixpoint::iterate() {
       /*
        * No monotonicity because of the box operator
        */
+
       propagate = !(*current == *accumulator);
 
       //      cout << "prop: " << propagate << endl;

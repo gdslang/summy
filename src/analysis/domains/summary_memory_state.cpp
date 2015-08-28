@@ -26,6 +26,7 @@
 #include <vector>
 #include <assert.h>
 #include <summy/analysis/domains/cr_merge_region_iterator.h>
+#include <summy/analysis/domains/sms_op.h>
 #include <queue>
 #include <experimental/optional>
 
@@ -33,7 +34,6 @@ using namespace analysis::api;
 using namespace summy;
 using namespace gdsl::rreil;
 using namespace summy::rreil;
-
 
 using namespace analysis;
 using namespace std;
@@ -632,13 +632,9 @@ void analysis::summary_memory_state::check_consistency() {
         num_var *nv = new num_var(f_it.second.num_id);
         ptr_set_t aliases = child_state->queryAls(nv);
         delete nv;
-        //        cout << aliases << endl;
-        //        assert(aliases.size() == 2);
-        //        if(aliases.size() == 1) {
-        //          ptr const &p = *aliases.begin();
-        //          //          assert(p.id != special_ptr::badptr);
-        //          assert(*p.offset == vs_finite::zero);
-        //        }
+        ptr p = ::analysis::unpack_singleton(aliases);
+        //          assert(p.id != special_ptr::badptr);
+        assert(*p.offset == vs_finite::zero);
       }
     }
   };
@@ -834,7 +830,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
 
 void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size,
   updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
-//    cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
+  //    cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
 
   bool force_weak = false;
   ptr_set_t aliases_cleaned;
