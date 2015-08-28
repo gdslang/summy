@@ -841,11 +841,6 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
   for(auto &alias : aliases) {
     special_deref_desc_t spdd = handle_special_dereference(alias.id);
     force_weak = force_weak || spdd.force_weak;
-    if(!spdd.ignore) aliases_cleaned.insert(alias);
-  }
-
-  for(auto &alias : aliases_cleaned) {
-    io_region io = region_by_id(getter, alias.id);
 
     bool is_static = false;
     tie(is_static, ignore) = static_address(alias.id);
@@ -854,8 +849,13 @@ void analysis::summary_memory_state::update_multiple(api::ptr_set_t aliases, reg
       continue;
     }
 
-    vector<id_shared_t> ids;
+    if(!spdd.ignore || is_static) aliases_cleaned.insert(alias);
+  }
 
+  for(auto &alias : aliases_cleaned) {
+    io_region io = region_by_id(getter, alias.id);
+
+    vector<id_shared_t> ids;
     bool singleton = aliases_cleaned.size() == 1;
     bool _continue = false;
     value_set_visitor vsv;
