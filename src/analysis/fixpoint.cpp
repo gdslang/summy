@@ -75,11 +75,11 @@ void fixpoint::iterate() {
           //          cout << "Boxed: " << *evaluated << endl;
         }
 
-        cout << "============================" << endl;
-        cout << "evaluated:" << endl << *evaluated << endl;
+//        cout << "============================" << endl;
+//        cout << "evaluated:" << endl << *evaluated << endl;
 
         if(accumulator_set) {
-          cout << "accumulator:" << endl << *accumulator << endl;
+//          cout << "accumulator:" << endl << *accumulator << endl;
 
           accumulator = shared_ptr<domain_state>(evaluated->join(accumulator.get(), node_id));
         } else {
@@ -87,9 +87,7 @@ void fixpoint::iterate() {
           accumulator_set = true;
         }
 
-        cout << "accumulator (after):" << endl << *accumulator << endl;
-
-        dynamic_pointer_cast<global_state>(accumulator)->get_mstate()->check_consistency();
+//        cout << "accumulator (after):" << endl << *accumulator << endl;
       };
 
       analysis->record_updates();

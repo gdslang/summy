@@ -61,12 +61,12 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)),
   //  vs_finite::zero) << endl;
 
-  if(!replacement) {
-    ptr ptr_fresh = ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero);
-    ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
-    child_state->assume(n_in, {ptr_fresh, _nullptr});
+  ptr ptr_fresh = ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero);
+  ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
+  child_state->assume(n_in, {ptr_fresh, _nullptr});
+
+  if(!replacement)
     child_state->assume(n_out, {ptr_fresh, _nullptr});
-  }
   //  child_state->assign(n_out, ass_e);
 
   in_r.insert(make_pair(offset, field{size, nid_in}));
@@ -632,6 +632,7 @@ void analysis::summary_memory_state::check_consistency() {
         num_var *nv = new num_var(f_it.second.num_id);
         ptr_set_t aliases = child_state->queryAls(nv);
         delete nv;
+        assert(aliases.size() > 0);
         ptr p = ::analysis::unpack_singleton(aliases);
         //          assert(p.id != special_ptr::badptr);
         assert(*p.offset == vs_finite::zero);
@@ -758,11 +759,9 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   auto temp = assign_temporary(addr->get_lin(), addr->get_size());
   vector<num_linear *> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
-  bool force_weak = false;
   for(auto &alias : aliases) {
     //    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
     special_deref_desc_t spdd = handle_special_dereference(alias.id);
-    force_weak = force_weak || spdd.force_weak;
     if(spdd.ignore) continue;
 
     io_region io = dereference(alias.id);
@@ -790,8 +789,12 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
         lins.push_back(transLEReg(io, noo, load->get_size()));
       }
     });
-    vsv._([&](vs_open *o) { assert(false); });
-    vsv._([&](vs_top *t) { assert(false); });
+    vsv._([&](vs_open *o) {
+      lins.push_back(new num_linear_vs(value_set::top));
+    });
+    vsv._([&](vs_top *t) {
+      lins.push_back(new num_linear_vs(value_set::top));
+    });
     vs_shared_t offset_bits = *vs_finite::single(8) * alias.offset;
     offset_bits->accept(vsv);
   }
@@ -802,7 +805,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
     num_expr *rhs_expr = new num_expr_lin(new num_linear_vs(value_set::top));
     child_state->assign(lhs, rhs_expr);
     delete rhs_expr;
-  } else if(lins.size() == 1 && !force_weak) {
+  } else if(lins.size() == 1) {
     num_expr *rhs_expr = new num_expr_lin(lins[0]);
     child_state->assign(lhs, rhs_expr);
     delete rhs_expr;

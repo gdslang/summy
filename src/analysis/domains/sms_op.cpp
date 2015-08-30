@@ -40,8 +40,6 @@ using namespace summy;
 
 api::ptr analysis::unpack_singleton(api::ptr_set_t aliases) {
   aliases = als_state::normalise(aliases);
-  if(aliases.size() > 2)
-    __builtin_trap();
   assert(aliases.size() <= 2);
   optional<ptr> opt_result;
   for(auto &alias : aliases) {
