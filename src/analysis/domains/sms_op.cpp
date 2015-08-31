@@ -54,11 +54,11 @@ api::ptr analysis::unpack_singleton(api::ptr_set_t aliases) {
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-//  cout << "apply_summary" << endl;
-//  cout << "caller:" << endl
-//       << *caller << endl;
-//  cout << "summary: " << endl
-//       << *summary << endl;
+  //  cout << "apply_summary" << endl;
+  //  cout << "caller:" << endl
+  //       << *caller << endl;
+  //  cout << "summary: " << endl
+  //       << *summary << endl;
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -379,10 +379,12 @@ num_var_pairs_t(::analysis::matchPointers)(
   auto matchPointersRegion = [&](io_region &io_ra, io_region &io_rb) {
     num_var_pairs_t upcoming;
 
-//    cout << "io_ra: ";
-//    for(auto &f_it : io_ra.out_r)
+    //    cout << "io_ra: ";
+    //    for(auto &f_it : io_ra.out_r)
 
     vector<function<void()>> insertions;
+
+    //    vector<function<void()>> copy_pasters;
 
     /*
      * We first check for missing pointers in the region...
@@ -396,24 +398,30 @@ num_var_pairs_t(::analysis::matchPointers)(
           //          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
 
           field_desc_t ending_first = rpd.ending_first;
-          if(ending_first.region_first)
-            insertions.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first]() {
-//                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
-//                            ending_first.offset << endl;
-              field &inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
+          if(ending_first.region_first) {
+            insertions.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+              //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
+              //                            ending_first.offset << endl;
+              field inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
+              //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
               num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
               num_var *to = new num_var(inserted.num_id);
               b_n->copy_paste(to, from, a_n);
+              //              });
             });
-          else
-            insertions.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first]() {
-//                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
-//                            ending_first.offset << endl;
-              field &inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
+          } else {
+            insertions.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+              //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
+              //                            ending_first.offset << endl;
+              field inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
+              //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
               num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
               num_var *to = new num_var(inserted.num_id);
               a_n->copy_paste(to, from, b_n);
+              //              });
+
             });
+          }
         }
       }
       ++mri;
@@ -440,7 +448,7 @@ num_var_pairs_t(::analysis::matchPointers)(
           if(f_a.size == f_b.size) {
             num_var *f_a_nv = new num_var(f_a.num_id);
             ptr_set_t als_a = a_n->queryAls(f_a_nv);
-//            cout << "************" << *f_a_nv << ": " << als_a << endl;
+            //            cout << "************" << *f_a_nv << ": " << als_a << endl;
             delete f_a_nv;
 
             ptr p_a = unpack_singleton(als_a);
@@ -468,6 +476,9 @@ num_var_pairs_t(::analysis::matchPointers)(
       }
       ++mri;
     }
+
+    //    for(auto copy_paster : copy_pasters)
+    //      copy_paster();
 
     return upcoming;
   };
@@ -601,13 +612,13 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   }
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "compat OF" << endl;
-//    cout << *a << endl;
-//    cout << "WITH" << endl;
-//    cout << *b << endl;
+  //    cout << "++++++++++++++++++++++++++++++" << endl;
+  //    cout << "++++++++++++++++++++++++++++++" << endl;
+  //    cout << "++++++++++++++++++++++++++++++" << endl;
+  //    cout << "compat OF" << endl;
+  //    cout << *a << endl;
+  //    cout << "WITH" << endl;
+  //    cout << *b << endl;
   //  }
 
   /*
@@ -646,10 +657,12 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
    * in the deref map need to be replaced.
    */
   b_n->equate_kill(eq_aliases);
+  a_n->equate_kill(eq_aliases);
   for(auto &eq_alias : eq_aliases) {
     num_var *alias_a;
     num_var *alias_b;
     tie(alias_a, alias_b) = eq_alias;
+//    cout << "eq_alias: " << *alias_a << ", " << *alias_b << endl;
     rename_rk(b_input, alias_b->get_id(), alias_a->get_id());
     rename_rk(b_output, alias_b->get_id(), alias_a->get_id());
     delete alias_a;
