@@ -44,6 +44,7 @@ public:
   virtual void kill(std::vector<api::num_var*> vars) = 0;
   virtual void equate_kill(num_var_pairs_t vars) = 0;
   virtual void fold(num_var_pairs_t vars) = 0;
+  virtual void copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) = 0;
 
   virtual bool cleanup(api::num_var *var) = 0;
   virtual void project(api::num_vars *vars) = 0;

@@ -130,7 +130,8 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 47)
+      if(n.get_id() == 11 || n.get_id() == 35 || n.get_id() == 69 || n.get_id() == 46 || n.get_id() == 47 ||
+         n.get_id() == 80)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       else
         n.dot(out);

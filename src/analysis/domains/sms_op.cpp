@@ -379,6 +379,9 @@ num_var_pairs_t(::analysis::matchPointers)(
   auto matchPointersRegion = [&](io_region &io_ra, io_region &io_rb) {
     num_var_pairs_t upcoming;
 
+//    cout << "io_ra: ";
+//    for(auto &f_it : io_ra.out_r)
+
     vector<function<void()>> insertions;
 
     /*
@@ -394,16 +397,22 @@ num_var_pairs_t(::analysis::matchPointers)(
 
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first)
-            insertions.push_back([&io_rb, &b_n, ending_first]() {
-              //              cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
-              //              ending_first.offset << endl;
-              io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
+            insertions.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first]() {
+//                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
+//                            ending_first.offset << endl;
+              field &inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
+              num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
+              num_var *to = new num_var(inserted.num_id);
+              b_n->copy_paste(to, from, a_n);
             });
           else
-            insertions.push_back([&io_ra, &a_n, ending_first]() {
-              //              cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
-              //              ending_first.offset << endl;
-              io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
+            insertions.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first]() {
+//                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
+//                            ending_first.offset << endl;
+              field &inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
+              num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
+              num_var *to = new num_var(inserted.num_id);
+              a_n->copy_paste(to, from, b_n);
             });
         }
       }

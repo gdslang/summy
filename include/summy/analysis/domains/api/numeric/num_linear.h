@@ -30,6 +30,8 @@ public:
   virtual num_linear *copy() const = 0;
 //  virtual void add(summy::vs_shared_t vs) = 0;
 //  virtual void scale(summy::vs_shared_t vs) = 0;
+
+  virtual bool operator==(num_linear &b) = 0;
 };
 
 std::ostream &operator<<(std::ostream &out, num_linear &_this);
@@ -68,6 +70,8 @@ public:
   num_linear_term *copy() const;
 
   void accept(num_visitor &v);
+
+  virtual bool operator==(num_linear &b);
 };
 
 class num_linear_vs : public num_linear {
@@ -87,6 +91,8 @@ public:
   num_linear_vs *copy() const;
 
   void accept(num_visitor &v);
+
+  virtual bool operator==(num_linear &b);
 };
 
 }

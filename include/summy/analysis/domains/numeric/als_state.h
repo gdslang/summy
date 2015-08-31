@@ -45,6 +45,7 @@ private:
   api::ptr simplify_ptr_sum(std::vector<id_shared_t> const &pointers);
   api::num_expr *replace_pointers(api::num_expr *e);
   api::num_linear *replace_pointers(api::num_linear *l);
+  api::num_linear *replace_pointers(std::map<id_shared_t, id_shared_t, id_less_no_version> &id_gen_map, api::num_linear *l);
   /*
    * Todo: Remove (siehe als_state.cpp oben)
    */
@@ -83,6 +84,7 @@ public:
   void kill(std::vector<api::num_var *> vars);
   void equate_kill(num_var_pairs_t vars);
   void fold(num_var_pairs_t vars);
+  void copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state);
 
   bool cleanup(api::num_var *var);
   void project(api::num_vars *vars);

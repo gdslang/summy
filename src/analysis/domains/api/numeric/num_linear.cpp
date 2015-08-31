@@ -52,6 +52,16 @@ void analysis::api::num_linear_term::accept(num_visitor &v) {
   v.visit(this);
 }
 
+bool analysis::api::num_linear_term::operator==(num_linear &b) {
+  bool equals = false;
+  num_visitor nv;
+  nv._([&](num_linear_term *nt_b) {
+    equals = scale == nt_b->scale && *var == *nt_b->var && *next == *nt_b->next;
+  });
+  b.accept(nv);
+  return equals;
+}
+
 /*
  * num_linear_vs
  */
@@ -70,4 +80,14 @@ void analysis::api::num_linear_vs::accept(num_visitor &v) {
 
 num_linear_vs *analysis::api::num_linear_vs::copy() const {
   return new num_linear_vs(value_set);
+}
+
+bool analysis::api::num_linear_vs::operator==(num_linear &b) {
+  bool equals = false;
+  num_visitor nv;
+  nv._([&](num_linear_vs *lvs_b) {
+    equals = *value_set == lvs_b->value_set;
+  });
+  b.accept(nv);
+  return equals;
 }

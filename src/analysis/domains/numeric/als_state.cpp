@@ -90,16 +90,17 @@ ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers) {
 api::num_expr *analysis::als_state::replace_pointers(api::num_expr *e) {
   num_expr *result;
   num_visitor nv;
-  nv._([&](num_expr_cmp *ec) { result = new num_expr_cmp(replace_pointers(ec->get_opnd()), ec->get_op()); });
-  nv._([&](num_expr_lin *el) { result = new num_expr_lin(replace_pointers(el->get_inner())); });
+  std::map<id_shared_t, id_shared_t, id_less_no_version> id_gen_map;
+  nv._([&](num_expr_cmp *ec) { result = new num_expr_cmp(replace_pointers(id_gen_map, ec->get_opnd()), ec->get_op()); });
+  nv._([&](num_expr_lin *el) { result = new num_expr_lin(replace_pointers(id_gen_map, el->get_inner())); });
   nv._([&](num_expr_bin *el) {
-    result = new num_expr_bin(replace_pointers(el->get_opnd1()), el->get_op(), replace_pointers(el->get_opnd2()));
+    result = new num_expr_bin(replace_pointers(id_gen_map, el->get_opnd1()), el->get_op(), replace_pointers(id_gen_map, el->get_opnd2()));
   });
   e->accept(nv);
   return result;
 }
 
-api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
+api::num_linear *analysis::als_state::replace_pointers(std::map<id_shared_t, id_shared_t, id_less_no_version> &id_gen_map, api::num_linear *l) {
   map<id_shared_t, int64_t, id_less_no_version> terms;
   num_linear *result;
   num_visitor nv;
@@ -111,8 +112,12 @@ api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
       if(aliases.size() == 1) {
         terms[*aliases.begin()] += lt->get_scale();
         terms[lt->get_var()->get_id()] += lt->get_scale();
-      } else
-        terms[numeric_id::generate()] += lt->get_scale();
+      } else {
+        auto gen_it = id_gen_map.find(lt->get_var()->get_id());
+        if(gen_it == id_gen_map.end())
+          tie(gen_it, ignore) = id_gen_map.insert(make_pair(lt->get_var()->get_id(), numeric_id::generate()));
+        terms[gen_it->second] += lt->get_scale();
+      }
     } else
       terms[lt->get_var()->get_id()] = lt->get_scale();
   });
@@ -121,6 +126,11 @@ api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
   for(auto term_mapping : terms)
     result = new num_linear_term(term_mapping.second, new num_var(term_mapping.first), result);
   return result;
+}
+
+api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
+  std::map<id_shared_t, id_shared_t, id_less_no_version> id_gen_map;
+  return replace_pointers(id_gen_map, l);
 }
 
 als_state *analysis::als_state::domop(domain_state *other, size_t current_node, domopper_t domopper) {
@@ -506,6 +516,21 @@ void als_state::equate_kill(num_var_pairs_t vars) {
 
 void als_state::fold(num_var_pairs_t vars) {
   child_state->fold(vars);
+}
+
+void als_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) {
+  als_state *from_state_als = dynamic_cast<als_state*>(from_state);
+
+  /*
+   * We first insert and then overwrite, so 'to' is actually contained in the state
+   */
+//  assert(elements.find(to->get_id()) == elements.end());
+  auto from_it = from_state_als->elements.find(from->get_id());
+//  assert(from_it != from_state_als->elements.end());
+  if(from_it != from_state_als->elements.end())
+    elements[to->get_id()] = from_it->second;
+
+  child_state->copy_paste(to, from, from_state_als->child_state);
 }
 
 api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {

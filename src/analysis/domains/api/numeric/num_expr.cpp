@@ -149,11 +149,11 @@ void analysis::api::num_expr_bin::put(std::ostream &out) {
       break;
     }
     case OR: {
-      out << "&";
+      out << "|";
       break;
     }
     case XOR: {
-      out << "&";
+      out << "^";
       break;
     }
   }

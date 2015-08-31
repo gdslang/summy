@@ -547,6 +547,15 @@ void analysis::equality_state::fold(num_var_pairs_t vars) {
   throw string("analysis::equality_state::fold(num_var_pairs_t)");
 }
 
+void analysis::equality_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) {
+  cout << "analysis::equality_state::copy_paste(" << *to << ", " << *from << ", ...)" << endl;
+  /*
+   * Todo: ...
+   */
+  equality_state *from_state_eq = dynamic_cast<equality_state*>(from_state);
+  child_state->copy_paste(to, from, from_state_eq->child_state);
+}
+
 bool analysis::equality_state::cleanup(api::num_var *var) {
   bool var_required = true;
   auto var_it = back_map.find(var->get_id());

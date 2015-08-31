@@ -15,3 +15,7 @@ std::ostream &analysis::api::operator <<(std::ostream &out, num_var &_this) {
 void analysis::api::num_vars::add(id_set_t const &ids) {
   this->ids.insert(ids.begin(), ids.end());
 }
+
+bool analysis::api::num_var::operator==(num_var &b) {
+  return *id == *b.id;
+}

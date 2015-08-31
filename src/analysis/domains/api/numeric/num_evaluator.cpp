@@ -116,6 +116,13 @@ summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_expr *exp) {
         result = *opnd1 / opnd2;
         break;
       }
+      case XOR: {
+        if(*bin->get_opnd1() == *bin->get_opnd2())
+          result = vs_finite::zero;
+        else
+          result = value_set::top;
+        break;
+      }
       default: {
         result = value_set::top;
         break;

@@ -33,6 +33,8 @@ public:
     return id;
   }
 
+  bool operator==(num_var &b);
+
   friend std::ostream &operator<< (std::ostream &out, num_var &_this);
 };
 

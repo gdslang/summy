@@ -170,7 +170,7 @@ void value_sets::vsd_state::weak_assign(num_var *lhs, num_expr *rhs) {
 }
 
 void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
-//  cout << "vsd_state::assume(" << *cmp << ")" << endl;
+  //  cout << "vsd_state::assume(" << *cmp << ")" << endl;
   auto assume_zero = [&](vector<num_linear *> lins) {
     vector<vector<num_expr *>> fp_exprss;
     struct fp_lin {
@@ -327,6 +327,15 @@ void analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {
   throw string("analysis::value_sets::vsd_state::assume(num_var_pairs_t)");
 }
 
+void analysis::value_sets::vsd_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) {
+  vsd_state *from_state_vsd = dynamic_cast<vsd_state*>(from_state);
+
+  auto from_it = from_state_vsd->elements.find(from->get_id());
+//  assert(from_it != from_state_vsd->elements.end());
+  if(from_it != from_state_vsd->elements.end())
+    elements[to->get_id()] = from_it->second;
+}
+
 bool analysis::value_sets::vsd_state::cleanup(api::num_var *var) {
   if(*queryVal(var) == value_set::top) {
     elements.erase(var->get_id());
@@ -364,7 +373,7 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
   //    cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
   vs_shared_t nv_val = queryVal(nv);
 
-//  cout << *nv_val << endl;
+  //  cout << *nv_val << endl;
 
   map<id_shared_t, vector<vs_shared_t>, id_less_no_version> symbol_offsets;
 
@@ -391,9 +400,7 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
       //  vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
     }
   });
-  vsv._default([&](value_set *v) {
-    symbol_offsets[special_ptr::badptr].push_back(vs_finite::zero);
-  });
+  vsv._default([&](value_set *v) { symbol_offsets[special_ptr::badptr].push_back(vs_finite::zero); });
   nv_val->accept(vsv);
 
   ptr_set_t result;
@@ -410,8 +417,8 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     result.insert(ptr(so_it.first, offsets_vs.value()));
   }
 
-//      if(result.size() > 0) cout << "+++" << result << endl;
-//  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
+  //      if(result.size() > 0) cout << "+++" << result << endl;
+  //  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
 
   return result;
 }
@@ -479,7 +486,6 @@ summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(num_linear *lin) {
 
 summy::vs_shared_t analysis::value_sets::vsd_state::queryVal(api::num_var *nv) {
   return num_ev.queryVal(nv);
-  ;
 }
 
 numeric_state *analysis::value_sets::vsd_state::copy() const {
