@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    dectran dt(g, true);
+    dectran dt(g, false);
 
     dt.transduce();
     dt.register_();
@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
       if(n.get_id() == 11 || n.get_id() == 35 || n.get_id() == 69 || n.get_id() == 46 || n.get_id() == 47 ||
-         n.get_id() == 80)
+         n.get_id() == 80 || true)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       else
         n.dot(out);

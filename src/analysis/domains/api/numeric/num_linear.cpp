@@ -54,7 +54,7 @@ void analysis::api::num_linear_term::accept(num_visitor &v) {
 
 bool analysis::api::num_linear_term::operator==(num_linear &b) {
   bool equals = false;
-  num_visitor nv;
+  num_visitor nv(true);
   nv._([&](num_linear_term *nt_b) {
     equals = scale == nt_b->scale && *var == *nt_b->var && *next == *nt_b->next;
   });
@@ -84,7 +84,7 @@ num_linear_vs *analysis::api::num_linear_vs::copy() const {
 
 bool analysis::api::num_linear_vs::operator==(num_linear &b) {
   bool equals = false;
-  num_visitor nv;
+  num_visitor nv(true);
   nv._([&](num_linear_vs *lvs_b) {
     equals = *value_set == lvs_b->value_set;
   });

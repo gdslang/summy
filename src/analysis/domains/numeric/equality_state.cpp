@@ -548,7 +548,7 @@ void analysis::equality_state::fold(num_var_pairs_t vars) {
 }
 
 void analysis::equality_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) {
-  cout << "analysis::equality_state::copy_paste(" << *to << ", " << *from << ", ...)" << endl;
+//  cout << "analysis::equality_state::copy_paste(" << *to << ", " << *from << ", ...)" << endl;
   /*
    * Todo: ...
    */
