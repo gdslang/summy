@@ -389,10 +389,47 @@ num_var_pairs_t(::analysis::matchPointers)(
     /*
      * We first check for missing pointers in the region...
      */
+    struct collision_t {
+      int64_t from;
+      int64_t to;
+      uint64_t count;
+    };
+
+    auto replace_field = [&](collision_t &c) {
+      cout << "Replacing field from " << c.from << " to " << c.to << " (" << c.count << " pieces)" << endl;
+    };
+
+    optional<collision_t> io_ra_coll;
+    optional<collision_t> io_rb_coll;
 
     merge_region_iterator mri(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
+      if(rpd.collision) {
+        if(rpd.field_first_region()) {
+          field_desc_t f_ra = *rpd.field_first_region();
+          if(f_ra.f.size > 0) {
+            if(io_ra_coll) {
+              io_ra_coll->count++;
+              io_ra_coll->to = f_ra.offset + f_ra.f.size - 1;
+            } else
+              io_ra_coll = collision_t{f_ra.offset, f_ra.offset + (int64_t)f_ra.f.size, 1};
+          }
+        } else if(io_ra_coll)
+          replace_field(*io_ra_coll);
+
+        if(rpd.field_second_region()) {
+          field_desc_t f_rb = *rpd.field_second_region();
+          if(f_rb.f.size > 0) {
+            if(io_rb_coll) {
+              io_rb_coll->count++;
+              io_rb_coll->to = f_rb.offset + f_rb.f.size - 1;
+            } else
+              io_rb_coll = collision_t{f_rb.offset, f_rb.offset + (int64_t)f_rb.f.size, 1};
+          }
+        } else if(io_rb_coll)
+          replace_field(*io_rb_coll);
+      }
       if(!rpd.collision) {
         if(!rpd.ending_last) {
           //          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
@@ -666,7 +703,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     num_var *alias_a;
     num_var *alias_b;
     tie(alias_a, alias_b) = eq_alias;
-//    cout << "eq_alias: " << *alias_a << ", " << *alias_b << endl;
+    //    cout << "eq_alias: " << *alias_a << ", " << *alias_b << endl;
     rename_rk(b_input, alias_b->get_id(), alias_a->get_id());
     rename_rk(b_output, alias_b->get_id(), alias_a->get_id());
     delete alias_a;
