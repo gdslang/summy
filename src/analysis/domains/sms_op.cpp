@@ -407,6 +407,8 @@ num_var_pairs_t(::analysis::matchPointers)(
               num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
               num_var *to = new num_var(inserted.num_id);
               b_n->copy_paste(to, from, a_n);
+              delete to;
+              delete from;
               //              });
             });
           } else {
@@ -418,6 +420,8 @@ num_var_pairs_t(::analysis::matchPointers)(
               num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
               num_var *to = new num_var(inserted.num_id);
               a_n->copy_paste(to, from, b_n);
+              delete to;
+              delete from;
               //              });
 
             });
