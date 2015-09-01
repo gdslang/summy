@@ -71,5 +71,8 @@ cr_merge_region_iterator &analysis::cr_merge_region_iterator::operator++() {
       insert_f();
   }
 
+  if(mri == mri.end())
+    insert_f();
+
   return *this;
 }

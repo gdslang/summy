@@ -88,11 +88,12 @@ region_pair_desc_t merge_region_iterator::operator*() {
     } else {
       if(perfect_overlap)
         return region_pair_desc_t{false, f_a_off, f_b_off};
-      else /* no overlap */
+      else { /* no overlap */
         if(end_a < end_b)
-        return region_pair_desc_t{false, f_a_off, nullopt};
-      else
-        return region_pair_desc_t{false, f_b_off, nullopt};
+          return region_pair_desc_t{false, f_a_off, nullopt};
+        else
+          return region_pair_desc_t{false, f_b_off, nullopt};
+      }
     }
   } else if(r1_it != r1_it_end && r2_it == r2_it_end) {
     int64_t offset_a = r1_it->first;
