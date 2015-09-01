@@ -392,45 +392,36 @@ num_var_pairs_t(::analysis::matchPointers)(
     struct collision_t {
       int64_t from;
       int64_t to;
-      uint64_t count;
     };
 
-    auto replace_field = [&](collision_t &c) {
-      cout << "Replacing field from " << c.from << " to " << c.to << " (" << c.count << " pieces)" << endl;
-    };
+    optional<collision_t> collision;
 
-    optional<collision_t> io_ra_coll;
-    optional<collision_t> io_rb_coll;
+    auto resolve_collision = [&]() {
+      if(collision) {
+        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
+        collision = std::experimental::nullopt;
+      }
+    };
 
     merge_region_iterator mri(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
       if(rpd.collision) {
-        if(rpd.field_first_region()) {
-          field_desc_t f_ra = *rpd.field_first_region();
-          if(f_ra.f.size > 0) {
-            if(io_ra_coll) {
-              io_ra_coll->count++;
-              io_ra_coll->to = f_ra.offset + f_ra.f.size - 1;
-            } else
-              io_ra_coll = collision_t{f_ra.offset, f_ra.offset + (int64_t)f_ra.f.size, 1};
-          }
-        } else if(io_ra_coll)
-          replace_field(*io_ra_coll);
-
-        if(rpd.field_second_region()) {
-          field_desc_t f_rb = *rpd.field_second_region();
-          if(f_rb.f.size > 0) {
-            if(io_rb_coll) {
-              io_rb_coll->count++;
-              io_rb_coll->to = f_rb.offset + f_rb.f.size - 1;
-            } else
-              io_rb_coll = collision_t{f_rb.offset, f_rb.offset + (int64_t)f_rb.f.size, 1};
-          }
-        } else if(io_rb_coll)
-          replace_field(*io_rb_coll);
+        int64_t from;
+        if(collision) {
+          from = collision->from;
+        } else {
+          from = rpd.ending_first.offset;
+          if(rpd.ending_last)
+            from = std::min(from, rpd.ending_last->offset);
+        }
+        size_t size = rpd.ending_first.f.size;
+        if(rpd.ending_last)
+          size = std::max(size, rpd.ending_last->f.size);
+        collision = collision_t {from, from + (int64_t)size - 1};
       }
-      if(!rpd.collision) {
+      else {
+        resolve_collision();
         if(!rpd.ending_last) {
           //          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
 
@@ -467,6 +458,7 @@ num_var_pairs_t(::analysis::matchPointers)(
       }
       ++mri;
     }
+    resolve_collision();
 
     /*
      * ... insert them...
