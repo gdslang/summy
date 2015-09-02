@@ -412,15 +412,12 @@ num_var_pairs_t(::analysis::matchPointers)(
           from = collision->from;
         } else {
           from = rpd.ending_first.offset;
-          if(rpd.ending_last)
-            from = std::min(from, rpd.ending_last->offset);
+          if(rpd.ending_last) from = std::min(from, rpd.ending_last->offset);
         }
         size_t size = rpd.ending_first.f.size;
-        if(rpd.ending_last)
-          size = std::max(size, rpd.ending_last->f.size);
-        collision = collision_t {from, from + (int64_t)size - 1};
-      }
-      else {
+        if(rpd.ending_last) size = std::max(size, rpd.ending_last->f.size);
+        collision = collision_t{from, from + (int64_t)size - 1};
+      } else {
         resolve_collision();
         if(!rpd.ending_last) {
           //          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;

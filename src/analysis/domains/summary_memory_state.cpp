@@ -51,6 +51,29 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   num_var *n_in = new num_var(nid_in);
   num_var *n_out = new num_var(nid_out);
 
+  vector<int64_t> offsets;
+  vector<num_var *> replaced;
+  bool contiguous = true;
+  int64_t offset_next = offset;
+  for(auto it = in_r.lower_bound(offset); it != in_r.end(); it++) {
+    int64_t offset_current = it->first;
+    if(offset_current >= offset + (int64_t)size) break;
+    offsets.push_back(offset_current);
+    if(contiguous) {
+      if(offset_current == offset_next) {
+        field &f = it->second;
+        replaced.push_back(new num_var(f.num_id));
+        offset_next += f.size;
+      } else
+        contiguous = false;
+    }
+  }
+
+  for(auto offset : offsets) {
+    in_r.erase(offset);
+    out_r.erase(offset);
+  }
+
   /*
    * We do not assign from the input to the output so that there is no equality relation between the input
    * and output. Equality relations result in tests to apply to all equal variables which, in turn, may result
@@ -65,8 +88,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
   child_state->assume(n_in, {ptr_fresh, _nullptr});
 
-  if(!replacement)
-    child_state->assume(n_out, {ptr_fresh, _nullptr});
+  if(!replacement) child_state->assume(n_out, {ptr_fresh, _nullptr});
   //  child_state->assign(n_out, ass_e);
 
   in_r.insert(make_pair(offset, field{size, nid_in}));
@@ -789,12 +811,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
         lins.push_back(transLEReg(io, noo, load->get_size()));
       }
     });
-    vsv._([&](vs_open *o) {
-      lins.push_back(new num_linear_vs(value_set::top));
-    });
-    vsv._([&](vs_top *t) {
-      lins.push_back(new num_linear_vs(value_set::top));
-    });
+    vsv._([&](vs_open *o) { lins.push_back(new num_linear_vs(value_set::top)); });
+    vsv._([&](vs_top *t) { lins.push_back(new num_linear_vs(value_set::top)); });
     vs_shared_t offset_bits = *vs_finite::single(8) * alias.offset;
     offset_bits->accept(vsv);
   }
