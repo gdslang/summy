@@ -88,7 +88,9 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
   child_state->assume(n_in, {ptr_fresh, _nullptr});
 
-  if(!replacement) child_state->assume(n_out, {ptr_fresh, _nullptr});
+  if(contiguous && replaced.size() > 0) {
+
+  } else if(!replacement) child_state->assume(n_out, {ptr_fresh, _nullptr});
   //  child_state->assign(n_out, ass_e);
 
   in_r.insert(make_pair(offset, field{size, nid_in}));
