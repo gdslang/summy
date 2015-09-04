@@ -51,8 +51,13 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   num_var *n_in = new num_var(nid_in);
   num_var *n_out = new num_var(nid_out);
 
+  struct field_desc_t {
+    int64_t offset;
+    field f;
+  };
+
   vector<int64_t> offsets;
-  vector<num_var *> replaced;
+  vector<field_desc_t> replaced;
   bool contiguous = true;
   int64_t offset_next = offset;
   for(auto it = in_r.lower_bound(offset); it != in_r.end(); it++) {
@@ -62,7 +67,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     if(contiguous) {
       if(offset_current == offset_next) {
         field &f = it->second;
-        replaced.push_back(new num_var(f.num_id));
+        replaced.push_back(field_desc_t { offset_current, f });
         offset_next += f.size;
       } else
         contiguous = false;
@@ -88,9 +93,17 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
   child_state->assume(n_in, {ptr_fresh, _nullptr});
 
-  if(contiguous && replaced.size() > 0) {
+  /*
+   * Todo: size > 64?
+   */
+  if(contiguous && replaced.size() > 0 && size <= 64) {
+    size_t size_acc = 0;
+    for(size_t i = replaced.size() - 1; i >= 0; i--) {
 
-  } else if(!replacement) child_state->assume(n_out, {ptr_fresh, _nullptr});
+    }
+  } else if(!replacement) {
+    child_state->assume(n_out, {ptr_fresh, _nullptr});
+  };
   //  child_state->assign(n_out, ass_e);
 
   in_r.insert(make_pair(offset, field{size, nid_in}));
