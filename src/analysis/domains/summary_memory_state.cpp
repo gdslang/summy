@@ -76,8 +76,13 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   num_var *n_out = new num_var(nid_out);
 
   for(auto offset : offsets) {
-    in_r.erase(offset);
-    out_r.erase(offset);
+    auto in_it = in_r.find(offset);
+    auto out_it = out_r.find(offset);
+    num_var *in_var = new num_var(in_it->second.num_id);
+    num_var *out_var = new num_var(out_it->second.num_id);
+    child_state->kill({ in_var, out_var });
+    in_r.erase(in_it);
+    out_r.erase(out_it);
   }
 
   /*

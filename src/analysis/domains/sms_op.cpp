@@ -748,8 +748,6 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
       auto eqk_add = [&](id_shared_t x, id_shared_t y) {
         if(!(*x == *y)) equate_kill_vars.push_back(make_tuple(new num_var(x), new num_var(y)));
       };
-      id_set_t a_kill_ids;
-      id_set_t b_kill_ids;
 
       region_t region;
 
@@ -757,10 +755,11 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
       while(mri != cr_merge_region_iterator::end(region_a, region_b)) {
         region_pair_desc_t rpd = *mri;
         if(rpd.collision) {
-          if(rpd.ending_last) {
-            a_kill_ids.insert(rpd.field_first_region().value().f.num_id);
-            b_kill_ids.insert(rpd.field_second_region().value().f.num_id);
-          }
+          /*
+           * Conflicts are now resolved during pointer machting, so there must
+           * not be any conflicts left
+           */
+          assert(false);
         } else {
           if(!rpd.ending_last) {
             //            cout << *id << endl;
@@ -784,17 +783,6 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
         delete a;
         delete b;
       }
-
-      auto kill = [&](id_set_t kill_ids, numeric_state *ns) {
-        for(auto id : kill_ids) {
-          num_var *nv_id = new num_var(id);
-          ns->kill({nv_id});
-          delete nv_id;
-        }
-      };
-
-      kill(a_kill_ids, a_n);
-      kill(b_kill_ids, b_n);
 
       result_map.insert(make_pair(id, region));
     };
