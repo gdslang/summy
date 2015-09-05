@@ -85,7 +85,27 @@ std::string c_compile(std::string program, unsigned int opt) {
 
     exit([&]() { system("rm program.c"); });
 
-    if(system(ss.str().c_str())) throw string("Unable to compile assembly program");
+    if(system(ss.str().c_str())) throw string("Unable to compile C program");
+  });
+
+  return filename;
+}
+
+std::string cpp_compile(std::string program, unsigned int opt) {
+  string filename = "program.elf";
+
+  scope_exit exit([&]() {
+    ofstream c_file;
+    c_file.open("program.cpp");
+    c_file << program << endl;
+    c_file.close();
+
+    stringstream ss;
+    ss << "clang++ -O" << opt << " program.cpp -o program.elf";
+
+    exit([&]() { system("rm program.cpp"); });
+
+    if(system(ss.str().c_str())) throw string("Unable to compile C++ program");
   });
 
   return filename;

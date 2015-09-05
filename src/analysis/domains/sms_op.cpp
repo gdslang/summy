@@ -377,14 +377,15 @@ num_var_pairs_t(::analysis::matchPointers)(
    * in one of the regions.
    */
   auto matchPointersRegion = [&](io_region &io_ra, io_region &io_rb) {
+//    cout << "Next region" << endl;
+
     num_var_pairs_t upcoming;
 
     //    cout << "io_ra: ";
     //    for(auto &f_it : io_ra.out_r)
 
     vector<function<void()>> insertions;
-
-    //    vector<function<void()>> copy_pasters;
+    vector<function<void()>> conflict_resolvers;
 
     /*
      * We first check for missing pointers in the region...
@@ -398,7 +399,21 @@ num_var_pairs_t(::analysis::matchPointers)(
 
     auto resolve_collision = [&]() {
       if(collision) {
-        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
+//        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
+        conflict_resolvers.push_back([&]() {
+//          summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
+//          summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
+//          cout << "a: " << *a_sms_before << endl;
+//          cout << "b: " << *b_sms_before << endl;
+
+          io_ra.insert(a_n, collision->from, collision->to - collision->from + 1, true);
+          io_rb.insert(b_n, collision->from, collision->to - collision->from + 1, true);
+
+//          summary_memory_state *a_sms_after = new summary_memory_state(NULL, a_n, a_in, a_out);
+//          summary_memory_state *b_sms_after = new summary_memory_state(NULL, b_n, b_in, b_out);
+//          cout << "a: " << *a_sms_after << endl;
+//          cout << "b: " << *b_sms_after << endl;
+        });
         collision = std::experimental::nullopt;
       }
     };
@@ -406,17 +421,25 @@ num_var_pairs_t(::analysis::matchPointers)(
     merge_region_iterator mri(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
+
+//      cout << "Next it, collision: " << rpd.collision << endl;
+//      if(rpd.field_first_region())
+//        cout << "First region: offset: " << rpd.field_first_region()->offset << ", size: " << rpd.field_first_region()->f.size << endl;
+//      if(rpd.field_second_region())
+//        cout << "Second region: offset: " << rpd.field_second_region()->offset << ", size: " << rpd.field_second_region()->f.size << endl;
+
       if(rpd.collision) {
+        int64_t from_current;
+        from_current = rpd.ending_first.offset;
+        if(rpd.ending_last) from_current = std::min(from_current, rpd.ending_last->offset);
         int64_t from;
-        if(collision) {
+        if(collision)
           from = collision->from;
-        } else {
-          from = rpd.ending_first.offset;
-          if(rpd.ending_last) from = std::min(from, rpd.ending_last->offset);
-        }
+        else
+          from = from_current;
         size_t size = rpd.ending_first.f.size;
         if(rpd.ending_last) size = std::max(size, rpd.ending_last->f.size);
-        collision = collision_t{from, from + (int64_t)size - 1};
+        collision = collision_t{from, from_current + (int64_t)size - 1};
       } else {
         resolve_collision();
         if(!rpd.ending_last) {
@@ -462,6 +485,9 @@ num_var_pairs_t(::analysis::matchPointers)(
      */
     for(auto inserter : insertions)
       inserter();
+
+    for(auto conflict_resolver : conflict_resolvers)
+      conflict_resolver();
 
     /*
      * and finally retrieve all matching pointer variables. Keep in mind

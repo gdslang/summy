@@ -123,6 +123,13 @@ summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_expr *exp) {
           result = value_set::top;
         break;
       }
+      case SHL: {
+        if(*opnd1 == vs_finite::zero)
+          result = vs_finite::zero;
+        else
+          result = value_set::top;
+        break;
+      }
       default: {
         result = value_set::top;
         break;

@@ -74,17 +74,32 @@ struct _analysis_result {
   }
 };
 
-static void state(_analysis_result &r, string program, bool is_c, bool gdsl_optimize) {
+enum language_t {
+  ASSEMBLY,
+  C,
+  CPP
+};
+
+static void state(_analysis_result &r, string program, language_t lang, bool gdsl_optimize) {
   SCOPED_TRACE("state()");
 
-  if(is_c) {
-    string filename = c_compile(program, 1);
-    r.elfp = new elf_provider(filename.c_str());
-  } else {
-    string ___asm = program;
-    r.elfp = asm_compile_elfp(___asm);
+  switch(lang) {
+    case ASSEMBLY: {
+      string ___asm = program;
+      r.elfp = asm_compile_elfp(___asm);
+      break;
+    }
+    case C: {
+      string filename = c_compile(program, 1);
+      r.elfp = new elf_provider(filename.c_str());
+      break;
+    }
+    case CPP: {
+      string filename = cpp_compile(program, 1);
+      r.elfp = new elf_provider(filename.c_str());
+      break;
+    }
   }
-
 
   //  binary_provider::entry_t e;
   //  tie(ignore, e) = elfp->entry("foo");
@@ -136,11 +151,15 @@ static void state(_analysis_result &r, string program, bool is_c, bool gdsl_opti
 }
 
 static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = false) {
-  state(r, _asm, false, gdsl_optimize);
+  state(r, _asm, ASSEMBLY, gdsl_optimize);
 }
 
 static void state_c(_analysis_result &r, string c, bool gdsl_optimize = false) {
-  state(r, c, true, gdsl_optimize);
+  state(r, c, C, gdsl_optimize);
+}
+
+static void state_cpp(_analysis_result &r, string c, bool gdsl_optimize = false) {
+  state(r, c, CPP, gdsl_optimize);
 }
 
 static void query_val(
@@ -1104,4 +1123,53 @@ int main(void) {\n\
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
   ASSERT_EQ(*r, vs_finite::single(122));
+}
+
+TEST_F(summary_dstack_test, CppVirtualFunctionCall) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_cpp(ar, "\n\
+#include <stdio.h>\n\
+#include <stdlib.h>\n\
+#include <string>\n\
+\n\
+struct hugo {\n\
+  virtual int foo() {\n\
+    return 99;\n\
+  }\n\
+  virtual ~hugo() { }\n\
+};\n\
+\n\
+struct inge : public hugo {\n\
+  virtual int foo() {\n\
+    return 42;\n\
+  }\n\
+  virtual ~inge() { }\n\
+};\n\
+\n\
+int main(int argc, char **argv) {\n\
+  void *addr;\n\
+\n\
+  __asm volatile ( \"mov %%r11, %0\"\n\
+    : \"=a\" (addr)\n\
+    : \"a\" (addr)\n\
+    : );\n\
+\n\
+  hugo *h = new (addr) inge();\n\
+\n\
+  long long x = h->foo();\n\
+\n\
+  __asm volatile ( \"mov %0, %%r11\"\n\
+    : \"=a\" (x)\n\
+    : \"a\" (x)\n\
+    : \"r11\");\n\
+\n\
+  __asm volatile ( \"end:\" );\n\
+\n\
+  return x;\n\
+}",
+    false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(42));
 }
