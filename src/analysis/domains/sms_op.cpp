@@ -369,14 +369,14 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return return_site;
 }
 
-num_var_pairs_t(::analysis::matchPointers)(
+num_var_pairs_t(::analysis::compatMatchSeparate)(
   relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n) {
   /*
    * Find aliases for a specific region of the given summaries. We need both
    * input and output here in order to be able to add pointers that are missing
    * in one of the regions.
    */
-  auto matchPointersRegion = [&](io_region &io_ra, io_region &io_rb) {
+  auto compatMatchSeparateRegion = [&](io_region &io_ra, io_region &io_rb) {
 //    cout << "Next region" << endl;
 
     num_var_pairs_t upcoming;
@@ -589,7 +589,7 @@ num_var_pairs_t(::analysis::matchPointers)(
     /*
      * We first collect all equalities of the current region.
      */
-    num_var_pairs_t upcoming = matchPointersRegion(rp.io_ra, rp.io_rb);
+    num_var_pairs_t upcoming = compatMatchSeparateRegion(rp.io_ra, rp.io_rb);
     for(auto upc : upcoming) {
       num_var *a;
       num_var *b;
@@ -703,7 +703,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   /*
    * The first step is implemented by finding corresponding pointer variables...
    */
-  num_var_pairs_t eq_aliases = matchPointers(a_input, a_output, a_n, b_input, b_output, b_n);
+  num_var_pairs_t eq_aliases = compatMatchSeparate(a_input, a_output, a_n, b_input, b_output, b_n);
 
   //  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
   //  cout << "before_rename: " << *before_rename << endl;
@@ -745,12 +745,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
 
     auto handle_region = [&](id_shared_t id, region_t const &region_a, region_t const &region_b) {
       num_var_pairs_t equate_kill_vars;
-      auto eqk_add = [&](id_shared_t x, id_shared_t y) {
-        if(!(*x == *y)) equate_kill_vars.push_back(make_tuple(new num_var(x), new num_var(y)));
-      };
-
       region_t region;
-
       cr_merge_region_iterator mri(region_a, region_b, region);
       while(mri != cr_merge_region_iterator::end(region_a, region_b)) {
         region_pair_desc_t rpd = *mri;
@@ -770,7 +765,9 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
           field_desc_t fd_first = rpd.field_first_region().value();
           field_desc_t fd_second = rpd.field_second_region().value();
 
-          eqk_add(fd_first.f.num_id, fd_second.f.num_id);
+          id_shared_t id_first = fd_first.f.num_id;
+          id_shared_t id_second = fd_second.f.num_id;
+          if(!(*id_first == *id_second)) equate_kill_vars.push_back(make_tuple(new num_var(id_first), new num_var(id_second)));
           region.insert(make_pair(fd_first.offset, fd_first.f));
         }
         ++mri;
