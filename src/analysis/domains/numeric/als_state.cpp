@@ -41,7 +41,7 @@ void analysis::als_state::kill(id_shared_t id) {
   auto id_it = elements.find(id);
   if(id_it != elements.end()) {
     id_shared_t id_repl;
-    id_set_t &aliases = id_it->second;
+    id_set_t const &aliases = id_it->second;
     if(aliases.size() == 1)
       id_repl = *aliases.begin();
     else
@@ -91,16 +91,19 @@ api::num_expr *analysis::als_state::replace_pointers(api::num_expr *e) {
   num_expr *result;
   num_visitor nv;
   std::map<id_shared_t, id_shared_t, id_less_no_version> id_gen_map;
-  nv._([&](num_expr_cmp *ec) { result = new num_expr_cmp(replace_pointers(id_gen_map, ec->get_opnd()), ec->get_op()); });
+  nv._(
+    [&](num_expr_cmp *ec) { result = new num_expr_cmp(replace_pointers(id_gen_map, ec->get_opnd()), ec->get_op()); });
   nv._([&](num_expr_lin *el) { result = new num_expr_lin(replace_pointers(id_gen_map, el->get_inner())); });
   nv._([&](num_expr_bin *el) {
-    result = new num_expr_bin(replace_pointers(id_gen_map, el->get_opnd1()), el->get_op(), replace_pointers(id_gen_map, el->get_opnd2()));
+    result = new num_expr_bin(
+      replace_pointers(id_gen_map, el->get_opnd1()), el->get_op(), replace_pointers(id_gen_map, el->get_opnd2()));
   });
   e->accept(nv);
   return result;
 }
 
-api::num_linear *analysis::als_state::replace_pointers(std::map<id_shared_t, id_shared_t, id_less_no_version> &id_gen_map, api::num_linear *l) {
+api::num_linear *analysis::als_state::replace_pointers(
+  std::map<id_shared_t, id_shared_t, id_less_no_version> &id_gen_map, api::num_linear *l) {
   map<id_shared_t, int64_t, id_less_no_version> terms;
   num_linear *result;
   num_visitor nv;
@@ -108,7 +111,7 @@ api::num_linear *analysis::als_state::replace_pointers(std::map<id_shared_t, id_
     lt->get_next()->accept(nv);
     auto e_it = elements.find(lt->get_var()->get_id());
     if(e_it != elements.end()) {
-      id_set_t &aliases = e_it->second;
+      id_set_t const &aliases = e_it->second;
       if(aliases.size() == 1) {
         terms[*aliases.begin()] += lt->get_scale();
         terms[lt->get_var()->get_id()] += lt->get_scale();
@@ -391,7 +394,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
             if(_vars.size() != 1) break;
           }
           default: {
-            elements[var->get_id()] = id_set_t {special_ptr::_nullptr};
+            elements[var->get_id()] = id_set_t{special_ptr::_nullptr};
             child_state->kill({var});
             break;
           }
@@ -485,10 +488,10 @@ void als_state::equate_kill(num_var_pairs_t vars) {
    *
    * Todo: cache back map
    */
-  elements_t back_map;
-  for(auto e_mapping : elements)
-    for(auto elem : e_mapping.second)
-      back_map[elem].insert(e_mapping.first);
+  auto const &back_map = elements.get_backward();
+  //  for(auto e_mapping : elements)
+  //    for(auto elem : e_mapping.second)
+  //      back_map[elem].insert(e_mapping.first);
 
   for(auto var_pair : vars) {
     num_var *a, *b;
@@ -496,7 +499,7 @@ void als_state::equate_kill(num_var_pairs_t vars) {
     auto b_it = back_map.find(b->get_id());
     if(b_it != back_map.end())
       for(auto preimage : b_it->second) {
-        auto &aliases = elements.at(preimage);
+        auto aliases = elements.at(preimage);
         //        assert(aliases_it != elements.end());
         //        id_set_t &aliases = *aliases_it;
         aliases.erase(b->get_id());
@@ -519,37 +522,36 @@ void als_state::fold(num_var_pairs_t vars) {
 }
 
 void als_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) {
-  als_state *from_state_als = dynamic_cast<als_state*>(from_state);
+  als_state *from_state_als = dynamic_cast<als_state *>(from_state);
 
   /*
    * We first insert and then overwrite, so 'to' is actually contained in the state
    */
-//  assert(elements.find(to->get_id()) == elements.end());
+  //  assert(elements.find(to->get_id()) == elements.end());
   auto from_it = from_state_als->elements.find(from->get_id());
-//  assert(from_it != from_state_als->elements.end());
-  if(from_it != from_state_als->elements.end())
-    elements[to->get_id()] = from_it->second;
+  //  assert(from_it != from_state_als->elements.end());
+  if(from_it != from_state_als->elements.end()) elements[to->get_id()] = from_it->second;
 
   child_state->copy_paste(to, from, from_state_als->child_state);
 }
 
 api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
-//    cout << "queryALS for " << *nv << endl;
-//    cout << "offset: " << *child_state->queryVal(nv) << endl;
+  //    cout << "queryALS for " << *nv << endl;
+  //    cout << "offset: " << *child_state->queryVal(nv) << endl;
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
   if(id_it == elements.end()) return child_state->queryAls(nv);
-  singleton_value_t &aliases = id_it->second;
+  singleton_value_t const &aliases = id_it->second;
   for(auto alias : aliases) {
     if(*alias == *special_ptr::_nullptr) {
       auto child_aliases = child_state->queryAls(nv);
       result.insert(child_aliases.begin(), child_aliases.end());
     } else {
-//      num_var *nv = new num_var(alias);
+      //      num_var *nv = new num_var(alias);
       vs_shared_t offset_bytes = child_state->queryVal(nv);
       //    vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
       result.insert(ptr(alias, offset_bytes));
-//      delete nv;
+      //      delete nv;
     }
   }
   return result;
@@ -648,9 +650,7 @@ api::ptr_set_t analysis::als_state::normalise(api::ptr_set_t aliases) {
     idv._([&](sm_id *sid) {
       result.insert(ptr(special_ptr::_nullptr, *vs_finite::single((int64_t)sid->get_address()) + alias.offset));
     });
-    idv._default([&](id *_id) {
-      result.insert(alias);
-    });
+    idv._default([&](id *_id) { result.insert(alias); });
     alias.id->accept(idv);
   }
   return result;
