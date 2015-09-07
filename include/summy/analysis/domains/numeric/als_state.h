@@ -40,11 +40,6 @@ private:
    * - If an alias set of a variable is empty, the state of this variable is bottom
    */
   elements_t elements;
-  elements_t back_map;
-
-  void insert(id_shared_t id, id_shared_t alias);
-  void set(id_shared_t id, id_set_t ids);
-  void erase(elements_t::iterator it);
 
   void kill(id_shared_t id);
   api::ptr simplify_ptr_sum(std::vector<id_shared_t> const &pointers);

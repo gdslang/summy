@@ -26,18 +26,6 @@ using namespace std;
 using namespace summy;
 using namespace summy::rreil;
 
-void als_state::insert(id_shared_t id, id_shared_t alias) {
-  elements[id].insert(alias);
-  back_map[alias].insert(id);
-}
-
-void als_state::erase(elements_t::iterator it) {
-  for(auto &x : it->second) {
-    back_map[x].erase(it->first);
-  }
-  elements.erase(it);
-}
-
 /*
  * Saubere Implementierung des Alias-Domain sollte eine spezielle, neue Variable
  * für den Offset verwenden und nicht diejenige, die schon für den Wert der Pointervariablen
@@ -62,7 +50,7 @@ void analysis::als_state::kill(id_shared_t id) {
     //      cout << "Assigning " << *current_val_expr << " to " << *var << endl;
     child_state->assign(id_var, kill_expr);
     delete kill_expr;
-    erase(id_it);
+    elements.erase(id_it);
   }
   delete id_var;
 }
@@ -194,7 +182,6 @@ analysis::als_state::~als_state() {
 
 void analysis::als_state::bottomify() {
   elements.clear();
-  back_map.clear();
   child_state->bottomify();
 }
 
