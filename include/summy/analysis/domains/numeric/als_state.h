@@ -12,6 +12,7 @@
 #include <summy/analysis/domains/numeric/num_evaluator.h>
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
+#include <summy/analysis/inverse_set_map.h>
 #include <cppgdsl/rreil/id/id.h>
 #include <map>
 #include <set>
@@ -25,7 +26,8 @@ typedef std::set<id_shared_t, id_less_no_version> id_set_t;
 typedef std::tuple<id_shared_t, id_set_t> singleton_t;
 typedef std::tuple_element<0, singleton_t>::type singleton_key_t;
 typedef std::tuple_element<1, singleton_t>::type singleton_value_t;
-typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> elements_t;
+//typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> elements_t;
+typedef inverse_set_map<id_shared_t, id_less_no_version> elements_t;
 
 /**
  * Alias domain state
