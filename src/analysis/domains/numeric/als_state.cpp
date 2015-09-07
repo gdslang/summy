@@ -391,7 +391,7 @@ void als_state::assume(api::num_expr_cmp *cmp) {
             if(_vars.size() != 1) break;
           }
           default: {
-            elements[var->get_id()] = {special_ptr::_nullptr};
+            elements[var->get_id()] = id_set_t {special_ptr::_nullptr};
             child_state->kill({var});
             break;
           }

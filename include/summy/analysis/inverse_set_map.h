@@ -20,9 +20,14 @@ private:
 
 public:
   struct modification_wrapper_t {
-    ELEM_T& inner;
+    set_t& inner;
 
-    modification_wrapper_t& operator=(ELEM_T &e) {
+    modification_wrapper_t& operator=(set_t &&e) {
+      inner = e;
+      return *this;
+    }
+
+    modification_wrapper_t& operator=(set_t &e) {
       inner = e;
       return *this;
     }
@@ -34,32 +39,64 @@ public:
     void insert(typename set_t::iterator from, typename set_t::iterator to) {
       inner.insert(from, to);
     }
+
+    void insert(ELEM_T const &e) {
+      inner.insert(e);
+    }
   };
 
   modification_wrapper_t operator[] (ELEM_T &&key) {
     return modification_wrapper_t { forward[key] };
   }
 
-  typename map_t::iterator find(const ELEM_T &key) const {
+  modification_wrapper_t operator[] (ELEM_T &key) {
+    return modification_wrapper_t { forward[key] };
+  }
+
+  set_t &at(ELEM_T &key) {
+    return forward.at(key);
+  }
+
+  typename map_t::const_iterator find(const ELEM_T &key) const {
     return forward.find(key);
   }
 
-  typename map_t::iterator begin() const {
+  typename map_t::iterator find(const ELEM_T &key) {
+    return forward.find(key);
+  }
+
+  std::pair<typename map_t::iterator, bool> insert(std::pair<ELEM_T, set_t> const &p) {
+    return forward.insert(p);
+  }
+
+  typename map_t::const_iterator begin() const {
     return forward.begin();
   }
 
-  typename map_t::iterator end() const {
+  typename map_t::iterator begin() {
+    return forward.begin();
+  }
+
+  typename map_t::const_iterator end() const {
     return forward.end();
   }
 
-  typename map_t::iterator clear() {
-    return forward.clear();
+  typename map_t::iterator end() {
+    return forward.end();
+  }
+
+  void clear() {
+    forward.clear();
+  }
+
+  void erase(ELEM_T &&e) {
+    forward.erase(e);
   }
 
   void erase(typename map_t::const_iterator it) {
-    for(auto &e : it.second) {
-      backward[e].erase(it.first);
-    }
+//    for(auto &e : it.second) {
+//      backward[e].erase(it.first);
+//    }
     forward.erase(it);
   }
 };
