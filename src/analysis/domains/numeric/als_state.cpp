@@ -489,22 +489,42 @@ void als_state::equate_kill(num_var_pairs_t vars) {
    * Todo: cache back map
    */
   auto const &back_map = elements.get_backward();
-  //  for(auto e_mapping : elements)
-  //    for(auto elem : e_mapping.second)
-  //      back_map[elem].insert(e_mapping.first);
+
+//  elements_t back_map_old;
+//  for(auto e_mapping : elements)
+//    for(auto elem : e_mapping.second)
+//      back_map_old[elem].insert(e_mapping.first);
+//  for(auto &mapping : back_map_old) {
+//    cout << *mapping.first << " -> {";
+//    for(auto &e : mapping.second)
+//      cout << *e << ", ";
+//    cout << "}, ";
+//  }
+//  cout << endl;
+
 
   for(auto var_pair : vars) {
     num_var *a, *b;
     tie(a, b) = var_pair;
+
+    vector<id_shared_t> to_replace;
+
+//    cout << "~: " << (back_map.find(b->get_id()) != back_map.end()) << endl;
+//    cout << "+: " << (back_map_old.find(b->get_id()) != back_map_old.end()) << endl;
+
     auto b_it = back_map.find(b->get_id());
     if(b_it != back_map.end())
-      for(auto preimage : b_it->second) {
-        auto aliases = elements.at(preimage);
-        //        assert(aliases_it != elements.end());
-        //        id_set_t &aliases = *aliases_it;
-        aliases.erase(b->get_id());
-        aliases.insert(a->get_id());
-      }
+      for(auto preimage : b_it->second)
+        to_replace.push_back(preimage);
+
+    /*
+     * Todo: Is it okay to modify 'elements' during iteration?
+     */
+    for(id_shared_t preimage : to_replace) {
+      auto aliases = elements.at(preimage);
+      aliases.erase(b->get_id());
+      aliases.insert(a->get_id());
+    }
   }
 
   for(auto var_pair : vars) {
