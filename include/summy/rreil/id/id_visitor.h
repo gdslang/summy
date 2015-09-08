@@ -51,6 +51,8 @@ public:
   void _(std::function<void(special_ptr *)> c) {
     this->spcial_ptr_callback = c;
   }
+
+  using gdsl::rreil::id_visitor::_;
 };
 }
 }

@@ -486,7 +486,7 @@ void als_state::equate_kill(num_var_pairs_t vars) {
   /*
    * Build back map
    *
-   * Todo: cache back map
+   * Todo: We don't need the null/bad pointer in there!
    */
   auto const &back_map = elements.get_backward();
 

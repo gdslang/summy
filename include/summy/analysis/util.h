@@ -9,6 +9,10 @@
 #include <cppgdsl/rreil/id/id.h>
 #include <memory>
 #include <string>
+#include <summy/rreil/id/id_visitor.h>
+#include <experimental/optional>
+
+#include <vector>
 
 namespace analysis {
 
@@ -19,6 +23,13 @@ std::string print_id_no_version(std::shared_ptr<gdsl::rreil::id> x);
  * is ignored.
  */
 struct id_less_no_version {
+  static std::vector<std::experimental::optional<bool>> less;
+  static summy::rreil::id_visitor iv_a;
+  static summy::rreil::id_visitor iv_b;
+
+  static summy::rreil::id_visitor construct_visitors();
+
+  bool foo(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b) const;
   bool operator()(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b) const;
 };
 
