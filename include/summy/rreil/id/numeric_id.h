@@ -20,12 +20,17 @@ private:
   int_t counter;
 
   void put(std::ostream &out);
+
+  static size_t subclass_counter;
 public:
   numeric_id(int_t counter) :
     counter(counter) {
   }
   ~numeric_id();
 
+  size_t get_subclass_counter() {
+    return subclass_counter;
+  }
   int_t get_counter() {
     return counter;
   }

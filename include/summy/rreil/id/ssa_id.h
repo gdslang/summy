@@ -20,11 +20,17 @@ private:
   size_t version;
 
   void put(std::ostream &out);
+
+  static size_t subclass_counter;
 public:
   ssa_id(gdsl::rreil::id *id, size_t version) :
       id(id), version(version) {
   }
   ~ssa_id();
+
+  size_t get_subclass_counter() {
+    return subclass_counter;
+  }
 
   gdsl::rreil::id *get_id() {
     return id;

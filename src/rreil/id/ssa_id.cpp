@@ -16,6 +16,8 @@ void ssa_id::put(std::ostream &out) {
   out << *id << "_" << version;
 }
 
+size_t summy::rreil::ssa_id::subclass_counter = gdsl::rreil::id::subclass_counter++;
+
 ssa_id::~ssa_id() {
   delete id;
 }

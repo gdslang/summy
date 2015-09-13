@@ -5,6 +5,7 @@
  *      Author: Julian Kranz
  */
 
+#include <cppgdsl/rreil/id/id.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/numeric_id.h>
 
@@ -14,6 +15,8 @@ using namespace std;
 void summy::rreil::numeric_id::put(std::ostream &out) {
   out << "#" << counter;
 }
+
+size_t summy::rreil::numeric_id::subclass_counter = gdsl::rreil::id::subclass_counter++;
 
 summy::rreil::numeric_id::~numeric_id() {
 }

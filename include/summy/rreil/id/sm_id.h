@@ -30,9 +30,14 @@ private:
 
   void put(std::ostream &out);
 
+  static size_t subclass_counter;
 public:
   sm_id(std::string symbol, void *address) : symbol(symbol), address(address) {}
   ~sm_id();
+
+  size_t get_subclass_counter() {
+    return subclass_counter;
+  }
 
   std::string get_symbol() {
     return symbol;

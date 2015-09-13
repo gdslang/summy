@@ -5,6 +5,7 @@
  *      Author: Julian Kranz
  */
 
+#include <cppgdsl/rreil/id/id.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/memory_id.h>
 
@@ -15,6 +16,8 @@ void summy::rreil::memory_id::put(std::ostream &out) {
   out << *inner;
   out << '>';
 }
+
+size_t summy::rreil::memory_id::subclass_counter = gdsl::rreil::id::subclass_counter++;
 
 summy::rreil::memory_id::~memory_id() {
 }

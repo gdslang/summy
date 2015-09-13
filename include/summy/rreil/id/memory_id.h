@@ -21,11 +21,17 @@ private:
   std::shared_ptr<gdsl::rreil::id> inner;
 
   void put(std::ostream &out);
+
+  static size_t subclass_counter;
 public:
   memory_id(int_t deref, std::shared_ptr<gdsl::rreil::id> inner) :
       deref(deref), inner(inner) {
   }
   ~memory_id();
+
+  size_t get_subclass_counter() {
+    return subclass_counter;
+  }
 
   int_t get_deref() {
     return deref;

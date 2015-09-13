@@ -25,6 +25,8 @@ void summy::rreil::special_ptr::put(std::ostream &out) {
   out << ">";
 }
 
+size_t summy::rreil::special_ptr::subclass_counter = gdsl::rreil::id::subclass_counter++;
+
 summy::rreil::special_ptr::~special_ptr() {}
 
 bool summy::rreil::special_ptr::operator==(gdsl::rreil::id &other) const {

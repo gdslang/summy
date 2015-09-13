@@ -27,9 +27,14 @@ private:
 
   void put(std::ostream &out);
 
+  static size_t subclass_counter;
 public:
   special_ptr(special_ptr_kind kind) : kind(kind) {}
   ~special_ptr();
+
+  size_t get_subclass_counter() {
+    return subclass_counter;
+  }
 
   special_ptr_kind get_kind() {
     return kind;
