@@ -35,7 +35,7 @@ public:
   sm_id(std::string symbol, void *address) : symbol(symbol), address(address) {}
   ~sm_id();
 
-  size_t get_subclass_counter() {
+  size_t get_subclass_counter() const {
     return subclass_counter;
   }
 
@@ -48,6 +48,7 @@ public:
   }
 
   bool operator==(gdsl::rreil::id &other) const;
+  bool operator<(id const& other) const;
   void accept(gdsl::rreil::id_visitor &v);
 
   static std::shared_ptr<gdsl::rreil::id> from_symbol(analysis::symbol symb);

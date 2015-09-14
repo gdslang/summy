@@ -29,7 +29,7 @@ public:
   }
   ~memory_id();
 
-  size_t get_subclass_counter() {
+  size_t get_subclass_counter() const {
     return subclass_counter;
   }
 
@@ -42,6 +42,7 @@ public:
   }
 
   bool operator==(gdsl::rreil::id &other) const;
+  bool operator<(id const& other) const;
   void accept(gdsl::rreil::id_visitor &v);
 };
 

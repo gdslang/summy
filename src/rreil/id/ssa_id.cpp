@@ -36,3 +36,18 @@ bool summy::rreil::ssa_id::operator ==(gdsl::rreil::id &other) const {
   other.accept(iv);
   return equals;
 }
+
+bool summy::rreil::ssa_id::operator<(const class id &other) const {
+  size_t scc_me = subclass_counter;
+  size_t scc_other = other.get_subclass_counter();
+  if(scc_me == scc_other) {
+    ssa_id const &other_casted = dynamic_cast<ssa_id const &>(other);
+    if(version < other_casted.version)
+      return true;
+    else if(version > other_casted.version)
+      return false;
+    else
+      return *id < *other_casted.id;
+  } else
+    return scc_me < scc_other;
+}

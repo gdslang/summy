@@ -31,6 +31,16 @@ bool summy::rreil::numeric_id::operator ==(gdsl::rreil::id &other) const {
   return equals;
 }
 
+bool summy::rreil::numeric_id::operator<(const id &other) const {
+  size_t scc_me = subclass_counter;
+  size_t scc_other = other.get_subclass_counter();
+  if(scc_me == scc_other) {
+    numeric_id const &other_casted = dynamic_cast<numeric_id const &>(other);
+    return counter < other_casted.counter;
+  } else
+    return scc_me < scc_other;
+}
+
 void summy::rreil::numeric_id::accept(gdsl::rreil::id_visitor &v) {
   auto &summy_v = dynamic_cast<summy::rreil::id_visitor&>(v);
   summy_v.visit(this);
