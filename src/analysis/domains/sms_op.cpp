@@ -71,7 +71,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
    * certain offsets. The mapping is established from the structure of the memory
    * of the summary.
    */
-  map<id_shared_t, ptr_set_t, id_less_no_version> ptr_map;
+  map<id_shared_t, ptr_set_t, id_less> ptr_map;
 
   /*
    * Todo: Handling of null pointer and bad pointer?
@@ -79,7 +79,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   ptr_map.insert(make_pair(special_ptr::_nullptr, ptr_set_t{ptr(special_ptr::_nullptr, vs_finite::zero)}));
   ptr_map.insert(make_pair(special_ptr::badptr, ptr_set_t{ptr(special_ptr::badptr, vs_finite::zero)}));
 
-  typedef std::set<id_shared_t, id_less_no_version> alias_queue_t;
+  typedef std::set<id_shared_t, id_less> alias_queue_t;
   alias_queue_t ptr_worklist;
 
   auto offsets_bytes_to_bits_base = [&](int64_t base, ptr_set_t const &region_keys_c) {
@@ -203,7 +203,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   /*
    * We build a ptr_map_rev and a conflict region map in order to deal with unexpected aliasing situations
    */
-  map<id_shared_t, ptr_set_t, id_less_no_version> ptr_map_rev;
+  map<id_shared_t, ptr_set_t, id_less> ptr_map_rev;
   for(auto &ptr_mapping : ptr_map)
     for(auto &p_c : ptr_mapping.second)
       if(summary->output.deref.find(ptr_mapping.first) != summary->output.deref.end())

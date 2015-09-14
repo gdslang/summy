@@ -375,7 +375,7 @@ api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
 
   //  cout << *nv_val << endl;
 
-  map<id_shared_t, vector<vs_shared_t>, id_less_no_version> symbol_offsets;
+  map<id_shared_t, vector<vs_shared_t>, id_less> symbol_offsets;
 
   value_set_visitor vsv(true);
   vsv._([&](vs_finite *vf) {

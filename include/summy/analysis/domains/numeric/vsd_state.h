@@ -26,7 +26,7 @@ namespace value_sets {
 typedef std::tuple<id_shared_t, summy::vs_shared_t> singleton_t;
 typedef std::tuple_element<0, singleton_t>::type singleton_key_t;
 typedef std::tuple_element<1, singleton_t>::type singleton_value_t;
-typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> elements_t;
+typedef std::map<singleton_key_t, singleton_value_t, id_less> elements_t;
 
 /**
  * Value set domain state

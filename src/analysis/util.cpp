@@ -37,13 +37,9 @@ string analysis::print_id_no_version(std::shared_ptr<gdsl::rreil::id> x) {
 
 bool analysis::id_less_no_version::operator()(
   std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b) const {
+  return print_id_no_version(a).compare(print_id_no_version(b)) < 0;
+}
 
-//  cout << "-------" << endl;
-  if(*a < *b && *b < *a)
-    cout << *a << " <> " << *b << endl;
-  if(!(*a < *b) && !(*b < *a))
-    if(print_id_no_version(a).compare(print_id_no_version(b)) != 0)
-    cout << *a << " <==> " << *b << endl;
-
+bool analysis::id_less::operator()(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b) const {
   return *a < *b;
 }

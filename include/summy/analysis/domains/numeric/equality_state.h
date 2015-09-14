@@ -19,12 +19,12 @@ namespace api {
 class num_linear;
 }
 
-typedef std::set<id_shared_t, id_less_no_version> id_set_t;
+typedef std::set<id_shared_t, id_less> id_set_t;
 typedef std::tuple<id_shared_t, id_set_t> singleton_t;
 typedef std::tuple_element<0, singleton_t>::type singleton_key_t;
 typedef std::tuple_element<1, singleton_t>::type singleton_value_t;
-typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> eq_elements_t;
-typedef std::map<id_shared_t, id_shared_t, id_less_no_version> back_map_t;
+typedef std::map<singleton_key_t, singleton_value_t, id_less> eq_elements_t;
+typedef std::map<id_shared_t, id_shared_t, id_less> back_map_t;
 
 /**
  * Equality domain state

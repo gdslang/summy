@@ -14,9 +14,9 @@ using namespace summy;
 using namespace std;
 
 bool ptr::operator<(const ptr &other) const {
-  if(id_less_no_version()(id, other.id))
+  if(id_less()(id, other.id))
     return true;
-  else if(id_less_no_version()(other.id, id))
+  else if(id_less()(other.id, id))
     return false;
   else
     return vs_total_less()(offset, other.offset);

@@ -27,7 +27,7 @@ typedef std::map<int64_t, field> region_t;
 /*
  * region_map: memory id -> memory region
  */
-typedef std::map<id_shared_t, region_t, id_less_no_version> region_map_t;
+typedef std::map<id_shared_t, region_t, id_less> region_map_t;
 /*
  * deref: numeric id -> memory region
  */

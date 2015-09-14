@@ -26,4 +26,8 @@ struct id_less_no_version {
   bool operator()(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b) const;
 };
 
+struct id_less {
+  bool operator()(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b) const;
+};
+
 }

@@ -90,7 +90,7 @@ ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers) {
 api::num_expr *analysis::als_state::replace_pointers(api::num_expr *e) {
   num_expr *result;
   num_visitor nv;
-  std::map<id_shared_t, id_shared_t, id_less_no_version> id_gen_map;
+  std::map<id_shared_t, id_shared_t, id_less> id_gen_map;
   nv._(
     [&](num_expr_cmp *ec) { result = new num_expr_cmp(replace_pointers(id_gen_map, ec->get_opnd()), ec->get_op()); });
   nv._([&](num_expr_lin *el) { result = new num_expr_lin(replace_pointers(id_gen_map, el->get_inner())); });
@@ -103,8 +103,8 @@ api::num_expr *analysis::als_state::replace_pointers(api::num_expr *e) {
 }
 
 api::num_linear *analysis::als_state::replace_pointers(
-  std::map<id_shared_t, id_shared_t, id_less_no_version> &id_gen_map, api::num_linear *l) {
-  map<id_shared_t, int64_t, id_less_no_version> terms;
+  std::map<id_shared_t, id_shared_t, id_less> &id_gen_map, api::num_linear *l) {
+  map<id_shared_t, int64_t, id_less> terms;
   num_linear *result;
   num_visitor nv;
   nv._([&](num_linear_term *lt) {
@@ -132,7 +132,7 @@ api::num_linear *analysis::als_state::replace_pointers(
 }
 
 api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
-  std::map<id_shared_t, id_shared_t, id_less_no_version> id_gen_map;
+  std::map<id_shared_t, id_shared_t, id_less> id_gen_map;
   return replace_pointers(id_gen_map, l);
 }
 

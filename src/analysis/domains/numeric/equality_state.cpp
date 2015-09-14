@@ -46,7 +46,7 @@ equality_state *analysis::equality_state::join_widen(domain_state *other, size_t
 
 api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
   //  cout << "simp " << *l << endl;
-  map<id_shared_t, int64_t, id_less_no_version> id_scales;
+  map<id_shared_t, int64_t, id_less> id_scales;
   num_linear *lin_simplified;
   num_visitor nv;
   nv._([&](num_linear_term *nt) {
@@ -125,7 +125,7 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
   //  second = *vw_it;
   id_shared_t first;
   id_shared_t second;
-  tie(first, second) = tsortc(id_less_no_version(), rep(v->get_id()), rep(w->get_id()));
+  tie(first, second) = tsortc(id_less(), rep(v->get_id()), rep(w->get_id()));
 
   auto insert = [&](auto id) {
     elements[first].insert(id);

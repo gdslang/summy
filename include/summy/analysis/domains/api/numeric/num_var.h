@@ -15,7 +15,7 @@ namespace analysis {
 namespace api {
 
 typedef std::shared_ptr<gdsl::rreil::id> id_shared_t;
-typedef std::set<id_shared_t, id_less_no_version> id_set_t;
+typedef std::set<id_shared_t, id_less> id_set_t;
 
 class num_var {
 private:
