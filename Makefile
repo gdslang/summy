@@ -43,9 +43,12 @@ demo_ismt: all
 .PHONY: demo_dstack
 demo_dstack: all
 	$(MAKE) -C exec/demo_dstack/
-.PHONY: test
+.PHONY: test_build
 test: all
-	$(MAKE) -C exec/tester/ && exec/tester/summy-tester
+	$(MAKE) -C exec/tester/
+.PHONY: test_build
+test_build: test
+	exec/tester/summy-tester
 
 .PHONY: clean
 clean:
