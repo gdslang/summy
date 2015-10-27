@@ -8,7 +8,7 @@
 #pragma once
 #include <summy/analysis/domains/numeric/numeric_state.h>
 #include <summy/analysis/domains/api/api.h>
-#include <summy/analysis/domains/api/ptr_set.h>
+#include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/numeric/num_evaluator.h>
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>

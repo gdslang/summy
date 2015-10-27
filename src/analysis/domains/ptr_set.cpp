@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/domains/api/ptr_set.h>
+#include <summy/analysis/domains/ptr_set.h>
 #include <summy/value_set/vs_compare.h>
 
 using namespace analysis;

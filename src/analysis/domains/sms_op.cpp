@@ -11,7 +11,7 @@
 #include <summy/analysis/domains/api/numeric/num_expr.h>
 #include <summy/analysis/domains/api/numeric/num_linear.h>
 #include <summy/analysis/domains/api/numeric/num_var.h>
-#include <summy/analysis/domains/api/ptr_set.h>
+#include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/cr_merge_region_iterator.h>
 #include <summy/analysis/domains/merge_region_iterator.h>
 #include <summy/analysis/domains/numeric/als_state.h>

@@ -16,8 +16,6 @@
 #include "memory/mem_expr.h"
 #include "memory/mem_visitor.h"
 
-#include "ptr_set.h"
-
 #include <memory>
 #include <set>
 
