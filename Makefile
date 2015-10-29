@@ -44,10 +44,10 @@ demo_ismt: all
 demo_dstack: all
 	$(MAKE) -C exec/demo_dstack/
 .PHONY: test_build
-test: all
+test_build: all
 	$(MAKE) -C exec/tester/
-.PHONY: test_build
-test_build: test
+.PHONY: test
+test: test_build
 	exec/tester/summy-tester
 
 .PHONY: clean
