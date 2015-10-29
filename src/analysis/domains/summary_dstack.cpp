@@ -26,6 +26,7 @@
 #include <functional>
 #include <assert.h>
 #include <summy/analysis/domains/sms_op.h>
+#include <summy/rreil/id/memory_id.h>
 #include <experimental/optional>
 
 using cfg::address_node;
@@ -100,6 +101,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             shared_ptr<summary_memory_state> summary = shared_ptr<summary_memory_state>(sms_bottom());
 
             ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
+            ptr_set_t field_req_ptrs;
             //                        cout << *b->get_target() << endl;
             //                        cout << callee_aliases << endl;
             for(auto ptr : callee_aliases) {
@@ -111,6 +113,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   is_text = true;
                   text_address = sid->get_address();
                 }
+              });
+              idv._([&](memory_id *mid)  {
+//                cout << "There seems to be an unkown function pointer :/" << endl;
+                field_req_ptrs.insert(ptr);
               });
               ptr.id->accept(idv);
               if(!is_text) continue;
