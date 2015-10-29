@@ -44,7 +44,7 @@ private:
   elements_t elements;
 
   void kill(id_shared_t id);
-  api::ptr simplify_ptr_sum(std::vector<id_shared_t> const &pointers);
+  ptr simplify_ptr_sum(std::vector<id_shared_t> const &pointers);
   api::num_expr *replace_pointers(api::num_expr *e);
   api::num_linear *replace_pointers(api::num_linear *l);
   api::num_linear *replace_pointers(std::map<id_shared_t, id_shared_t, id_less> &id_gen_map, api::num_linear *l);
@@ -78,11 +78,11 @@ public:
   als_state *narrow(domain_state *other, size_t current_node);
 
   void assign(api::num_var *lhs, api::num_expr *rhs, bool weak);
-  void assign(api::num_var *lhs, api::ptr_set_t aliases);
+  void assign(api::num_var *lhs, ptr_set_t aliases);
   void assign(api::num_var *lhs, api::num_expr *rhs);
   void weak_assign(api::num_var *lhs, api::num_expr *rhs);
   void assume(api::num_expr_cmp *cmp);
-  void assume(api::num_var *lhs, api::ptr_set_t aliases);
+  void assume(api::num_var *lhs, ptr_set_t aliases);
   void kill(std::vector<api::num_var *> vars);
   void equate_kill(num_var_pairs_t vars);
   void fold(num_var_pairs_t vars);
@@ -92,7 +92,7 @@ public:
   void project(api::num_vars *vars);
   api::num_vars *vars();
 
-  api::ptr_set_t queryAls(api::num_var *nv);
+  ptr_set_t queryAls(api::num_var *nv);
   summy::vs_shared_t queryVal(api::num_linear *lin);
   summy::vs_shared_t queryVal(api::num_var *nv);
 
@@ -102,7 +102,7 @@ public:
    * Re-offset static memory aliases to the null pointer. Static memory ids
    * may in general be a bad idea; maybe, they should be removed.
    */
-  static api::ptr_set_t normalise(api::ptr_set_t aliases);
+  static ptr_set_t normalise(ptr_set_t aliases);
   static std::tuple<bool, elements_t, numeric_state *, numeric_state *> compat(als_state const *a, als_state const *b);
 };
 }

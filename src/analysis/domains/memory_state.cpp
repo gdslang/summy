@@ -737,7 +737,7 @@ std::set<summy::vs_shared_t> analysis::memory_state::queryPts(std::unique_ptr<ma
   return result;
 }
 
-api::ptr_set_t analysis::memory_state::queryAls(gdsl::rreil::address *a) {
+ptr_set_t analysis::memory_state::queryAls(gdsl::rreil::address *a) {
   if(is_bottom()) return ptr_set_t{};
   auto temp = assign_temporary(a->get_lin(), a->get_size());
   ptr_set_t aliases = child_state->queryAls(temp->get_var());

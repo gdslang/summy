@@ -38,7 +38,7 @@ using namespace analysis;
 using namespace analysis::api;
 using namespace summy;
 
-api::ptr analysis::unpack_singleton(api::ptr_set_t aliases) {
+ptr analysis::unpack_singleton(ptr_set_t aliases) {
   aliases = als_state::normalise(aliases);
   assert(aliases.size() <= 2);
   optional<ptr> opt_result;

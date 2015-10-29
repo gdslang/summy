@@ -9,7 +9,6 @@
 #include <summy/value_set/vs_compare.h>
 
 using namespace analysis;
-using namespace analysis::api;
 using namespace summy;
 using namespace std;
 
@@ -22,11 +21,11 @@ bool ptr::operator<(const ptr &other) const {
     return vs_total_less()(offset, other.offset);
 }
 
-bool analysis::api::ptr::operator==(const ptr &other) const {
+bool analysis::ptr::operator==(const ptr &other) const {
   return !(*this < other) && !(other < *this);
 }
 
-std::ostream &analysis::api::operator<<(std::ostream &out, const ptr &_this) {
+std::ostream &analysis::operator<<(std::ostream &out, const ptr &_this) {
   out << "(" << *_this.id << " + " << *_this.offset << ")";
   return out;
 }
@@ -35,7 +34,7 @@ std::ostream &analysis::api::operator<<(std::ostream &out, const ptr &_this) {
 //  return a == b;
 //}
 
-std::ostream &analysis::api::operator<<(std::ostream &out, ptr_set_t &_this) {
+std::ostream &analysis::operator<<(std::ostream &out, ptr_set_t &_this) {
   out << "{";
   bool first = true;
   for(auto &ptr : _this) {

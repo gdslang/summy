@@ -320,7 +320,7 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
   }
 }
 
-void als_state::assign(api::num_var *lhs, api::ptr_set_t aliases) {
+void als_state::assign(api::num_var *lhs, ptr_set_t aliases) {
   aliases = normalise(aliases);
   optional<vs_shared_t> offset_joined;
   for(auto alias : aliases)
@@ -555,7 +555,7 @@ void als_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *
   child_state->copy_paste(to, from, from_state_als->child_state);
 }
 
-api::ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
+ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   //    cout << "queryALS for " << *nv << endl;
   //    cout << "offset: " << *child_state->queryVal(nv) << endl;
   ptr_set_t result;
@@ -663,7 +663,7 @@ als_state *als_state::copy() const {
   return new als_state(*this);
 }
 
-api::ptr_set_t analysis::als_state::normalise(api::ptr_set_t aliases) {
+ptr_set_t analysis::als_state::normalise(ptr_set_t aliases) {
   ptr_set_t result;
   for(auto &alias : aliases) {
     summy::rreil::id_visitor idv;

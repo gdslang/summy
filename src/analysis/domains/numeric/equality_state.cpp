@@ -363,7 +363,7 @@ void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   delete rhs_simplified;
 }
 
-void analysis::equality_state::assign(api::num_var *lhs, api::ptr_set_t aliases) {
+void analysis::equality_state::assign(api::num_var *lhs, ptr_set_t aliases) {
   child_state->assign(lhs, aliases);
 }
 
@@ -520,7 +520,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   //  delete g;
 }
 
-void analysis::equality_state::assume(api::num_var *lhs, api::ptr_set_t aliases) {
+void analysis::equality_state::assume(api::num_var *lhs, ptr_set_t aliases) {
   if(is_bottom()) return;
 
   child_state->assume(lhs, aliases);
@@ -588,7 +588,7 @@ api::num_vars *analysis::equality_state::vars() {
   return child_state->vars();
 }
 
-api::ptr_set_t analysis::equality_state::queryAls(api::num_var *nv) {
+ptr_set_t analysis::equality_state::queryAls(api::num_var *nv) {
   return child_state->queryAls(nv);
 }
 

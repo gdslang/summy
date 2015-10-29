@@ -98,7 +98,7 @@ public:
   summy::vs_shared_t queryVal(gdsl::rreil::linear *l, size_t size);
   summy::vs_shared_t queryVal(gdsl::rreil::expr *e, size_t size);
   std::set<summy::vs_shared_t> queryPts(std::unique_ptr<managed_temporary> &address);
-  api::ptr_set_t queryAls(gdsl::rreil::address *a);
+  ptr_set_t queryAls(gdsl::rreil::address *a);
   region_t const& query_region(id_shared_t id);
 
   memory_state *copy() const;

@@ -154,7 +154,7 @@ void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
   elements[lhs->get_id()] = er;
 }
 
-void value_sets::vsd_state::assign(api::num_var *lhs, api::ptr_set_t aliases) {
+void value_sets::vsd_state::assign(api::num_var *lhs, ptr_set_t aliases) {
   throw string("value_sets::vsd_state::assign(): Operation not supported");
 }
 
@@ -369,7 +369,7 @@ vsd_state *analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> s
   return new vsd_state(sm);
 }
 
-api::ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
+ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
   //    cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
   vs_shared_t nv_val = queryVal(nv);
 

@@ -14,7 +14,6 @@
 #include <memory>
 
 namespace analysis {
-namespace api {
 
 struct ptr {
   std::shared_ptr<gdsl::rreil::id> id;
@@ -39,6 +38,4 @@ std::ostream &operator<<(std::ostream &out, ptr_set_t &_this);
 
 //bool operator==(ptr_set_t const &a, ptr_set_t const &b);
 
-
-}
 }

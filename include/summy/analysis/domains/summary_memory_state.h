@@ -62,6 +62,7 @@ struct memory_head {
  * Summary-based memory domain state
  */
 class summary_memory_state : public domain_state, public memory_state_base {
+  friend class mempath;
 
 private:
   shared_ptr<static_memory> sm;
@@ -149,9 +150,9 @@ public:
   //  region_t join_region_aliases(region_t const &r1, region_t const &r2, numeric_state *n);
 
   typedef std::function<void(api::num_var *)> updater_t;
-  void update_multiple(api::ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak,
+  void update_multiple(ptr_set_t aliases, regions_getter_t getter, size_t size, updater_t strong, updater_t weak,
     bool bit_offsets, bool handle_conflicts);
-  void store(api::ptr_set_t aliases, size_t size, api::num_expr *rhs);
+  void store(ptr_set_t aliases, size_t size, api::num_expr *rhs);
 
   void update(gdsl::rreil::assign *assign);
   void update(gdsl::rreil::load *load);
@@ -171,8 +172,8 @@ public:
   summy::vs_shared_t queryVal(gdsl::rreil::expr *e, size_t size);
   api::num_linear *dereference(api::num_var *v, int64_t offset, size_t size);
   std::set<summy::vs_shared_t> queryPts(std::unique_ptr<managed_temporary> &address);
-  api::ptr_set_t queryAls(gdsl::rreil::address *a);
-  api::ptr_set_t queryAls(api::num_var *a);
+  ptr_set_t queryAls(gdsl::rreil::address *a);
+  ptr_set_t queryAls(api::num_var *a);
   region_t const &query_region_output(id_shared_t id);
   region_t const &query_deref_output(id_shared_t id);
 

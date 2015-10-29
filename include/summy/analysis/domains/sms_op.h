@@ -10,10 +10,11 @@
 #include <tuple>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/domains/numeric/numeric_state.h>
+#include <summy/analysis/domains/ptr_set.h>
 
 namespace analysis {
 
-api::ptr unpack_singleton(api::ptr_set_t aliases);
+ptr unpack_singleton(ptr_set_t aliases);
 
 struct summary_application_t {
   summary_memory_state *return_site;
