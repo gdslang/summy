@@ -83,6 +83,8 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     child_state->kill({in_var, out_var});
     in_r.erase(in_it);
     out_r.erase(out_it);
+    delete in_var;
+    delete out_var;
   }
 
   /*

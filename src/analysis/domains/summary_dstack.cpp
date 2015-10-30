@@ -25,6 +25,7 @@
 #include <summy/value_set/value_set_visitor.h>
 #include <functional>
 #include <assert.h>
+#include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/sms_op.h>
 #include <summy/rreil/id/memory_id.h>
 #include <experimental/optional>
@@ -93,6 +94,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             shared_ptr<global_state> state_c = this->state[from];
             summary_memory_state *mstate = state_c->get_mstate();
 
+//            cout << *mstate << endl;
+
             void *f_addr;
             bool unpackable_a = unpack_f_addr(f_addr, state_c->get_f_addr());
             assert(unpackable_a);
@@ -150,6 +153,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               //              cout << ptr << endl;
             }
             cfg->commit_updates();
+
+            set<mempath> mps = mempath::from_pointers(field_req_ptrs, mstate);
+            for(auto mp : mps)
+              cout << mp << endl;
 
             //            cout << "Need to apply the following summary: " << endl;
             //            cout << *summary << endl;

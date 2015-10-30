@@ -39,7 +39,7 @@ public:
   bool operator<(const mempath &other) const;
   bool operator==(const mempath &other) const;
 
-  static std::set<mempath> from_pointers(ptr_set_t pointers, std::shared_ptr<summary_memory_state> state);
+  static std::set<mempath> from_pointers(ptr_set_t pointers, summary_memory_state *state);
 
   friend std::ostream &operator<<(std::ostream &out, mempath const &_this);
 };
