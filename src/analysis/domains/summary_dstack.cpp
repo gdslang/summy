@@ -28,6 +28,7 @@
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/sms_op.h>
 #include <summy/rreil/id/memory_id.h>
+#include <algorithm>
 #include <experimental/optional>
 
 using cfg::address_node;
@@ -64,6 +65,11 @@ bool analysis::summary_dstack::unpack_f_addr(void *&r, summy::vs_shared_t f_addr
   return single;
 }
 
+//void analysis::summary_dstack::propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new) {
+//
+//}
+
+
 void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
   //  cout << "Adding constraint from " << from << " to " << to << endl;
 
@@ -94,7 +100,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             shared_ptr<global_state> state_c = this->state[from];
             summary_memory_state *mstate = state_c->get_mstate();
 
-//            cout << *mstate << endl;
+            //            cout << *mstate << endl;
 
             void *f_addr;
             bool unpackable_a = unpack_f_addr(f_addr, state_c->get_f_addr());
@@ -104,7 +110,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             shared_ptr<summary_memory_state> summary = shared_ptr<summary_memory_state>(sms_bottom());
 
             ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
-            ptr_set_t field_req_ptrs;
+            id_set_t field_req_ids_new;
             //                        cout << *b->get_target() << endl;
             //                        cout << callee_aliases << endl;
             for(auto ptr : callee_aliases) {
@@ -117,9 +123,9 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   text_address = sid->get_address();
                 }
               });
-              idv._([&](memory_id *mid)  {
-//                cout << "There seems to be an unkown function pointer :/" << endl;
-                field_req_ptrs.insert(ptr);
+              idv._([&](memory_id *mid) {
+                //                cout << "There seems to be an unkown function pointer :/" << endl;
+                field_req_ids_new.insert(ptr.id);
               });
               ptr.id->accept(idv);
               if(!is_text) continue;
@@ -154,9 +160,17 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             }
             cfg->commit_updates();
 
-            set<mempath> mps = mempath::from_pointers(field_req_ptrs, mstate);
-            for(auto mp : mps)
+            set<mempath> field_reqs_new = mempath::from_aliases(field_req_ids_new, mstate);
+//            propagate_reqs(f_addr, mps);
+            for(auto mp : field_reqs_new)
               cout << mp << endl;
+            auto &fd = function_desc_map.at(f_addr);
+            if(!includes(fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
+              fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
+              const cfg::in_edges_t &in_edges = cfg->in_edges(fd.head_id);
+              for(auto from : in_edges)
+                cout << "Need to update " << from << endl;
+            }
 
             //            cout << "Need to apply the following summary: " << endl;
             //            cout << *summary << endl;

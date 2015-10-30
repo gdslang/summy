@@ -79,6 +79,15 @@ public:
   }
   void assert_dependency(dependency dep);
 
+  /**
+   * This method calculates a set of nodes that got dirty during constraint
+   * evaluation. This allows the analysis to tell the fixpoint engine to re-
+   * evaluate additional nodes.
+   */
+  virtual std::set<size_t> dirty_nodes() {
+    return std::set<size_t>();
+  }
+
   virtual node_compare_t get_fixpoint_node_comparer();
 
   virtual void put(std::ostream &out) = 0;

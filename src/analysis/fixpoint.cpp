@@ -125,6 +125,9 @@ void fixpoint::iterate() {
       for(auto dependant : dependants)
         worklist.push(dependant);
     }
+    auto dirty_nodes = analysis->dirty_nodes();
+    for(auto dirty : dirty_nodes)
+      worklist.push(dirty);
 
     seen.insert(node_id);
   }

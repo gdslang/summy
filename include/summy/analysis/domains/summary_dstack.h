@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/global_analysis/global_state.h>
@@ -22,9 +23,7 @@ namespace analysis {
 typedef std::vector<std::shared_ptr<global_state>> state_t;
 
 struct summary_dstack_result : public ::analysis::analysis_result<state_t> {
-  summary_dstack_result(state_t &s) :
-      analysis_result(s) {
-  }
+  summary_dstack_result(state_t &s) : analysis_result(s) {}
 };
 
 typedef std::shared_ptr<summary_memory_state> summary_t;
@@ -39,25 +38,30 @@ struct function_desc {
    * Node id of head node
    */
   size_t head_id;
+  /*
+   * Field requirements (function pointers)
+   */
+  std::set<mempath> field_reqs;
 
-  function_desc(summary_t summary, size_t min_calls_sz, size_t head_id) :
-      summary(summary), min_calls_sz(min_calls_sz), head_id(head_id) {
-  }
+  function_desc(summary_t summary, size_t min_calls_sz, size_t head_id)
+      : summary(summary), min_calls_sz(min_calls_sz), head_id(head_id) {}
 };
 
 class summary_dstack : public fp_analysis {
 private:
   std::shared_ptr<static_memory> sm;
-  std::map<void*, function_desc> function_desc_map;
+  std::map<void *, function_desc> function_desc_map;
   state_t state;
 
   bool unpack_f_addr(void *&r, summy::vs_shared_t f_addr);
+//  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);
 
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   void remove_constraint(size_t from, size_t to);
   dependency gen_dependency(size_t from, size_t to);
   void init_state(summy::vs_shared_t f_addr);
   void init_state();
+
 public:
   summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm);
   summary_dstack(cfg::cfg *cfg);
@@ -78,4 +82,4 @@ public:
   void put(std::ostream &out);
 };
 
-}  // namespace analysis
+} // namespace analysis

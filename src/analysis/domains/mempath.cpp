@@ -62,12 +62,12 @@ bool mempath::operator==(const mempath &other) const {
   return compare_to(other) == 0;
 }
 
-std::set<mempath> analysis::mempath::from_pointers(ptr_set_t pointers, summary_memory_state *state) {
+std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary_memory_state *state) {
   /*
    * Todo: id_set, not ptr_set
    */
   set<mempath> result;
-  for(auto &ptr : pointers) {
+  for(auto &alias : aliases) {
     bool found = false;
     for(region_map_t::iterator region_it = state->input.regions.begin(); region_it != state->input.regions.end();
         region_it++) {
@@ -77,11 +77,11 @@ std::set<mempath> analysis::mempath::from_pointers(ptr_set_t pointers, summary_m
         for(auto &field_it : region_it->second) {
           steps.push_back(step(field_it.first, field_it.second.size));
           num_var field_nv = num_var(field_it.second.num_id);
-          ptr_set_t aliases = state->queryAls(&field_nv);
-          struct ptr alias = unpack_singleton(aliases);
-          assert(*alias.offset == vs_finite::zero);
-          if(*ptr.id == *alias.id) return true;
-          auto deref_region_it = state->input.deref.find(alias.id);
+          ptr_set_t aliases_field = state->queryAls(&field_nv);
+          struct ptr alias_field = unpack_singleton(aliases_field);
+          assert(*alias_field.offset == vs_finite::zero);
+          if(*alias == *alias_field.id) return true;
+          auto deref_region_it = state->input.deref.find(alias_field.id);
           if(deref_region_it != state->input.deref.end())
             if(handle_region(deref_region_it)) return true;
           steps.pop_back();
