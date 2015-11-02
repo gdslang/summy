@@ -169,7 +169,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
               const cfg::in_edges_t &in_edges = cfg->in_edges(fd.head_id);
               for(auto from : in_edges)
-                cout << "Need to update " << from << endl;
+                _dirty_nodes.insert(from);
             }
 
             //            cout << "Need to apply the following summary: " << endl;
@@ -229,6 +229,14 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         });
         dest->accept(nv);
         assert(is_addr_node);
+
+        auto& desc = this->function_desc_map.at(address);
+        if(desc.field_reqs.size() > 0) {
+          cout << "This call requires the following fields:" << endl;
+          for(auto &f : desc.field_reqs)
+            cout << f << endl;
+        }
+
         state_new =
           dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address), callers_t{from}));
       } else {
@@ -377,6 +385,12 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
     } else
       return a < b;
   };
+}
+
+std::set<size_t> analysis::summary_dstack::dirty_nodes() {
+  set<size_t> dirty_nodes = this->_dirty_nodes;
+  this->_dirty_nodes.clear();
+  return dirty_nodes;
 }
 
 void analysis::summary_dstack::put(std::ostream &out) {

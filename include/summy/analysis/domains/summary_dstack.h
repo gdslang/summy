@@ -51,6 +51,7 @@ class summary_dstack : public fp_analysis {
 private:
   std::shared_ptr<static_memory> sm;
   std::map<void *, function_desc> function_desc_map;
+  std::set<size_t> _dirty_nodes;
   state_t state;
 
   bool unpack_f_addr(void *&r, summy::vs_shared_t f_addr);
@@ -78,6 +79,8 @@ public:
   summary_dstack_result result();
 
   node_compare_t get_fixpoint_node_comparer();
+
+  std::set<size_t> dirty_nodes();
 
   void put(std::ostream &out);
 };
