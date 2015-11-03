@@ -39,6 +39,13 @@ public:
   bool operator<(const mempath &other) const;
   bool operator==(const mempath &other) const;
 
+  /**
+   * Propagate the described memory field from one state to another
+   *
+   * @return 'true' if the field is a requirement in 'from'
+   */
+  bool propagate(summary_memory_state *from, summary_memory_state *to);
+
   static std::set<mempath> from_aliases(api::id_set_t aliases, summary_memory_state *state);
 
   friend std::ostream &operator<<(std::ostream &out, mempath const &_this);

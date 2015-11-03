@@ -11,8 +11,10 @@
 #include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/sms_op.h>
 #include <summy/value_set/vs_finite.h>
+#include <experimental/optional>
 #include <string>
 
+using std::experimental::optional;
 using summy::value_set;
 using summy::vs_finite;
 
@@ -60,6 +62,52 @@ bool mempath::operator<(const mempath &other) const {
 
 bool mempath::operator==(const mempath &other) const {
   return compare_to(other) == 0;
+}
+
+bool analysis::mempath::propagate(summary_memory_state *from, summary_memory_state *to) {
+  optional<ptr_set_t> aliases_from;
+
+  auto from_reg_it = from->output.regions.find(base);
+  if(from_reg_it != from->output.regions.end()) {
+    optional<ptr_set_t> aliases_current;
+    for (size_t i = 0; i < path.size(); ++i) {
+//      if(from_reg_it == from->output.deref.end())
+//        break;
+      size_t offset = path[i].offset;
+      size_t size = path[i].size;
+      auto field_it = from_reg_it->second.find(offset);
+      if(field_it == from_reg_it->second.end())
+        return true;
+      field &f = field_it->second;
+      if(f.size != size)
+        return true;
+      num_var f_var = num_var(f.num_id);
+      aliases_from = from->queryAls(&f_var);
+      /*
+       * Todo: Multiple aliases!
+       */
+      ptr singleton = unpack_singleton(aliases_from.value());
+      /*
+       * Todo: ...
+       */
+      assert(*singleton.offset == vs_finite::zero);
+      from_reg_it = from->output.deref.find(singleton.id);
+      if(from_reg_it == from->output.deref.end())
+        return true;
+    }
+  }
+
+  if(!aliases_from)
+    return true;
+
+  ptr_set_t aliases_explicit;
+  bool result = false;
+  for(auto &alias : aliases_from.value()) {
+    //Take over aliases we can propagate
+  }
+  if(aliases_explicit.size() > 0) {
+    // propagate
+  }
 }
 
 std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary_memory_state *state) {

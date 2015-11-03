@@ -162,14 +162,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
             set<mempath> field_reqs_new = mempath::from_aliases(field_req_ids_new, mstate);
 //            propagate_reqs(f_addr, mps);
-            for(auto mp : field_reqs_new)
-              cout << mp << endl;
             auto &fd = function_desc_map.at(f_addr);
             if(!includes(fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
               fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
-              const cfg::in_edges_t &in_edges = cfg->in_edges(fd.head_id);
-              for(auto from : in_edges)
-                _dirty_nodes.insert(from);
+              _dirty_nodes.insert(fd.head_id);
             }
 
             //            cout << "Need to apply the following summary: " << endl;
@@ -229,6 +225,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         });
         dest->accept(nv);
         assert(is_addr_node);
+        state_new =
+          dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address), callers_t{from}));
 
         auto& desc = this->function_desc_map.at(address);
         if(desc.field_reqs.size() > 0) {
@@ -237,8 +235,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             cout << f << endl;
         }
 
-        state_new =
-          dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address), callers_t{from}));
       } else {
         state_new = state[from];
         if(!state_new->get_mstate()->is_bottom()) {
