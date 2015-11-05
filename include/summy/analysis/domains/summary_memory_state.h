@@ -50,6 +50,10 @@ struct io_region {
   region_t &in_r;
   region_t &out_r;
 
+  io_region operator =(io_region other) {
+    return io_region{other.in_r, other.out_r};
+  }
+
   field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement);
 };
 
@@ -110,7 +114,7 @@ protected:
   //  region_t merge_memory(id_shared_t addr_a, id_shared_t addr_b);
   struct rt_result_t {
     bool conflict;
-    region_t::iterator region_it;
+    region_t::iterator field_it;
   };
   rt_result_t retrieve_kill(region_t &region, int64_t offset, size_t size, bool handle_conflict);
   region_t::iterator retrieve_kill(region_t &region, int64_t offset, size_t size);

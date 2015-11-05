@@ -80,7 +80,8 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     auto out_it = out_r.find(offset);
     num_var *in_var = new num_var(in_it->second.num_id);
     num_var *out_var = new num_var(out_it->second.num_id);
-    child_state->kill({in_var, out_var});
+    cout << "Please implement me!!" << endl;
+    //    child_state->kill({in_var, out_var});
     in_r.erase(in_it);
     out_r.erase(out_it);
     delete in_var;
@@ -104,19 +105,20 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
    */
   if(contiguous && replaced.size() > 0 && size <= 64) {
     optional<num_var *> temp;
-    for(size_t i = replaced.size() - 1;; i--) {
-      field f = replaced[i];
+    for(size_t i = replaced.size(); i > 0; i--) {
+      field f = replaced[i - 1];
+      cout << *child_state->queryVal(new num_var(f.num_id)) << endl;
       if(temp) {
         num_expr *shift =
           new num_expr_bin(new num_linear_term((*temp)->copy()), SHL, new num_linear_vs(vs_finite::single(f.size)));
         id_shared_t temp_next = numeric_id::generate();
         num_var *temp_var = new num_var(temp_next);
         child_state->assign(temp_var, shift);
-        //        cout << "assign " << *temp_var << " = " << *shift << endl;
+        cout << "assign " << *temp_var << " = " << *shift << endl;
         num_expr *addition =
-          new num_expr_lin(new num_linear_term(1, temp_var->copy(), new num_linear_term((*temp)->copy())));
+          new num_expr_lin(new num_linear_term(1, temp_var->copy(), new num_linear_term(new num_var(f.num_id))));
         child_state->assign(*temp, addition);
-        //        cout << "assign " << **temp << " = " << *addition << endl;
+        cout << "assign " << **temp << " = " << *addition << endl;
         child_state->kill({temp_var});
         delete addition;
         delete temp_var;
@@ -124,7 +126,6 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
       } else {
         temp = new num_var(f.num_id);
       }
-      if(!i) break;
     }
     num_expr *temp_expr = new num_expr_lin(new num_linear_term(*temp));
     child_state->assign(n_out, temp_expr);
@@ -534,7 +535,7 @@ summary_memory_state::rt_result_t analysis::summary_memory_state::retrieve_kill(
 }
 
 region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &region, int64_t offset, size_t size) {
-  return retrieve_kill(region, offset, size, true).region_it;
+  return retrieve_kill(region, offset, size, true).field_it;
 }
 
 void analysis::summary_memory_state::topify(region_t &region, int64_t offset, size_t size) {
@@ -556,13 +557,13 @@ optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   assert(in.conflict == out.conflict);
   if(in.conflict && !handle_conflict) return nullopt;
   optional<id_shared_t> r;
-  if(in.region_it == io.in_r.end()) {
-    assert(out.region_it == io.out_r.end());
+  if(in.field_it == io.in_r.end()) {
+    assert(out.field_it == io.out_r.end());
     field &f = io.insert(child_state, offset, size, in.conflict);
     r = f.num_id;
   } else {
-    assert(out.region_it != io.out_r.end());
-    r = out.region_it->second.num_id;
+    assert(out.field_it != io.out_r.end());
+    r = out.field_it->second.num_id;
   }
   return r;
 }

@@ -230,9 +230,15 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
         auto& desc = this->function_desc_map.at(address);
         if(desc.field_reqs.size() > 0) {
+          auto const& in_edges = cfg->in_edges(from);
+          assert(in_edges.size() == 1);
+          size_t from_parent = *in_edges.begin();
+
           cout << "This call requires the following fields:" << endl;
-          for(auto &f : desc.field_reqs)
+          for(auto &f : desc.field_reqs) {
             cout << f << endl;
+            f.propagate(state[from_parent]->get_mstate(), state_new->get_mstate());
+          }
         }
 
       } else {

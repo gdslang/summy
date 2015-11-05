@@ -10,11 +10,13 @@
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/sms_op.h>
+#include <summy/rreil/id/sm_id.h>
 #include <summy/value_set/vs_finite.h>
 #include <experimental/optional>
 #include <string>
 
 using std::experimental::optional;
+using summy::rreil::sm_id;
 using summy::value_set;
 using summy::vs_finite;
 
@@ -64,50 +66,76 @@ bool mempath::operator==(const mempath &other) const {
   return compare_to(other) == 0;
 }
 
-bool analysis::mempath::propagate(summary_memory_state *from, summary_memory_state *to) {
+bool analysis::mempath::propagate(summary_memory_state *from, summary_memory_state *to) const {
+//  from = from->copy();
   optional<ptr_set_t> aliases_from;
 
-  auto from_reg_it = from->output.regions.find(base);
-  if(from_reg_it != from->output.regions.end()) {
-    optional<ptr_set_t> aliases_current;
-    for (size_t i = 0; i < path.size(); ++i) {
-//      if(from_reg_it == from->output.deref.end())
-//        break;
-      size_t offset = path[i].offset;
-      size_t size = path[i].size;
-      auto field_it = from_reg_it->second.find(offset);
-      if(field_it == from_reg_it->second.end())
-        return true;
-      field &f = field_it->second;
-      if(f.size != size)
-        return true;
-      num_var f_var = num_var(f.num_id);
-      aliases_from = from->queryAls(&f_var);
-      /*
-       * Todo: Multiple aliases!
-       */
-      ptr singleton = unpack_singleton(aliases_from.value());
-      /*
-       * Todo: ...
-       */
-      assert(*singleton.offset == vs_finite::zero);
-      from_reg_it = from->output.deref.find(singleton.id);
-      if(from_reg_it == from->output.deref.end())
-        return true;
-    }
+//  cout << *from << endl;
+
+  auto from_io = from->region_by_id(&relation::get_regions, base);
+  optional<ptr_set_t> aliases_current;
+  for(size_t i = 0; i < path.size(); ++i) {
+    cout << "iiiii " << i << endl;
+    //      if(from_reg_it == from->output.deref.end())
+    //        break;
+    size_t offset = path[i].offset;
+    size_t size = path[i].size;
+    auto field_it = from_io.out_r.find(offset);
+    if(field_it == from_io.out_r.end()) assert(false);
+    field f = field_it->second;
+    if(f.size != size)
+      f = from_io.insert(from->child_state, offset, size, true);
+    num_var f_var = num_var(f.num_id);
+    aliases_from = from->queryAls(&f_var);
+    /*
+     * Todo: Multiple aliases!
+     */
+    cout << aliases_from.value() << endl;
+//    ptr singleton = unpack_singleton(aliases_from.value());
+//    /*
+//     * Todo: ...
+//     */
+//    assert(*singleton.offset == vs_finite::zero);
+//    from_io = from->region_by_id(&relation::get_deref, singleton.id);
   }
 
-  if(!aliases_from)
-    return true;
+  if(!aliases_from) return true;
 
   ptr_set_t aliases_explicit;
   bool result = false;
   for(auto &alias : aliases_from.value()) {
-    //Take over aliases we can propagate
+    summy::rreil::id_visitor idv;
+    idv._([&](sm_id *sid) { aliases_explicit.insert(alias); });
+    alias.id->accept(idv);
+    // Take over aliases we can propagate
   }
   if(aliases_explicit.size() > 0) {
     // propagate
+    assert(to->input.regions.find(base) == to->input.regions.end());
+    assert(path.size() > 0);
+
+    optional<field> f;
+    io_region io = to->region_by_id(&relation::get_regions, base);
+
+    for(size_t i = 0; i < path.size(); ++i) {
+      f = io.insert(to->child_state, path[i].offset, path[i].size, false);
+      num_var f_id_nv = num_var(f.value().num_id);
+      ptr_set_t aliases_f = to->child_state->queryAls(&f_id_nv);
+      ptr p = unpack_singleton(aliases_f);
+      cout << p << endl;
+      assert(*p.offset == vs_finite::zero);
+      io = to->region_by_id(&relation::get_deref, p.id);
+    }
+
+    if(f) {
+      num_var f_var(f->num_id);
+      to->child_state->assign(&f_var, aliases_explicit);
+    }
   }
+
+  cout << *to << endl;
+
+  return result;
 }
 
 std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary_memory_state *state) {
@@ -142,8 +170,7 @@ std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary
         break;
       }
     }
-    if(!found)
-      cout << "analysis::mempath::from_pointers() - Warning: Unable to find pointer." << endl;
+    if(!found) cout << "analysis::mempath::from_pointers() - Warning: Unable to find pointer." << endl;
   }
   return result;
 }

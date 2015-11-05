@@ -44,7 +44,7 @@ public:
    *
    * @return 'true' if the field is a requirement in 'from'
    */
-  bool propagate(summary_memory_state *from, summary_memory_state *to);
+  bool propagate(summary_memory_state *from, summary_memory_state *to) const;
 
   static std::set<mempath> from_aliases(api::id_set_t aliases, summary_memory_state *state);
 
