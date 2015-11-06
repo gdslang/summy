@@ -75,17 +75,16 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   num_var *n_in = new num_var(nid_in);
   num_var *n_out = new num_var(nid_out);
 
+  vector<num_var*> kill_vars;
   for(auto offset : offsets) {
     auto in_it = in_r.find(offset);
     auto out_it = out_r.find(offset);
     num_var *in_var = new num_var(in_it->second.num_id);
     num_var *out_var = new num_var(out_it->second.num_id);
-    cout << "Please implement me!!" << endl;
-    //    child_state->kill({in_var, out_var});
+    kill_vars.push_back(in_var);
+    kill_vars.push_back(out_var);
     in_r.erase(in_it);
     out_r.erase(out_it);
-    delete in_var;
-    delete out_var;
   }
 
   /*
@@ -141,6 +140,10 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   delete n_in;
   delete n_out;
   //  delete ass_e;
+
+  child_state->kill(kill_vars);
+  for(num_var *var : kill_vars)
+    delete var;
 
   return field_out_it->second;
 }
