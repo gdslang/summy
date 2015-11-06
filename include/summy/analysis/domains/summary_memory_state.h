@@ -50,7 +50,7 @@ struct io_region {
   region_t &in_r;
   region_t &out_r;
 
-  io_region operator =(io_region other) {
+  io_region operator=(io_region other) {
     return io_region{other.in_r, other.out_r};
   }
 
@@ -197,6 +197,6 @@ public:
     relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n);
 
   friend std::tuple<memory_head, numeric_state *, numeric_state *> compat(
-    summary_memory_state const *a, summary_memory_state const *b);
+    bool copy_paste, summary_memory_state const *a, summary_memory_state const *b);
 };
 }

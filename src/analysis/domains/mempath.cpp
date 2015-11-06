@@ -75,7 +75,6 @@ bool analysis::mempath::propagate(summary_memory_state *from, summary_memory_sta
   auto from_io = from->region_by_id(&relation::get_regions, base);
   optional<ptr_set_t> aliases_current;
   for(size_t i = 0; i < path.size(); ++i) {
-    cout << "iiiii " << i << endl;
     //      if(from_reg_it == from->output.deref.end())
     //        break;
     size_t offset = path[i].offset;
@@ -133,7 +132,7 @@ bool analysis::mempath::propagate(summary_memory_state *from, summary_memory_sta
     }
   }
 
-  cout << *to << endl;
+//  cout << *to << endl;
 
   return result;
 }

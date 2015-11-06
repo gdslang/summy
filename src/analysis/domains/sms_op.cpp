@@ -369,15 +369,15 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return return_site;
 }
 
-num_var_pairs_t(::analysis::compatMatchSeparate)(
-  relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n) {
+num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in, relation &a_out, numeric_state *a_n,
+  relation &b_in, relation &b_out, numeric_state *b_n) {
   /*
    * Find aliases for a specific region of the given summaries. We need both
    * input and output here in order to be able to add pointers that are missing
    * in one of the regions.
    */
   auto compatMatchSeparateRegion = [&](io_region &io_ra, io_region &io_rb) {
-//    cout << "Next region" << endl;
+    //    cout << "Next region" << endl;
 
     num_var_pairs_t upcoming;
 
@@ -399,20 +399,20 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(
 
     auto resolve_collision = [&]() {
       if(collision) {
-//        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
+        //        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
         conflict_resolvers.push_back([&]() {
-//          summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
-//          summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
-//          cout << "a: " << *a_sms_before << endl;
-//          cout << "b: " << *b_sms_before << endl;
+          //          summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
+          //          summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
+          //          cout << "a: " << *a_sms_before << endl;
+          //          cout << "b: " << *b_sms_before << endl;
 
           io_ra.insert(a_n, collision->from, collision->to - collision->from + 1, true);
           io_rb.insert(b_n, collision->from, collision->to - collision->from + 1, true);
 
-//          summary_memory_state *a_sms_after = new summary_memory_state(NULL, a_n, a_in, a_out);
-//          summary_memory_state *b_sms_after = new summary_memory_state(NULL, b_n, b_in, b_out);
-//          cout << "a: " << *a_sms_after << endl;
-//          cout << "b: " << *b_sms_after << endl;
+          //          summary_memory_state *a_sms_after = new summary_memory_state(NULL, a_n, a_in, a_out);
+          //          summary_memory_state *b_sms_after = new summary_memory_state(NULL, b_n, b_in, b_out);
+          //          cout << "a: " << *a_sms_after << endl;
+          //          cout << "b: " << *b_sms_after << endl;
         });
         collision = std::experimental::nullopt;
       }
@@ -422,11 +422,13 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
 
-//      cout << "Next it, collision: " << rpd.collision << endl;
-//      if(rpd.field_first_region())
-//        cout << "First region: offset: " << rpd.field_first_region()->offset << ", size: " << rpd.field_first_region()->f.size << endl;
-//      if(rpd.field_second_region())
-//        cout << "Second region: offset: " << rpd.field_second_region()->offset << ", size: " << rpd.field_second_region()->f.size << endl;
+      //      cout << "Next it, collision: " << rpd.collision << endl;
+      //      if(rpd.field_first_region())
+      //        cout << "First region: offset: " << rpd.field_first_region()->offset << ", size: " <<
+      //        rpd.field_first_region()->f.size << endl;
+      //      if(rpd.field_second_region())
+      //        cout << "Second region: offset: " << rpd.field_second_region()->offset << ", size: " <<
+      //        rpd.field_second_region()->f.size << endl;
 
       if(rpd.collision) {
         int64_t from_current;
@@ -447,29 +449,33 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(
 
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first) {
-            insertions.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+            insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
               //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
               //                            ending_first.offset << endl;
               field inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
               //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
-              num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
-              num_var *to = new num_var(inserted.num_id);
-              b_n->copy_paste(to, from, a_n);
-              delete to;
-              delete from;
+              if(copy_paste) {
+                num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
+                num_var *to = new num_var(inserted.num_id);
+                b_n->copy_paste(to, from, a_n);
+                delete to;
+                delete from;
+              }
               //              });
             });
           } else {
-            insertions.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+            insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
               //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
               //                            ending_first.offset << endl;
               field inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
               //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
-              num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
-              num_var *to = new num_var(inserted.num_id);
-              a_n->copy_paste(to, from, b_n);
-              delete to;
-              delete from;
+              if(copy_paste) {
+                num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
+                num_var *to = new num_var(inserted.num_id);
+                a_n->copy_paste(to, from, b_n);
+                delete to;
+                delete from;
+              }
               //              });
 
             });
@@ -651,7 +657,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(
 }
 
 std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
-  const summary_memory_state *a, const summary_memory_state *b) {
+  bool copy_paste, const summary_memory_state *a, const summary_memory_state *b) {
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();
 
@@ -703,7 +709,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   /*
    * The first step is implemented by finding corresponding pointer variables...
    */
-  num_var_pairs_t eq_aliases = compatMatchSeparate(a_input, a_output, a_n, b_input, b_output, b_n);
+  num_var_pairs_t eq_aliases = compatMatchSeparate(copy_paste, a_input, a_output, a_n, b_input, b_output, b_n);
 
   //  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
   //  cout << "before_rename: " << *before_rename << endl;
@@ -767,7 +773,8 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
 
           id_shared_t id_first = fd_first.f.num_id;
           id_shared_t id_second = fd_second.f.num_id;
-          if(!(*id_first == *id_second)) equate_kill_vars.push_back(make_tuple(new num_var(id_first), new num_var(id_second)));
+          if(!(*id_first == *id_second))
+            equate_kill_vars.push_back(make_tuple(new num_var(id_first), new num_var(id_second)));
           region.insert(make_pair(fd_first.offset, fd_first.f));
         }
         ++mri;

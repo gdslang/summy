@@ -107,18 +107,17 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     optional<num_var *> temp;
     for(size_t i = replaced.size(); i > 0; i--) {
       field f = replaced[i - 1];
-      cout << *child_state->queryVal(new num_var(f.num_id)) << endl;
       if(temp) {
         num_expr *shift =
           new num_expr_bin(new num_linear_term((*temp)->copy()), SHL, new num_linear_vs(vs_finite::single(f.size)));
         id_shared_t temp_next = numeric_id::generate();
         num_var *temp_var = new num_var(temp_next);
         child_state->assign(temp_var, shift);
-        cout << "assign " << *temp_var << " = " << *shift << endl;
+//        cout << "assign " << *temp_var << " = " << *shift << endl;
         num_expr *addition =
           new num_expr_lin(new num_linear_term(1, temp_var->copy(), new num_linear_term(new num_var(f.num_id))));
         child_state->assign(*temp, addition);
-        cout << "assign " << **temp << " = " << *addition << endl;
+//        cout << "assign " << **temp << " = " << *addition << endl;
         child_state->kill({temp_var});
         delete addition;
         delete temp_var;
@@ -165,7 +164,7 @@ summary_memory_state *analysis::summary_memory_state::domop(
   numeric_state *me_compat;
   numeric_state *other_compat;
   memory_head head_compat;
-  tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
+  tie(head_compat, me_compat, other_compat) = compat(true, this, other_casted);
 
   //  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
 
@@ -712,7 +711,7 @@ bool analysis::summary_memory_state::operator>=(const domain_state &other) const
   summary_memory_state const &other_casted = dynamic_cast<summary_memory_state const &>(other);
   numeric_state *me_compat;
   numeric_state *other_compat;
-  tie(ignore, me_compat, other_compat) = compat(this, &other_casted);
+  tie(ignore, me_compat, other_compat) = compat(false, this, &other_casted);
   bool result = *me_compat >= *other_compat;
   delete me_compat;
   delete other_compat;

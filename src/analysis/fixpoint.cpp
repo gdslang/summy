@@ -103,6 +103,9 @@ void fixpoint::iterate() {
        * No monotonicity because of the box operator
        */
 
+//      cout << "++++++ current:" << endl << *current << endl;
+//      cout << "++++++ acc:" << endl << *accumulator << endl;
+
       propagate = !(*current == *accumulator);
 
       //      cout << "prop: " << propagate << endl;
@@ -112,6 +115,7 @@ void fixpoint::iterate() {
        * state.
        */
       propagate = false;
+
 
     //    cout << "Propagate: " << propagate << endl;
 
