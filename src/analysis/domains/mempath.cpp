@@ -6,6 +6,7 @@
  */
 
 #include <assert.h>
+#include <cppgdsl/rreil/id/id.h>
 #include <summy/analysis/domains/api/numeric/num_var.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/ptr_set.h>
@@ -15,6 +16,7 @@
 #include <experimental/optional>
 #include <string>
 
+using gdsl::rreil::id;
 using std::experimental::optional;
 using summy::rreil::sm_id;
 using summy::value_set;
@@ -66,11 +68,11 @@ bool mempath::operator==(const mempath &other) const {
   return compare_to(other) == 0;
 }
 
-bool analysis::mempath::propagate(summary_memory_state *from, summary_memory_state *to) const {
-//  from = from->copy();
+ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
+  //  from = from->copy();
   optional<ptr_set_t> aliases_from;
 
-//  cout << *from << endl;
+  //  cout << *from << endl;
 
   auto from_io = from->region_by_id(&relation::get_regions, base);
   optional<ptr_set_t> aliases_current;
@@ -82,33 +84,42 @@ bool analysis::mempath::propagate(summary_memory_state *from, summary_memory_sta
     auto field_it = from_io.out_r.find(offset);
     if(field_it == from_io.out_r.end()) assert(false);
     field f = field_it->second;
-    if(f.size != size)
-      f = from_io.insert(from->child_state, offset, size, true);
+    if(f.size != size) f = from_io.insert(from->child_state, offset, size, true);
     num_var f_var = num_var(f.num_id);
     aliases_from = from->queryAls(&f_var);
     /*
      * Todo: Multiple aliases!
      */
     cout << aliases_from.value() << endl;
-//    ptr singleton = unpack_singleton(aliases_from.value());
-//    /*
-//     * Todo: ...
-//     */
-//    assert(*singleton.offset == vs_finite::zero);
-//    from_io = from->region_by_id(&relation::get_deref, singleton.id);
+    //    ptr singleton = unpack_singleton(aliases_from.value());
+    //    /*
+    //     * Todo: ...
+    //     */
+    //    assert(*singleton.offset == vs_finite::zero);
+    //    from_io = from->region_by_id(&relation::get_deref, singleton.id);
   }
 
-  if(!aliases_from) return true;
+  return aliases_from.value();
+}
 
-  ptr_set_t aliases_explicit;
-  bool result = false;
-  for(auto &alias : aliases_from.value()) {
+std::tuple<ptr_set_t, ptr_set_t> analysis::mempath::split(ptr_set_t aliases) {
+  ptr_set_t aliases_immediate;
+  ptr_set_t aliases_symbolic;
+  for(auto &alias : aliases) {
     summy::rreil::id_visitor idv;
-    idv._([&](sm_id *sid) { aliases_explicit.insert(alias); });
+    idv._([&](sm_id *sid) { aliases_immediate.insert(alias); });
+    idv._default([&](id *_id) {
+      aliases_symbolic.insert(alias);
+    });
     alias.id->accept(idv);
     // Take over aliases we can propagate
   }
-  if(aliases_explicit.size() > 0) {
+  return make_tuple(aliases_immediate, aliases_symbolic);
+}
+
+void analysis::mempath::propagate(ptr_set_t aliases_from_immediate, summary_memory_state *to) const {
+
+  if(aliases_from_immediate.size() > 0) {
     // propagate
     assert(to->input.regions.find(base) == to->input.regions.end());
     assert(path.size() > 0);
@@ -128,13 +139,33 @@ bool analysis::mempath::propagate(summary_memory_state *from, summary_memory_sta
 
     if(f) {
       num_var f_var(f->num_id);
-      to->child_state->assign(&f_var, aliases_explicit);
+      to->child_state->assign(&f_var, aliases_from_immediate);
     }
   }
 
-//  cout << *to << endl;
+  //  cout << *to << endl;
+}
 
-  return result;
+std::experimental::optional<set<mempath>> analysis::mempath::propagate(
+  summary_memory_state *from, summary_memory_state *to) const {
+  ptr_set_t aliases_from = resolve(from);
+
+  ptr_set_t aliases_from_immediate;
+  ptr_set_t aliases_from_symbolic;
+  tie(aliases_from_immediate, aliases_from_symbolic) = split(aliases_from);
+
+  propagate(aliases_from_immediate, to);
+
+  if(aliases_from_symbolic.size() > 0) {
+    id_set_t aliases_from_symbolic_ids;
+    for(auto ptr : aliases_from_symbolic)
+      aliases_from_symbolic_ids.insert(ptr.id);
+    /*
+     * Todo: What if offsets are != zero?!
+     */
+    return from_aliases(aliases_from_symbolic_ids, from);
+  } else
+    return experimental::nullopt;
 }
 
 std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary_memory_state *state) {

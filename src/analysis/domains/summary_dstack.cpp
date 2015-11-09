@@ -240,7 +240,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             f.propagate(state[from_parent]->get_mstate(), state_new->get_mstate());
           }
         }
-
       } else {
         state_new = state[from];
         if(!state_new->get_mstate()->is_bottom()) {
