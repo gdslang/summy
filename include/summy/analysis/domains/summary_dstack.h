@@ -57,6 +57,7 @@ private:
   bool unpack_f_addr(void *&r, summy::vs_shared_t f_addr);
 //  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);
 
+  void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   void remove_constraint(size_t from, size_t to);
   dependency gen_dependency(size_t from, size_t to);

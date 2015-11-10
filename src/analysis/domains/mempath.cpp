@@ -135,31 +135,6 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
     }
   }
 
-//  auto from_io = from->region_by_id(&relation::get_regions, base);
-//  for(size_t i = 0; i < path.size(); ++i) {
-//    //      if(from_reg_it == from->output.deref.end())
-//    //        break;
-//    size_t offset = path[i].offset;
-//    size_t size = path[i].size;
-//    auto field_it = from_io.out_r.find(offset);
-//    if(field_it == from_io.out_r.end()) assert(false);
-//    field f = field_it->second;
-//    if(f.size != size) f = from_io.insert(from->child_state, offset, size, true);
-//    num_var f_var = num_var(f.num_id);
-//    aliases_from = from->queryAls(&f_var);
-//    /*
-//     * Todo: Multiple aliases!
-//     */
-//    for(auto &alias : aliases_from) {
-//    }
-//    //    ptr singleton = unpack_singleton(aliases_from.value());
-//    //    /*
-//    //     * Todo: ...
-//    //     */
-//    //    assert(*singleton.offset == vs_finite::zero);
-//    //    from_io = from->region_by_id(&relation::get_deref, singleton.id);
-//  }
-
   return aliases_from;
 }
 
@@ -228,11 +203,10 @@ std::experimental::optional<set<mempath>> analysis::mempath::propagate(
 }
 
 std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary_memory_state *state) {
-  /*
-   * Todo: id_set, not ptr_set
-   */
   set<mempath> result;
   for(auto &alias : aliases) {
+    cout << *alias << endl;
+
     bool found = false;
     for(region_map_t::iterator region_it = state->input.regions.begin(); region_it != state->input.regions.end();
         region_it++) {

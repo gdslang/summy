@@ -65,10 +65,13 @@ bool analysis::summary_dstack::unpack_f_addr(void *&r, summy::vs_shared_t f_addr
   return single;
 }
 
-//void analysis::summary_dstack::propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new) {
-//
-//}
-
+void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr) {
+  auto &fd = function_desc_map.at(f_addr);
+  if(!includes(fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
+    fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
+    _dirty_nodes.insert(fd.head_id);
+  }
+}
 
 void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
   //  cout << "Adding constraint from " << from << " to " << to << endl;
@@ -161,12 +164,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             cfg->commit_updates();
 
             set<mempath> field_reqs_new = mempath::from_aliases(field_req_ids_new, mstate);
-//            propagate_reqs(f_addr, mps);
-            auto &fd = function_desc_map.at(f_addr);
-            if(!includes(fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
-              fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
-              _dirty_nodes.insert(fd.head_id);
-            }
+            //            propagate_reqs(f_addr, mps);
+            propagate_reqs(field_reqs_new, f_addr);
 
             //            cout << "Need to apply the following summary: " << endl;
             //            cout << *summary << endl;
@@ -228,16 +227,23 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         state_new =
           dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address), callers_t{from}));
 
-        auto& desc = this->function_desc_map.at(address);
+        auto &desc = this->function_desc_map.at(address);
         if(desc.field_reqs.size() > 0) {
-          auto const& in_edges = cfg->in_edges(from);
+          auto const &in_edges = cfg->in_edges(from);
           assert(in_edges.size() == 1);
           size_t from_parent = *in_edges.begin();
 
           cout << "This call requires the following fields:" << endl;
           for(auto &f : desc.field_reqs) {
             cout << f << endl;
-            f.propagate(state[from_parent]->get_mstate(), state_new->get_mstate());
+            optional<set<mempath>> mempaths_new =
+              f.propagate(state[from_parent]->get_mstate(), state_new->get_mstate());
+            if(mempaths_new) {
+              void *f_addr;
+              bool unpackable_a = unpack_f_addr(f_addr, state[from_parent]->get_f_addr());
+              assert(unpackable_a);
+              propagate_reqs(mempaths_new.value(), f_addr);
+            }
           }
         }
       } else {
