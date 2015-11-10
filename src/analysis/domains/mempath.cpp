@@ -11,15 +11,19 @@
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/sms_op.h>
+#include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/sm_id.h>
+#include <summy/value_set/value_set_visitor.h>
 #include <summy/value_set/vs_finite.h>
 #include <experimental/optional>
 #include <string>
 
 using gdsl::rreil::id;
 using std::experimental::optional;
+using summy::rreil::memory_id;
 using summy::rreil::sm_id;
 using summy::value_set;
+using summy::value_set_visitor;
 using summy::vs_finite;
 
 using namespace std;
@@ -70,36 +74,93 @@ bool mempath::operator==(const mempath &other) const {
 
 ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
   //  from = from->copy();
-  optional<ptr_set_t> aliases_from;
+  ptr_set_t aliases_from;
 
   //  cout << *from << endl;
+  assert(path.size() > 0);
 
-  auto from_io = from->region_by_id(&relation::get_regions, base);
-  optional<ptr_set_t> aliases_current;
-  for(size_t i = 0; i < path.size(); ++i) {
-    //      if(from_reg_it == from->output.deref.end())
-    //        break;
-    size_t offset = path[i].offset;
-    size_t size = path[i].size;
+  struct work_item {
+    size_t index;
+    ptr_set_t aliases;
+  };
+  vector<work_item> work;
+
+  auto step = [&](size_t index, io_region &from_io, int64_t offset_alias) {
+    int64_t offset = path[index].offset + offset_alias;
+    size_t size = path[index].size;
     auto field_it = from_io.out_r.find(offset);
     if(field_it == from_io.out_r.end()) assert(false);
     field f = field_it->second;
     if(f.size != size) f = from_io.insert(from->child_state, offset, size, true);
     num_var f_var = num_var(f.num_id);
-    aliases_from = from->queryAls(&f_var);
-    /*
-     * Todo: Multiple aliases!
-     */
-    cout << aliases_from.value() << endl;
-    //    ptr singleton = unpack_singleton(aliases_from.value());
-    //    /*
-    //     * Todo: ...
-    //     */
-    //    assert(*singleton.offset == vs_finite::zero);
-    //    from_io = from->region_by_id(&relation::get_deref, singleton.id);
+    ptr_set_t aliases = from->queryAls(&f_var);
+    if(index + 1 >= path.size())
+      aliases_from.insert(aliases.begin(), aliases.end());
+    else
+      work.push_back({index + 1, aliases});
+  };
+
+  auto from_io = from->region_by_id(&relation::get_regions, base);
+  step(0, from_io, 0);
+
+  while(work.size() > 0) {
+    work_item wi = work.back();
+    work.pop_back();
+    for(auto &alias : wi.aliases) {
+      optional<int64_t> offset;
+      value_set_visitor vsv;
+      vsv._([&](vs_finite *vsf) {
+        if(vsf->is_singleton())
+          offset = *vsf->get_elements().begin();
+      });
+      vsv._default([&](value_set *vs) {
+        /*
+         * Warning?
+         */
+      });
+      alias.offset->accept(vsv);
+      summy::rreil::id_visitor idv;
+      idv._([&](memory_id *mid) {
+        if(offset) {
+          from_io = from->region_by_id(&relation::get_deref, alias.id);
+          step(wi.index, from_io, offset.value());
+        }
+      });
+      idv._default([&](id *_id) {
+        /*
+         * Warning?
+         */
+      });
+      alias.id->accept(idv);
+    }
   }
 
-  return aliases_from.value();
+//  auto from_io = from->region_by_id(&relation::get_regions, base);
+//  for(size_t i = 0; i < path.size(); ++i) {
+//    //      if(from_reg_it == from->output.deref.end())
+//    //        break;
+//    size_t offset = path[i].offset;
+//    size_t size = path[i].size;
+//    auto field_it = from_io.out_r.find(offset);
+//    if(field_it == from_io.out_r.end()) assert(false);
+//    field f = field_it->second;
+//    if(f.size != size) f = from_io.insert(from->child_state, offset, size, true);
+//    num_var f_var = num_var(f.num_id);
+//    aliases_from = from->queryAls(&f_var);
+//    /*
+//     * Todo: Multiple aliases!
+//     */
+//    for(auto &alias : aliases_from) {
+//    }
+//    //    ptr singleton = unpack_singleton(aliases_from.value());
+//    //    /*
+//    //     * Todo: ...
+//    //     */
+//    //    assert(*singleton.offset == vs_finite::zero);
+//    //    from_io = from->region_by_id(&relation::get_deref, singleton.id);
+//  }
+
+  return aliases_from;
 }
 
 std::tuple<ptr_set_t, ptr_set_t> analysis::mempath::split(ptr_set_t aliases) {
@@ -108,9 +169,7 @@ std::tuple<ptr_set_t, ptr_set_t> analysis::mempath::split(ptr_set_t aliases) {
   for(auto &alias : aliases) {
     summy::rreil::id_visitor idv;
     idv._([&](sm_id *sid) { aliases_immediate.insert(alias); });
-    idv._default([&](id *_id) {
-      aliases_symbolic.insert(alias);
-    });
+    idv._default([&](id *_id) { aliases_symbolic.insert(alias); });
     alias.id->accept(idv);
     // Take over aliases we can propagate
   }
@@ -119,29 +178,32 @@ std::tuple<ptr_set_t, ptr_set_t> analysis::mempath::split(ptr_set_t aliases) {
 
 void analysis::mempath::propagate(ptr_set_t aliases_from_immediate, summary_memory_state *to) const {
 
-  if(aliases_from_immediate.size() > 0) {
-    // propagate
-    assert(to->input.regions.find(base) == to->input.regions.end());
-    assert(path.size() > 0);
+  if(aliases_from_immediate.size() == 0) return;
 
-    optional<field> f;
-    io_region io = to->region_by_id(&relation::get_regions, base);
+  // propagate
 
-    for(size_t i = 0; i < path.size(); ++i) {
-      f = io.insert(to->child_state, path[i].offset, path[i].size, false);
-      num_var f_id_nv = num_var(f.value().num_id);
-      ptr_set_t aliases_f = to->child_state->queryAls(&f_id_nv);
-      ptr p = unpack_singleton(aliases_f);
-      cout << p << endl;
-      assert(*p.offset == vs_finite::zero);
-      io = to->region_by_id(&relation::get_deref, p.id);
-    }
+  /*
+   * Only for now; we have a set of mempaths, they may refer
+   * to the same base
+   */
+  assert(to->input.regions.find(base) == to->input.regions.end());
 
-    if(f) {
-      num_var f_var(f->num_id);
-      to->child_state->assign(&f_var, aliases_from_immediate);
-    }
+  assert(path.size() > 0);
+
+  field f;
+  io_region io = to->region_by_id(&relation::get_regions, base);
+
+  for(size_t i = 0; i < path.size(); ++i) {
+    f = io.insert(to->child_state, path[i].offset, path[i].size, false);
+    num_var f_id_nv = num_var(f.num_id);
+    ptr_set_t aliases_f = to->child_state->queryAls(&f_id_nv);
+    ptr p = unpack_singleton(aliases_f);
+    assert(*p.offset == vs_finite::zero);
+    io = to->region_by_id(&relation::get_deref, p.id);
   }
+
+  num_var f_var(f.num_id);
+  to->child_state->assign(&f_var, aliases_from_immediate);
 
   //  cout << *to << endl;
 }
@@ -160,9 +222,6 @@ std::experimental::optional<set<mempath>> analysis::mempath::propagate(
     id_set_t aliases_from_symbolic_ids;
     for(auto ptr : aliases_from_symbolic)
       aliases_from_symbolic_ids.insert(ptr.id);
-    /*
-     * Todo: What if offsets are != zero?!
-     */
     return from_aliases(aliases_from_symbolic_ids, from);
   } else
     return experimental::nullopt;
