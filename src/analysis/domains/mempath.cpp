@@ -19,7 +19,6 @@
 #include <string>
 
 using gdsl::rreil::id;
-using std::experimental::optional;
 using summy::rreil::memory_id;
 using summy::rreil::sm_id;
 using summy::value_set;
@@ -27,6 +26,7 @@ using summy::value_set_visitor;
 using summy::vs_finite;
 
 using namespace std;
+using namespace std::experimental;
 using namespace analysis;
 using namespace analysis::api;
 
@@ -110,8 +110,7 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
       optional<int64_t> offset;
       value_set_visitor vsv;
       vsv._([&](vs_finite *vsf) {
-        if(vsf->is_singleton())
-          offset = *vsf->get_elements().begin();
+        if(vsf->is_singleton()) offset = *vsf->get_elements().begin();
       });
       vsv._default([&](value_set *vs) {
         /*
@@ -152,35 +151,49 @@ std::tuple<ptr_set_t, ptr_set_t> analysis::mempath::split(ptr_set_t aliases) {
 }
 
 void analysis::mempath::propagate(ptr_set_t aliases_from_immediate, summary_memory_state *to) const {
-
   if(aliases_from_immediate.size() == 0) return;
-
-  // propagate
-
-  /*
-   * Only for now; we have a set of mempaths, they may refer
-   * to the same base
-   */
-  assert(to->input.regions.find(base) == to->input.regions.end());
 
   assert(path.size() > 0);
 
-  field f;
-  io_region io = to->region_by_id(&relation::get_regions, base);
+  auto step = [&](size_t index, io_region &io) -> optional<id_shared_t> {
+    int64_t offset = path[index].offset;
+    size_t size = path[index].size;
+    auto field_it = io.out_r.find(offset);
+    field f;
+    if(field_it == io.out_r.end())
+      f = io.insert(to->child_state, offset, size, false);
+    else if(f.size != size)
+      return nullopt;
+    else
+      f = field_it->second;
+    return f.num_id;
+  };
 
-  for(size_t i = 0; i < path.size(); ++i) {
-    f = io.insert(to->child_state, path[i].offset, path[i].size, false);
-    num_var f_id_nv = num_var(f.num_id);
-    ptr_set_t aliases_f = to->child_state->queryAls(&f_id_nv);
-    ptr p = unpack_singleton(aliases_f);
-    assert(*p.offset == vs_finite::zero);
-    io = to->region_by_id(&relation::get_deref, p.id);
+  auto warn_bad = [&]() { cout << "Warning (analysis::mempath::propagate): Conflicts while propagating pointers."; };
+
+  io_region io = to->region_by_id(&relation::get_regions, base);
+  optional<id_shared_t> opt_id = step(0, io);
+  if(!opt_id) {
+    warn_bad();
+    return;
   }
 
-  num_var f_var(f.num_id);
-  to->child_state->assign(&f_var, aliases_from_immediate);
+  for(size_t i = 1; i < path.size(); ++i) {
+    num_var f_var(opt_id.value());
+    ptr_set_t aliases = to->queryAls(&f_var);
+    ptr _ptr = unpack_singleton(aliases);
+    assert(*_ptr.offset == vs_finite::zero);
+    io = to->region_by_id(&relation::get_deref, _ptr.id);
 
-  //  cout << *to << endl;
+    opt_id = step(i, io);
+    if(!opt_id) {
+      warn_bad();
+      return;
+    }
+  }
+
+  num_var f_var(opt_id.value());
+  to->child_state->assign(&f_var, aliases_from_immediate);
 }
 
 std::experimental::optional<set<mempath>> analysis::mempath::propagate(
