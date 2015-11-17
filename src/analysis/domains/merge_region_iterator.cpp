@@ -76,6 +76,8 @@ region_pair_desc_t merge_region_iterator::operator*() {
         perfect_overlap = true;
     }
 
+    cout << offset_a << " / " << offset_b << endl;
+
     this->r1_collision = this->r1_collision || collision_local;
     this->r2_collision = this->r2_collision || collision_local;
     bool collision = this->r1_collision || this->r2_collision;

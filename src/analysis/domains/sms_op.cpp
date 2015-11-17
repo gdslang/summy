@@ -760,6 +760,14 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
            * Conflicts are now resolved during pointer machting, so there must
            * not be any conflicts left
            */
+
+          cout << rpd.ending_first.offset << endl;
+
+          cout << *id << endl;
+          cout << endl;
+          cout << "++++++++++++++++++++++++++" << *a << endl;
+          cout << endl;
+          cout << "**************************" << *a << endl;
           assert(false);
         } else {
           if(!rpd.ending_last) {
