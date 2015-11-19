@@ -54,7 +54,7 @@ void fixpoint::iterate() {
          */
         auto evaluated = constraint();
 
-        //                cout << "Evaluated: " << *evaluated << endl;
+        //                        cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -76,7 +76,7 @@ void fixpoint::iterate() {
         }
 
         //        cout << "============================" << endl;
-        //        cout << "evaluated:" << endl << *evaluated << endl;
+        //                cout << "evaluated:" << endl << *evaluated << endl;
 
         if(accumulator_set) {
           //          cout << "accumulator:" << endl << *accumulator << endl;
@@ -103,8 +103,8 @@ void fixpoint::iterate() {
        * No monotonicity because of the box operator
        */
 
-//      cout << "++++++ current:" << endl << *current << endl;
-//      cout << "++++++ acc:" << endl << *accumulator << endl;
+      //      cout << "++++++ current:" << endl << *current << endl;
+      //      cout << "++++++ acc:" << endl << *accumulator << endl;
 
       propagate = !(*current == *accumulator);
 

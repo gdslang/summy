@@ -476,6 +476,7 @@ bool analysis::summary_memory_state::overlap_region(region_t &region, int64_t of
  */
 summary_memory_state::rt_result_t analysis::summary_memory_state::retrieve_kill(
   region_t &region, int64_t offset, size_t size, bool handle_conflict) {
+//    cout << "before: " << endl << *this << endl;
   //  cout << "retrieve_kill() " << offset << " / " << size << endl;
 
   bool conflict = false;
@@ -530,6 +531,7 @@ summary_memory_state::rt_result_t analysis::summary_memory_state::retrieve_kill(
     region.insert(make_pair(offset, field{size, numeric_id::generate()}));
   }
 
+//  cout << "after: " << endl << *this << endl;
   //  cout << "Found: " << found << endl;
 
   if(!found) return rt_result_t{conflict, region.end()};
@@ -554,8 +556,11 @@ void analysis::summary_memory_state::topify(region_t &region, int64_t offset, si
 
 optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   io_region io, int64_t offset, size_t size, bool handle_conflict) {
+    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+  cout << *this << endl;
   rt_result_t in = retrieve_kill(io.in_r, offset, size, handle_conflict);
   rt_result_t out = retrieve_kill(io.out_r, offset, size, handle_conflict);
+  cout << *this << endl;
   assert(in.conflict == out.conflict);
   if(in.conflict && !handle_conflict) return nullopt;
   optional<id_shared_t> r;
@@ -692,10 +697,14 @@ bool analysis::summary_memory_state::is_bottom() const {
 
 void analysis::summary_memory_state::check_consistency() {
   //  cout << "check_consistency..." << endl;
-  //  cout << *this << endl;
+    cout << *this << endl;
   auto check_regions = [&](region_map_t &regions) {
     for(auto &region_it : regions) {
+      optional<int64_t> first_free;
       for(auto &f_it : region_it.second) {
+        if(first_free)
+          assert(f_it.first >= first_free.value());
+        first_free = f_it.first + (int64_t)f_it.second.size;
         num_var *nv = new num_var(f_it.second.num_id);
         ptr_set_t aliases = child_state->queryAls(nv);
         delete nv;

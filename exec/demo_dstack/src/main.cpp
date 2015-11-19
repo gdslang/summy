@@ -116,12 +116,12 @@ int main(int argc, char **argv) {
     jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
 
-    fp.iterate();
-
     ofstream dot_noa_fs;
     dot_noa_fs.open("output_noa.dot", ios::out);
     cfg.dot(dot_noa_fs);
     dot_noa_fs.close();
+
+    fp.iterate();
 
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);
