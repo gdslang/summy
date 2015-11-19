@@ -399,7 +399,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
 
     auto resolve_collision = [&]() {
       if(collision) {
-        //        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
+        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
         conflict_resolvers.push_back([&]() {
           //          summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
           //          summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
@@ -431,17 +431,16 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
       //        rpd.field_second_region()->f.size << endl;
 
       if(rpd.collision) {
-        int64_t from_current;
-        from_current = rpd.ending_first.offset;
-        if(rpd.ending_last) from_current = std::min(from_current, rpd.ending_last->offset);
-        int64_t from;
-        if(collision)
-          from = collision->from;
-        else
-          from = from_current;
-        size_t size = rpd.ending_first.f.size;
-        if(rpd.ending_last) size = std::max(size, rpd.ending_last->f.size);
-        collision = collision_t{from, from_current + (int64_t)size - 1};
+        if(rpd.ending_last) {
+          //          cout << "Collision (first) from " << from_current << " s:" << rpd.ending_first.f.size << endl;
+          //          cout << "Collision (second) from " << rpd.ending_last.value().offset << " s:" <<
+          //          rpd.ending_last.value().f.size << endl;
+          int64_t from_current = std::min(rpd.ending_first.offset, rpd.ending_last->offset);
+          int64_t from = collision ? collision->from : from_current;
+          size_t size = rpd.ending_first.f.size;
+          if(rpd.ending_last) size = std::max(size, rpd.ending_last->f.size);
+          collision = collision_t{from, from_current + (int64_t)size - 1};
+        }
       } else {
         resolve_collision();
         if(!rpd.ending_last) {
@@ -673,6 +672,13 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     return make_tuple(head, a_n, b_n);
   }
 
+  cout << endl;
+  cout << "++++++++++++++++++++++++++//" << endl
+       << *a << endl;
+  cout << endl;
+  cout << "**************************//" << endl
+       << *b << endl;
+
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
   //    cout << "++++++++++++++++++++++++++++++" << endl;
   //    cout << "++++++++++++++++++++++++++++++" << endl;
@@ -767,7 +773,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
           cout << endl;
           cout << "++++++++++++++++++++++++++" << *a << endl;
           cout << endl;
-          cout << "**************************" << *a << endl;
+          cout << "**************************" << *b << endl;
           assert(false);
         } else {
           if(!rpd.ending_last) {
