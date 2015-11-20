@@ -557,16 +557,17 @@ void analysis::summary_memory_state::topify(region_t &region, int64_t offset, si
 optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   io_region io, int64_t offset, size_t size, bool handle_conflict) {
     cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-  cout << *this << endl;
   rt_result_t in = retrieve_kill(io.in_r, offset, size, handle_conflict);
   rt_result_t out = retrieve_kill(io.out_r, offset, size, handle_conflict);
-  cout << *this << endl;
   assert(in.conflict == out.conflict);
   if(in.conflict && !handle_conflict) return nullopt;
   optional<id_shared_t> r;
   if(in.field_it == io.in_r.end()) {
     assert(out.field_it == io.out_r.end());
+    cout << *this << endl;
     field &f = io.insert(child_state, offset, size, in.conflict);
+    cout << *this << endl;
+    cout << "????????????????????";
     r = f.num_id;
   } else {
     assert(out.field_it != io.out_r.end());
