@@ -49,18 +49,31 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   //    int64_t offset;
   //    field f;
   //  };
+//  cout << endl << "INSERT " << offset << " / " << size << endl;
 
   vector<int64_t> offsets;
   vector<field> replaced;
   bool contiguous = true;
   int64_t offset_next = offset;
-  for(auto it = out_r.lower_bound(offset); it != out_r.end(); it++) {
-    int64_t offset_current = it->first;
+
+  auto out_r_it = out_r.lower_bound(offset);
+
+  /*
+   * Check whether preceeding fields overlaps; in this case, we include the preceeding field
+   */
+  if(out_r_it != out_r.begin() && out_r_it->first > offset) {
+    --out_r_it;
+    if(out_r_it->first + (int64_t)out_r_it->second.size <= offset)
+      out_r_it++;
+  }
+
+  for(; out_r_it != out_r.end(); out_r_it++) {
+    int64_t offset_current = out_r_it->first;
     if(offset_current >= offset + (int64_t)size) break;
     offsets.push_back(offset_current);
     if(contiguous) {
       if(offset_current == offset_next) {
-        field &f = it->second;
+        field &f = out_r_it->second;
         replaced.push_back(f);
         offset_next += f.size;
       } else
@@ -77,6 +90,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   vector<num_var*> kill_vars;
   for(auto offset : offsets) {
+//    cout << endl << "REMOVING OFFSET " << offset << endl;
     auto in_it = in_r.find(offset);
     auto out_it = out_r.find(offset);
     num_var *in_var = new num_var(in_it->second.num_id);
@@ -556,7 +570,7 @@ void analysis::summary_memory_state::topify(region_t &region, int64_t offset, si
 
 optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   io_region io, int64_t offset, size_t size, bool handle_conflict) {
-    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+//    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
   rt_result_t in = retrieve_kill(io.in_r, offset, size, handle_conflict);
   rt_result_t out = retrieve_kill(io.out_r, offset, size, handle_conflict);
   assert(in.conflict == out.conflict);
@@ -564,10 +578,10 @@ optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   optional<id_shared_t> r;
   if(in.field_it == io.in_r.end()) {
     assert(out.field_it == io.out_r.end());
-    cout << *this << endl;
+//    cout << *this << endl;
     field &f = io.insert(child_state, offset, size, in.conflict);
-    cout << *this << endl;
-    cout << "????????????????????";
+//    cout << *this << endl;
+//    cout << "????????????????????";
     r = f.num_id;
   } else {
     assert(out.field_it != io.out_r.end());
