@@ -17,5 +17,10 @@ int g(int (*fp)(int(*)(void))) {
 }
 
 int main() {
-	return g(&h) + h(&q);
+	int x = g(&h) + h(&q);
+
+          __asm volatile ( "movl %0, %%r11d"
+          : "=a" (x)
+          : "a" (x)
+          : "r11");
 }
