@@ -377,7 +377,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
    * in one of the regions.
    */
   auto compatMatchSeparateRegion = [&](io_region &io_ra, io_region &io_rb) {
-    //    cout << "Next region" << endl;
+//    cout << "Next region" << endl;
 
     num_var_pairs_t upcoming;
 
@@ -399,7 +399,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
 
     auto resolve_collision = [&]() {
       if(collision) {
-        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
+        //        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
         conflict_resolvers.push_back([&]() {
           //          summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
           //          summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
@@ -424,11 +424,11 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
 
       //      cout << "Next it, collision: " << rpd.collision << endl;
       //      if(rpd.field_first_region())
-      //        cout << "First region: offset: " << rpd.field_first_region()->offset << ", size: " <<
-      //        rpd.field_first_region()->f.size << endl;
+      //        cout << "First region: offset: " << rpd.field_first_region()->offset
+      //             << ", size: " << rpd.field_first_region()->f.size << endl;
       //      if(rpd.field_second_region())
-      //        cout << "Second region: offset: " << rpd.field_second_region()->offset << ", size: " <<
-      //        rpd.field_second_region()->f.size << endl;
+      //        cout << "Second region: offset: " << rpd.field_second_region()->offset
+      //             << ", size: " << rpd.field_second_region()->f.size << endl;
 
       if(rpd.collision) {
         if(rpd.ending_last) {
@@ -449,8 +449,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first) {
             insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-              //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
-              //                            ending_first.offset << endl;
+//              cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " << ending_first.offset << endl;
               field inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
               //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
               if(copy_paste) {
@@ -464,8 +463,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
             });
           } else {
             insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-              //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
-              //                            ending_first.offset << endl;
+//              cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " << ending_first.offset << endl;
               field inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
               //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
               if(copy_paste) {
@@ -502,6 +500,14 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
     mri = merge_region_iterator(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
+
+//      cout << "Var first: " << *rpd.ending_first.f.num_id << endl;
+//      cout << "Offset/size first: " << rpd.ending_first.offset << " / " << rpd.ending_first.f.size << endl;
+//      if(rpd.ending_last)
+//        cout << "Offset/size last: " << rpd.ending_last.value().offset << " / " << rpd.ending_last.value().f.size
+//             << endl;
+//      cout << "collision: " << rpd.collision << endl;
+
       if(!rpd.collision) {
         if(rpd.ending_last) {
           field const &f_a = rpd.ending_first.f;
@@ -532,8 +538,9 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
               upcoming.push_back(make_tuple(new num_var(p_a.id), new num_var(p_b.id)));
             }
           }
-        } else
+        } else {
           assert(false);
+        }
       }
       ++mri;
     }
@@ -594,6 +601,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
     /*
      * We first collect all equalities of the current region.
      */
+
+
     num_var_pairs_t upcoming = compatMatchSeparateRegion(rp.io_ra, rp.io_rb);
     for(auto upc : upcoming) {
       num_var *a;
@@ -672,21 +681,14 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     return make_tuple(head, a_n, b_n);
   }
 
-  cout << endl;
-  cout << "++++++++++++++++++++++++++//" << endl
-       << *a << endl;
-  cout << endl;
-  cout << "**************************//" << endl
-       << *b << endl;
-
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-  //    cout << "++++++++++++++++++++++++++++++" << endl;
-  //    cout << "++++++++++++++++++++++++++++++" << endl;
-  //    cout << "++++++++++++++++++++++++++++++" << endl;
-  //    cout << "compat OF" << endl;
-  //    cout << *a << endl;
-  //    cout << "WITH" << endl;
-  //    cout << *b << endl;
+//  cout << "++++++++++++++++++++++++++++++" << endl;
+//  cout << "++++++++++++++++++++++++++++++" << endl;
+//  cout << "++++++++++++++++++++++++++++++" << endl;
+//  cout << "compat OF" << endl;
+//  cout << *a << endl;
+//  cout << "WITH" << endl;
+//  cout << *b << endl;
   //  }
 
   /*
@@ -766,14 +768,6 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
            * Conflicts are now resolved during pointer machting, so there must
            * not be any conflicts left
            */
-
-          cout << rpd.ending_first.offset << endl;
-
-          cout << *id << endl;
-          cout << endl;
-          cout << "++++++++++++++++++++++++++" << *a << endl;
-          cout << endl;
-          cout << "**************************" << *b << endl;
           assert(false);
         } else {
           if(!rpd.ending_last) {

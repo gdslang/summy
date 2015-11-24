@@ -67,7 +67,7 @@ region_pair_desc_t merge_region_iterator::operator*() {
     bool perfect_overlap = false;
     if(offset_a < offset_b) {
       if(end_a > offset_b) collision_local = true;
-    } else if(offset_b > offset_a) {
+    } else if(offset_b < offset_a) {
       if(end_b > offset_a) collision_local = true;
     } else {
       if(end_a != end_b)
@@ -75,6 +75,10 @@ region_pair_desc_t merge_region_iterator::operator*() {
       else
         perfect_overlap = true;
     }
+
+//    cout << "collision_local: " << collision_local << endl;
+//    cout << "\t offset_a: " << offset_a << ", offset_b: " << offset_b << endl;
+//    cout << "\t end_a: " << end_a << ", end_b: " << end_b << endl;
 
     this->r1_collision = this->r1_collision || collision_local;
     this->r2_collision = this->r2_collision || collision_local;

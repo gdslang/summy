@@ -49,7 +49,6 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   //    int64_t offset;
   //    field f;
   //  };
-//  cout << endl << "INSERT " << offset << " / " << size << endl;
 
   vector<int64_t> offsets;
   vector<field> replaced;
@@ -90,7 +89,6 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   vector<num_var*> kill_vars;
   for(auto offset : offsets) {
-//    cout << endl << "REMOVING OFFSET " << offset << endl;
     auto in_it = in_r.find(offset);
     auto out_it = out_r.find(offset);
     num_var *in_var = new num_var(in_it->second.num_id);
@@ -570,7 +568,6 @@ void analysis::summary_memory_state::topify(region_t &region, int64_t offset, si
 
 optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   io_region io, int64_t offset, size_t size, bool handle_conflict) {
-//    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
   rt_result_t in = retrieve_kill(io.in_r, offset, size, handle_conflict);
   rt_result_t out = retrieve_kill(io.out_r, offset, size, handle_conflict);
   assert(in.conflict == out.conflict);
@@ -578,10 +575,7 @@ optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   optional<id_shared_t> r;
   if(in.field_it == io.in_r.end()) {
     assert(out.field_it == io.out_r.end());
-//    cout << *this << endl;
     field &f = io.insert(child_state, offset, size, in.conflict);
-//    cout << *this << endl;
-//    cout << "????????????????????";
     r = f.num_id;
   } else {
     assert(out.field_it != io.out_r.end());
@@ -712,7 +706,6 @@ bool analysis::summary_memory_state::is_bottom() const {
 
 void analysis::summary_memory_state::check_consistency() {
   //  cout << "check_consistency..." << endl;
-    cout << *this << endl;
   auto check_regions = [&](region_map_t &regions) {
     for(auto &region_it : regions) {
       optional<int64_t> first_free;
