@@ -81,7 +81,7 @@ std::string c_compile(std::string program, unsigned int opt) {
     c_file.close();
 
     stringstream ss;
-    ss << "clang -O" << opt << " -std=c11 -w program.c -o program.elf";
+    ss << "clang -mcmodel=large -O" << opt << " -std=c11 -fno-inline -fno-optimize-sibling-calls -w program.c -o program.elf";
 
     exit([&]() { system("rm program.c"); });
 
@@ -101,7 +101,7 @@ std::string cpp_compile(std::string program, unsigned int opt) {
     c_file.close();
 
     stringstream ss;
-    ss << "clang++ -O" << opt << " program.cpp -o program.elf";
+    ss << "clang++ -O" << opt << " -fno-inline -fno-optimize-sibling-calls program.cpp -o program.elf";
 
     exit([&]() { system("rm program.cpp"); });
 

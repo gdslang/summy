@@ -378,7 +378,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
    * in one of the regions.
    */
   auto compatMatchSeparateRegion = [&](io_region &io_ra, io_region &io_rb) {
-//    cout << "Next region" << endl;
+    //    cout << "Next region" << endl;
 
     num_var_pairs_t upcoming;
 
@@ -450,7 +450,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first) {
             insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-//              cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " << ending_first.offset << endl;
+//                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
+//                            ending_first.offset << endl;
               field inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
               //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
               if(copy_paste) {
@@ -464,7 +465,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
             });
           } else {
             insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-//              cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " << ending_first.offset << endl;
+//                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
+//                            ending_first.offset << endl;
               field inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
               //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
               if(copy_paste) {
@@ -502,12 +504,13 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
 
-//      cout << "Var first: " << *rpd.ending_first.f.num_id << endl;
-//      cout << "Offset/size first: " << rpd.ending_first.offset << " / " << rpd.ending_first.f.size << endl;
-//      if(rpd.ending_last)
-//        cout << "Offset/size last: " << rpd.ending_last.value().offset << " / " << rpd.ending_last.value().f.size
-//             << endl;
-//      cout << "collision: " << rpd.collision << endl;
+      //      cout << "Var first: " << *rpd.ending_first.f.num_id << endl;
+      //      cout << "Offset/size first: " << rpd.ending_first.offset << " / " << rpd.ending_first.f.size << endl;
+      //      if(rpd.ending_last)
+      //        cout << "Offset/size last: " << rpd.ending_last.value().offset << " / " <<
+      //        rpd.ending_last.value().f.size
+      //             << endl;
+      //      cout << "collision: " << rpd.collision << endl;
 
       if(!rpd.collision) {
         if(rpd.ending_last) {
@@ -586,6 +589,24 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
   init_from_regions(a_in.regions, a_out.regions, b_in.regions, b_out.regions, true);
   init_from_regions(b_in.regions, b_out.regions, a_in.regions, a_out.regions, false);
 
+  /*
+   * There may be special regions that are not reachable through registers, but have globally unique
+   * ids. Therefore, we add deref regions with equal ids to the worklist.
+   */
+  for(auto deref_first_it = a_in.deref.begin(); deref_first_it != a_in.deref.end(); deref_first_it++) {
+    auto deref_second_it = b_in.deref.find(deref_first_it->first);
+    if(deref_second_it != b_in.deref.end()) {
+      auto &deref_first_out = a_out.deref.at(deref_first_it->first);
+      auto &deref_second_out = b_out.deref.at(deref_second_it->first);
+
+      io_region io_first = io_region{deref_first_it->second, deref_first_out};
+      io_region io_second = io_region{deref_second_it->second, deref_second_out};
+
+      worklist.push(region_pair{io_first, io_second});
+    }
+
+  }
+
   num_var_pairs_t result;
 
   /*
@@ -602,7 +623,6 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
     /*
      * We first collect all equalities of the current region.
      */
-
 
     num_var_pairs_t upcoming = compatMatchSeparateRegion(rp.io_ra, rp.io_rb);
     for(auto upc : upcoming) {
@@ -683,13 +703,13 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   }
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-//  cout << "++++++++++++++++++++++++++++++" << endl;
-//  cout << "++++++++++++++++++++++++++++++" << endl;
-//  cout << "++++++++++++++++++++++++++++++" << endl;
-//  cout << "compat OF" << endl;
-//  cout << *a << endl;
-//  cout << "WITH" << endl;
-//  cout << *b << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "++++++++++++++++++++++++++++++" << endl;
+//    cout << "compat OF" << endl;
+//    cout << *a << endl;
+//    cout << "WITH" << endl;
+//    cout << *b << endl;
   //  }
 
   /*
@@ -740,14 +760,14 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     delete alias_b;
   }
 
-  //  summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
-  //  cout << "after_rename, a: " << *after_rename_a << endl;
-  //  summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
-  //  cout << "after_rename, b: " << *after_rename_b << endl;
+//    summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
+//    cout << "after_rename, a: " << *after_rename_a << endl;
+//    summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
+//    cout << "after_rename, b: " << *after_rename_b << endl;
 
   /*
    * In the second step, all corresponding regions already have got the same region key. Thus,
-   * in order to built a compatible relation we only need to iterate the regions in the deref and
+   * in order to build a compatible relation we only need to iterate the regions in the deref and
    * regions map. For each pair of regions, the fields are matched. If a field perfectly overlaps
    * a field in the other region, the field is added to the compatible region. Otherwise, if there
    * is a conflict, a new field is created in the compatible region that contains a newly created
@@ -772,8 +792,8 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
           assert(false);
         } else {
           if(!rpd.ending_last) {
-            //            cout << *id << endl;
-            //            cout << *rpd.ending_first.f.num_id << endl;
+            cout << *id << endl;
+            cout << *rpd.ending_first.f.num_id << endl;
           }
           assert(rpd.ending_last);
 
