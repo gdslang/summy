@@ -333,6 +333,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
             num_expr *value_joined_expr =
               new num_expr_lin(new num_linear_vs(value_set::join(value_summary, value_caller)));
             return_site->child_state->assign(nv_fld_c, value_joined_expr);
+            delete value_joined_expr;
           }
         };
         ptr_set_t region_aliases_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_aliases_c);
