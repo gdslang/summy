@@ -89,7 +89,7 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
     int64_t offset = path[index].offset + offset_alias;
     size_t size = path[index].size;
     auto field_it = from_io.out_r.find(offset);
-    if(field_it == from_io.out_r.end()) assert(false);
+    if(field_it == from_io.out_r.end()) return;
     field f = field_it->second;
     if(f.size != size) f = from_io.insert(from->child_state, offset, size, true);
     num_var f_var = num_var(f.num_id);

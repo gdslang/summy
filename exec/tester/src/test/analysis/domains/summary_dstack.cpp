@@ -1213,21 +1213,51 @@ int main() {\n\
 //int g(int (*fp)(void)) {\n\
 //  return h(fp);\n\
 //}\n\
-//      int main() {\n\
-//        int x = g(&f);\n\
-//        __asm volatile ( \"movl %0, %%r11d\"\n\
-//          : \"=a\" (x)\n\
-//          : \"a\" (x)\n\
-//          : \"r11\");\n\
+//int main() {\n\
+//  int x = g(&f);\n\
+//  __asm volatile ( \"movl %0, %%r11d\"\n\
+//  : \"=a\" (x)\n\
+//  : \"a\" (x)\n\
+//  : \"r11\");\n\
 //\n\
-//        __asm volatile ( \"end:\" );\n\
-//        return 0;\n\
-//      }", false));
+//  __asm volatile ( \"end:\" );\n\
+//  return 0;\n\
+//}", false));
 //
 //  vs_shared_t r;
 //  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
 //  ASSERT_EQ(*r, vs_finite::single(44));
 //}
+
+TEST_F(summary_dstack_test, FunctionPointerParamter3) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_c(ar, "\n\
+int f() {\n\
+  return 77;\n\
+}\n\
+\n\
+int h(int (*fp)(void)) {\n\
+  return fp();\n\
+}\n\
+\n\
+int g(int (*fp)(int(*)(void))) {\n\
+  return fp(&f);\n\
+}\n\
+int main() {\n\
+  int x = g(&h);\n\
+  __asm volatile ( \"movl %0, %%r11d\"\n\
+  : \"=a\" (x)\n\
+  : \"a\" (x)\n\
+  : \"r11\");\n\
+\n\
+  __asm volatile ( \"end:\" );\n\
+  return 0;\n\
+}", false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
+  ASSERT_EQ(*r, vs_finite::single(77));
+}
 
 TEST_F(summary_dstack_test, FunctionPointerParamter4) {
   _analysis_result ar;
