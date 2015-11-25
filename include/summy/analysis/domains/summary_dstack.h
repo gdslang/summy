@@ -29,7 +29,7 @@ struct summary_dstack_result : public ::analysis::analysis_result<state_t> {
 typedef std::shared_ptr<summary_memory_state> summary_t;
 
 struct function_desc {
-  summary_t summary;
+  std::set<size_t> summary_nodes;
   /*
    * Minimal call stack size
    */
@@ -43,8 +43,7 @@ struct function_desc {
    */
   std::set<mempath> field_reqs;
 
-  function_desc(summary_t summary, size_t min_calls_sz, size_t head_id)
-      : summary(summary), min_calls_sz(min_calls_sz), head_id(head_id) {}
+  function_desc(size_t min_calls_sz, size_t head_id) : min_calls_sz(min_calls_sz), head_id(head_id) {}
 };
 
 class summary_dstack : public fp_analysis {
@@ -55,7 +54,7 @@ private:
   state_t state;
 
   bool unpack_f_addr(void *&r, summy::vs_shared_t f_addr);
-//  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);
+  //  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);
 
   void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);

@@ -110,7 +110,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             assert(unpackable_a);
             size_t current_min_calls_sz = function_desc_map.at(f_addr).min_calls_sz;
 
-            shared_ptr<summary_memory_state> summary = shared_ptr<summary_memory_state>(sms_bottom());
+            optional<shared_ptr<summary_memory_state>> summary;
 
             ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
             id_set_t field_req_ids_new;
@@ -139,7 +139,20 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   auto fd_it = function_desc_map.find(address);
                   if(fd_it != function_desc_map.end()) {
                     auto &f_desc = fd_it->second;
-                    summary = shared_ptr<summary_memory_state>(summary->join(f_desc.summary.get(), to));
+                    for(size_t s_node : f_desc.summary_nodes)
+                      if(summary)
+                        summary =
+                          shared_ptr<summary_memory_state>(summary.value()->join(state[s_node]->get_mstate(), to));
+                      else
+                        summary = shared_ptr<summary_memory_state>(state[s_node]->get_mstate()->copy());
+
+                    //                    cout << address << endl;
+                    //                    cout << "=====================================" << endl;
+                    //                    if(this->state.size() > 91)
+                    //            cout << *this->state[91]->get_mstate() << endl;
+                    //                    cout << "==================================+++" << endl;
+                    //                    cout << *f_desc.summary.get() << endl;
+
                     f_desc.min_calls_sz = std::max(f_desc.min_calls_sz, current_min_calls_sz);
 
                     size_t head_id = fd_it->second.head_id;
@@ -151,8 +164,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   } else {
                     size_t an_id = cfg->create_node(
                       [&](size_t id) { return new address_node(id, (size_t)address, cfg::DECODABLE); });
-                    function_desc_map.insert(
-                      make_pair(address, function_desc(summary_t(sms_bottom()), current_min_calls_sz + 1, an_id)));
+                    function_desc_map.insert(make_pair(address, function_desc(current_min_calls_sz + 1, an_id)));
                     //                    cout << "New edge from " << to << " to " << an_id << endl;
                     cfg->update_edge(to, an_id, new call_edge(true));
                   }
@@ -170,7 +182,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //            cout << "Need to apply the following summary: " << endl;
             //            cout << *summary << endl;
 
-            summary_memory_state *summarized = apply_summary(mstate, summary.get());
+            shared_ptr<summary_memory_state> bottom = shared_ptr<summary_memory_state>(sms_bottom());
+            summary_memory_state *summarized = apply_summary(mstate, summary ? summary.value().get() : bottom.get());
             return shared_ptr<global_state>(
               new global_state(summarized, state_c->get_f_addr(), state_c->get_callers()));
           };
@@ -187,8 +200,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //              summary_map[state_c->get_f_addr()] =
             //              shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
             //            else
-            fd_it->second.summary =
-              shared_ptr<summary_memory_state>(fd_it->second.summary->join(state_c->get_mstate(), to));
+            fd_it->second.summary_nodes.insert(to);
             for(auto caller : state_c->get_callers())
               assert_dependency(gen_dependency(to, caller));
             return state_c;
@@ -233,9 +245,9 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           assert(in_edges.size() == 1);
           size_t from_parent = *in_edges.begin();
 
-          cout << "This call requires the following fields:" << endl;
+//          cout << "This call requires the following fields:" << endl;
           for(auto &f : desc.field_reqs) {
-            cout << f << endl;
+//            cout << f << endl;
             optional<set<mempath>> mempaths_new =
               f.propagate(state[from_parent]->get_mstate(), state_new->get_mstate());
             if(mempaths_new) {
@@ -313,7 +325,7 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
   node_visitor nv;
   nv._([&](address_node *an) { addr = an->get_address(); });
   n->accept(nv);
-  function_desc_map.insert(make_pair((void *)addr.value(), function_desc(summary_t(sms_bottom()), 0, n->get_id())));
+  function_desc_map.insert(make_pair((void *)addr.value(), function_desc(0, n->get_id())));
   state[n->get_id()]->set_f_addr(vs_finite::single(addr.value()));
 }
 

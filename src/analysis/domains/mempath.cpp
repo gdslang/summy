@@ -218,8 +218,6 @@ std::experimental::optional<set<mempath>> analysis::mempath::propagate(
 std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary_memory_state *state) {
   set<mempath> result;
   for(auto &alias : aliases) {
-    cout << *alias << endl;
-
     bool found = false;
     for(region_map_t::iterator region_it = state->input.regions.begin(); region_it != state->input.regions.end();
         region_it++) {

@@ -1177,22 +1177,22 @@ int main(int argc, char **argv) {\n\
 TEST_F(summary_dstack_test, FunctionPointerParamter1) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_c(ar, "\n\
-      int f() {\n\
-        return 57;\n\
-      }\n\
-      int g(int (*fp)(void)) {\n\
-        return fp();\n\
-      }\n\
-      int main() {\n\
-        int x = g(&f);\n\
-        __asm volatile ( \"movl %0, %%r11d\"\n\
-          : \"=a\" (x)\n\
-          : \"a\" (x)\n\
-          : \"r11\");\n\
+int f() {\n\
+  return 57;\n\
+}\n\
+int g(int (*fp)(void)) {\n\
+  return fp();\n\
+}\n\
+int main() {\n\
+  int x = g(&f);\n\
+  __asm volatile ( \"movl %0, %%r11d\"\n\
+  : \"=a\" (x)\n\
+  : \"a\" (x)\n\
+  : \"r11\");\n\
 \n\
-        __asm volatile ( \"end:\" );\n\
-        return 0;\n\
-      }", false));
+   __asm volatile ( \"end:\" );\n\
+     return 0;\n\
+}", false));
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
@@ -1247,19 +1247,18 @@ int h(int (*fp)(void)) {\n\
 int g(int (*fp)(int(*)(void))) {\n\
   return fp(&f);\n\
 }\n\
-      int main() {\n\
-        int x = g(&h) + h(&q);\n\
-        __asm volatile ( \"movl %0, %%r11d\"\n\
-          : \"=a\" (x)\n\
-          : \"a\" (x)\n\
-          : \"r11\");\n\
+int main() {\n\
+  int x = g(&h) + h(&q);\n\
+  __asm volatile ( \"movl %0, %%r11d\"\n\
+  : \"=a\" (x)\n\
+  : \"a\" (x)\n\
+  : \"r11\");\n\
 \n\
-        __asm volatile ( \"end:\" );\n\
-        return 0;\n\
-      }", false));
+__asm volatile ( \"end:\" );\n\
+  return 0;\n\
+}", false));
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
-  cout << *r << endl;
   ASSERT_EQ(*r, make_shared<vs_finite>(vs_finite::elements_t { 84, 141, 198}));
 }
