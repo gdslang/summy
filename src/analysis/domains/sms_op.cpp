@@ -355,7 +355,15 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
   for(auto &deref_mapping_so : summary->output.deref) {
     id_shared_t region_key = deref_mapping_so.first;
-    ptr_set_t &region_aliases_c = ptr_map.at(region_key);
+
+    auto region_aliases_c_it = ptr_map.find(region_key);
+    /*
+     * If a memory region is not reachable in the summary (?),
+     * its key may not be present in the ptr_map
+     */
+    if(region_aliases_c_it == ptr_map.end())
+      continue;
+    ptr_set_t &region_aliases_c = region_aliases_c_it->second;
     process_region(&relation::get_deref, region_aliases_c, deref_mapping_so.second);
   }
   delete _top;
