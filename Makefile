@@ -43,6 +43,9 @@ demo_ismt: all
 .PHONY: demo_dstack
 demo_dstack: all
 	$(MAKE) -C exec/demo_dstack/
+.PHONY: all_f
+all_f: all
+	$(MAKE) -C exec/all_f/
 .PHONY: test_build
 test_build: all
 	$(MAKE) -C exec/tester/

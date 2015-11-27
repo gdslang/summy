@@ -93,10 +93,20 @@ int main(int argc, char **argv) {
   unsigned char *buffer = (unsigned char *)malloc(section.size);
   memcpy(buffer, elfp.get_data().data + section.offset, section.size);
 
-  size_t size = (function.offset - section.offset) + function.size + 1000;
-  if(size > section.size) size = section.size;
+//  size_t size = (function.offset - section.offset) + function.size + 1000;
+//  if(size > section.size) size = section.size;
 
-  g.set_code(buffer, size, section.address);
+  auto functions = elfp.functions();
+  for(auto f : functions) {
+    binary_provider::entry_t e;
+    string name;
+    tie(name, e) = f;
+    cout << hex << e.address << " (" << name << ")" << endl;
+  }
+
+  return 0;
+
+  g.set_code(buffer, section.size, section.address);
   if(g.seek(function.address)) {
     throw string("Unable to seek to given function_name");
   }
