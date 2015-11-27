@@ -251,6 +251,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             optional<set<mempath>> mempaths_new =
               f.propagate(state[from_parent]->get_mstate(), state_new->get_mstate());
             if(mempaths_new) {
+//              cout << "Propagating..." << endl;
+//              for(auto p : mempaths_new.value())
+//                cout << p << endl;
+
               void *f_addr;
               bool unpackable_a = unpack_f_addr(f_addr, state[from_parent]->get_f_addr());
               assert(unpackable_a);

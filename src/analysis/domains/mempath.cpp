@@ -89,8 +89,11 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
     int64_t offset = path[index].offset + offset_alias;
     size_t size = path[index].size;
     auto field_it = from_io.out_r.find(offset);
-    if(field_it == from_io.out_r.end()) return;
-    field f = field_it->second;
+    field f;
+    if(field_it == from_io.out_r.end())
+      f = from_io.insert(from->child_state, offset, size, false);
+    else
+      f = field_it->second;
     if(f.size != size) f = from_io.insert(from->child_state, offset, size, true);
     num_var f_var = num_var(f.num_id);
     ptr_set_t aliases = from->queryAls(&f_var);
@@ -198,6 +201,9 @@ void analysis::mempath::propagate(ptr_set_t aliases_from_immediate, summary_memo
 
 std::experimental::optional<set<mempath>> analysis::mempath::propagate(
   summary_memory_state *from, summary_memory_state *to) const {
+//  cout << "propagate from" << endl;
+//  cout << *from << endl;
+
   ptr_set_t aliases_from = resolve(from);
 
   ptr_set_t aliases_from_immediate;
@@ -216,6 +222,7 @@ std::experimental::optional<set<mempath>> analysis::mempath::propagate(
 }
 
 std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary_memory_state *state) {
+//  cout << "std::set<mempath> analysis::mempath::from_aliases()" << endl;
   set<mempath> result;
   for(auto &alias : aliases) {
     bool found = false;
