@@ -62,16 +62,21 @@ cfg::cfg::~cfg() {
   }
 }
 
-void cfg::cfg::add_program(translated_program_t &translated_binary) {
+
+void cfg::cfg::add_program(translated_program_t &translated_binary, experimental::optional<string> name) {
   for(auto elem : translated_binary) {
     size_t address;
     vector<gdsl::rreil::statement*> *statements;
     tie(address, statements) = elem;
     size_t from_node = create_node([&](size_t id) {
-      return new address_node(id, address, DECODED);
+      return new address_node(id, address, DECODED, name);
     });
     add_nodes(statements, from_node);
   }
+}
+
+void cfg::cfg::add_program(translated_program_t &translated_binary) {
+  add_program(translated_binary, experimental::nullopt);
 }
 
 size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*> const *statements, size_t from_node) {

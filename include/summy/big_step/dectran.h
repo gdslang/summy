@@ -11,6 +11,7 @@
 #include <summy/cfg/cfg.h>
 #include <summy/transformers/trivial_connector.h>
 #include <cppgdsl/gdsl.h>
+#include <experimental/optional>
 
 #include <set>
 
@@ -24,7 +25,9 @@ private:
   std::set<size_t> unresolved;
 
   cfg::translated_program_t decode_translate(bool decode_multiple);
-  void initial_cfg(cfg::cfg &cfg, bool decode_multiple);
+  void initial_cfg(
+    cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
+
 public:
   dectran(gdsl::gdsl &g, bool blockwise_optimized);
 
@@ -32,7 +35,7 @@ public:
     return cfg;
   }
 
-  std::set<size_t> const& get_unresolved() {
+  std::set<size_t> const &get_unresolved() {
     return unresolved;
   }
 
@@ -44,6 +47,7 @@ public:
    * Decode and translate first block
    */
   void transduce(bool decode_multiple);
+  void transduce(size_t address, std::string function_name);
   void transduce() {
     transduce(false);
   }

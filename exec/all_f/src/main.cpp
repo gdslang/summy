@@ -87,8 +87,8 @@ int main(int argc, char **argv) {
   tie(success, section) = elfp.section(".text");
   if(!success) throw string("Invalid section .text");
 
-  binary_provider::entry_t function;
-  tie(ignore, function) = elfp.symbol("main");
+//  binary_provider::entry_t function;
+//  tie(ignore, function) = elfp.symbol("main");
 
   unsigned char *buffer = (unsigned char *)malloc(section.size);
   memcpy(buffer, elfp.get_data().data + section.offset, section.size);
@@ -96,30 +96,41 @@ int main(int argc, char **argv) {
 //  size_t size = (function.offset - section.offset) + function.size + 1000;
 //  if(size > section.size) size = section.size;
 
-  auto functions = elfp.functions();
-  for(auto f : functions) {
-    binary_provider::entry_t e;
-    string name;
-    tie(name, e) = f;
-    cout << hex << e.address << " (" << name << ")" << endl;
-  }
 
-  return 0;
 
   g.set_code(buffer, section.size, section.address);
-  if(g.seek(function.address)) {
-    throw string("Unable to seek to given function_name");
-  }
+//  if(g.seek(function.address)) {
+//    throw string("Unable to seek to given function_name");
+//  }
 
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
     dectran dt(g, false);
 
-    dt.transduce();
+    auto functions = elfp.functions();
+    for(auto f : functions) {
+      binary_provider::entry_t e;
+      string name;
+      tie(name, e) = f;
+      cout << hex << e.address << " (" << name << ")" << endl;
+      try {
+        dt.transduce(e.address, name);
+      } catch(string &s) {
+        cout << "\t Unable to seek!" << endl;
+      }
+    }
+
     dt.register_();
 
     auto &cfg = dt.get_cfg();
     cfg.commit_updates();
+
+    ofstream dot_noa_fs;
+    dot_noa_fs.open("output_noa.dot", ios::out);
+    cfg.dot(dot_noa_fs);
+    dot_noa_fs.close();
+
+    return 0;
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se);
@@ -128,10 +139,7 @@ int main(int argc, char **argv) {
 
     fp.iterate();
 
-    ofstream dot_noa_fs;
-    dot_noa_fs.open("output_noa.dot", ios::out);
-    cfg.dot(dot_noa_fs);
-    dot_noa_fs.close();
+
 
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);

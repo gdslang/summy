@@ -23,6 +23,7 @@
 
 using namespace gdsl::rreil;
 using namespace std;
+using namespace std::experimental;
 
 cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   cfg::translated_program_t prog;
@@ -32,14 +33,15 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
 
     statements_t *rreil;
     if(blockwise_optimized) {
-      gdsl::block b = gdsl.decode_translate_block(
-          gdsl::optimization_configuration::CONTEXT | gdsl::optimization_configuration::LIVENESS
-              | gdsl::optimization_configuration::FSUBST, LONG_MAX);
+      gdsl::block b = gdsl.decode_translate_block(gdsl::optimization_configuration::CONTEXT |
+                                                    gdsl::optimization_configuration::LIVENESS |
+                                                    gdsl::optimization_configuration::FSUBST,
+        LONG_MAX);
       rreil = b.get_statements();
     } else {
       gdsl::instruction insn = gdsl.decode();
-//      printf("Instruction: %s\n", insn.to_string().c_str());
-//      printf("---------------------------------\n");
+      //      printf("Instruction: %s\n", insn.to_string().c_str());
+      //      printf("---------------------------------\n");
       rreil = insn.translate();
     }
 
@@ -55,23 +57,23 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   return prog;
 }
 
-void dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple) {
+void dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
   auto prog = decode_translate(decode_multiple);
-  cfg.add_program(prog);
+  cfg.add_program(prog, name);
 
   for(auto t : prog) {
-    vector<gdsl::rreil::statement*>* rreil;
+    vector<gdsl::rreil::statement *> *rreil;
     tie(ignore, rreil) = t;
     for(auto stmt : *rreil)
       delete stmt;
     delete rreil;
   }
 
-  vector<transformer*> transformers;
+  vector<transformer *> transformers;
   transformers.push_back(new decomposer(&cfg));
   transformers.push_back(new goto_ip_adder(&cfg));
   transformers.push_back(new ip_propagator(&cfg));
-//  transformers.push_back(new trivial_connector(&cfg));
+  //  transformers.push_back(new trivial_connector(&cfg));
   for(auto t : transformers) {
     t->transform();
     delete t;
@@ -83,12 +85,19 @@ void dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple) {
   cfg.clear_updates();
 }
 
-dectran::dectran(gdsl::gdsl &gdsl, bool blockwise_optimized) :
-    big_step(cfg), gdsl(gdsl), tc(&cfg), blockwise_optimized(blockwise_optimized) {
-}
+dectran::dectran(gdsl::gdsl &gdsl, bool blockwise_optimized)
+    : big_step(cfg), gdsl(gdsl), tc(&cfg), blockwise_optimized(blockwise_optimized) {}
 
 void dectran::transduce(bool decode_multiple) {
   initial_cfg(cfg, decode_multiple);
+  tc.transform();
+}
+
+void dectran::transduce(size_t address, std::string function_name) {
+  if(gdsl.seek(address)) {
+    throw string("Unable to seek to function");
+  }
+  initial_cfg(cfg, false, function_name);
   tc.transform();
 }
 
