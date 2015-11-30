@@ -95,8 +95,8 @@ public:
   cfg();
   ~cfg();
 
-  void add_program(translated_program_t &translated_binary);
-  void add_program(translated_program_t &translated_binary, std::experimental::optional<std::string> name);
+  size_t add_program(translated_program_t &translated_binary);
+  size_t add_program(translated_program_t &translated_binary, std::experimental::optional<std::string> name);
   size_t add_nodes(std::vector<gdsl::rreil::statement*> const *statements, size_t from_node);
 
   size_t next_node_id();

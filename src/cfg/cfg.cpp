@@ -19,6 +19,7 @@
 #include <assert.h>
 
 using namespace std;
+using namespace std::experimental;
 
 bool cfg::edge_id::operator <(const edge_id &other) const {
   if(from < other.from) return true;
@@ -62,8 +63,8 @@ cfg::cfg::~cfg() {
   }
 }
 
-
-void cfg::cfg::add_program(translated_program_t &translated_binary, experimental::optional<string> name) {
+size_t cfg::cfg::add_program(translated_program_t &translated_binary, experimental::optional<string> name) {
+  optional<size_t> head_node;
   for(auto elem : translated_binary) {
     size_t address;
     vector<gdsl::rreil::statement*> *statements;
@@ -71,12 +72,15 @@ void cfg::cfg::add_program(translated_program_t &translated_binary, experimental
     size_t from_node = create_node([&](size_t id) {
       return new address_node(id, address, DECODED, name);
     });
+    if(!head_node)
+      head_node = from_node;
     add_nodes(statements, from_node);
   }
+  return head_node.value();
 }
 
-void cfg::cfg::add_program(translated_program_t &translated_binary) {
-  add_program(translated_binary, experimental::nullopt);
+size_t cfg::cfg::add_program(translated_program_t &translated_binary) {
+  return add_program(translated_binary, experimental::nullopt);
 }
 
 size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement*> const *statements, size_t from_node) {

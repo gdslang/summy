@@ -59,7 +59,7 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
 
 void dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
   auto prog = decode_translate(decode_multiple);
-  cfg.add_program(prog, name);
+  size_t head_node = cfg.add_program(prog, name);
 
   for(auto t : prog) {
     vector<gdsl::rreil::statement *> *rreil;
@@ -70,9 +70,9 @@ void dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental
   }
 
   vector<transformer *> transformers;
-  transformers.push_back(new decomposer(&cfg));
-  transformers.push_back(new goto_ip_adder(&cfg));
-  transformers.push_back(new ip_propagator(&cfg));
+  transformers.push_back(new decomposer(&cfg, head_node));
+  transformers.push_back(new goto_ip_adder(&cfg, head_node));
+  transformers.push_back(new ip_propagator(&cfg, head_node));
   //  transformers.push_back(new trivial_connector(&cfg));
   for(auto t : transformers) {
     t->transform();
