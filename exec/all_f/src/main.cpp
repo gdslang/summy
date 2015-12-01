@@ -106,31 +106,33 @@ int main(int argc, char **argv) {
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
     dectran dt(g, false);
+    dt.register_();
 
     auto functions = elfp.functions();
     for(auto f : functions) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
+      if(name != "main" && name != "foo")
+        continue;
       cout << hex << e.address << " (" << name << ")" << endl;
       try {
-        dt.transduce(e.address, name);
+        dt.transduce_function(e.address, name);
+        auto &cfg = dt.get_cfg();
+        cfg.commit_updates();
       } catch(string &s) {
         cout << "\t Unable to seek!" << endl;
       }
     }
 
-    dt.register_();
-
     auto &cfg = dt.get_cfg();
-    cfg.commit_updates();
 
     ofstream dot_noa_fs;
     dot_noa_fs.open("output_noa.dot", ios::out);
     cfg.dot(dot_noa_fs);
     dot_noa_fs.close();
 
-    return 0;
+//    return 0;
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se);
@@ -138,8 +140,6 @@ int main(int argc, char **argv) {
     fixpoint fp(&ds, jd_man);
 
     fp.iterate();
-
-
 
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);

@@ -25,7 +25,7 @@ private:
   std::set<size_t> unresolved;
 
   cfg::translated_program_t decode_translate(bool decode_multiple);
-  void initial_cfg(
+  size_t initial_cfg(
     cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
 
 public:
@@ -46,8 +46,8 @@ public:
   /*
    * Decode and translate first block
    */
-  void transduce(bool decode_multiple);
-  void transduce(size_t address, std::string function_name);
+  void transduce(bool decode_multiple, std::experimental::optional<std::string> function_name = std::experimental::nullopt);
+  void transduce_function(size_t address, std::string function_name);
   void transduce() {
     transduce(false);
   }

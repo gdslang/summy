@@ -57,7 +57,7 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   return prog;
 }
 
-void dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
+size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
   auto prog = decode_translate(decode_multiple);
   size_t head_node = cfg.add_program(prog, name);
 
@@ -83,22 +83,24 @@ void dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental
    * We're not interested in trivial updates...
    */
   cfg.clear_updates();
+
+  return head_node;
 }
 
 dectran::dectran(gdsl::gdsl &gdsl, bool blockwise_optimized)
     : big_step(cfg), gdsl(gdsl), tc(&cfg), blockwise_optimized(blockwise_optimized) {}
 
-void dectran::transduce(bool decode_multiple) {
-  initial_cfg(cfg, decode_multiple);
+void dectran::transduce(bool decode_multiple, std::experimental::optional<std::string> function_name) {
+  size_t head_node = initial_cfg(cfg, decode_multiple, function_name);
+  tc.set_root(head_node);
   tc.transform();
 }
 
-void dectran::transduce(size_t address, std::string function_name) {
+void dectran::transduce_function(size_t address, std::string function_name) {
   if(gdsl.seek(address)) {
     throw string("Unable to seek to function");
   }
-  initial_cfg(cfg, false, function_name);
-  tc.transform();
+  transduce(false, function_name);
 }
 
 void dectran::notify(const std::vector<cfg::update> &updates) {
