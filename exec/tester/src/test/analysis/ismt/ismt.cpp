@@ -10,10 +10,10 @@
 #include <bjutil/gdsl_init.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/gdsl.h>
-#include <summy/big_step/dectran.h>
 #include <summy/big_step/ssa.h>
 #include <summy/cfg/cfg.h>
 #include <summy/analysis/ismt/ismt.h>
+#include <summy/big_step/analysis_dectran.h>
 #include <summy/test/compile.h>
 #include <fstream>
 #include <iosfwd>
@@ -40,7 +40,7 @@ protected:
 };
 
 static void targets_for_gdsl(set<size_t> &targets, gdsl::gdsl &g) {
-  dectran dt(g, false);
+  analysis_dectran dt(g, false);
   dt.transduce();
   dt.register_();
 

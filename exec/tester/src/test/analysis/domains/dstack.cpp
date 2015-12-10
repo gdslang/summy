@@ -10,7 +10,6 @@
 #include <summy/analysis/domains/memory_state.h>
 #include <summy/test/compile.h>
 #include <summy/analysis/fixpoint.h>
-#include <summy/big_step/dectran.h>
 #include <bjutil/gdsl_init.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/frontend/bare_frontend.h>
@@ -20,6 +19,7 @@
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <gtest/gtest.h>
+#include <summy/big_step/analysis_dectran.h>
 #include <summy/cfg/jd_manager.h>
 #include <summy/cfg/node/address_node.h>
 #include <memory>
@@ -67,7 +67,7 @@ protected:
 };
 
 struct _analysis_result {
-  dectran *dt;
+  analysis_dectran *dt;
 
   dstack *ds_analyzed;
   map<size_t, size_t> addr_node_map;
@@ -106,7 +106,7 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
 
   g.set_code(compiled.data(), compiled.size(), 0);
 
-  r.dt = new dectran(g, gdsl_optimize);
+  r.dt = new analysis_dectran(g, gdsl_optimize);
   r.dt->transduce();
   r.dt->register_();
 

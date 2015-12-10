@@ -1,4 +1,3 @@
-#include <summy/big_step/dectran.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/node/address_node.h>
 #include <cppgdsl/gdsl.h>
@@ -28,7 +27,7 @@
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/transformers/resolved_connector.h>
 #include <bjutil/sort.h>
-
+#include <summy/big_step/analysis_dectran.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
@@ -98,14 +97,23 @@ int main(int argc, char **argv) {
 
 
 
+
   g.set_code(buffer, section.size, section.address);
 //  if(g.seek(function.address)) {
 //    throw string("Unable to seek to given function_name");
 //  }
 
+  analysis_dectran test_dt(g, false);
+//  test_dt.transduce(true);
+
+  ofstream dot_noa_fs;
+  dot_noa_fs.open("output_noa.dot", ios::out);
+  test_dt.get_cfg().dot(dot_noa_fs);
+  dot_noa_fs.close();
+
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    dectran dt(g, false);
+    analysis_dectran dt(g, false);
     dt.register_();
 
     auto functions = elfp.functions();
@@ -127,10 +135,10 @@ int main(int argc, char **argv) {
 
     auto &cfg = dt.get_cfg();
 
-    ofstream dot_noa_fs;
-    dot_noa_fs.open("output_noa.dot", ios::out);
-    cfg.dot(dot_noa_fs);
-    dot_noa_fs.close();
+//    ofstream dot_noa_fs;
+//    dot_noa_fs.open("output_noa.dot", ios::out);
+//    cfg.dot(dot_noa_fs);
+//    dot_noa_fs.close();
 
 //    return 0;
 

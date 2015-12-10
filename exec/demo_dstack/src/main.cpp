@@ -1,4 +1,3 @@
-#include <summy/big_step/dectran.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/node/address_node.h>
 #include <cppgdsl/gdsl.h>
@@ -28,7 +27,7 @@
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/transformers/resolved_connector.h>
 #include <bjutil/sort.h>
-
+#include <summy/big_step/analysis_dectran.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
@@ -103,7 +102,7 @@ int main(int argc, char **argv) {
 
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    dectran dt(g, false);
+    analysis_dectran dt(g, false);
 
     dt.transduce();
     dt.register_();

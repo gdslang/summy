@@ -1,4 +1,3 @@
-#include <summy/big_step/dectran.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/node/address_node.h>
 #include <summy/big_step/ssa.h>
@@ -26,6 +25,7 @@
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/ismt/ismt.h>
 #include <summy/analysis/liveness/liveness.h>
+#include <summy/big_step/analysis_dectran.h>
 #include <summy/transformers/resolved_connector.h>
 
 #include <summy/value_set/value_set.h>
@@ -280,7 +280,7 @@ int main(int argc, char **argv) {
 //  bj_gdsl bjg = gdsl_init_immediate(&f, 0x00000000, 0);
 
 //  dectran dt(*bjg.gdsl, false);
-  dectran dt(*bjg.gdsl, false);
+  analysis_dectran dt(*bjg.gdsl, false);
   dt.transduce();
   dt.register_();
 

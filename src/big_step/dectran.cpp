@@ -5,7 +5,6 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/big_step/dectran.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <summy/cfg/node/address_node.h>
 #include <summy/transformers/transformer.h>
@@ -19,6 +18,7 @@
 #include <cppgdsl/instruction.h>
 #include <cppgdsl/rreil/statement/statement.h>
 #include <limits.h>
+#include <summy/big_step/dectran.h>
 #include <vector>
 
 using namespace gdsl::rreil;
@@ -69,62 +69,23 @@ size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experiment
     delete rreil;
   }
 
-  vector<transformer *> transformers;
-  transformers.push_back(new decomposer(&cfg, head_node));
-  transformers.push_back(new goto_ip_adder(&cfg, head_node));
-  transformers.push_back(new ip_propagator(&cfg, head_node));
-  //  transformers.push_back(new trivial_connector(&cfg));
-  for(auto t : transformers) {
-    t->transform();
-    delete t;
-  }
-
-  /*
-   * We're not interested in trivial updates...
-   */
-  cfg.clear_updates();
+//  vector<transformer *> transformers;
+//  transformers.push_back(new decomposer(&cfg, head_node));
+//  transformers.push_back(new goto_ip_adder(&cfg, head_node));
+//  transformers.push_back(new ip_propagator(&cfg, head_node));
+//  //  transformers.push_back(new trivial_connector(&cfg));
+//  for(auto t : transformers) {
+//    t->transform();
+//    delete t;
+//  }
+//
+//  /*
+//   * We're not interested in trivial updates...
+//   */
+//  cfg.clear_updates();
 
   return head_node;
 }
 
-dectran::dectran(gdsl::gdsl &gdsl, bool blockwise_optimized)
-    : big_step(cfg), gdsl(gdsl), tc(&cfg), blockwise_optimized(blockwise_optimized) {}
-
-void dectran::transduce(bool decode_multiple, std::experimental::optional<std::string> function_name) {
-  size_t head_node = initial_cfg(cfg, decode_multiple, function_name);
-  tc.set_root(head_node);
-  tc.transform();
-}
-
-void dectran::transduce_function(size_t address, std::string function_name) {
-  if(gdsl.seek(address)) {
-    throw string("Unable to seek to function");
-  }
-  transduce(false, function_name);
-}
-
-void dectran::notify(const std::vector<cfg::update> &updates) {
-  auto up = cfg.push_updates();
-  for(auto &update : updates) {
-    if(update.kind != cfg::ERASE) {
-      cfg::node_visitor nv;
-      nv._([&](cfg::address_node *an) {
-        size_t an_id = an->get_id();
-        if(an->get_decs() == cfg::DECODABLE) {
-          cfg::cfg cfg_new;
-          if(!gdsl.seek(an->get_address())) {
-            initial_cfg(cfg_new, false);
-            cfg.merge(cfg_new, an_id, 0 /* Todo: fix */);
-            /*
-             * From now on, 'an' is freed
-             */
-            tc.set_root(an_id);
-            auto unres_new = tc.transform_ur();
-            unresolved.insert(unres_new.begin(), unres_new.end());
-          }
-        }
-      });
-      cfg.get_node_payload(update.to)->accept(nv);
-    }
-  }
-}
+dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized)
+    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl){}
