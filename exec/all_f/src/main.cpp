@@ -28,6 +28,7 @@
 #include <summy/transformers/resolved_connector.h>
 #include <bjutil/sort.h>
 #include <summy/big_step/analysis_dectran.h>
+#include <summy/big_step/fcollect_dectran.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
@@ -103,8 +104,8 @@ int main(int argc, char **argv) {
 //    throw string("Unable to seek to given function_name");
 //  }
 
-  analysis_dectran test_dt(g, false);
-//  test_dt.transduce(true);
+  fcollect_dectran test_dt(g, false);
+  test_dt.transduce();
 
   ofstream dot_noa_fs;
   dot_noa_fs.open("output_noa.dot", ios::out);

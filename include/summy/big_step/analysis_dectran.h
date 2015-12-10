@@ -1,7 +1,7 @@
 /*
- * dectran.h
+ * analysis_dectran.h
  *
- *  Created on: Oct 30, 2014
+ *  Created on: Dec 10, 2015
  *      Author: Julian Kranz
  */
 

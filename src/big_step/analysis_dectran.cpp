@@ -52,7 +52,7 @@ analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized)
 }
 
 void analysis_dectran::transduce(bool decode_multiple, std::experimental::optional<std::string> function_name) {
-  size_t head_node = initial_cfg(big_step::cfg, decode_multiple, function_name);
+  size_t head_node = initial_cfg(cfg, decode_multiple, function_name);
   tc.set_root(head_node);
   tc.transform();
 }
