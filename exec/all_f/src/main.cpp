@@ -29,7 +29,7 @@
 #include <bjutil/sort.h>
 #include <summy/analysis/fcollect/fcollect.h>
 #include <summy/big_step/analysis_dectran.h>
-#include <summy/big_step/fcollect_dectran.h>
+#include <summy/big_step/sweep.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
@@ -98,39 +98,34 @@ int main(int argc, char **argv) {
 //  if(size > section.size) size = section.size;
 
   g.set_code(buffer, section.size, section.address);
-//  if(g.seek(function.address)) {
-//    throw string("Unable to seek to given function_name");
-//  }
-
-  fcollect_dectran test_dt(g, false);
-  test_dt.transduce();
-  analysis::fcollect::fcollect fc(&test_dt.get_cfg());
-  jd_manager jd_man_fc(&test_dt.get_cfg());
-  fixpoint fp_collect(&fc, jd_man_fc);
-  fp_collect.iterate();
-
-  for(size_t address : fc.result().result)
-    cout << hex << address << dec << endl;
-
-  ofstream dot_noa_fs;
-  dot_noa_fs.open("output_noa.dot", ios::out);
-  test_dt.get_cfg().dot(dot_noa_fs);
-  dot_noa_fs.close();
 
   try {
+    sweep sweep(g, false);
+    sweep.transduce();
+    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+    jd_manager jd_man_fc(&sweep.get_cfg());
+    fixpoint fp_collect(&fc, jd_man_fc);
+    fp_collect.iterate();
+
+//    for(size_t address : fc.result().result)
+//      cout << hex << address << dec << endl;
+    set<size_t> fstarts = fc.result().result;
+
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
     analysis_dectran dt(g, false);
     dt.register_();
 
+    cout << "*** Function from ELF data..." << endl;
     auto functions = elfp.functions();
     for(auto f : functions) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
-      if(name != "main" && name != "foo")
-        continue;
-      cout << hex << e.address << " (" << name << ")" << endl;
+//      if(name != "main" && name != "foo")
+//        continue;
+      cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
+        fstarts.erase(e.address);
         dt.transduce_function(e.address, name);
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
@@ -139,7 +134,23 @@ int main(int argc, char **argv) {
       }
     }
 
+    cout << "*** Additionally collected functions..." << endl;
+    for(size_t address : fstarts) {
+      cout << hex << address << dec << endl;
+      try {
+        dt.transduce_function(address);
+        auto &cfg = dt.get_cfg();
+        cfg.commit_updates();
+      } catch(string &s) {
+        cout << "\t Unable to seek!" << endl;
+      }
+    }
+
     auto &cfg = dt.get_cfg();
+    ofstream dot_noa_fs;
+    dot_noa_fs.open("output_noa.dot", ios::out);
+    cfg.dot(dot_noa_fs);
+    dot_noa_fs.close();
 
 //    ofstream dot_noa_fs;
 //    dot_noa_fs.open("output_noa.dot", ios::out);
@@ -169,7 +180,7 @@ int main(int argc, char **argv) {
     });
     dot_fs.close();
 
-  } catch(string s) {
+  } catch(string &s) {
     cout << "Exception: " << s << endl;
     exit(1);
   }

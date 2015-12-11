@@ -16,7 +16,7 @@
 
 #include <set>
 
-class fcollect_dectran : public dectran {
+class sweep : public dectran {
 private:
   cfg::cfg cfg;
 
@@ -24,7 +24,7 @@ private:
     cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
 
 public:
-  fcollect_dectran(gdsl::gdsl &g, bool blockwise_optimized);
+  sweep(gdsl::gdsl &g, bool blockwise_optimized);
 
   cfg::cfg &get_cfg() {
     return cfg;

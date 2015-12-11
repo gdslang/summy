@@ -18,14 +18,14 @@
 #include <cppgdsl/instruction.h>
 #include <cppgdsl/rreil/statement/statement.h>
 #include <limits.h>
-#include <summy/big_step/fcollect_dectran.h>
+#include <summy/big_step/sweep.h>
 #include <vector>
 
 using namespace gdsl::rreil;
 using namespace std;
 using namespace std::experimental;
 
-size_t fcollect_dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
+size_t sweep::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
   size_t head_node = dectran::initial_cfg(cfg, decode_multiple, name);
 
   vector<transformer *> transformers;
@@ -44,11 +44,11 @@ size_t fcollect_dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::e
   return head_node;
 }
 
-fcollect_dectran::fcollect_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized)
+sweep::sweep(gdsl::gdsl &gdsl, bool blockwise_optimized)
     : dectran(cfg, gdsl, blockwise_optimized), cfg() {
 
 }
 
-void fcollect_dectran::transduce() {
+void sweep::transduce() {
   initial_cfg(cfg, true, nullopt);
 }

@@ -44,8 +44,10 @@ public:
   /*
    * Decode and translate first block
    */
-  void transduce(bool decode_multiple, std::experimental::optional<std::string> function_name = std::experimental::nullopt);
-  void transduce_function(size_t address, std::string function_name);
+  void transduce(
+    bool decode_multiple, std::experimental::optional<std::string> function_name = std::experimental::nullopt);
+  void transduce_function(
+    size_t address, std::experimental::optional<std::string> function_name = std::experimental::nullopt);
   void transduce() {
     transduce(false);
   }

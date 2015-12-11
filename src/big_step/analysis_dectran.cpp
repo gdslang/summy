@@ -25,7 +25,8 @@ using namespace gdsl::rreil;
 using namespace std;
 using namespace std::experimental;
 
-size_t analysis_dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
+size_t analysis_dectran::initial_cfg(
+  cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
   size_t head_node = dectran::initial_cfg(cfg, decode_multiple, name);
 
   vector<transformer *> transformers;
@@ -47,9 +48,7 @@ size_t analysis_dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::e
 }
 
 analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized)
-    : dectran(cfg, gdsl, blockwise_optimized), big_step::big_step(cfg), tc(&cfg), cfg() {
-
-}
+    : dectran(cfg, gdsl, blockwise_optimized), big_step::big_step(cfg), tc(&cfg), cfg() {}
 
 void analysis_dectran::transduce(bool decode_multiple, std::experimental::optional<std::string> function_name) {
   size_t head_node = initial_cfg(cfg, decode_multiple, function_name);
@@ -57,7 +56,7 @@ void analysis_dectran::transduce(bool decode_multiple, std::experimental::option
   tc.transform();
 }
 
-void analysis_dectran::transduce_function(size_t address, std::string function_name) {
+void analysis_dectran::transduce_function(size_t address, std::experimental::optional<std::string> function_name) {
   if(gdsl.seek(address)) {
     throw string("Unable to seek to function");
   }

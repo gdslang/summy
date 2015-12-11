@@ -59,3 +59,4 @@ clean:
 	$(MAKE) -C exec/demo_ismt clean
 	$(MAKE) -C exec/demo_dstack clean
 	$(MAKE) -C exec/tester clean
+	$(MAKE) -C exec/all_f clean
