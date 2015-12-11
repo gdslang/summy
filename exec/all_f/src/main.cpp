@@ -27,6 +27,7 @@
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/transformers/resolved_connector.h>
 #include <bjutil/sort.h>
+#include <summy/analysis/fcollect/fcollect.h>
 #include <summy/big_step/analysis_dectran.h>
 #include <summy/big_step/fcollect_dectran.h>
 #include <summy/value_set/value_set.h>
@@ -96,9 +97,6 @@ int main(int argc, char **argv) {
 //  size_t size = (function.offset - section.offset) + function.size + 1000;
 //  if(size > section.size) size = section.size;
 
-
-
-
   g.set_code(buffer, section.size, section.address);
 //  if(g.seek(function.address)) {
 //    throw string("Unable to seek to given function_name");
@@ -106,6 +104,13 @@ int main(int argc, char **argv) {
 
   fcollect_dectran test_dt(g, false);
   test_dt.transduce();
+  analysis::fcollect::fcollect fc(&test_dt.get_cfg());
+  jd_manager jd_man_fc(&test_dt.get_cfg());
+  fixpoint fp_collect(&fc, jd_man_fc);
+  fp_collect.iterate();
+
+  for(size_t address : fc.result().result)
+    cout << hex << address << dec << endl;
 
   ofstream dot_noa_fs;
   dot_noa_fs.open("output_noa.dot", ios::out);
