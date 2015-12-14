@@ -191,6 +191,9 @@ summary_memory_state *analysis::summary_memory_state::domop(
   return result;
 }
 
+//summary_memory_state *analysis::summary_memory_state::domop_abstracting(
+//  domain_state *other, size_t current_node, domopper_t domopper) {}
+
 std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_temporary(
   int_t size, std::function<num_expr *(analysis::api::converter &)> cvc) {
   num_var *var = new num_var(numeric_id::generate());
@@ -705,7 +708,11 @@ bool analysis::summary_memory_state::is_bottom() const {
 }
 
 void analysis::summary_memory_state::check_consistency() {
-  //  cout << "check_consistency..." << endl;
+  if(is_bottom()) {
+    assert(input.regions.empty());
+    assert(output.regions.empty());
+  }
+//    cout << "check_consistency..." << *this << endl;
   auto check_regions = [&](region_map_t &regions) {
     for(auto &region_it : regions) {
       optional<int64_t> first_free;
@@ -739,11 +746,22 @@ bool analysis::summary_memory_state::operator>=(const domain_state &other) const
 }
 
 summary_memory_state *analysis::summary_memory_state::join(domain_state *other, size_t current_node) {
-  return domop(other, current_node, &numeric_state::join);
+  summary_memory_state *other_casted = (summary_memory_state*)other;
+  if(is_bottom())
+    return other_casted->copy();
+  if(other_casted->is_bottom())
+    return this->copy();
+  summary_memory_state *result = domop(other, current_node, &numeric_state::join);
+  assert(!result->is_bottom());
+  return result;
 }
 
 summary_memory_state *analysis::summary_memory_state::widen(domain_state *other, size_t current_node) {
-  return domop(other, current_node, &numeric_state::widen);
+  summary_memory_state *other_casted = (summary_memory_state*)other;
+  summary_memory_state *result = domop(other, current_node, &numeric_state::widen);
+  if(!is_bottom() && !other_casted->is_bottom())
+    assert(!result->is_bottom());
+  return result;
 }
 
 summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other, size_t current_node) {
@@ -803,6 +821,11 @@ void analysis::summary_memory_state::update(gdsl::rreil::assign *assign) {
   delete n_var;
 
   cleanup();
+
+  /*
+   * Consistency
+   */
+  assert(!is_bottom());
 }
 
 summary_memory_state *analysis::summary_memory_state::copy() const {
@@ -909,11 +932,17 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   delete lhs;
 
   cleanup();
+
+  /*
+   * Consistency
+   */
+  assert(!is_bottom());
 }
 
 void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_getter_t getter, size_t size,
   updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
   //    cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
+  bool bottom_before = is_bottom();
 
   bool force_weak = false;
   ptr_set_t aliases_cleaned;
@@ -1008,6 +1037,11 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
       delete lhs;
     }
   }
+
+  /*
+   * Consistency
+   */
+  assert(bottom_before || !is_bottom());
 }
 
 void analysis::summary_memory_state::store(ptr_set_t aliases, size_t size, api::num_expr *rhs) {
@@ -1032,6 +1066,11 @@ void analysis::summary_memory_state::update(gdsl::rreil::store *store) {
   delete rhs;
 
   cleanup();
+
+  /*
+   * Consistency
+   */
+  assert(!is_bottom());
 }
 
 void analysis::summary_memory_state::assume(gdsl::rreil::sexpr *cond) {

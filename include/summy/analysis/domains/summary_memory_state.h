@@ -76,6 +76,7 @@ private:
 
   typedef numeric_state *(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
   summary_memory_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
+//  summary_memory_state *domop_abstracting(domain_state *other, size_t current_node, domopper_t domopper);
 
   std::unique_ptr<managed_temporary> assign_temporary(
     int_t size, std::function<analysis::api::num_expr *(analysis::api::converter &)> cvc);

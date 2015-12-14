@@ -38,7 +38,7 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = worklist.pop();
 
-//    cout << "Next node: " << node_id << endl;
+    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<domain_state> accumulator;
@@ -54,7 +54,7 @@ void fixpoint::iterate() {
          */
         auto evaluated = constraint();
 
-        //                        cout << "Evaluated: " << *evaluated << endl;
+                                cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
