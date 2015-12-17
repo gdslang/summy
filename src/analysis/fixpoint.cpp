@@ -17,6 +17,7 @@ using namespace cfg;
 using namespace std;
 using namespace analysis;
 
+
 void fixpoint::iterate() {
   updated.clear();
   fp_priority_queue worklist = fp_priority_queue(analysis->pending(), analysis->get_fixpoint_node_comparer());
@@ -52,7 +53,9 @@ void fixpoint::iterate() {
         /*
          * Evaluate constraint
          */
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         auto evaluated = constraint();
+        cout << "++++++++++++++++++++++++" << endl;
 
                                 cout << "Evaluated: " << *evaluated << endl;
 

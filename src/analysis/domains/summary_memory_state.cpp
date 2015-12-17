@@ -1081,6 +1081,14 @@ void analysis::summary_memory_state::assume(gdsl::rreil::sexpr *cond) {
   for(auto add : ecr.additional)
     child_state->assume(add);
   ecr.free();
+  if(child_state->is_bottom()) {
+    bottomify();
+    return;
+  }
+
+  /*
+   * Todo: Is this necessary?
+   */
   unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
   vs_shared_t value = child_state->queryVal(temp->get_var());
   if(*value == vs_finite::_false) bottomify();
@@ -1099,6 +1107,14 @@ void analysis::summary_memory_state::assume_not(gdsl::rreil::sexpr *cond) {
      */
     child_state->assume(add);
   ecr.free();
+  if(child_state->is_bottom()) {
+    bottomify();
+    return;
+  }
+
+  /*
+   * Todo: Is this necessary?
+   */
   unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
   vs_shared_t value = child_state->queryVal(temp->get_var());
   if(*value == vs_finite::_true) bottomify();

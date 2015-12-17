@@ -90,8 +90,14 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
   auto for_update =
     [&](auto *update) { for_mutable([=](summary_memory_state *state_new) { state_new->update(update); }); };
   edge_visitor ev;
+
+//  statement *_stmt =  NULL;
+//  bool _cond = false;
+//  bool _call = false;
+
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
+//    _stmt = stmt;
     statement_visitor v;
     v._([&](assign *a) { for_update(a); });
     v._([&](load *l) { for_update(l); });
@@ -215,6 +221,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     stmt->accept(v);
   });
   ev._([&](const cond_edge *edge) {
+//    _cond = true;
     for_mutable([=](summary_memory_state *state_new) {
       if(edge->is_positive())
         state_new->assume(edge->get_cond());
@@ -223,6 +230,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     });
   });
   ev._([&](const call_edge *edge) {
+//    _call = true;
     transfer_f = [=]() {
       shared_ptr<global_state> state_new;
       if(edge->is_target_edge()) {
@@ -289,7 +297,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     };
   });
   e->accept(ev);
-  (constraints[to])[from] = transfer_f;
+  (constraints[to])[from] = [=]() {
+//    if(_stmt != NULL)
+//      cout << *_stmt << endl;
+//    cout << "cond: " << _cond << endl;
+//    cout << "call: " << _call << endl;
+    return transfer_f();
+  };
 }
 
 void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
