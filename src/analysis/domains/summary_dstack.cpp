@@ -51,18 +51,18 @@ using namespace summy::rreil;
 using namespace summy;
 using namespace std::experimental;
 
-bool analysis::summary_dstack::unpack_f_addr(void *&r, summy::vs_shared_t f_addr) {
-  bool single = false;
+set<void *> analysis::summary_dstack::unpack_f_addrs(summy::vs_shared_t f_addr) {
+  set<void *> addresses;
   value_set_visitor vsv;
   vsv._([&](vs_finite *vsf) {
     vs_finite::elements_t const &elems = vsf->get_elements();
     if(elems.size() == 1) {
-      single = true;
-      r = (void *)*elems.begin();
+      void *r = (void *)*elems.begin();
+      addresses.insert(r);
     }
   });
   f_addr->accept(vsv);
-  return single;
+  return addresses;
 }
 
 void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr) {
@@ -111,10 +111,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
             //            cout << *mstate << endl;
 
-            void *f_addr;
-            bool unpackable_a = unpack_f_addr(f_addr, state_c->get_f_addr());
-            assert(unpackable_a);
-            size_t current_min_calls_sz = function_desc_map.at(f_addr).min_calls_sz;
+            set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
+            assert(f_addrs.size() > 0);
+            size_t current_min_calls_sz = 0;
+            for(auto f_addr : f_addrs) {
+              auto f_min_calls_sz = function_desc_map.at(f_addr).min_calls_sz;
+              if(f_min_calls_sz > current_min_calls_sz) current_min_calls_sz = f_min_calls_sz;
+            }
 
             optional<shared_ptr<summary_memory_state>> summary;
 
@@ -183,7 +186,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
             set<mempath> field_reqs_new = mempath::from_aliases(field_req_ids_new, mstate);
             //            propagate_reqs(f_addr, mps);
-            propagate_reqs(field_reqs_new, f_addr);
+            for(auto f_addr : f_addrs)
+              propagate_reqs(field_reqs_new, f_addr);
 
             //            cout << "Need to apply the following summary: " << endl;
             //            cout << *summary << endl;
@@ -199,17 +203,18 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           transfer_f = [=]() {
             shared_ptr<global_state> state_c = this->state[from];
             cout << *state_c << endl;
-            void *f_addr;
-            bool unpackable_a = unpack_f_addr(f_addr, state_c->get_f_addr());
-            assert(unpackable_a);
-            auto fd_it = function_desc_map.find(f_addr);
-            //            if(summary_it == summary_map.end())
-            //              summary_map[state_c->get_f_addr()] =
-            //              shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
-            //            else
-            fd_it->second.summary_nodes.insert(to);
-            for(auto caller : state_c->get_callers())
-              assert_dependency(gen_dependency(to, caller));
+            set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
+            assert(f_addrs.size() > 0);
+            for(auto f_addr : f_addrs) {
+              auto fd_it = function_desc_map.find(f_addr);
+              //            if(summary_it == summary_map.end())
+              //              summary_map[state_c->get_f_addr()] =
+              //              shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
+              //            else
+              fd_it->second.summary_nodes.insert(to);
+              for(auto caller : state_c->get_callers())
+                assert_dependency(gen_dependency(to, caller));
+            }
             return state_c;
           };
           break;
@@ -264,10 +269,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               //              for(auto p : mempaths_new.value())
               //                cout << p << endl;
 
-              void *f_addr;
-              bool unpackable_a = unpack_f_addr(f_addr, state[from_parent]->get_f_addr());
-              assert(unpackable_a);
-              propagate_reqs(mempaths_new.value(), f_addr);
+              set<void*> f_addrs = unpack_f_addrs(state[from_parent]->get_f_addr());
+              assert(f_addrs.size() > 0);
+              for(auto f_addr : f_addrs)
+                propagate_reqs(mempaths_new.value(), f_addr);
             }
           }
         }
@@ -414,21 +419,29 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
     shared_ptr<global_state> state_b = this->state[b];
     //    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
 
-    void *f_addr_a;
-    bool unpackable_a = unpack_f_addr(f_addr_a, state_a->get_f_addr());
+    set<void*> f_addrs_a = unpack_f_addrs(state_a->get_f_addr());
 
-    void *f_addr_b;
-    bool unpackable_b = unpack_f_addr(f_addr_b, state_b->get_f_addr());
+    set<void*> f_addrs_b = unpack_f_addrs(state_b->get_f_addr());
 
     //    cout << a << " < " << b << " ~~~ " << *state_a->get_f_addr() << " //// " << *state_b->get_f_addr() << endl;
 
-    if(unpackable_a && !unpackable_b)
+    if(f_addrs_a.size() != 0 && f_addrs_b.size() == 0)
       return true;
-    else if(!unpackable_a && unpackable_b)
+    else if(f_addrs_a.size() == 0 && f_addrs_b.size() != 0)
       return false;
-    else if(unpackable_a && unpackable_b) {
-      size_t min_calls_sz_a = function_desc_map.at(f_addr_a).min_calls_sz;
-      size_t min_calls_sz_b = function_desc_map.at(f_addr_b).min_calls_sz;
+    else if(f_addrs_a.size() != 0 && f_addrs_b.size() != 0) {
+      size_t min_calls_sz_a = 0;
+      for(auto f_addr_a : f_addrs_a) {
+        size_t min_calls_sz_curr =  function_desc_map.at(f_addr_a).min_calls_sz;
+        if(min_calls_sz_curr > min_calls_sz_a)
+          min_calls_sz_a = min_calls_sz_curr;
+      }
+      size_t min_calls_sz_b = 0;
+      for(auto f_addr_b : f_addrs_b) {
+        size_t min_calls_sz_curr =  function_desc_map.at(f_addr_b).min_calls_sz;
+        if(min_calls_sz_curr > min_calls_sz_b)
+          min_calls_sz_b = min_calls_sz_curr;
+      }
       //      cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
       if(min_calls_sz_a > min_calls_sz_b)
         return true;

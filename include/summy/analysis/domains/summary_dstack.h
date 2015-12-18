@@ -53,7 +53,7 @@ private:
   std::set<size_t> _dirty_nodes;
   state_t state;
 
-  bool unpack_f_addr(void *&r, summy::vs_shared_t f_addr);
+  static std::set<void*> unpack_f_addrs(summy::vs_shared_t f_addr);
   //  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);
 
   void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
