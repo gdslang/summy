@@ -64,6 +64,8 @@ private:
   void init_state();
 
 public:
+  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const& f_starts);
+  [[deprecated]]
   summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm);
   summary_dstack(cfg::cfg *cfg);
   ~summary_dstack();

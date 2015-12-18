@@ -22,6 +22,7 @@ private:
   cfg::cfg cfg;
 
   std::set<size_t> unresolved;
+  std::set<size_t> f_heads;
 
   size_t initial_cfg(
     cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
@@ -39,6 +40,10 @@ public:
 
   cfg::cfg &get_cfg() {
     return cfg;
+  }
+
+  std::set<size_t> const& get_f_heads() {
+    return f_heads;
   }
 
   /*

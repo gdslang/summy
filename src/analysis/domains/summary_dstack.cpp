@@ -91,13 +91,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     [&](auto *update) { for_mutable([=](summary_memory_state *state_new) { state_new->update(update); }); };
   edge_visitor ev;
 
-//  statement *_stmt =  NULL;
-//  bool _cond = false;
-//  bool _call = false;
+  //  statement *_stmt =  NULL;
+  //  bool _cond = false;
+  //  bool _call = false;
 
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
-//    _stmt = stmt;
+    //    _stmt = stmt;
     statement_visitor v;
     v._([&](assign *a) { for_update(a); });
     v._([&](load *l) { for_update(l); });
@@ -198,6 +198,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         case gdsl::rreil::BRANCH_HINT_RET: {
           transfer_f = [=]() {
             shared_ptr<global_state> state_c = this->state[from];
+            cout << *state_c << endl;
             void *f_addr;
             bool unpackable_a = unpack_f_addr(f_addr, state_c->get_f_addr());
             assert(unpackable_a);
@@ -221,7 +222,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     stmt->accept(v);
   });
   ev._([&](const cond_edge *edge) {
-//    _cond = true;
+    //    _cond = true;
     for_mutable([=](summary_memory_state *state_new) {
       if(edge->is_positive())
         state_new->assume(edge->get_cond());
@@ -230,7 +231,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     });
   });
   ev._([&](const call_edge *edge) {
-//    _call = true;
+    //    _call = true;
     transfer_f = [=]() {
       shared_ptr<global_state> state_new;
       if(edge->is_target_edge()) {
@@ -253,15 +254,15 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           assert(in_edges.size() == 1);
           size_t from_parent = *in_edges.begin();
 
-//          cout << "This call requires the following fields:" << endl;
+          //          cout << "This call requires the following fields:" << endl;
           for(auto &f : desc.field_reqs) {
-//            cout << f << endl;
+            //            cout << f << endl;
             optional<set<mempath>> mempaths_new =
               f.propagate(state[from_parent]->get_mstate(), state_new->get_mstate());
             if(mempaths_new) {
-//              cout << "Propagating..." << endl;
-//              for(auto p : mempaths_new.value())
-//                cout << p << endl;
+              //              cout << "Propagating..." << endl;
+              //              for(auto p : mempaths_new.value())
+              //                cout << p << endl;
 
               void *f_addr;
               bool unpackable_a = unpack_f_addr(f_addr, state[from_parent]->get_f_addr());
@@ -298,10 +299,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
   });
   e->accept(ev);
   (constraints[to])[from] = [=]() {
-//    if(_stmt != NULL)
-//      cout << *_stmt << endl;
-//    cout << "cond: " << _cond << endl;
-//    cout << "call: " << _call << endl;
+    //    if(_stmt != NULL)
+    //      cout << *_stmt << endl;
+    //    cout << "cond: " << _cond << endl;
+    //    cout << "call: " << _call << endl;
     return transfer_f();
   };
 }
@@ -330,6 +331,22 @@ void analysis::summary_dstack::init_state(summy::vs_shared_t f_addr) {
 
 void analysis::summary_dstack::init_state() {
   init_state(value_set::bottom);
+}
+
+analysis::summary_dstack::summary_dstack(
+  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const &f_starts)
+    : fp_analysis(cfg), sm(sm) {
+  init();
+
+  for(auto node_id : f_starts) {
+    node *n = cfg->get_node_payload(node_id);
+    optional<size_t> addr;
+    node_visitor nv;
+    nv._([&](address_node *an) { addr = an->get_address(); });
+    n->accept(nv);
+    function_desc_map.insert(make_pair((void *)addr.value(), function_desc(0, n->get_id())));
+    state[n->get_id()]->set_f_addr(vs_finite::single(addr.value()));
+  }
 }
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm) : fp_analysis(cfg), sm(sm) {

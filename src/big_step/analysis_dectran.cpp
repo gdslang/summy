@@ -54,6 +54,7 @@ void analysis_dectran::transduce(bool decode_multiple, std::experimental::option
   size_t head_node = initial_cfg(cfg, decode_multiple, function_name);
   tc.set_root(head_node);
   tc.transform();
+  f_heads.insert(head_node);
 }
 
 void analysis_dectran::transduce_function(size_t address, std::experimental::optional<std::string> function_name) {

@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
 //    return 0;
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-    summary_dstack ds(&cfg, se);
+    summary_dstack ds(&cfg, se, dt.get_f_heads());
     jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
 
