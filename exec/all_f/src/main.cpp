@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
 
 //    for(size_t address : fc.result().result)
 //      cout << hex << address << dec << endl;
-    set<size_t> fstarts = fc.result().result;
+    set<size_t> fstarts;// = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
     analysis_dectran dt(g, false);
@@ -121,6 +121,8 @@ int main(int argc, char **argv) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
+      if(/*name != "deregister_tm_clones" && name != "register_tm_clones" && */name != "__do_global_dtors_aux" && name != "_start")
+        continue;
 //      if(name != "main" && name != "foo")
 //        continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;

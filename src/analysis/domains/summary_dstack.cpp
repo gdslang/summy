@@ -56,9 +56,9 @@ set<void *> analysis::summary_dstack::unpack_f_addrs(summy::vs_shared_t f_addr) 
   value_set_visitor vsv;
   vsv._([&](vs_finite *vsf) {
     vs_finite::elements_t const &elems = vsf->get_elements();
-    if(elems.size() == 1) {
-      void *r = (void *)*elems.begin();
-      addresses.insert(r);
+    for(auto address : elems) {
+      void *address_ptr = (void *)address;
+      addresses.insert(address_ptr);
     }
   });
   f_addr->accept(vsv);
@@ -202,7 +202,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         case gdsl::rreil::BRANCH_HINT_RET: {
           transfer_f = [=]() {
             shared_ptr<global_state> state_c = this->state[from];
-            cout << *state_c << endl;
             set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
             assert(f_addrs.size() > 0);
             for(auto f_addr : f_addrs) {
