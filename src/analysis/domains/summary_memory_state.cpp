@@ -715,6 +715,7 @@ void analysis::summary_memory_state::check_consistency() {
 //    cout << "check_consistency..." << *this << endl;
   auto check_regions = [&](region_map_t &regions) {
     for(auto &region_it : regions) {
+      cout << *region_it.first << endl;
       optional<int64_t> first_free;
       for(auto &f_it : region_it.second) {
         if(first_free)
@@ -724,6 +725,7 @@ void analysis::summary_memory_state::check_consistency() {
         ptr_set_t aliases = child_state->queryAls(nv);
         delete nv;
         assert(aliases.size() > 0);
+        assert(aliases.size() <= 2);
         ptr p = ::analysis::unpack_singleton(aliases);
         //          assert(p.id != special_ptr::badptr);
         assert(*p.offset == vs_finite::zero);

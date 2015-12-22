@@ -53,11 +53,11 @@ void fixpoint::iterate() {
         /*
          * Evaluate constraint
          */
-        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+        //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         auto evaluated = constraint();
-        cout << "++++++++++++++++++++++++" << endl;
+        //        cout << "++++++++++++++++++++++++" << endl;
 
-                                cout << "Evaluated: " << *evaluated << endl;
+        //                                cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -69,12 +69,15 @@ void fixpoint::iterate() {
          * Todo: Backward analysis?
          */
         //        cout << "Current: " << *current << endl;
-        if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
+        if(false && jd_man.jump_direction(node_other, node_id) == BACKWARD) {
           domain_state *boxed;
           bool needs_postprocessing;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
-          if(needs_postprocessing) postprocess_worklist.push(node_id);
+          if(needs_postprocessing) {
+            cout << "Postproc: " << node_id << endl;
+            postprocess_worklist.push(node_id);
+          }
           //          cout << "Boxed: " << *evaluated << endl;
         }
 
@@ -129,12 +132,16 @@ void fixpoint::iterate() {
 
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
-      for(auto dependant : dependants)
+      for(auto dependant : dependants) {
+//        cout << "Pushing " << dependant << endl;
         worklist.push(dependant);
+      }
     }
     auto dirty_nodes = analysis->dirty_nodes();
-    for(auto dirty : dirty_nodes)
+    for(auto dirty : dirty_nodes) {
+//      cout << "Adding dirty node: " << dirty << endl;
       worklist.push(dirty);
+    }
 
     seen.insert(node_id);
   }

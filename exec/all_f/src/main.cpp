@@ -121,8 +121,11 @@ int main(int argc, char **argv) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
-      if(/*name != "deregister_tm_clones" && name != "register_tm_clones" && */name != "__do_global_dtors_aux" && name != "_start")
-        continue;
+//      if(name != "deregister_tm_clones" && name != "__do_global_dtors_aux" && name != "_start")
+//        continue;
+//      if(name != "__libc_csu_init") {
+//        continue;
+//      }
 //      if(name != "main" && name != "foo")
 //        continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
@@ -175,7 +178,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 21)
+      if(n.get_id() == 9999)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       else
         n.dot(out);

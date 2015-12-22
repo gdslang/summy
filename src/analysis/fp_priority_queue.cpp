@@ -51,3 +51,7 @@ bool analysis::fp_priority_queue::empty() {
 void analysis::fp_priority_queue::clear() {
   inner.clear();
 }
+
+size_t analysis::fp_priority_queue::size() {
+  return inner.size();
+}

@@ -54,11 +54,15 @@ ptr analysis::unpack_singleton(ptr_set_t aliases) {
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
+
 //    cout << "apply_summary" << endl;
 //    cout << "caller:" << endl
 //         << *caller << endl;
-//    cout << "summary: " << endl
-//         << *summary << endl;
+    cout << "summary: " << endl
+         << *summary << endl;
+
+//  caller->check_consistency();
+  summary->check_consistency();
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing

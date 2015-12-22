@@ -30,6 +30,7 @@ public:
   size_t pop();
   bool empty();
   void clear();
+  size_t size();
 };
 
 }
