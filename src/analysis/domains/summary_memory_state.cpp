@@ -109,6 +109,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   //  vs_finite::zero) << endl;
   ptr ptr_fresh = ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero);
   ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
+  ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
   child_state->assume(n_in, {ptr_fresh, _nullptr});
 
   /*
@@ -142,7 +143,8 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     delete temp_expr;
   } else if(!replacement) {
     child_state->assume(n_out, {ptr_fresh, _nullptr});
-  };
+  } else
+    child_state->assume(n_out, {badptr});
   //  child_state->assign(n_out, ass_e);
 
   in_r.insert(make_pair(offset, field{size, nid_in}));
@@ -715,7 +717,7 @@ void analysis::summary_memory_state::check_consistency() {
 //    cout << "check_consistency..." << *this << endl;
   auto check_regions = [&](region_map_t &regions) {
     for(auto &region_it : regions) {
-      cout << *region_it.first << endl;
+//      cout << *region_it.first << endl;
       optional<int64_t> first_free;
       for(auto &f_it : region_it.second) {
         if(first_free)
@@ -724,8 +726,6 @@ void analysis::summary_memory_state::check_consistency() {
         num_var *nv = new num_var(f_it.second.num_id);
         ptr_set_t aliases = child_state->queryAls(nv);
         delete nv;
-        assert(aliases.size() > 0);
-        assert(aliases.size() <= 2);
         ptr p = ::analysis::unpack_singleton(aliases);
         //          assert(p.id != special_ptr::badptr);
         assert(*p.offset == vs_finite::zero);

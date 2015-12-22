@@ -40,29 +40,35 @@ using namespace summy;
 
 ptr analysis::unpack_singleton(ptr_set_t aliases) {
   aliases = als_state::normalise(aliases);
-  assert(aliases.size() <= 2);
   optional<ptr> opt_result;
+  optional<ptr> bad_result;
   for(auto &alias : aliases) {
     if(*alias.id == *special_ptr::_nullptr) continue;
+    if(*alias.id == *special_ptr::badptr) {
+      bad_result = alias;
+      continue;
+    }
     assert(!opt_result);
     opt_result = alias;
   }
-  assert(opt_result);
-  return opt_result.value();
+  if(opt_result)
+    return opt_result.value();
+  else
+    return bad_result.value();
 }
 
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
 
-//    cout << "apply_summary" << endl;
-//    cout << "caller:" << endl
-//         << *caller << endl;
-    cout << "summary: " << endl
-         << *summary << endl;
+  //    cout << "apply_summary" << endl;
+  //    cout << "caller:" << endl
+  //         << *caller << endl;
+  //      cout << "summary: " << endl
+  //           << *summary << endl;
 
-//  caller->check_consistency();
-  summary->check_consistency();
+  //    caller->check_consistency();
+  //    summary->check_consistency();
 
   /*
    * We need a copy in order to add new variables for joined regions addressing unexpected aliasing
@@ -108,8 +114,6 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       num_var *nv_field_s = new num_var(f_s.num_id);
       ptr_set_t aliases_fld_s = summary->child_state->queryAls(nv_field_s);
 
-      assert(aliases_fld_s.size() <= 2);
-
       ptr_set_t region_keys_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_keys_c);
 
       /*
@@ -142,8 +146,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
       delete nv_field_s;
 
-      for(auto &p_s : aliases_fld_s) {
-        if(*p_s.id == *special_ptr::_nullptr) continue;
+      auto p_s = unpack_singleton(aliases_fld_s);
+      if(!(*p_s.id == *special_ptr::badptr)) {
         ptr_set_t &aliases_c = ptr_map[p_s.id];
         if(!includes(aliases_c.begin(), aliases_c.end(), aliases_fld_c.begin(), aliases_fld_c.end())) {
           aliases_c.insert(aliases_fld_c.begin(), aliases_fld_c.end());
@@ -365,8 +369,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
      * If a memory region is not reachable in the summary (?),
      * its key may not be present in the ptr_map
      */
-    if(region_aliases_c_it == ptr_map.end())
-      continue;
+    if(region_aliases_c_it == ptr_map.end()) continue;
     ptr_set_t &region_aliases_c = region_aliases_c_it->second;
     process_region(&relation::get_deref, region_aliases_c, deref_mapping_so.second);
   }
@@ -462,8 +465,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first) {
             insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-//                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
-//                            ending_first.offset << endl;
+              //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
+              //                            ending_first.offset << endl;
               field inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
               //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
               if(copy_paste) {
@@ -477,8 +480,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
             });
           } else {
             insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-//                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
-//                            ending_first.offset << endl;
+              //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
+              //                            ending_first.offset << endl;
               field inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
               //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
               if(copy_paste) {
@@ -616,7 +619,6 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
 
       worklist.push(region_pair{io_first, io_second});
     }
-
   }
 
   num_var_pairs_t result;
@@ -715,13 +717,13 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   }
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "++++++++++++++++++++++++++++++" << endl;
-//    cout << "compat OF" << endl;
-//    cout << *a << endl;
-//    cout << "WITH" << endl;
-//    cout << *b << endl;
+  //    cout << "++++++++++++++++++++++++++++++" << endl;
+  //    cout << "++++++++++++++++++++++++++++++" << endl;
+  //    cout << "++++++++++++++++++++++++++++++" << endl;
+  //    cout << "compat OF" << endl;
+  //    cout << *a << endl;
+  //    cout << "WITH" << endl;
+  //    cout << *b << endl;
   //  }
 
   /*
@@ -772,10 +774,10 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     delete alias_b;
   }
 
-//    summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
-//    cout << "after_rename, a: " << *after_rename_a << endl;
-//    summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
-//    cout << "after_rename, b: " << *after_rename_b << endl;
+  //    summary_memory_state *after_rename_a = new summary_memory_state(a->sm, a_n, a_input, a_output);
+  //    cout << "after_rename, a: " << *after_rename_a << endl;
+  //    summary_memory_state *after_rename_b = new summary_memory_state(a->sm, b_n, b_input, b_output);
+  //    cout << "after_rename, b: " << *after_rename_b << endl;
 
   /*
    * In the second step, all corresponding regions already have got the same region key. Thus,
