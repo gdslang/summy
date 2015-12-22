@@ -69,7 +69,7 @@ void fixpoint::iterate() {
          * Todo: Backward analysis?
          */
         //        cout << "Current: " << *current << endl;
-        if(false && jd_man.jump_direction(node_other, node_id) == BACKWARD) {
+        if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
           domain_state *boxed;
           bool needs_postprocessing;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
