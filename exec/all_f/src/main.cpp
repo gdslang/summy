@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
     sweep sweep(g, false);
     sweep.transduce();
     analysis::fcollect::fcollect fc(&sweep.get_cfg());
-    jd_manager jd_man_fc(&sweep.get_cfg());
+    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
     fixpoint fp_collect(&fc, jd_man_fc);
     fp_collect.iterate();
 
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, dt.get_f_heads());
-    jd_manager jd_man(&cfg);
+    cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
 
     fp.iterate();

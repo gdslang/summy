@@ -147,5 +147,4 @@ void analysis::adaptive_rd::adaptive_rd::put(std::ostream &out) {
     }
     cout << endl;
   }
-
 }

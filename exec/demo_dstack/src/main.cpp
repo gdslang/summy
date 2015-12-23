@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se);
-    jd_manager jd_man(&cfg);
+    cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
 
     fp.iterate();

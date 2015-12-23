@@ -27,6 +27,10 @@ private:
 
   addr_state *domop(::analysis::domain_state *other);
 public:
+  std::experimental::optional<size_t> const& get_address() {
+    return address;
+  }
+
   addr_state(size_t address) :
       domain_state(), address(address) {
   }
