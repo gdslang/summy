@@ -759,6 +759,9 @@ summary_memory_state *analysis::summary_memory_state::join(domain_state *other, 
 }
 
 summary_memory_state *analysis::summary_memory_state::widen(domain_state *other, size_t current_node) {
+  cout << "Widening of " << *this << endl;
+  cout << "with" << endl;
+  cout << *other << endl;
   summary_memory_state *other_casted = (summary_memory_state*)other;
   summary_memory_state *result = domop(other, current_node, &numeric_state::widen);
   if(!is_bottom() && !other_casted->is_bottom())

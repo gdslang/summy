@@ -70,7 +70,7 @@ void fixpoint::iterate() {
          */
         //        cout << "Current: " << *current << endl;
         if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
-          cout << "Back jump from " << node_id << " to " << node_other << endl;
+          cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
           bool needs_postprocessing;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
@@ -79,7 +79,7 @@ void fixpoint::iterate() {
             cout << "Postproc: " << node_id << endl;
             postprocess_worklist.push(node_id);
           }
-          //          cout << "Boxed: " << *evaluated << endl;
+//                    cout << "Boxed: " << *evaluated << endl;
         }
 
         //        cout << "============================" << endl;

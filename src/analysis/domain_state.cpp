@@ -11,9 +11,13 @@ using namespace analysis;
 using namespace std;
 
 std::tuple<domain_state*, bool> domain_state::box(domain_state *other, size_t current_node) {
-  if(*other <= *this)
+  cout << "BOX of" << endl << *other << endl;
+  cout << "and" << endl;
+  cout << *this << endl;
+  if(*other <= *this) {
+    cout << "NARROWING" << endl;
     return make_tuple(this->narrow(other, current_node), false);
-  else
+  } else
     return make_tuple(this->widen(other, current_node), true);
 }
 

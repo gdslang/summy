@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
 
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    analysis_dectran dt(g, false);
+    analysis_dectran dt(g, true);
 
     dt.transduce();
     dt.register_();
@@ -115,12 +115,12 @@ int main(int argc, char **argv) {
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
 
-    fp.iterate();
-
     ofstream dot_noa_fs;
     dot_noa_fs.open("output_noa.dot", ios::out);
     cfg.dot(dot_noa_fs);
     dot_noa_fs.close();
+
+    fp.iterate();
 
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 21)
+      if(n.get_id() == 26)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       else
         n.dot(out);
