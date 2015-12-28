@@ -361,6 +361,12 @@ api::num_vars *analysis::value_sets::vsd_state::vars() {
   return new num_vars(ids);
 }
 
+void analysis::value_sets::vsd_state::collect_ids(
+  std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map) {
+  for(auto &element : elements)
+    id_map[element.first.get()].insert((analysis::id_shared_t *)&element.first);
+}
+
 vsd_state *analysis::value_sets::vsd_state::bottom(std::shared_ptr<static_memory> sm) {
   return new vsd_state(sm, true);
 }
