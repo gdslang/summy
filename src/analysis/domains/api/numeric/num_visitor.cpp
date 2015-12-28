@@ -9,6 +9,7 @@
 #include <summy/analysis/domains/api/numeric/num_expr.h>
 #include <summy/analysis/domains/api/numeric/num_linear.h>
 #include <string>
+#include <assert.h>
 
 using namespace analysis::api;
 using namespace std;
@@ -40,6 +41,5 @@ void num_visitor::visit(num_expr_bin *v) {
 
 void num_visitor::_default() {
   if(default_callback != NULL) default_callback();
-  else if(!ignore_default)
-    throw string("Unhandled default");
+  else assert(ignore_default);
 }

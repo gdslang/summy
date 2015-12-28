@@ -51,7 +51,8 @@ global_state *analysis::global_state::widen(::analysis::domain_state *other, siz
   set_union(callers.begin(), callers.end(), other_casted->callers.begin(), other_casted->callers.end(),
       inserter(callers_widened, callers_widened.begin()));
 
-  vs_shared_t f_addr_widened = value_set::widen(this->f_addr, other_casted->f_addr);
+//  cout << "widen(" << *this->f_addr << ", " << *other_casted->get_f_addr() <<")" << endl;
+  vs_shared_t f_addr_widened = value_set::join(this->f_addr, other_casted->f_addr);
 
   return new global_state(mstate_widened, f_addr_widened, callers_widened);
 }

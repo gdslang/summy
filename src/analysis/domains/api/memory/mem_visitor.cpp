@@ -7,6 +7,7 @@
 
 #include <summy/analysis/domains/api/memory/mem_visitor.h>
 #include <string>
+#include <assert.h>
 
 using namespace analysis::api;
 using namespace std;
@@ -23,6 +24,5 @@ void mem_visitor::visit(mem_expr_deref *v) {
 
 void mem_visitor::_default() {
   if(default_callback != NULL) default_callback();
-  else if(!ignore_default)
-    throw string("Unhandled default");
+  else assert(ignore_default);
 }

@@ -9,6 +9,7 @@
 #include <summy/value_set/vs_open.h>
 #include <summy/value_set/vs_top.h>
 #include <string>
+#include <assert.h>
 
 using namespace summy;
 using namespace std;
@@ -30,6 +31,5 @@ void value_set_visitor::visit(vs_top *v) {
 
 void value_set_visitor::_default(value_set *v) {
   if(default_callback != NULL) default_callback(v);
-  else if(!ignore_default)
-    throw string("Unhandled default");
+  else assert(ignore_default);
 }

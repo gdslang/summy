@@ -49,6 +49,7 @@ void fixpoint::iterate() {
 //    cout << "Next node: " << node_id << endl;
 
     bool propagate;
+    bool needs_postprocessing = false;
     shared_ptr<domain_state> accumulator;
     bool accumulator_set = false;
     auto &constraints = analysis->constraints_at(node_id);
@@ -77,17 +78,13 @@ void fixpoint::iterate() {
          */
         //        cout << "Current: " << *current << endl;
         if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
-//          cout << "Back jump from " << node_other << " to " << node_id << endl;
+          //          cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
-          bool needs_postprocessing;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
-//          cout << "Result: " << endl << *evaluated << endl;
-          if(needs_postprocessing) {
-//            cout << "Postproc: " << node_id << endl;
-            postprocess_worklist.push(node_id);
-          }
-//                    cout << "Boxed: " << *evaluated << endl;
+          //          cout << "Result: " << endl << *evaluated << endl;
+
+          //                    cout << "Boxed: " << *evaluated << endl;
         }
 
         //        cout << "============================" << endl;
@@ -135,6 +132,10 @@ void fixpoint::iterate() {
     //    cout << "Propagate: " << propagate << endl;
 
     if(propagate) {
+      if(needs_postprocessing) {
+        //            cout << "Postproc: " << node_id << endl;
+        postprocess_worklist.push(node_id);
+      }
       analysis->update(node_id, accumulator);
       updated.insert(node_id);
     }
@@ -142,13 +143,13 @@ void fixpoint::iterate() {
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
       for(auto dependant : dependants) {
-//        cout << "Pushing " << dependant << endl;
+        //        cout << "Pushing " << dependant << endl;
         worklist.push(dependant);
       }
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {
-//      cout << "Adding dirty node: " << dirty << endl;
+      //      cout << "Adding dirty node: " << dirty << endl;
       worklist.push(dirty);
     }
 
@@ -170,7 +171,6 @@ void fixpoint::notify(const vector<::cfg::update> &updates) {
 size_t analysis::fixpoint::max_iter() {
   size_t max = 0;
   for(auto nits_it : node_iterations)
-    if(nits_it.second > max)
-      max = nits_it.second;
+    if(nits_it.second > max) max = nits_it.second;
   return max;
 }

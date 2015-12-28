@@ -121,7 +121,6 @@ int main(int argc, char **argv) {
     dot_noa_fs.close();
 
     fp.iterate();
-
     cout << "Max its: " << fp.max_iter() << endl;
 
     //  cout << "++++++++++" << endl;
@@ -131,7 +130,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 26)
+      if(n.get_id() == 0)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       else
         n.dot(out);

@@ -152,10 +152,6 @@ int main(int argc, char **argv) {
     }
 
     auto &cfg = dt.get_cfg();
-    ofstream dot_noa_fs;
-    dot_noa_fs.open("output_noa.dot", ios::out);
-    cfg.dot(dot_noa_fs);
-    dot_noa_fs.close();
 
 //    ofstream dot_noa_fs;
 //    dot_noa_fs.open("output_noa.dot", ios::out);
@@ -170,6 +166,12 @@ int main(int argc, char **argv) {
     fixpoint fp(&ds, jd_man);
 
     fp.iterate();
+    cout << "Max its: " << fp.max_iter() << endl;
+
+    ofstream dot_noa_fs;
+    dot_noa_fs.open("output_noa.dot", ios::out);
+    cfg.dot(dot_noa_fs);
+    dot_noa_fs.close();
 
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);

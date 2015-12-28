@@ -53,7 +53,7 @@ using namespace std::experimental;
 
 set<void *> analysis::summary_dstack::unpack_f_addrs(summy::vs_shared_t f_addr) {
   set<void *> addresses;
-  value_set_visitor vsv;
+  value_set_visitor vsv(true);
   vsv._([&](vs_finite *vsf) {
     vs_finite::elements_t const &elems = vsf->get_elements();
     for(auto address : elems) {
