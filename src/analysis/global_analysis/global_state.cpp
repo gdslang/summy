@@ -32,12 +32,28 @@ global_state *analysis::global_state::join(::analysis::domain_state *other, size
 
 global_state *analysis::global_state::narrow(::analysis::domain_state *other, size_t current_node) {
   global_state *other_casted = dynamic_cast<global_state *>(other);
-  return new global_state(*other_casted);
+
+  summary_memory_state *mstate_narrowed = mstate->narrow(other_casted->mstate, current_node);
+  callers_t callers_narrowed;
+  set_intersection(callers.begin(), callers.end(), other_casted->callers.begin(), other_casted->callers.end(),
+      inserter(callers_narrowed, callers_narrowed.begin()));
+
+  vs_shared_t f_addr_narrowed = value_set::narrow(this->f_addr, other_casted->f_addr);
+
+  return new global_state(mstate_narrowed, f_addr_narrowed, callers_narrowed);
 }
 
 global_state *analysis::global_state::widen(::analysis::domain_state *other, size_t current_node) {
   global_state *other_casted = dynamic_cast<global_state *>(other);
-  return new global_state(*other_casted);
+
+  summary_memory_state *mstate_widened = mstate->widen(other_casted->mstate, current_node);
+  callers_t callers_widened;
+  set_union(callers.begin(), callers.end(), other_casted->callers.begin(), other_casted->callers.end(),
+      inserter(callers_widened, callers_widened.begin()));
+
+  vs_shared_t f_addr_widened = value_set::widen(this->f_addr, other_casted->f_addr);
+
+  return new global_state(mstate_widened, f_addr_widened, callers_widened);
 }
 
 bool analysis::global_state::operator >=(const ::analysis::domain_state &other) const {

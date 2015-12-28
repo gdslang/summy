@@ -10,6 +10,7 @@
 #include <summy/cfg/observer.h>
 #include <summy/analysis/fp_priority_queue.h>
 #include <set>
+#include <map>
 #include <vector>
 
 namespace cfg {
@@ -26,6 +27,8 @@ private:
   std::set<size_t> seen;
   std::set<size_t> updated;
   cfg::jd_manager &jd_man;
+
+  std::map<size_t, size_t> node_iterations;
 public:
   virtual ~fixpoint() {
   }
@@ -40,6 +43,12 @@ public:
   std::set<size_t> const &get_updated() {
     return updated;
   }
+
+  /**
+   * Get the maximum number of iterations needed for any
+   * node
+   */
+  size_t max_iter();
 };
 
 }

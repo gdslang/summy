@@ -20,6 +20,7 @@ using namespace analysis;
 
 void fixpoint::iterate() {
   updated.clear();
+  node_iterations.clear();
   fp_priority_queue worklist = fp_priority_queue(analysis->pending(), analysis->get_fixpoint_node_comparer());
   fp_priority_queue postprocess_worklist(analysis->get_fixpoint_node_comparer());
 
@@ -39,7 +40,13 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = worklist.pop();
 
-    cout << "Next node: " << node_id << endl;
+    auto nits_it = node_iterations.find(node_id);
+    if(nits_it != node_iterations.end())
+      nits_it->second++;
+    else
+      node_iterations[node_id] = 0;
+
+//    cout << "Next node: " << node_id << endl;
 
     bool propagate;
     shared_ptr<domain_state> accumulator;
@@ -70,13 +77,14 @@ void fixpoint::iterate() {
          */
         //        cout << "Current: " << *current << endl;
         if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
-          cout << "Back jump from " << node_other << " to " << node_id << endl;
+//          cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
           bool needs_postprocessing;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
+//          cout << "Result: " << endl << *evaluated << endl;
           if(needs_postprocessing) {
-            cout << "Postproc: " << node_id << endl;
+//            cout << "Postproc: " << node_id << endl;
             postprocess_worklist.push(node_id);
           }
 //                    cout << "Boxed: " << *evaluated << endl;
@@ -157,4 +165,12 @@ void fixpoint::notify(const vector<::cfg::update> &updates) {
   }
 
   iterate();
+}
+
+size_t analysis::fixpoint::max_iter() {
+  size_t max = 0;
+  for(auto nits_it : node_iterations)
+    if(nits_it.second > max)
+      max = nits_it.second;
+  return max;
 }

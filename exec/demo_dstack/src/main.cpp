@@ -122,6 +122,8 @@ int main(int argc, char **argv) {
 
     fp.iterate();
 
+    cout << "Max its: " << fp.max_iter() << endl;
+
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);
     //  cout << "++++++++++" << endl;

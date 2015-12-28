@@ -57,10 +57,13 @@ struct _analysis_result {
   map<size_t, size_t> addr_node_map;
   elf_provider *elfp;
 
+  size_t max_it;
+
   _analysis_result() {
     dt = NULL;
     ds_analyzed = NULL;
     elfp = NULL;
+    max_it = 0;
   }
 
   ~_analysis_result() {
@@ -71,6 +74,7 @@ struct _analysis_result {
     ds_analyzed = NULL;
     elfp = NULL;
     dt = NULL;
+    max_it = 0;
   }
 };
 
@@ -148,6 +152,8 @@ static void state(_analysis_result &r, string program, language_t lang, bool gds
     nv._([&](address_node *an) { r.addr_node_map[an->get_address()] = an->get_id(); });
     node->accept(nv);
   }
+
+  r.max_it = fp.max_iter();
 }
 
 static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = false) {
@@ -1291,4 +1297,25 @@ __asm volatile ( \"end:\" );\n\
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
   ASSERT_EQ(*r, make_shared<vs_finite>(vs_finite::elements_t { 84, 141, 198}));
+}
+
+TEST_F(summary_dstack_test, LoopWideningNarrowing) {
+  // test23-loop.as
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "main:\n\
+mov $0, %r11\n\
+head:\n\
+cmp $100, %r11\n\
+je end\n\
+inc %r11\n\
+jmp head\n\
+end:\n\
+ret",
+    true));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(100));
+
+  ASSERT_EQ(ar.max_it, 3);
 }
