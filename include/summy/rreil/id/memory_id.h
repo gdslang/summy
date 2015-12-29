@@ -37,7 +37,7 @@ public:
     return deref;
   }
 
-  std::shared_ptr<gdsl::rreil::id> get_id() {
+  std::shared_ptr<gdsl::rreil::id> const& get_id() {
     return inner;
   }
 

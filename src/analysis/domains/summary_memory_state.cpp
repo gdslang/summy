@@ -62,8 +62,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
    */
   if(out_r_it != out_r.begin() && out_r_it->first > offset) {
     --out_r_it;
-    if(out_r_it->first + (int64_t)out_r_it->second.size <= offset)
-      out_r_it++;
+    if(out_r_it->first + (int64_t)out_r_it->second.size <= offset) out_r_it++;
   }
 
   for(; out_r_it != out_r.end(); out_r_it++) {
@@ -87,7 +86,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   num_var *n_in = new num_var(nid_in);
   num_var *n_out = new num_var(nid_out);
 
-  vector<num_var*> kill_vars;
+  vector<num_var *> kill_vars;
   for(auto offset : offsets) {
     auto in_it = in_r.find(offset);
     auto out_it = out_r.find(offset);
@@ -125,11 +124,11 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
         id_shared_t temp_next = numeric_id::generate();
         num_var *temp_var = new num_var(temp_next);
         child_state->assign(temp_var, shift);
-//        cout << "assign " << *temp_var << " = " << *shift << endl;
+        //        cout << "assign " << *temp_var << " = " << *shift << endl;
         num_expr *addition =
           new num_expr_lin(new num_linear_term(1, temp_var->copy(), new num_linear_term(new num_var(f.num_id))));
         child_state->assign(*temp, addition);
-//        cout << "assign " << **temp << " = " << *addition << endl;
+        //        cout << "assign " << **temp << " = " << *addition << endl;
         child_state->kill({temp_var});
         delete addition;
         delete temp_var;
@@ -193,7 +192,7 @@ summary_memory_state *analysis::summary_memory_state::domop(
   return result;
 }
 
-//summary_memory_state *analysis::summary_memory_state::domop_abstracting(
+// summary_memory_state *analysis::summary_memory_state::domop_abstracting(
 //  domain_state *other, size_t current_node, domopper_t domopper) {}
 
 std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_temporary(
@@ -493,7 +492,7 @@ bool analysis::summary_memory_state::overlap_region(region_t &region, int64_t of
  */
 summary_memory_state::rt_result_t analysis::summary_memory_state::retrieve_kill(
   region_t &region, int64_t offset, size_t size, bool handle_conflict) {
-//    cout << "before: " << endl << *this << endl;
+  //    cout << "before: " << endl << *this << endl;
   //  cout << "retrieve_kill() " << offset << " / " << size << endl;
 
   bool conflict = false;
@@ -548,7 +547,7 @@ summary_memory_state::rt_result_t analysis::summary_memory_state::retrieve_kill(
     region.insert(make_pair(offset, field{size, numeric_id::generate()}));
   }
 
-//  cout << "after: " << endl << *this << endl;
+  //  cout << "after: " << endl << *this << endl;
   //  cout << "Found: " << found << endl;
 
   if(!found) return rt_result_t{conflict, region.end()};
@@ -714,14 +713,13 @@ void analysis::summary_memory_state::check_consistency() {
     assert(input.regions.empty());
     assert(output.regions.empty());
   }
-//    cout << "check_consistency..." << *this << endl;
+  //    cout << "check_consistency..." << *this << endl;
   auto check_regions = [&](region_map_t &regions) {
     for(auto &region_it : regions) {
-//      cout << *region_it.first << endl;
+      //      cout << *region_it.first << endl;
       optional<int64_t> first_free;
       for(auto &f_it : region_it.second) {
-        if(first_free)
-          assert(f_it.first >= first_free.value());
+        if(first_free) assert(f_it.first >= first_free.value());
         first_free = f_it.first + (int64_t)f_it.second.size;
         num_var *nv = new num_var(f_it.second.num_id);
         ptr_set_t aliases = child_state->queryAls(nv);
@@ -748,21 +746,18 @@ bool analysis::summary_memory_state::operator>=(const domain_state &other) const
 }
 
 summary_memory_state *analysis::summary_memory_state::join(domain_state *other, size_t current_node) {
-  summary_memory_state *other_casted = (summary_memory_state*)other;
-  if(is_bottom())
-    return other_casted->copy();
-  if(other_casted->is_bottom())
-    return this->copy();
+  summary_memory_state *other_casted = (summary_memory_state *)other;
+  if(is_bottom()) return other_casted->copy();
+  if(other_casted->is_bottom()) return this->copy();
   summary_memory_state *result = domop(other, current_node, &numeric_state::join);
   assert(!result->is_bottom());
   return result;
 }
 
 summary_memory_state *analysis::summary_memory_state::widen(domain_state *other, size_t current_node) {
-  summary_memory_state *other_casted = (summary_memory_state*)other;
+  summary_memory_state *other_casted = (summary_memory_state *)other;
   summary_memory_state *result = domop(other, current_node, &numeric_state::widen);
-  if(!is_bottom() && !other_casted->is_bottom())
-    assert(!result->is_bottom());
+  if(!is_bottom() && !other_casted->is_bottom()) assert(!result->is_bottom());
   return result;
 }
 
@@ -1146,6 +1141,86 @@ void analysis::summary_memory_state::cleanup() {
   _inner(input.deref);
   _inner(output.regions);
   _inner(output.deref);
+}
+
+void analysis::summary_memory_state::rename() {
+//  summary_memory_state *old = this->copy();
+
+  /*
+   * First, we build up a map that maps all id objects
+   * to occurrences of shared pointers referring to them.
+   */
+  std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> id_map;
+  child_state->collect_ids(id_map);
+  auto _inner = [&](auto &regions) {
+    auto region_it = regions.begin();
+    while(region_it != regions.end()) {
+      id_map[region_it->first.get()].insert((analysis::id_shared_t *)&region_it->first);
+      auto field_it = region_it->second.begin();
+      while(field_it != region_it->second.end()) {
+        id_map[field_it->second.num_id.get()].insert((analysis::id_shared_t *)&field_it->second.num_id);
+        field_it++;
+      }
+      region_it++;
+    }
+  };
+  _inner(input.regions);
+  _inner(input.deref);
+  _inner(output.regions);
+  _inner(output.deref);
+
+  /*
+   * Next, we build a mapping that maps each numeric id counter to its repective
+   * id object. This way, we sort the ids by counter value. This is important
+   * because we have to keep the order of the variables as we rename (i.e.
+   * replace) them since we do the renaming without rebuilding the data
+   * structures the variables live in. This approach is kind of daredevil ;-).
+   *
+   * We also have to rename memory ids. A memory id contains a numeric id. We
+   * therefore also add the set of memory ids containing the numeric id with the
+   * respective counter to the mapping. This way we can replace the memory ids
+   * together with the numeric ids.
+   */
+  struct rev_id {
+    gdsl::rreil::id *_id;
+    set<memory_id *> memory_ids;
+  };
+  std::map<size_t, rev_id> rev_map;
+  for(auto &id_map_it : id_map) {
+    summy::rreil::id_visitor idv;
+    idv._([&](numeric_id *nid) { rev_map[nid->get_counter()]._id = nid; });
+    idv._([&](memory_id *mid) {
+      bool found = false;
+      summy::rreil::id_visitor inner_idv;
+      inner_idv._([&](numeric_id *nid) {
+        rev_map[nid->get_counter()].memory_ids.insert(mid);
+        found = true;
+      });
+      mid->get_id()->accept(inner_idv);
+      assert(found);
+    });
+    id_map_it.first->accept(idv);
+  }
+
+  /*
+   * Finally, we replace the respective numeric variables. Memory ids are
+   * rebuild using the fresh variables.
+   */
+  for(auto &rev_it : rev_map) {
+    id_shared_t fresh = numeric_id::generate();
+    for(analysis::id_shared_t *instance : id_map.at(rev_it.second._id))
+      *instance = fresh;
+    for(memory_id *mid : rev_it.second.memory_ids) {
+      id_shared_t memory_fresh = make_shared<memory_id>(mid->get_deref(), fresh);
+      for(analysis::id_shared_t *instance : id_map.at(mid))
+        *instance = memory_fresh;
+    }
+  }
+
+  /*
+   * Enable this for debugging!
+   */
+//  assert(*old == *this);
 }
 
 void analysis::summary_memory_state::project(api::num_vars *vars) {

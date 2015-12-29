@@ -659,6 +659,20 @@ api::num_vars *analysis::als_state::vars() {
   return child_vars;
 }
 
+void analysis::als_state::collect_ids(std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map) {
+  auto for_elements = [&](auto const& elements) {
+    for(auto const& elements_it : elements) {
+      for(auto const& alias_it : elements_it.second)
+        id_map[alias_it.get()].insert((analysis::id_shared_t *)&alias_it);
+      id_map[elements_it.first.get()].insert((analysis::id_shared_t *)&elements_it.first);
+    }
+  };
+  for_elements(elements);
+  for_elements(elements.get_backward());
+
+  child_state->collect_ids(id_map);
+}
+
 als_state *als_state::copy() const {
   return new als_state(*this);
 }

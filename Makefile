@@ -2,8 +2,8 @@ CC=gcc
 #CC=clang
 CPP=clang++
 INCDS=-Iinclude
-CFLAGS=$(CFLAGS_EXTRA) -c -MMD -ggdb3 -O0 -std=c11 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
-CPPFLAGS=$(CPPFLAGS_EXTRA) -c -MMD -ggdb3 -O0 -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
+CFLAGS=$(CFLAGS_EXTRA) -c -MMD -ggdb3 -O1 -std=c11 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
+CPPFLAGS=$(CPPFLAGS_EXTRA) -c -MMD -ggdb3 -O1 -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
 
 LIBRARY=libsummy.a
 

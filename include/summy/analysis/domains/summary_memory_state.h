@@ -166,6 +166,7 @@ public:
   void assume_not(gdsl::rreil::sexpr *cond);
 
   void cleanup();
+  void rename();
   void project(api::num_vars *vars);
   api::num_vars *vars_relations();
   api::num_vars *vars();

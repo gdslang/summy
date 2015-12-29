@@ -193,6 +193,11 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //            cout << *summary << endl;
 
             shared_ptr<summary_memory_state> bottom = shared_ptr<summary_memory_state>(sms_bottom());
+            if(state_c->get_f_addr() == this->state[to]->get_f_addr() && summary)
+              /*
+               * Directly recursive call => We have to rename variables!
+               */
+              summary.value()->rename();
             summary_memory_state *summarized = apply_summary(mstate, summary ? summary.value().get() : bottom.get());
             return shared_ptr<global_state>(
               new global_state(summarized, state_c->get_f_addr(), state_c->get_callers()));

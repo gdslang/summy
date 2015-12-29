@@ -548,11 +548,11 @@ void analysis::equality_state::fold(num_var_pairs_t vars) {
 }
 
 void analysis::equality_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) {
-//  cout << "analysis::equality_state::copy_paste(" << *to << ", " << *from << ", ...)" << endl;
+  //  cout << "analysis::equality_state::copy_paste(" << *to << ", " << *from << ", ...)" << endl;
   /*
    * Todo: ...
    */
-  equality_state *from_state_eq = dynamic_cast<equality_state*>(from_state);
+  equality_state *from_state_eq = dynamic_cast<equality_state *>(from_state);
   child_state->copy_paste(to, from, from_state_eq->child_state);
 }
 
@@ -586,6 +586,19 @@ void analysis::equality_state::project(api::num_vars *vars) {
 
 api::num_vars *analysis::equality_state::vars() {
   return child_state->vars();
+}
+
+void analysis::equality_state::collect_ids(std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map) {
+  for(auto &elements_it : elements) {
+    for(auto &eq_it : elements_it.second)
+      id_map[eq_it.get()].insert((analysis::id_shared_t *)&eq_it);
+    id_map[elements_it.first.get()].insert((analysis::id_shared_t *)&elements_it.first);
+  }
+  for(auto &back_mapping : back_map) {
+    id_map[back_mapping.first.get()].insert((analysis::id_shared_t *)&back_mapping.first);
+    id_map[back_mapping.second.get()].insert((analysis::id_shared_t *)&back_mapping.second);
+  }
+  child_state->collect_ids(id_map);
 }
 
 ptr_set_t analysis::equality_state::queryAls(api::num_var *nv) {
