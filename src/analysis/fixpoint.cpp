@@ -47,6 +47,10 @@ void fixpoint::iterate() {
       node_iterations[node_id] = 0;
 
 //    cout << "Next node: " << node_id << endl;
+//    if(node_id == 57)
+//      cout << *analysis->get(node_id) << endl;
+//    if(max_iter() > 4)
+//      break;
 
     bool propagate;
     bool needs_postprocessing = false;
@@ -149,7 +153,7 @@ void fixpoint::iterate() {
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {
-      //      cout << "Adding dirty node: " << dirty << endl;
+            cout << "Adding dirty node: " << dirty << endl;
       worklist.push(dirty);
     }
 

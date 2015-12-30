@@ -44,6 +44,11 @@ void analysis::relation::clear() {
   deref.clear();
 }
 
+analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimental::optional<id_shared_t const> r_key)
+    : in_r(in_r), out_r(out_r) {
+  if(r_key) name = r_key.value()->to_string();
+}
+
 field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
   //  struct field_desc_t {
   //    int64_t offset;
@@ -81,8 +86,8 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size) return out_r.find(offset)->second;
 
-  id_shared_t nid_in = numeric_id::generate();
-  id_shared_t nid_out = numeric_id::generate();
+  id_shared_t nid_in = name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
+  id_shared_t nid_out = name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
   num_var *n_in = new num_var(nid_in);
   num_var *n_out = new num_var(nid_out);
 
@@ -214,7 +219,8 @@ io_region analysis::summary_memory_state::region_by_id(regions_getter_t getter, 
   if(id_in_it == input_rmap.end()) tie(id_in_it, ignore) = input_rmap.insert(make_pair(id, region_t{}));
   auto id_out_it = output_rmap.find(id);
   if(id_out_it == output_rmap.end()) tie(id_out_it, ignore) = output_rmap.insert(make_pair(id, region_t{}));
-  return io_region{id_in_it->second, id_out_it->second};
+  return io_region(
+    id_in_it->second, id_out_it->second, getter == &relation::get_regions ? optional<id_shared_t const>(id) : nullopt);
 }
 
 void analysis::summary_memory_state::bottomify() {

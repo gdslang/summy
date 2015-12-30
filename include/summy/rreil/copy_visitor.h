@@ -11,6 +11,7 @@
 #include <summy/rreil/visitor.h>
 #include <memory>
 #include <string>
+#include <experimental/optional>
 
 namespace summy {
 namespace rreil {
@@ -19,10 +20,12 @@ class ssa_id;
 
 class copy_visitor : public gdsl::rreil::copy_visitor, public virtual summy::rreil::id_visitor {
 public:
-  typedef std::function<gdsl::rreil::id*(gdsl::rreil::id*, int_t)> ssa_id_ctor_t;
-  typedef std::function<gdsl::rreil::id*(int_t)> numeric_id_ctor_t;
-  typedef std::function<gdsl::rreil::id*(int_t, std::shared_ptr<gdsl::rreil::id>)> memory_id_ctor_t;
-  typedef std::function<gdsl::rreil::id*(std::string, void*)> sm_id_ctor_t;
+  typedef std::function<gdsl::rreil::id *(gdsl::rreil::id *, int_t)> ssa_id_ctor_t;
+  typedef std::function<gdsl::rreil::id *(
+    int_t, std::experimental::optional<std::string>, std::experimental::optional<bool>)> numeric_id_ctor_t;
+  typedef std::function<gdsl::rreil::id *(int_t, std::shared_ptr<gdsl::rreil::id>)> memory_id_ctor_t;
+  typedef std::function<gdsl::rreil::id *(std::string, void *)> sm_id_ctor_t;
+
 private:
   ssa_id_ctor_t ssa_id_ctor = NULL;
   numeric_id_ctor_t numeric_id_ctor = NULL;
@@ -53,5 +56,5 @@ public:
 };
 
 
-}  // namespace rreil
-}  // namespace summy
+} // namespace rreil
+} // namespace summy

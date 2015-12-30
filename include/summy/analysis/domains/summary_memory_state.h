@@ -27,6 +27,7 @@
 #include <set>
 #include <tuple>
 #include <functional>
+#include <string>
 #include <experimental/optional>
 
 namespace analysis {
@@ -49,12 +50,18 @@ struct relation {
 struct io_region {
   region_t &in_r;
   region_t &out_r;
+  std::experimental::optional<std::string> name;
 
   io_region operator=(io_region other) {
-    return io_region{other.in_r, other.out_r};
+    return io_region(other.in_r, other.out_r, other.name);
   }
 
   field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement);
+
+  io_region(region_t &in_r, region_t &out_r) : in_r(in_r), out_r(out_r){};
+  io_region(region_t &in_r, region_t &out_r, std::experimental::optional<id_shared_t const> r_key);
+  io_region(region_t &in_r, region_t &out_r, std::experimental::optional<std::string> name)
+      : in_r(in_r), out_r(out_r), name(name) {}
 };
 
 struct memory_head {
@@ -76,7 +83,7 @@ private:
 
   typedef numeric_state *(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
   summary_memory_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
-//  summary_memory_state *domop_abstracting(domain_state *other, size_t current_node, domopper_t domopper);
+  //  summary_memory_state *domop_abstracting(domain_state *other, size_t current_node, domopper_t domopper);
 
   std::unique_ptr<managed_temporary> assign_temporary(
     int_t size, std::function<analysis::api::num_expr *(analysis::api::converter &)> cvc);

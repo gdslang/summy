@@ -592,8 +592,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
 
         auto &regions_first_out = first_out.at(regions_first_it->first);
         auto &regions_second_out = second_out.at(regions_first_it->first);
-        io_region io_first = io_region{regions_first_it->second, regions_first_out};
-        io_region io_second = io_region{regions_second_it->second, regions_second_out};
+        io_region io_first = io_region(regions_first_it->second, regions_first_out, regions_first_it->first);
+        io_region io_second = io_region(regions_second_it->second, regions_second_out, regions_second_it->first);
         if(a_b)
           worklist.push(region_pair{io_first, io_second});
         else
@@ -613,8 +613,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
       auto &deref_first_out = a_out.deref.at(deref_first_it->first);
       auto &deref_second_out = b_out.deref.at(deref_second_it->first);
 
-      io_region io_first = io_region{deref_first_it->second, deref_first_out};
-      io_region io_second = io_region{deref_second_it->second, deref_second_out};
+      io_region io_first = io_region(deref_first_it->second, deref_first_out);
+      io_region io_second = io_region(deref_second_it->second, deref_second_out);
 
       worklist.push(region_pair{io_first, io_second});
     }
@@ -686,8 +686,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
       }
       auto &deref_a_out = a_out.deref.at(va->get_id());
       auto &deref_b_out = b_out.deref.at(vb->get_id());
-      io_region io_a = io_region{deref_a_in_it->second, deref_a_out};
-      io_region io_b = io_region{deref_b_in_it->second, deref_b_out};
+      io_region io_a = io_region(deref_a_in_it->second, deref_a_out);
+      io_region io_b = io_region(deref_b_in_it->second, deref_b_out);
       worklist.push(region_pair{io_a, io_b});
 
       delete va;
