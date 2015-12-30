@@ -120,6 +120,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             }
 
             optional<shared_ptr<summary_memory_state>> summary;
+            bool directly_recursive = false;
 
             ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
             id_set_t field_req_ids_new;
@@ -148,12 +149,15 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   auto fd_it = function_desc_map.find(address);
                   if(fd_it != function_desc_map.end()) {
                     auto &f_desc = fd_it->second;
-                    for(size_t s_node : f_desc.summary_nodes)
+                    for(size_t s_node : f_desc.summary_nodes) {
                       if(summary)
                         summary =
                           shared_ptr<summary_memory_state>(summary.value()->join(state[s_node]->get_mstate(), to));
                       else
                         summary = shared_ptr<summary_memory_state>(state[s_node]->get_mstate()->copy());
+                      if(state_c->get_f_addr() == this->state[s_node]->get_f_addr())
+                        directly_recursive = true;
+                    }
 
                     //                    cout << address << endl;
                     //                    cout << "=====================================" << endl;
@@ -193,7 +197,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //            cout << *summary << endl;
 
             shared_ptr<summary_memory_state> bottom = shared_ptr<summary_memory_state>(sms_bottom());
-            if(state_c->get_f_addr() == this->state[to]->get_f_addr() && summary)
+            if(directly_recursive && summary)
               /*
                * Directly recursive call => We have to rename variables!
                */
