@@ -1144,7 +1144,7 @@ void analysis::summary_memory_state::cleanup() {
 }
 
 void analysis::summary_memory_state::rename() {
-//  summary_memory_state *old = this->copy();
+  //  summary_memory_state *old = this->copy();
 
   /*
    * First, we build up a map that maps all id objects
@@ -1182,7 +1182,7 @@ void analysis::summary_memory_state::rename() {
    * together with the numeric ids.
    */
   struct rev_id {
-    gdsl::rreil::id *_id;
+    optional<gdsl::rreil::id *> _id;
     set<memory_id *> memory_ids;
   };
   std::map<size_t, rev_id> rev_map;
@@ -1207,11 +1207,16 @@ void analysis::summary_memory_state::rename() {
    * rebuild using the fresh variables.
    */
   for(auto &rev_it : rev_map) {
-    id_shared_t fresh = numeric_id::generate();
-    for(analysis::id_shared_t *instance : id_map.at(rev_it.second._id))
-      *instance = fresh;
+    optional<id_shared_t> _fresh;
+    auto fresh = [&]() {
+      if(!_fresh) _fresh = numeric_id::generate();
+      return _fresh.value();
+    };
+    if(rev_it.second._id)
+      for(analysis::id_shared_t *instance : id_map.at(rev_it.second._id.value()))
+        *instance = fresh();
     for(memory_id *mid : rev_it.second.memory_ids) {
-      id_shared_t memory_fresh = make_shared<memory_id>(mid->get_deref(), fresh);
+      id_shared_t memory_fresh = make_shared<memory_id>(mid->get_deref(), fresh());
       for(analysis::id_shared_t *instance : id_map.at(mid))
         *instance = memory_fresh;
     }
@@ -1220,7 +1225,7 @@ void analysis::summary_memory_state::rename() {
   /*
    * Enable this for debugging!
    */
-//  assert(*old == *this);
+  //  assert(*old == *this);
 }
 
 void analysis::summary_memory_state::project(api::num_vars *vars) {

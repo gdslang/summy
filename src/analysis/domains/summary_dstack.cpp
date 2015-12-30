@@ -197,7 +197,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //            cout << *summary << endl;
 
             shared_ptr<summary_memory_state> bottom = shared_ptr<summary_memory_state>(sms_bottom());
-            if(directly_recursive && summary)
+            if((directly_recursive || true) && summary)
               /*
                * Directly recursive call => We have to rename variables!
                */
