@@ -204,7 +204,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               summary.value()->rename();
 //            if(summary)
 //              cout << *summary.value();
-            summary_memory_state *summarized = apply_summary(mstate, summary ? summary.value().get() : bottom.get());
+            summary_memory_state *summarized = summary ? apply_summary(mstate, summary.value().get()) : bottom->copy();
             return shared_ptr<global_state>(
               new global_state(summarized, state_c->get_f_addr(), state_c->get_callers()));
           };
