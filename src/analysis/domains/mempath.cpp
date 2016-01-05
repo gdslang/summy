@@ -29,6 +29,7 @@ using namespace std;
 using namespace std::experimental;
 using namespace analysis;
 using namespace analysis::api;
+using namespace summy::rreil;
 
 bool mempath::step::operator<(const step &other) const {
   if(offset > other.offset)
@@ -225,6 +226,9 @@ std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary
 //  cout << "std::set<mempath> analysis::mempath::from_aliases()" << endl;
   set<mempath> result;
   for(auto &alias : aliases) {
+    cout << "Alias: " << *alias << endl;
+        if(*alias == *special_ptr::_nullptr)
+          continue;
     bool found = false;
     for(region_map_t::iterator region_it = state->input.regions.begin(); region_it != state->input.regions.end();
         region_it++) {
@@ -251,7 +255,9 @@ std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary
         break;
       }
     }
-    if(!found) cout << "analysis::mempath::from_pointers() - Warning: Unable to find pointer." << endl;
+    if(!found) {
+      cout << "analysis::mempath::from_pointers() - Warning: Unable to find pointer." << endl;
+    }
   }
   return result;
 }
