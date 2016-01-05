@@ -125,6 +125,21 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             optional<shared_ptr<summary_memory_state>> summary;
             bool directly_recursive = false;
 
+            /*
+             * Todo: This is an expensive hack to recognize recursion
+             */
+            set<void*> callers_addrs_trans = f_addrs;
+            vector<size_t> callers_rest;
+            callers_rest.insert(callers_rest.begin(), state_c->get_callers().begin(), state_c->get_callers().end());
+            while(!callers_rest.empty()) {
+              size_t caller = callers_rest.back();
+              callers_rest.pop_back();
+              set<void*> caller_f_addrs = unpack_f_addrs(this->state[caller]->get_f_addr());
+              callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
+              callers_t &caller_callers = this->state[caller]->get_callers();
+              callers_rest.insert(callers_rest.begin(), caller_callers.begin(), caller_callers.end());
+            }
+
             ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
             id_set_t field_req_ids_new;
             //                        cout << *b->get_target() << endl;
@@ -149,6 +164,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               vsv._([&](vs_finite *vsf) {
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char *)text_address + offset;
+                  if(callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
+                    cout << "Warning: Ignoring recursive call." << endl;
+                    continue;
+                  }
                   auto fd_it = function_desc_map.find(address);
                   if(fd_it != function_desc_map.end()) {
                     auto &f_desc = fd_it->second;
