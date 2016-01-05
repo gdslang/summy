@@ -202,8 +202,8 @@ void analysis::mempath::propagate(ptr_set_t aliases_from_immediate, summary_memo
 
 std::experimental::optional<set<mempath>> analysis::mempath::propagate(
   summary_memory_state *from, summary_memory_state *to) const {
-//  cout << "propagate from" << endl;
-//  cout << *from << endl;
+  //  cout << "propagate from" << endl;
+  //  cout << *from << endl;
 
   ptr_set_t aliases_from = resolve(from);
 
@@ -223,12 +223,10 @@ std::experimental::optional<set<mempath>> analysis::mempath::propagate(
 }
 
 std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary_memory_state *state) {
-//  cout << "std::set<mempath> analysis::mempath::from_aliases()" << endl;
+  //  cout << "std::set<mempath> analysis::mempath::from_aliases()" << endl;
   set<mempath> result;
   for(auto &alias : aliases) {
-    cout << "Alias: " << *alias << endl;
-        if(*alias == *special_ptr::_nullptr)
-          continue;
+    if(*alias == *special_ptr::_nullptr || *alias == *special_ptr::badptr) continue;
     bool found = false;
     for(region_map_t::iterator region_it = state->input.regions.begin(); region_it != state->input.regions.end();
         region_it++) {

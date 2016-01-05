@@ -167,9 +167,11 @@ void analysis::fp_analysis::record_updates() {
   rec.start();
 }
 
-void analysis::fp_analysis::record_stop_commit() {
+bool analysis::fp_analysis::record_stop_commit() {
   rec.stop();
-  update(rec.checkout_updates());
+  auto const& updates = rec.checkout_updates();
+  update(updates);
+  return updates.size() > 0;
 }
 
 void analysis::fp_analysis::assert_dependency(dependency dep) {

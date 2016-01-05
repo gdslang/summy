@@ -35,9 +35,8 @@ public:
   virtual ~fixpoint() {
   }
 
-  fixpoint(class fp_analysis *analysis, cfg::jd_manager &jd_man) :
-      analysis(analysis), jd_man(jd_man) {
-  }
+  fixpoint(class fp_analysis *analysis, cfg::jd_manager &jd_man);
+
 
   void iterate();
   void notify(std::vector<cfg::update> const &updates);

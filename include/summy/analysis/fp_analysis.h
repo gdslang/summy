@@ -62,7 +62,7 @@ public:
 
   void update(std::vector<::cfg::update> const &updates);
   void record_updates();
-  void record_stop_commit();
+  bool record_stop_commit();
 
   virtual std::map<size_t, constraint_t> &constraints_at(size_t node) {
     return constraints[node];

@@ -66,8 +66,6 @@ set<void *> analysis::summary_dstack::unpack_f_addrs(summy::vs_shared_t f_addr) 
 }
 
 void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr) {
-  cout << "Propagating reqs..." << endl;
-
   auto &fd = function_desc_map.at(f_addr);
   if(!includes(fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
     fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());

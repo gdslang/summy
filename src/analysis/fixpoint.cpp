@@ -17,6 +17,9 @@ using namespace cfg;
 using namespace std;
 using namespace analysis;
 
+analysis::fixpoint::fixpoint(class fp_analysis *analysis, jd_manager &jd_man) : analysis(analysis), jd_man(jd_man) {
+}
+
 void fixpoint::iterate() {
   updated.clear();
   node_iterations.clear();
@@ -45,11 +48,11 @@ void fixpoint::iterate() {
     else
       node_iterations[node_id] = 0;
 
-    cout << "Next node: " << node_id << endl;
-//    if(node_id == 57)
-//      cout << *analysis->get(node_id) << endl;
-//    if(max_iter() > 4)
-//      break;
+//    cout << "Next node: " << node_id << endl;
+    //    if(node_id == 57)
+    //      cout << *analysis->get(node_id) << endl;
+    //    if(max_iter() > 4)
+    //      break;
 
     bool propagate;
     bool needs_postprocessing = false;
@@ -68,7 +71,7 @@ void fixpoint::iterate() {
         auto evaluated = constraint();
         //        cout << "++++++++++++++++++++++++" << endl;
 
-//                                        cout << "Evaluated: " << *evaluated << endl;
+        //                                        cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -108,7 +111,13 @@ void fixpoint::iterate() {
       analysis->record_updates();
       for(auto constraint_it = constraints.begin(); constraint_it != constraints.end(); constraint_it++)
         process_constraint(constraint_it->first, constraint_it->second);
-      analysis->record_stop_commit();
+      if(analysis->record_stop_commit()) {
+        for(size_t node : analysis->pending()) {
+          //    cout << "New node: " << node << endl;
+          //    cout << this << endl;
+          worklist.push(node);
+        }
+      }
 
       //      cout << "Current: " << *current << endl;
       //      cout << "Acc: " << *accumulator << endl;
@@ -152,7 +161,7 @@ void fixpoint::iterate() {
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {
-//            cout << "Adding dirty node: " << dirty << endl;
+      //            cout << "Adding dirty node: " << dirty << endl;
       worklist.push(dirty);
     }
 
@@ -161,20 +170,14 @@ void fixpoint::iterate() {
 }
 
 void fixpoint::notify(const vector<::cfg::update> &updates) {
-  analysis->update(updates);
+//    analysis->update(updates);
 
   for(auto &update : updates) {
     seen.erase(update.from);
     seen.erase(update.to);
   }
 
-  for(size_t node : analysis->pending()) {
-//    cout << "New node: " << node << endl;
-//    cout << this << endl;
-    worklist.push(node);
-  }
-
-//  iterate();
+  //  iterate();
 }
 
 size_t analysis::fixpoint::max_iter() {

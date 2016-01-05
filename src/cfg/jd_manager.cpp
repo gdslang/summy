@@ -19,11 +19,17 @@ using namespace cfg;
 using namespace std;
 
 jd_manager::jd_manager(::cfg::cfg *cfg) : addr(cfg), fp(&addr, *this) {
+  notified = false;
   fp.iterate();
   cfg->register_observer(&fp);
+  cfg->register_observer(this);
 }
 
 jump_dir jd_manager::jump_direction(size_t from, size_t to) {
+  if(notified) {
+    notified = false;
+    fp.iterate();
+  }
   analysis::addr::addr_result ar = addr.result();
   auto from_address = ar.result.at(from)->get_address();
   auto to_address = ar.result.at(to)->get_address();
@@ -33,4 +39,9 @@ jump_dir jd_manager::jump_direction(size_t from, size_t to) {
     return BACKWARD;
   else
     return FORWARD;
+}
+
+void jd_manager::notify(const std::vector<update> &updates) {
+  addr.analysis::fp_analysis::update(updates);
+  notified = true;
 }
