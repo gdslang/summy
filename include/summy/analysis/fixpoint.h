@@ -28,6 +28,8 @@ private:
   std::set<size_t> updated;
   cfg::jd_manager &jd_man;
 
+  fp_priority_queue worklist;
+
   std::map<size_t, size_t> node_iterations;
 public:
   virtual ~fixpoint() {

@@ -114,14 +114,15 @@ int main(int argc, char **argv) {
     summary_dstack ds(&cfg, se);
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
+    cfg.register_observer(&fp);
+
+    fp.iterate();
+    cout << "Max its: " << fp.max_iter() << endl;
 
     ofstream dot_noa_fs;
     dot_noa_fs.open("output_noa.dot", ios::out);
     cfg.dot(dot_noa_fs);
     dot_noa_fs.close();
-
-    fp.iterate();
-    cout << "Max its: " << fp.max_iter() << endl;
 
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);

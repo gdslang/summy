@@ -144,8 +144,8 @@ static void state(_analysis_result &r, string program, language_t lang, bool gds
   r.ds_analyzed = new summary_dstack(&cfg, se);
   jd_manager jd_man(&cfg);
   fixpoint fp(r.ds_analyzed, jd_man);
+  cfg.register_observer(&fp);
   fp.iterate();
-
 
   for(auto *node : cfg) {
     node_visitor nv;

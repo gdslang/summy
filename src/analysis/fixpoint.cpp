@@ -17,11 +17,10 @@ using namespace cfg;
 using namespace std;
 using namespace analysis;
 
-
 void fixpoint::iterate() {
   updated.clear();
   node_iterations.clear();
-  fp_priority_queue worklist = fp_priority_queue(analysis->pending(), analysis->get_fixpoint_node_comparer());
+  worklist = fp_priority_queue(analysis->pending(), analysis->get_fixpoint_node_comparer());
   fp_priority_queue postprocess_worklist(analysis->get_fixpoint_node_comparer());
 
   auto end = [&]() {
@@ -69,7 +68,7 @@ void fixpoint::iterate() {
         auto evaluated = constraint();
         //        cout << "++++++++++++++++++++++++" << endl;
 
-        //                                cout << "Evaluated: " << *evaluated << endl;
+//                                        cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -153,7 +152,7 @@ void fixpoint::iterate() {
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {
-            cout << "Adding dirty node: " << dirty << endl;
+//            cout << "Adding dirty node: " << dirty << endl;
       worklist.push(dirty);
     }
 
@@ -169,7 +168,13 @@ void fixpoint::notify(const vector<::cfg::update> &updates) {
     seen.erase(update.to);
   }
 
-  iterate();
+  for(size_t node : analysis->pending()) {
+//    cout << "New node: " << node << endl;
+//    cout << this << endl;
+    worklist.push(node);
+  }
+
+//  iterate();
 }
 
 size_t analysis::fixpoint::max_iter() {
