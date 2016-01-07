@@ -16,9 +16,34 @@
 namespace summy {
 namespace rreil {
 
-class memory_id : public gdsl::rreil::id {
+class memory_id : public gdsl::rreil::id {};
+
+class allocation_memory_id : public memory_id {
 private:
-  std::experimental::optional<void *> address;
+  void *allocation_site;
+
+  void put(std::ostream &out);
+
+  static size_t subclass_counter;
+
+public:
+  allocation_memory_id(void *allocation_site) : allocation_site(allocation_site) {}
+
+  size_t get_subclass_counter() const {
+    return subclass_counter;
+  }
+
+  void *get_allocation_site() {
+    return allocation_site;
+  }
+
+  bool operator==(gdsl::rreil::id &other) const;
+  bool operator<(id const &other) const;
+  void accept(gdsl::rreil::id_visitor &v);
+};
+
+class ptr_memory_id : public memory_id {
+private:
   std::shared_ptr<gdsl::rreil::id> inner;
 
   void put(std::ostream &out);
@@ -26,9 +51,8 @@ private:
   static size_t subclass_counter;
 
 public:
-  memory_id(std::shared_ptr<gdsl::rreil::id> inner, std::experimental::optional<void *> address)
-      : address(address), inner(inner) {}
-  ~memory_id();
+  ptr_memory_id(std::shared_ptr<gdsl::rreil::id> inner) : inner(inner) {}
+  ~ptr_memory_id();
 
   size_t get_subclass_counter() const {
     return subclass_counter;

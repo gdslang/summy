@@ -19,7 +19,7 @@
 #include <string>
 
 using gdsl::rreil::id;
-using summy::rreil::memory_id;
+using summy::rreil::ptr_memory_id;
 using summy::rreil::sm_id;
 using summy::value_set;
 using summy::value_set_visitor;
@@ -123,7 +123,7 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
       });
       alias.offset->accept(vsv);
       summy::rreil::id_visitor idv;
-      idv._([&](memory_id *mid) {
+      idv._([&](ptr_memory_id *mid) {
         if(offset) {
           from_io = from->region_by_id(&relation::get_deref, alias.id);
           step(wi.index, from_io, offset.value());

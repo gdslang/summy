@@ -6,8 +6,8 @@
  */
 
 #include <summy/rreil/id/id_visitor.h>
-#include <summy/rreil/id/numeric_id.h>
 #include <summy/rreil/id/memory_id.h>
+#include <summy/rreil/id/numeric_id.h>
 #include <summy/rreil/id/ssa_id.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/id/special_ptr.h>
@@ -28,12 +28,20 @@ void sr::id_visitor::visit(sr::numeric_id *a) {
     _default(a);
 }
 
-void sr::id_visitor::visit(sr::memory_id *a) {
-  if(memory_id_callback != NULL)
-    memory_id_callback(a);
+void sr::id_visitor::visit(sr::ptr_memory_id *a) {
+  if(ptr_memory_id_callback != NULL)
+    ptr_memory_id_callback(a);
   else
     _default(a);
 }
+
+void sr::id_visitor::visit(sr::allocation_memory_id *a) {
+  if(allocation_memory_id_callback != NULL)
+    allocation_memory_id_callback(a);
+  else
+    _default(a);
+}
+
 
 void sr::id_visitor::visit(sr::sm_id *a) {
   if(sm_id_callback != NULL)

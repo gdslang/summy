@@ -8,8 +8,8 @@
 #include <summy/rreil/id/ssa_id.h>
 #include <summy/rreil/copy_visitor.h>
 #include <summy/rreil/id/numeric_id.h>
-#include <summy/rreil/id/memory_id.h>
 #include <cppgdsl/rreil/id/id.h>
+#include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/sm_id.h>
 
 using namespace std;
@@ -30,13 +30,20 @@ void summy::rreil::copy_visitor::visit(numeric_id *a) {
     _id = new numeric_id(a->get_counter(), a->get_name(), a->get_input());
 }
 
-void summy::rreil::copy_visitor::visit(memory_id *a) {
+void summy::rreil::copy_visitor::visit(ptr_memory_id *a) {
   a->get_id()->accept(*this);
   gdsl::rreil::id *id = _id;
-  if(memory_id_ctor != NULL)
-    _id = memory_id_ctor(shared_ptr<gdsl::rreil::id>(id));
+  if(ptr_memory_id_ctor != NULL)
+    _id = ptr_memory_id_ctor(shared_ptr<gdsl::rreil::id>(id));
   else
-    _id = new memory_id(shared_ptr<gdsl::rreil::id>(id));
+    _id = new ptr_memory_id(shared_ptr<gdsl::rreil::id>(id));
+}
+
+void summy::rreil::copy_visitor::visit(allocation_memory_id *a) {
+  if(allocation_memory_id_ctor != NULL)
+    _id = allocation_memory_id_ctor(a->get_allocation_site());
+  else
+    _id = new allocation_memory_id(a->get_allocation_site());
 }
 
 void summy::rreil::copy_visitor::visit(sm_id *a) {

@@ -154,7 +154,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   text_address = sid->get_address();
                 }
               });
-              idv._([&](memory_id *mid) {
+              idv._([&](ptr_memory_id *mid) {
                 //                cout << "There seems to be an unkown function pointer :/" << endl;
                 field_req_ids_new.insert(ptr.id);
               });

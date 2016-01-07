@@ -401,7 +401,7 @@ analysis::memory_state::memory_state(shared_ptr<static_memory> sm, numeric_state
     regions.insert(make_pair(nv->get_id(), r));
 
     num_var *ptr_var = new num_var(f.num_id);
-    child_state->assume(ptr_var, {ptr(shared_ptr<gdsl::rreil::id>(new memory_id(nv->get_id())), vs_finite::zero)});
+    child_state->assume(ptr_var, {ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nv->get_id())), vs_finite::zero)});
     delete nv;
     delete ptr_var;
   };
