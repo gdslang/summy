@@ -111,7 +111,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   //  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
   //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)),
   //  vs_finite::zero) << endl;
-  ptr ptr_fresh = ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)), vs_finite::zero);
+  ptr ptr_fresh = ptr(shared_ptr<gdsl::rreil::id>(new memory_id(nid_in)), vs_finite::zero);
   ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
   ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
   child_state->assume(n_in, {ptr_fresh, _nullptr});
@@ -1222,7 +1222,7 @@ void analysis::summary_memory_state::rename() {
       for(analysis::id_shared_t *instance : id_map.at(rev_it.second._id.value()))
         *instance = fresh();
     for(memory_id *mid : rev_it.second.memory_ids) {
-      id_shared_t memory_fresh = make_shared<memory_id>(mid->get_deref(), fresh());
+      id_shared_t memory_fresh = make_shared<memory_id>(fresh());
       for(analysis::id_shared_t *instance : id_map.at(mid))
         *instance = memory_fresh;
     }

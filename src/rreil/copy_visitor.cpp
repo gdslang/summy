@@ -34,9 +34,9 @@ void summy::rreil::copy_visitor::visit(memory_id *a) {
   a->get_id()->accept(*this);
   gdsl::rreil::id *id = _id;
   if(memory_id_ctor != NULL)
-    _id = memory_id_ctor(a->get_deref(), shared_ptr<gdsl::rreil::id>(id));
+    _id = memory_id_ctor(shared_ptr<gdsl::rreil::id>(id));
   else
-    _id = new memory_id(a->get_deref(), shared_ptr<gdsl::rreil::id>(id));
+    _id = new memory_id(shared_ptr<gdsl::rreil::id>(id));
 }
 
 void summy::rreil::copy_visitor::visit(sm_id *a) {
