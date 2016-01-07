@@ -12,6 +12,9 @@
 void summy::rreil::memory_id::put(std::ostream &out) {
   out << '<';
   out << *inner;
+  if(address) {
+
+  }
   out << '>';
 }
 
@@ -24,7 +27,7 @@ bool summy::rreil::memory_id::operator ==(gdsl::rreil::id &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
   iv._([&](memory_id *m) {
-    equals = *this->inner == *m->inner;
+    equals = this->address == m->address && *this->inner == *m->inner;
   });
   other.accept(iv);
   return equals;
@@ -35,6 +38,15 @@ bool summy::rreil::memory_id::operator<(const id &other) const {
   size_t scc_other = other.get_subclass_counter();
   if(scc_me == scc_other) {
     memory_id const &other_casted = dynamic_cast<memory_id const &>(other);
+    if(address && !other_casted.address)
+      return true;
+    if(!address && other_casted.address)
+      return false;
+    if(address && other_casted.address)
+      if(address.value() < other_casted.address.value())
+        return true;
+      else if(address.value() > other_casted.address.value())
+        return false;
     return *inner < *other_casted.inner;
   } else
     return scc_me < scc_other;

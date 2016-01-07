@@ -18,6 +18,7 @@ namespace rreil {
 
 class memory_id : public gdsl::rreil::id {
 private:
+  std::experimental::optional<void *> address;
   std::shared_ptr<gdsl::rreil::id> inner;
 
   void put(std::ostream &out);
@@ -25,7 +26,8 @@ private:
   static size_t subclass_counter;
 
 public:
-  memory_id(std::shared_ptr<gdsl::rreil::id> inner) : inner(inner) {}
+  memory_id(std::shared_ptr<gdsl::rreil::id> inner, std::experimental::optional<void *> address)
+      : address(address), inner(inner) {}
   ~memory_id();
 
   size_t get_subclass_counter() const {
