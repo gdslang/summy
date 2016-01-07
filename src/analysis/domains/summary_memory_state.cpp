@@ -49,7 +49,7 @@ analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimenta
   if(r_key) name = r_key.value()->to_string();
 }
 
-field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
+field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr(id_shared_t)> ptr_ct) {
   //  struct field_desc_t {
   //    int64_t offset;
   //    field f;
@@ -111,7 +111,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   //  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
   //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)),
   //  vs_finite::zero) << endl;
-  ptr ptr_fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
+  ptr ptr_fresh = ptr_ct(nid_in);
   ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
   ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
   child_state->assume(n_in, {ptr_fresh, _nullptr});
@@ -164,6 +164,13 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     delete var;
 
   return field_out_it->second;
+}
+
+field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
+  auto ptr_fresh = [](id_shared_t nid_in) {
+    return ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
+  };
+  return insert(child_state, offset, size, replacement, ptr_fresh);
 }
 
 /*

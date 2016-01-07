@@ -412,10 +412,18 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg) : summary_dstack(cfg, ma
 analysis::summary_dstack::~summary_dstack() {}
 
 summary_memory_state *analysis::summary_dstack::sms_bottom() {
-  return summary_memory_state::bottom(sm, new equality_state(new als_state(vsd_state::bottom(sm))));
+  return sms_bottom(sm);
 }
 
 summary_memory_state *analysis::summary_dstack::sms_top() {
+  return sms_top(sm);
+}
+
+summary_memory_state *analysis::summary_dstack::sms_bottom(std::shared_ptr<static_memory> sm) {
+  return summary_memory_state::bottom(sm, new equality_state(new als_state(vsd_state::bottom(sm))));
+}
+
+summary_memory_state *analysis::summary_dstack::sms_top(std::shared_ptr<static_memory> sm) {
   summary_memory_state *sms_start =
     summary_memory_state::start_value(sm, new equality_state(new als_state(vsd_state::top(sm))));
   return sms_start;

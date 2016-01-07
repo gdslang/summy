@@ -18,6 +18,7 @@
 #include <summy/value_set/value_set.h>
 #include <summy/analysis/util.h>
 #include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/static_memory.h>
 #include <summy/rreil/id/special_ptr.h>
 
@@ -56,6 +57,7 @@ struct io_region {
     return io_region(other.in_r, other.out_r, other.name);
   }
 
+  field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr(id_shared_t)> ptr_ct);
   field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement);
 
   io_region(region_t &in_r, region_t &out_r) : in_r(in_r), out_r(out_r){};
@@ -68,6 +70,8 @@ struct memory_head {
   relation input;
   relation output;
 };
+
+class summary_dstack_stubs;
 
 /**
  * Summary-based memory domain state
@@ -207,5 +211,7 @@ public:
 
   friend std::tuple<memory_head, numeric_state *, numeric_state *> compat(
     bool copy_paste, summary_memory_state const *a, summary_memory_state const *b);
+
+  friend class summary_dstack_stubs;
 };
 }

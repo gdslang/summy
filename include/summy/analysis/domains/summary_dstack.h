@@ -72,6 +72,8 @@ public:
 
   summary_memory_state *sms_bottom();
   summary_memory_state *sms_top();
+  static summary_memory_state *sms_bottom(std::shared_ptr<static_memory> sm);
+  static summary_memory_state *sms_top(std::shared_ptr<static_memory> sm);
   std::shared_ptr<domain_state> bottom();
   std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr, callers_t callers);
   std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr);
