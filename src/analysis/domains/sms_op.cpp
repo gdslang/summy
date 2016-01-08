@@ -32,6 +32,7 @@
 using gdsl::rreil::id;
 using std::experimental::optional;
 using summy::rreil::allocation_memory_id;
+using summy::rreil::ptr_memory_id;
 using summy::rreil::sm_id;
 using summy::rreil::special_ptr;
 
@@ -65,8 +66,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   //    cout << "apply_summary" << endl;
   //    cout << "caller:" << endl
   //         << *caller << endl;
-        cout << "summary: " << endl
-             << *summary << endl;
+  cout << "summary: " << endl
+       << *summary << endl;
 
   //    caller->check_consistency();
   //    summary->check_consistency();
@@ -310,8 +311,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
             heap_allocated = true;
           });
           alias_s.id->accept(idv);
-          if(heap_allocated)
-            continue;
+          if(heap_allocated) continue;
           //          idv._default([&](id *_) {
           auto aliases_mapped_it = ptr_map.find(alias_s.id);
           ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
@@ -612,6 +612,34 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
   init_from_regions(a_in.regions, a_out.regions, b_in.regions, b_out.regions, true);
   init_from_regions(b_in.regions, b_out.regions, a_in.regions, a_out.regions, false);
 
+  auto init_from_deref_no_unref =
+    [&](region_map_t &first_in, region_map_t &first_out, region_map_t &second_in, region_map_t &second_out, bool a_b) {
+      for(auto regions_first_it = first_in.begin(); regions_first_it != first_in.end(); regions_first_it++) {
+        auto regions_second_it = second_in.find(regions_first_it->first);
+        if(regions_second_it == second_in.end()) {
+          bool is_ptr_var = false;
+          summy::rreil::id_visitor idv;
+          idv._([&](ptr_memory_id *pmid) { is_ptr_var = true; });
+          regions_first_it->first->accept(idv);
+          if(is_ptr_var) continue;
+          tie(regions_second_it, ignore) = second_in.insert(make_pair(regions_first_it->first, region_t()));
+          second_out.insert(make_pair(regions_first_it->first, region_t()));
+        } else if(a_b)
+          continue;
+
+        auto &regions_first_out = first_out.at(regions_first_it->first);
+        auto &regions_second_out = second_out.at(regions_first_it->first);
+        io_region io_first = io_region(regions_first_it->second, regions_first_out);
+        io_region io_second = io_region(regions_second_it->second, regions_second_out);
+        if(a_b)
+          worklist.push(region_pair{io_first, io_second});
+        else
+          worklist.push(region_pair{io_second, io_first});
+      }
+    };
+  init_from_deref_no_unref(a_in.deref, a_out.deref, b_in.deref, b_out.deref, true);
+  init_from_deref_no_unref(b_in.deref, b_out.deref, a_in.deref, a_out.deref, false);
+
   /*
    * There may be special regions that are not reachable through registers, but have globally unique
    * ids. Therefore, we add deref regions with equal ids to the worklist.
@@ -813,10 +841,10 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
            */
           assert(false);
         } else {
-          if(!rpd.ending_last) {
-            cout << *id << endl;
-            cout << *rpd.ending_first.f.num_id << endl;
-          }
+          //          if(!rpd.ending_last) {
+          //            cout << *id << endl;
+          //            cout << *rpd.ending_first.f.num_id << endl;
+          //          }
           assert(rpd.ending_last);
 
           field_desc_t fd_first = rpd.field_first_region().value();
@@ -844,7 +872,15 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     for(auto &region_it : a_map) {
       auto region_b_it = b_map.find(region_it.first);
       if(region_b_it != b_map.end()) handle_region(region_it.first, region_it.second, region_b_it->second);
-      //      else
+      //      else {
+      //        bool insert_other = true;
+      //        summy::rreil::id_visitor idv;
+      //        idv._([&](ptr_memory_id *pmid) {
+      //          insert_other = false;
+      //        });
+      //        if(insert_other)
+      //          handle_region(region_it.first, region_it.second, region_t());
+      //      }
       //        handle_region(region_it.first, region_it.second, region_t());
     }
     //    for(auto &region_b_it : b_map) {
