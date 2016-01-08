@@ -26,4 +26,8 @@ shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::allocator(void 
   auto allocation_site_ct = [=](id_shared_t nid_in) {
     return ptr(shared_ptr<gdsl::rreil::id>(new allocation_memory_id(allocation_site)), vs_finite::zero);
   };
+
+  rax_region.insert(malloc_summary->child_state, 0, 64, false, allocation_site_ct);
+
+  return malloc_summary;
 }

@@ -128,13 +128,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             /*
              * Todo: This is an expensive hack to recognize recursion
              */
-            set<void*> callers_addrs_trans = f_addrs;
+            set<void *> callers_addrs_trans = f_addrs;
             vector<size_t> callers_rest;
             callers_rest.insert(callers_rest.begin(), state_c->get_callers().begin(), state_c->get_callers().end());
             while(!callers_rest.empty()) {
               size_t caller = callers_rest.back();
               callers_rest.pop_back();
-              set<void*> caller_f_addrs = unpack_f_addrs(this->state[caller]->get_f_addr());
+              set<void *> caller_f_addrs = unpack_f_addrs(this->state[caller]->get_f_addr());
               callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
               callers_t &caller_callers = this->state[caller]->get_callers();
               callers_rest.insert(callers_rest.begin(), caller_callers.begin(), caller_callers.end());
@@ -177,8 +177,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                           shared_ptr<summary_memory_state>(summary.value()->join(state[s_node]->get_mstate(), to));
                       else
                         summary = shared_ptr<summary_memory_state>(state[s_node]->get_mstate()->copy());
-                      if(state_c->get_f_addr() == this->state[s_node]->get_f_addr())
-                        directly_recursive = true;
+                      if(state_c->get_f_addr() == this->state[s_node]->get_f_addr()) directly_recursive = true;
                     }
 
                     //                    cout << address << endl;
@@ -224,12 +223,12 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                * Directly recursive call => We have to rename variables!
                */
               summary.value()->rename();
-//            if(summary)
-//              cout << *summary.value();
-//            if(summary)
-//              cout << "We have a summary!" << endl;
-//            else
-//              cout << "We don't have a summary :-/" << endl;
+            //            if(summary)
+            //              cout << *summary.value();
+            //            if(summary)
+            //              cout << "We have a summary!" << endl;
+            //            else
+            //              cout << "We don't have a summary :-/" << endl;
             summary_memory_state *summarized = summary ? apply_summary(mstate, summary.value().get()) : bottom->copy();
             return shared_ptr<global_state>(
               new global_state(summarized, state_c->get_f_addr(), state_c->get_callers()));
@@ -305,7 +304,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               //              for(auto p : mempaths_new.value())
               //                cout << p << endl;
 
-              set<void*> f_addrs = unpack_f_addrs(state[from_parent]->get_f_addr());
+              set<void *> f_addrs = unpack_f_addrs(state[from_parent]->get_f_addr());
               assert(f_addrs.size() > 0);
               for(auto f_addr : f_addrs)
                 propagate_reqs(mempaths_new.value(), f_addr);
@@ -376,7 +375,7 @@ void analysis::summary_dstack::init_state() {
 
 analysis::summary_dstack::summary_dstack(
   cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const &f_starts)
-    : fp_analysis(cfg), sm(sm) {
+    : fp_analysis(cfg), sm(sm), stubs(sm) {
   init();
 
   for(auto node_id : f_starts) {
@@ -390,8 +389,11 @@ analysis::summary_dstack::summary_dstack(
   }
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm) : fp_analysis(cfg), sm(sm) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm)
+    : fp_analysis(cfg), sm(sm), stubs(sm) {
   init();
+
+  cout << *stubs.allocator((void*)0x99, 64) << endl;
 
   /*
    * Simulate initial call to node zero
@@ -463,9 +465,9 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
     shared_ptr<global_state> state_b = this->state[b];
     //    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
 
-    set<void*> f_addrs_a = unpack_f_addrs(state_a->get_f_addr());
+    set<void *> f_addrs_a = unpack_f_addrs(state_a->get_f_addr());
 
-    set<void*> f_addrs_b = unpack_f_addrs(state_b->get_f_addr());
+    set<void *> f_addrs_b = unpack_f_addrs(state_b->get_f_addr());
 
     //    cout << a << " < " << b << " ~~~ " << *state_a->get_f_addr() << " //// " << *state_b->get_f_addr() << endl;
 
@@ -476,15 +478,13 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
     else if(f_addrs_a.size() != 0 && f_addrs_b.size() != 0) {
       size_t min_calls_sz_a = 0;
       for(auto f_addr_a : f_addrs_a) {
-        size_t min_calls_sz_curr =  function_desc_map.at(f_addr_a).min_calls_sz;
-        if(min_calls_sz_curr > min_calls_sz_a)
-          min_calls_sz_a = min_calls_sz_curr;
+        size_t min_calls_sz_curr = function_desc_map.at(f_addr_a).min_calls_sz;
+        if(min_calls_sz_curr > min_calls_sz_a) min_calls_sz_a = min_calls_sz_curr;
       }
       size_t min_calls_sz_b = 0;
       for(auto f_addr_b : f_addrs_b) {
-        size_t min_calls_sz_curr =  function_desc_map.at(f_addr_b).min_calls_sz;
-        if(min_calls_sz_curr > min_calls_sz_b)
-          min_calls_sz_b = min_calls_sz_curr;
+        size_t min_calls_sz_curr = function_desc_map.at(f_addr_b).min_calls_sz;
+        if(min_calls_sz_curr > min_calls_sz_b) min_calls_sz_b = min_calls_sz_curr;
       }
       //      cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
       if(min_calls_sz_a > min_calls_sz_b)

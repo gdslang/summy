@@ -7,6 +7,7 @@
 
 #pragma once
 #include <summy/analysis/domains/mempath.h>
+#include <summy/analysis/domains/summary_dstack_stubs.h>
 #include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/global_analysis/global_state.h>
@@ -52,6 +53,8 @@ private:
   std::map<void *, function_desc> function_desc_map;
   std::set<size_t> _dirty_nodes;
   state_t state;
+
+  summary_dstack_stubs stubs;
 
   static std::set<void*> unpack_f_addrs(summy::vs_shared_t f_addr);
   //  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);

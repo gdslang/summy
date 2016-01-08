@@ -25,9 +25,7 @@ size_t summy::rreil::allocation_memory_id::subclass_counter = gdsl::rreil::id::s
 bool summy::rreil::allocation_memory_id::operator==(gdsl::rreil::id &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
-  iv._([&](allocation_memory_id *m) {
-    equals = this->allocation_site == m->allocation_site;
-  });
+  iv._([&](allocation_memory_id *m) { equals = this->allocation_site == m->allocation_site; });
   other.accept(iv);
   return equals;
 }
@@ -42,7 +40,11 @@ bool summy::rreil::allocation_memory_id::operator<(const id &other) const {
     return scc_me < scc_other;
 }
 
-void summy::rreil::allocation_memory_id::accept(gdsl::rreil::id_visitor &v) {}
+void summy::rreil::allocation_memory_id::accept(gdsl::rreil::id_visitor &v) {
+  auto &summy_v = dynamic_cast<summy::rreil::id_visitor &>(v);
+  summy_v.visit(this);
+  ;
+}
 
 /*
  * ptr_memory_id
@@ -56,15 +58,12 @@ void summy::rreil::ptr_memory_id::put(std::ostream &out) {
 
 size_t summy::rreil::ptr_memory_id::subclass_counter = gdsl::rreil::id::subclass_counter++;
 
-summy::rreil::ptr_memory_id::~ptr_memory_id() {
-}
+summy::rreil::ptr_memory_id::~ptr_memory_id() {}
 
-bool summy::rreil::ptr_memory_id::operator ==(gdsl::rreil::id &other) const {
+bool summy::rreil::ptr_memory_id::operator==(gdsl::rreil::id &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
-  iv._([&](ptr_memory_id *m) {
-    equals = *this->inner == *m->inner;
-  });
+  iv._([&](ptr_memory_id *m) { equals = *this->inner == *m->inner; });
   other.accept(iv);
   return equals;
 }
@@ -80,6 +79,6 @@ bool summy::rreil::ptr_memory_id::operator<(const id &other) const {
 }
 
 void summy::rreil::ptr_memory_id::accept(gdsl::rreil::id_visitor &v) {
-  auto &summy_v = dynamic_cast<summy::rreil::id_visitor&>(v);
+  auto &summy_v = dynamic_cast<summy::rreil::id_visitor &>(v);
   summy_v.visit(this);
 }
