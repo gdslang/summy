@@ -18,6 +18,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <experimental/optional>
 
 namespace analysis {
 
@@ -55,6 +56,7 @@ private:
   state_t state;
 
   summary_dstack_stubs stubs;
+  std::experimental::optional<summary_t> get_stub(void *address, size_t node);
 
   static std::set<void*> unpack_f_addrs(summy::vs_shared_t f_addr);
   //  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);

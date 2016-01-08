@@ -51,6 +51,17 @@ using namespace summy::rreil;
 using namespace summy;
 using namespace std::experimental;
 
+
+std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *address, size_t node) {
+  switch((size_t)address) {
+    case 0x4003e0: {
+      return stubs.allocator(node, 0);
+      break;
+    }
+  }
+  return nullopt;
+}
+
 set<void *> analysis::summary_dstack::unpack_f_addrs(summy::vs_shared_t f_addr) {
   set<void *> addresses;
   value_set_visitor vsv(true);
@@ -146,11 +157,11 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //                        cout << callee_aliases << endl;
             for(auto ptr : callee_aliases) {
               summy::rreil::id_visitor idv;
-              bool is_text = false;
+              bool is_valid_code_address = false;
               void *text_address;
               idv._([&](sm_id *sid) {
-                if(sid->get_symbol() == ".text") {
-                  is_text = true;
+                if(sid->get_symbol() == ".text" || sid->get_symbol() == ".plt") {
+                  is_valid_code_address = true;
                   text_address = sid->get_address();
                 }
               });
@@ -159,7 +170,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 field_req_ids_new.insert(ptr.id);
               });
               ptr.id->accept(idv);
-              if(!is_text) continue;
+              if(!is_valid_code_address) continue;
               value_set_visitor vsv;
               vsv._([&](vs_finite *vsf) {
                 for(int64_t offset : vsf->get_elements()) {
@@ -168,39 +179,46 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     cout << "Warning: Ignoring recursive call." << endl;
                     continue;
                   }
-                  auto fd_it = function_desc_map.find(address);
-                  if(fd_it != function_desc_map.end()) {
-                    auto &f_desc = fd_it->second;
-                    for(size_t s_node : f_desc.summary_nodes) {
-                      if(summary)
-                        summary =
-                          shared_ptr<summary_memory_state>(summary.value()->join(state[s_node]->get_mstate(), to));
-                      else
-                        summary = shared_ptr<summary_memory_state>(state[s_node]->get_mstate()->copy());
-                      if(state_c->get_f_addr() == this->state[s_node]->get_f_addr()) directly_recursive = true;
-                    }
-
-                    //                    cout << address << endl;
-                    //                    cout << "=====================================" << endl;
-                    //                    if(this->state.size() > 91)
-                    //            cout << *this->state[91]->get_mstate() << endl;
-                    //                    cout << "==================================+++" << endl;
-                    //                    cout << *f_desc.summary.get() << endl;
-
-                    f_desc.min_calls_sz = std::max(f_desc.min_calls_sz, current_min_calls_sz);
-
-                    size_t head_id = fd_it->second.head_id;
-                    cfg::in_edges_t const &head_in = cfg->in_edges(head_id);
-                    if(head_in.find(to) == head_in.end()) {
-                      //                      cout << "New edge from " << to << " to " << head_id << endl;
-                      cfg->update_edge(to, head_id, new call_edge(true));
-                    }
+                  auto add_summary = [&](summary_memory_state *next) {
+                    if(summary)
+                      summary = shared_ptr<summary_memory_state>(summary.value()->join(next, to));
+                    else
+                      summary = shared_ptr<summary_memory_state>(next->copy());
+                  };
+                  optional<summary_t> stub = get_stub(address, from);
+                  if(stub) {
+                    add_summary(stub.value().get());
                   } else {
-                    size_t an_id = cfg->create_node(
-                      [&](size_t id) { return new address_node(id, (size_t)address, cfg::DECODABLE); });
-                    function_desc_map.insert(make_pair(address, function_desc(current_min_calls_sz + 1, an_id)));
-                    //                    cout << "New edge from " << to << " to " << an_id << endl;
-                    cfg->update_edge(to, an_id, new call_edge(true));
+                    auto fd_it = function_desc_map.find(address);
+                    if(fd_it != function_desc_map.end()) {
+                      auto &f_desc = fd_it->second;
+                      for(size_t s_node : f_desc.summary_nodes) {
+                        add_summary(state[s_node]->get_mstate());
+                        if(state_c->get_f_addr() == this->state[s_node]->get_f_addr()) directly_recursive = true;
+                      }
+
+                      //                    cout << address << endl;
+                      //                    cout << "=====================================" << endl;
+                      //                    if(this->state.size() > 91)
+                      //            cout << *this->state[91]->get_mstate() << endl;
+                      //                    cout << "==================================+++" << endl;
+                      //                    cout << *f_desc.summary.get() << endl;
+
+                      f_desc.min_calls_sz = std::max(f_desc.min_calls_sz, current_min_calls_sz);
+
+                      size_t head_id = fd_it->second.head_id;
+                      cfg::in_edges_t const &head_in = cfg->in_edges(head_id);
+                      if(head_in.find(to) == head_in.end()) {
+                        //                      cout << "New edge from " << to << " to " << head_id << endl;
+                        cfg->update_edge(to, head_id, new call_edge(true));
+                      }
+                    } else {
+                      size_t an_id = cfg->create_node(
+                        [&](size_t id) { return new address_node(id, (size_t)address, cfg::DECODABLE); });
+                      function_desc_map.insert(make_pair(address, function_desc(current_min_calls_sz + 1, an_id)));
+                      //                    cout << "New edge from " << to << " to " << an_id << endl;
+                      cfg->update_edge(to, an_id, new call_edge(true));
+                    }
                   }
                 }
               });
@@ -392,8 +410,6 @@ analysis::summary_dstack::summary_dstack(
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm)
     : fp_analysis(cfg), sm(sm), stubs(sm) {
   init();
-
-  cout << *stubs.allocator((void*)0x99, 64) << endl;
 
   /*
    * Simulate initial call to node zero

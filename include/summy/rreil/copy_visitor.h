@@ -24,7 +24,7 @@ public:
   typedef std::function<gdsl::rreil::id *(
     int_t, std::experimental::optional<std::string>, std::experimental::optional<bool>)> numeric_id_ctor_t;
   typedef std::function<gdsl::rreil::id *(std::shared_ptr<gdsl::rreil::id>)> ptr_memory_id_ctor_t;
-  typedef std::function<gdsl::rreil::id *(void*)> allocation_memory_id_ctor_t;
+  typedef std::function<gdsl::rreil::id *(size_t)> allocation_memory_id_ctor_t;
   typedef std::function<gdsl::rreil::id *(std::string, void *)> sm_id_ctor_t;
 
 private:

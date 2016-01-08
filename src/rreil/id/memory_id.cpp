@@ -17,7 +17,7 @@ using namespace std;
  */
 
 void summy::rreil::allocation_memory_id::put(std::ostream &out) {
-  out << "<@0x" << hex << allocation_site << dec << '>';
+  out << "<@alloc:" << allocation_site << '>';
 }
 
 size_t summy::rreil::allocation_memory_id::subclass_counter = gdsl::rreil::id::subclass_counter++;

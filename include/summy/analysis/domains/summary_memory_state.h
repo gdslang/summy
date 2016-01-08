@@ -57,7 +57,7 @@ struct io_region {
     return io_region(other.in_r, other.out_r, other.name);
   }
 
-  field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr(id_shared_t)> ptr_ct);
+  field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr(id_shared_t)> ptr_ct_out);
   field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement);
 
   io_region(region_t &in_r, region_t &out_r) : in_r(in_r), out_r(out_r){};

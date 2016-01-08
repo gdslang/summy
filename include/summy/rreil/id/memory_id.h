@@ -20,20 +20,20 @@ class memory_id : public gdsl::rreil::id {};
 
 class allocation_memory_id : public memory_id {
 private:
-  void *allocation_site;
+  size_t allocation_site;
 
   void put(std::ostream &out);
 
   static size_t subclass_counter;
 
 public:
-  allocation_memory_id(void *allocation_site) : allocation_site(allocation_site) {}
+  allocation_memory_id(size_t allocation_site) : allocation_site(allocation_site) {}
 
   size_t get_subclass_counter() const {
     return subclass_counter;
   }
 
-  void *get_allocation_site() {
+  size_t get_allocation_site() {
     return allocation_site;
   }
 

@@ -17,6 +17,7 @@
 #include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/id/special_ptr.h>
 #include <summy/value_set/value_set.h>
@@ -30,6 +31,7 @@
 
 using gdsl::rreil::id;
 using std::experimental::optional;
+using summy::rreil::allocation_memory_id;
 using summy::rreil::sm_id;
 using summy::rreil::special_ptr;
 
@@ -63,8 +65,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   //    cout << "apply_summary" << endl;
   //    cout << "caller:" << endl
   //         << *caller << endl;
-  //      cout << "summary: " << endl
-  //           << *summary << endl;
+        cout << "summary: " << endl
+             << *summary << endl;
 
   //    caller->check_consistency();
   //    summary->check_consistency();
@@ -301,8 +303,15 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
         ptr_set_t aliases_c;
         for(auto &alias_s : aliases_s) {
-          //          summy::rreil::id_visitor idv;
-          //          idv._([&](sm_id *_sm_id) { aliases_c.insert(alias_s); });
+          summy::rreil::id_visitor idv;
+          bool heap_allocated = false;
+          idv._([&](allocation_memory_id *alloc) {
+            aliases_c.insert(alias_s);
+            heap_allocated = true;
+          });
+          alias_s.id->accept(idv);
+          if(heap_allocated)
+            continue;
           //          idv._default([&](id *_) {
           auto aliases_mapped_it = ptr_map.find(alias_s.id);
           ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
