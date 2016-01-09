@@ -89,7 +89,7 @@ void fp_analysis::update(vector<struct update> const &updates) {
 //    cout << "}" << endl;
 //  };
 
-  fixpoint_pending.clear();
+//  fixpoint_pending.clear();
 
   for(auto &update : updates) {
     switch(update.kind) {
@@ -172,6 +172,10 @@ bool analysis::fp_analysis::record_stop_commit() {
   auto const& updates = rec.checkout_updates();
   update(updates);
   return updates.size() > 0;
+}
+
+void analysis::fp_analysis::clear_pending() {
+  fixpoint_pending.clear();
 }
 
 void analysis::fp_analysis::assert_dependency(dependency dep) {

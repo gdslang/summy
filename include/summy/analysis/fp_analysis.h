@@ -70,6 +70,7 @@ public:
   virtual std::set<size_t> pending() {
     return fixpoint_pending;
   }
+  void clear_pending();
 
   virtual shared_ptr<domain_state> get(size_t node) = 0;
   virtual void update(size_t node, shared_ptr<domain_state> state) = 0;

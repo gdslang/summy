@@ -24,6 +24,7 @@ void fixpoint::iterate() {
   updated.clear();
   node_iterations.clear();
   worklist = fp_priority_queue(analysis->pending(), analysis->get_fixpoint_node_comparer());
+  analysis->clear_pending();
   fp_priority_queue postprocess_worklist(analysis->get_fixpoint_node_comparer());
 
   auto end = [&]() {
@@ -49,10 +50,10 @@ void fixpoint::iterate() {
       node_iterations[node_id] = 0;
 
 //    cout << "Next node: " << node_id << endl;
-    //    if(node_id == 57)
-    //      cout << *analysis->get(node_id) << endl;
-    //    if(max_iter() > 4)
-    //      break;
+//        if(node_id == 77)
+//          cout << "Baaaaack" << endl;
+        if(max_iter() > 10)
+          break;
 
     bool propagate;
     bool needs_postprocessing = false;
@@ -84,7 +85,7 @@ void fixpoint::iterate() {
          */
         //        cout << "Current: " << *current << endl;
         if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
-          //          cout << "Back jump from " << node_other << " to " << node_id << endl;
+//                    cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
@@ -148,6 +149,7 @@ void fixpoint::iterate() {
         //            cout << "Postproc: " << node_id << endl;
         postprocess_worklist.push(node_id);
       }
+//        cout << node_id << "->" << *accumulator << endl;
       analysis->update(node_id, accumulator);
       updated.insert(node_id);
     }

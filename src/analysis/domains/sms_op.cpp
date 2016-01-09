@@ -66,8 +66,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   //    cout << "apply_summary" << endl;
   //    cout << "caller:" << endl
   //         << *caller << endl;
-  cout << "summary: " << endl
-       << *summary << endl;
+//  cout << "summary: " << endl
+//       << *summary << endl;
 
   //    caller->check_consistency();
   //    summary->check_consistency();
@@ -612,11 +612,15 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
   init_from_regions(a_in.regions, a_out.regions, b_in.regions, b_out.regions, true);
   init_from_regions(b_in.regions, b_out.regions, a_in.regions, a_out.regions, false);
 
-  auto init_from_deref_no_unref =
+  auto init_from_deref_no_ptr =
     [&](region_map_t &first_in, region_map_t &first_out, region_map_t &second_in, region_map_t &second_out, bool a_b) {
       for(auto regions_first_it = first_in.begin(); regions_first_it != first_in.end(); regions_first_it++) {
         auto regions_second_it = second_in.find(regions_first_it->first);
         if(regions_second_it == second_in.end()) {
+          /*
+           * Deref regions referenced by pointers are only added if matched in the input. Therefore,
+           * here we only add if the region key is not a ptr_memory_id.
+           */
           bool is_ptr_var = false;
           summy::rreil::id_visitor idv;
           idv._([&](ptr_memory_id *pmid) { is_ptr_var = true; });
@@ -624,8 +628,14 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
           if(is_ptr_var) continue;
           tie(regions_second_it, ignore) = second_in.insert(make_pair(regions_first_it->first, region_t()));
           second_out.insert(make_pair(regions_first_it->first, region_t()));
-        } else if(a_b)
-          continue;
+        } else
+          /*
+           * There may be special regions that are not reachable through registers, but have globally unique
+           * ids. Therefore, we add deref regions with equal ids to the worklist. If a_b is true, the region
+           * pair has already been handled when a_b was false.
+           */
+          if(a_b) continue;
+
 
         auto &regions_first_out = first_out.at(regions_first_it->first);
         auto &regions_second_out = second_out.at(regions_first_it->first);
@@ -637,25 +647,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
           worklist.push(region_pair{io_second, io_first});
       }
     };
-  init_from_deref_no_unref(a_in.deref, a_out.deref, b_in.deref, b_out.deref, true);
-  init_from_deref_no_unref(b_in.deref, b_out.deref, a_in.deref, a_out.deref, false);
-
-  /*
-   * There may be special regions that are not reachable through registers, but have globally unique
-   * ids. Therefore, we add deref regions with equal ids to the worklist.
-   */
-  for(auto deref_first_it = a_in.deref.begin(); deref_first_it != a_in.deref.end(); deref_first_it++) {
-    auto deref_second_it = b_in.deref.find(deref_first_it->first);
-    if(deref_second_it != b_in.deref.end()) {
-      auto &deref_first_out = a_out.deref.at(deref_first_it->first);
-      auto &deref_second_out = b_out.deref.at(deref_second_it->first);
-
-      io_region io_first = io_region(deref_first_it->second, deref_first_out);
-      io_region io_second = io_region(deref_second_it->second, deref_second_out);
-
-      worklist.push(region_pair{io_first, io_second});
-    }
-  }
+  init_from_deref_no_ptr(a_in.deref, a_out.deref, b_in.deref, b_out.deref, true);
+  init_from_deref_no_ptr(b_in.deref, b_out.deref, a_in.deref, a_out.deref, false);
 
   num_var_pairs_t result;
 
