@@ -241,8 +241,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                * Directly recursive call => We have to rename variables!
                */
               summary.value()->rename();
-            //            if(summary)
-            //              cout << *summary.value();
+//                        if(summary)
+//                          cout << *summary.value();
 //                        if(summary)
 //                          cout << "We have a summary!" << endl;
 //                        else

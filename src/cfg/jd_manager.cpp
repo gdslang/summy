@@ -14,6 +14,7 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <assert.h>
 
 using namespace cfg;
 using namespace std;
@@ -33,6 +34,11 @@ jump_dir jd_manager::jump_direction(size_t from, size_t to) {
   analysis::addr::addr_result ar = addr.result();
   auto from_address = ar.result.at(from)->get_address();
   auto to_address = ar.result.at(to)->get_address();
+  /*
+   * Todo: There should be an address for every node?! => Assertions
+   */
+//  assert(from_address);
+//  assert(to_address);
 //  cout << (from_address ? from_address.value() : 0) << " / " << (to_address ? to_address.value() : 0)  << endl;
   if(!from_address || !to_address)
     return UNKNOWN;
