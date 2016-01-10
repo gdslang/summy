@@ -50,10 +50,10 @@ void fixpoint::iterate() {
       node_iterations[node_id] = 0;
 
 //    cout << "Next node: " << node_id << endl;
-//        if(node_id == 77)
-//          cout << "Baaaaack" << endl;
-        if(max_iter() > 10)
-          break;
+//        if(node_id == 110)
+//          cout << "Node 110" << endl;
+//        if(max_iter() > 10)
+//          break;
 
     bool propagate;
     bool needs_postprocessing = false;
@@ -72,7 +72,7 @@ void fixpoint::iterate() {
         auto evaluated = constraint();
         //        cout << "++++++++++++++++++++++++" << endl;
 
-        //                                        cout << "Evaluated: " << *evaluated << endl;
+//            cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect

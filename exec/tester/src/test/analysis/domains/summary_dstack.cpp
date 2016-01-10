@@ -817,14 +817,14 @@ ret",
   ASSERT_EQ(aliases_end_a.size(), 2);
 
   ptr_set_t aliases_start_c_end_deref;
-  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_c_end_deref, ar, "end", *aliases_start_c.begin()));
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_c_end_deref, ar, "end", unpack_singleton(aliases_start_c)));
   ASSERT_EQ(aliases_start_c_end_deref.size(), 3);
   ASSERT_NE(aliases_start_c_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_c_end_deref.end());
   ASSERT_EQ(aliases_start_c_end_deref.find(unpack_singleton(aliases_start_d)), aliases_start_c_end_deref.end());
   ASSERT_EQ(aliases_start_c_end_deref.find(unpack_singleton(aliases_start_c)), aliases_start_c_end_deref.end());
 
   ptr_set_t aliases_start_d_end_deref;
-  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_d_end_deref, ar, "end", *aliases_start_d.begin()));
+  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_d_end_deref, ar, "end", unpack_singleton(aliases_start_c)));
   ASSERT_EQ(aliases_start_d_end_deref.size(), 3);
   ASSERT_NE(aliases_start_d_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_d_end_deref.end());
   ASSERT_EQ(aliases_start_d_end_deref.find(unpack_singleton(aliases_start_d)), aliases_start_d_end_deref.end());
