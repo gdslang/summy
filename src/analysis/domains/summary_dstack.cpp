@@ -51,14 +51,27 @@ using namespace summy::rreil;
 using namespace summy;
 using namespace std::experimental;
 
-
 std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *address, size_t node) {
-  switch((size_t)address) {
-    case 0x4003e0: {
+//  symbol symb;
+//  bool success;
+//  tie(success, symb) = sm->lookup(address);
+//  cout << symb.symbol_name << endl;
+  cout << hex << address << dec << endl;
+
+  auto sf_it = sf.get_type_functions().find((size_t)address);
+  if(sf_it == sf.get_type_functions().end())
+    return nullopt;
+  switch(sf_it->second) {
+    case ALLOCATION: {
       return stubs.allocator(node, 0);
-      break;
     }
   }
+//  switch((size_t)address) {
+//    case 0x4003e0: {
+//      return stubs.allocator(node, 0);
+//      break;
+//    }
+//  }
   return nullopt;
 }
 
@@ -397,8 +410,8 @@ void analysis::summary_dstack::init_state() {
 }
 
 analysis::summary_dstack::summary_dstack(
-  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const &f_starts)
-    : fp_analysis(cfg), sm(sm), stubs(sm) {
+  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const &f_starts, special_functions sf)
+    : fp_analysis(cfg), sm(sm), stubs(sm), sf(sf) {
   init();
 
   for(auto node_id : f_starts) {
@@ -412,8 +425,8 @@ analysis::summary_dstack::summary_dstack(
   }
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm)
-    : fp_analysis(cfg), sm(sm), stubs(sm) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, special_functions sf)
+    : fp_analysis(cfg), sm(sm), stubs(sm), sf(sf) {
   init();
 
   /*
@@ -428,7 +441,7 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
   state[n->get_id()]->set_f_addr(vs_finite::single(addr.value()));
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg) : summary_dstack(cfg, make_shared<static_dummy>()) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, special_functions sf) : summary_dstack(cfg, make_shared<static_dummy>(), sf) {
   init();
 }
 

@@ -1,8 +1,10 @@
+#include <assert.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/node/address_node.h>
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <bjutil/binary/elf_provider.h>
+#include <bjutil/binary/special_functions.h>
 #include <bjutil/printer.h>
 #include <bjutil/gdsl_init.h>
 #include <stdio.h>
@@ -81,21 +83,35 @@ int main(int argc, char **argv) {
   gdsl::gdsl g(&f);
 
   elf_provider elfp = elf_provider(argv[1]);
-  binary_provider::entry_t section;
   bool success;
-  tie(success, section) = elfp.section(".text");
+
+  binary_provider::entry_t dot_plt;
+  tie(success, dot_plt) = elfp.section(".plt");
+  if(!success) throw string("Invalid section .plt");
+  cout << dot_plt.address << endl;
+  cout << dot_plt.size << endl;
+
+  binary_provider::entry_t dot_text;
+  tie(success, dot_text) = elfp.section(".text");
+  cout << dot_text.address << endl;
+  cout << dot_text.size << endl;
   if(!success) throw string("Invalid section .text");
+
+  assert(dot_plt.address + dot_plt.size == dot_text.address);
+  size_t section_size = dot_plt.size + dot_text.size;
+  size_t section_offset = dot_plt.offset;
+  size_t section_address = dot_plt.address;
 
   binary_provider::entry_t function;
   tie(ignore, function) = elfp.symbol("main");
 
-  unsigned char *buffer = (unsigned char *)malloc(section.size);
-  memcpy(buffer, elfp.get_data().data + section.offset, section.size);
+  unsigned char *buffer = (unsigned char *)malloc(section_size);
+  memcpy(buffer, elfp.get_data().data + section_offset, section_size);
 
-  size_t size = (function.offset - section.offset) + function.size + 1000;
-  if(size > section.size) size = section.size;
+  size_t size = (function.offset - section_offset) + function.size + 1000;
+  if(size > section_size) size = section_size;
 
-  g.set_code(buffer, size, section.address);
+  g.set_code(buffer, size, section_address);
   if(g.seek(function.address)) {
     throw string("Unable to seek to given function_name");
   }
@@ -111,7 +127,7 @@ int main(int argc, char **argv) {
     cfg.commit_updates();
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-    summary_dstack ds(&cfg, se);
+    summary_dstack ds(&cfg, se, special_functions::from_elf_provider(elfp));
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
     cfg.register_observer(&fp);

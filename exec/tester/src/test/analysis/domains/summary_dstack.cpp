@@ -6,6 +6,7 @@
  */
 
 #include <bjutil/binary/elf_provider.h>
+#include <bjutil/binary/special_functions.h>
 #include <summy/analysis/domains/summary_dstack.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/domains/sms_op.h>
@@ -23,6 +24,7 @@
 #include <summy/big_step/analysis_dectran.h>
 #include <summy/cfg/jd_manager.h>
 #include <summy/cfg/node/address_node.h>
+#include <summy/rreil/id/memory_id.h>
 #include <memory>
 #include <iostream>
 #include <map>
@@ -84,7 +86,7 @@ enum language_t {
   CPP
 };
 
-static void state(_analysis_result &r, string program, language_t lang, bool gdsl_optimize) {
+static void state(_analysis_result &r, string program, language_t lang, bool gdsl_optimize, uint8_t compiler_opt) {
   SCOPED_TRACE("state()");
 
   switch(lang) {
@@ -94,12 +96,12 @@ static void state(_analysis_result &r, string program, language_t lang, bool gds
       break;
     }
     case C: {
-      string filename = c_compile(program, 1);
+      string filename = c_compile(program, compiler_opt);
       r.elfp = new elf_provider(filename.c_str());
       break;
     }
     case CPP: {
-      string filename = cpp_compile(program, 1);
+      string filename = cpp_compile(program, compiler_opt);
       r.elfp = new elf_provider(filename.c_str());
       break;
     }
@@ -141,7 +143,7 @@ static void state(_analysis_result &r, string program, language_t lang, bool gds
   cfg.commit_updates();
 
   shared_ptr<static_memory> se = make_shared<static_elf>(r.elfp);
-  r.ds_analyzed = new summary_dstack(&cfg, se);
+  r.ds_analyzed = new summary_dstack(&cfg, se, special_functions::from_elf_provider(*r.elfp));
   jd_manager jd_man(&cfg);
   fixpoint fp(r.ds_analyzed, jd_man);
   cfg.register_observer(&fp);
@@ -157,15 +159,15 @@ static void state(_analysis_result &r, string program, language_t lang, bool gds
 }
 
 static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = false) {
-  state(r, _asm, ASSEMBLY, gdsl_optimize);
+  state(r, _asm, ASSEMBLY, gdsl_optimize, 1);
 }
 
 static void state_c(_analysis_result &r, string c, bool gdsl_optimize = false) {
-  state(r, c, C, gdsl_optimize);
+  state(r, c, C, gdsl_optimize, 1);
 }
 
 static void state_cpp(_analysis_result &r, string c, bool gdsl_optimize = false) {
-  state(r, c, CPP, gdsl_optimize);
+  state(r, c, CPP, gdsl_optimize, 1);
 }
 
 static void query_val(
@@ -404,6 +406,7 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
 
   address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
   aliases = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryAls(a);
+
   delete a;
 }
 
@@ -1318,4 +1321,42 @@ ret",
   ASSERT_EQ(*r, vs_finite::single(100));
 
   ASSERT_EQ(ar.max_it, 3);
+}
+
+TEST_F(summary_dstack_test, Malloc1) {
+  // test_malloc.c
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state(ar, "#include <stdlib.h>\n\
+\n\
+int main(void) {\n\
+  __asm volatile ( \"before_malloc:\" );\n\
+  int *x = malloc(4);\n\
+  __asm volatile ( \"movq %0, %%r11\"\n\
+  : \"=a\" (x)\n\
+  : \"a\" (x)\n\
+  : \"r11\");\n\
+  __asm volatile ( \"after_malloc:\" );\n\
+  return 0;\n\
+}",
+    C, false, 0));
+
+  ptr_set_t sp_before_malloc;
+  ASSERT_NO_FATAL_FAILURE(query_als(sp_before_malloc, ar, "before_malloc", "SP"));
+  ptr_set_t sp_after_malloc;
+  ASSERT_NO_FATAL_FAILURE(query_als(sp_after_malloc, ar, "after_malloc", "SP"));
+  ASSERT_EQ(sp_before_malloc, sp_after_malloc);
+
+  ptr_set_t r11_after_malloc;
+  ASSERT_NO_FATAL_FAILURE(query_als(r11_after_malloc, ar, "after_malloc", "R11"));
+
+  ptr alloc_ptr = unpack_singleton(r11_after_malloc);
+  ASSERT_EQ(*alloc_ptr.offset, vs_finite::zero);
+
+  summy::rreil::id_visitor idv;
+  bool is_alloc = false;
+  idv._([&](allocation_memory_id *alloc_id) {
+    is_alloc = true;
+  });
+  alloc_ptr.id->accept(idv);
+  ASSERT_TRUE(is_alloc);
 }

@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include <bjutil/binary/special_functions.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/summary_dstack_stubs.h>
 #include <summy/analysis/fp_analysis.h>
@@ -56,6 +57,7 @@ private:
   state_t state;
 
   summary_dstack_stubs stubs;
+  special_functions sf;
   std::experimental::optional<summary_t> get_stub(void *address, size_t node);
 
   static std::set<void*> unpack_f_addrs(summy::vs_shared_t f_addr);
@@ -69,10 +71,10 @@ private:
   void init_state();
 
 public:
-  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const& f_starts);
+  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const& f_starts, special_functions sf);
   [[deprecated]]
-  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm);
-  summary_dstack(cfg::cfg *cfg);
+  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, special_functions sf);
+  summary_dstack(cfg::cfg *cfg, special_functions sf);
   ~summary_dstack();
 
   summary_memory_state *sms_bottom();
