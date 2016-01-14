@@ -88,13 +88,9 @@ int main(int argc, char **argv) {
   binary_provider::entry_t dot_plt;
   tie(success, dot_plt) = elfp.section(".plt");
   if(!success) throw string("Invalid section .plt");
-  cout << dot_plt.address << endl;
-  cout << dot_plt.size << endl;
 
   binary_provider::entry_t dot_text;
   tie(success, dot_text) = elfp.section(".text");
-  cout << dot_text.address << endl;
-  cout << dot_text.size << endl;
   if(!success) throw string("Invalid section .text");
 
   assert(dot_plt.address + dot_plt.size == dot_text.address);
@@ -110,6 +106,14 @@ int main(int argc, char **argv) {
 
   size_t size = (function.offset - section_offset) + function.size + 1000;
   if(size > section_size) size = section_size;
+
+  auto f_dyn = elfp.functions_dynamic();
+  for(auto t : f_dyn) {
+    string name;
+    binary_provider::entry_t e;
+    tie(name, e) = t;
+    cout << name << "@" << e.address << endl;
+  }
 
   g.set_code(buffer, size, section_address);
   if(g.seek(function.address)) {

@@ -56,7 +56,7 @@ std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *
 //  bool success;
 //  tie(success, symb) = sm->lookup(address);
 //  cout << symb.symbol_name << endl;
-  cout << hex << address << dec << endl;
+//  cout << hex << address << dec << endl;
 
   auto sf_it = sf.get_type_functions().find((size_t)address);
   if(sf_it == sf.get_type_functions().end())
