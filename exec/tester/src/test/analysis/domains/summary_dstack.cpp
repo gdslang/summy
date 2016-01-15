@@ -6,7 +6,6 @@
  */
 
 #include <bjutil/binary/elf_provider.h>
-#include <bjutil/binary/special_functions.h>
 #include <summy/analysis/domains/summary_dstack.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/domains/sms_op.h>
@@ -143,7 +142,7 @@ static void state(_analysis_result &r, string program, language_t lang, bool gds
   cfg.commit_updates();
 
   shared_ptr<static_memory> se = make_shared<static_elf>(r.elfp);
-  r.ds_analyzed = new summary_dstack(&cfg, se, special_functions::from_elf_provider(*r.elfp));
+  r.ds_analyzed = new summary_dstack(&cfg, se);
   jd_manager jd_man(&cfg);
   fixpoint fp(r.ds_analyzed, jd_man);
   cfg.register_observer(&fp);

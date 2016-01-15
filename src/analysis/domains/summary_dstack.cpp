@@ -58,20 +58,17 @@ std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *
 //  cout << symb.symbol_name << endl;
 //  cout << hex << address << dec << endl;
 
-  auto sf_it = sf.get_type_functions().find((size_t)address);
-  if(sf_it == sf.get_type_functions().end())
+  auto functions = sm->functions_all();
+  if(!functions)
     return nullopt;
-  switch(sf_it->second) {
-    case ALLOCATION: {
+
+  auto f_it = functions.value().get().find((size_t)address);
+  if(f_it != functions.value().get().end()) {
+    string &name = f_it->second;
+    if(name == "malloc") {
       return stubs.allocator(node, 0);
     }
   }
-//  switch((size_t)address) {
-//    case 0x4003e0: {
-//      return stubs.allocator(node, 0);
-//      break;
-//    }
-//  }
   return nullopt;
 }
 
@@ -410,8 +407,8 @@ void analysis::summary_dstack::init_state() {
 }
 
 analysis::summary_dstack::summary_dstack(
-  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const &f_starts, special_functions sf)
-    : fp_analysis(cfg), sm(sm), stubs(sm), sf(sf) {
+  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const &f_starts)
+    : fp_analysis(cfg), sm(sm), stubs(sm) {
   init();
 
   for(auto node_id : f_starts) {
@@ -425,8 +422,8 @@ analysis::summary_dstack::summary_dstack(
   }
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, special_functions sf)
-    : fp_analysis(cfg), sm(sm), stubs(sm), sf(sf) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm)
+    : fp_analysis(cfg), sm(sm), stubs(sm) {
   init();
 
   /*
@@ -441,7 +438,7 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
   state[n->get_id()]->set_f_addr(vs_finite::single(addr.value()));
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, special_functions sf) : summary_dstack(cfg, make_shared<static_dummy>(), sf) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg) : summary_dstack(cfg, make_shared<static_dummy>()) {
   init();
 }
 

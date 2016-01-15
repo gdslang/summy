@@ -4,7 +4,6 @@
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <bjutil/binary/elf_provider.h>
-#include <bjutil/binary/special_functions.h>
 #include <bjutil/printer.h>
 #include <bjutil/gdsl_init.h>
 #include <stdio.h>
@@ -107,13 +106,13 @@ int main(int argc, char **argv) {
   size_t size = (function.offset - section_offset) + function.size + 1000;
   if(size > section_size) size = section_size;
 
-  auto f_dyn = elfp.functions_dynamic();
-  for(auto t : f_dyn) {
-    string name;
-    binary_provider::entry_t e;
-    tie(name, e) = t;
-    cout << name << "@" << e.address << endl;
-  }
+//  auto f_dyn = elfp.functions_dynamic();
+//  for(auto t : f_dyn) {
+//    string name;
+//    binary_provider::entry_t e;
+//    tie(name, e) = t;
+//    cout << name << "@" << e.address << endl;
+//  }
 
   g.set_code(buffer, size, section_address);
   if(g.seek(function.address)) {
@@ -131,7 +130,7 @@ int main(int argc, char **argv) {
     cfg.commit_updates();
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-    summary_dstack ds(&cfg, se, special_functions::from_elf_provider(elfp));
+    summary_dstack ds(&cfg, se);
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
     cfg.register_observer(&fp);
