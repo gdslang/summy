@@ -58,15 +58,32 @@ std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *
 //  cout << symb.symbol_name << endl;
 //  cout << hex << address << dec << endl;
 
-  auto functions = sm->functions_all();
+  auto functions = sm->functions();
   if(!functions)
     return nullopt;
 
   auto f_it = functions.value().get().find((size_t)address);
   if(f_it != functions.value().get().end()) {
-    string &name = f_it->second;
-    if(name == "malloc") {
+    string &name = f_it->second.name;
+
+    string _malloc = "malloc";
+    if(name.compare(0, _malloc.length(), _malloc) == 0) {
       return stubs.allocator(node, 0);
+    }
+
+    string _new = "_Znwm";
+    if(name.compare(0, _new.length(), _new) == 0) {
+      return stubs.allocator(node, 0);
+    }
+
+    string _new_array = "_Znam";
+    if(name.compare(0, _new_array.length(), _new_array) == 0) {
+      return stubs.allocator(node, 0);
+    }
+
+    if(f_it->second.lt == DYNAMIC) {
+      cout << "Warning: Ignoring call to " << name << "." << endl;
+      return stubs.no_effect();
     }
   }
   return nullopt;

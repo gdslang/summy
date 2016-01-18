@@ -16,7 +16,16 @@
 
 namespace analysis {
 
-typedef std::map<size_t, std::string> fmap_t;
+enum link_type {
+  DYNAMIC, STATIC
+};
+
+struct sm_function_desc {
+  std::string name;
+  link_type lt;
+};
+
+typedef std::map<size_t, sm_function_desc> fmap_t;
 
 struct symbol {
   std::string symbol_name;
@@ -25,7 +34,7 @@ struct symbol {
 
 class static_memory {
 public:
-  virtual std::experimental::optional<std::reference_wrapper<fmap_t>> functions_all() = 0;
+  virtual std::experimental::optional<std::reference_wrapper<fmap_t>> functions() = 0;
   virtual bool read(void *address, size_t bytes, uint8_t *buffer) const = 0;
   virtual std::tuple<bool, symbol> lookup(void *address) const = 0;
 //  virtual bool check(void *address, size_t bytes) const = 0;
@@ -35,7 +44,7 @@ public:
 
 class static_dummy : public static_memory {
 public:
-  std::experimental::optional<std::reference_wrapper<fmap_t>> functions_all();
+  std::experimental::optional<std::reference_wrapper<fmap_t>> functions();
   bool read(void *address, size_t bytes, uint8_t *buffer) const;
   std::tuple<bool, symbol> lookup(void *address) const;
 };
@@ -48,7 +57,7 @@ public:
   static_elf(elf_provider *ep) : ep(ep) {
   }
 
-  std::experimental::optional<std::reference_wrapper<fmap_t>> functions_all();
+  std::experimental::optional<std::reference_wrapper<fmap_t>> functions();
   bool read(void *address, size_t bytes, uint8_t *buffer) const;
   std::tuple<bool, symbol> lookup(void *address) const;
 };

@@ -14,7 +14,7 @@ using namespace analysis;
 
 // static_dummy
 
-std::experimental::optional<reference_wrapper<fmap_t>> analysis::static_dummy::functions_all() {
+std::experimental::optional<reference_wrapper<fmap_t>> analysis::static_dummy::functions() {
   return std::experimental::nullopt;
 }
 
@@ -29,19 +29,19 @@ std::tuple<bool, symbol> analysis::static_dummy::lookup(void *address) const {
 
 // static_elf
 
-std::experimental::optional<reference_wrapper<fmap_t>> analysis::static_elf::functions_all() {
+std::experimental::optional<reference_wrapper<fmap_t>> analysis::static_elf::functions() {
   if(!this->fmap) {
     this->fmap = fmap_t();
-    auto for_functions = [&](auto functions) {
+    auto for_functions = [&](auto functions, link_type lt) {
       for(tuple<string, binary_provider::entry_t> fdesc : functions) {
         string name;
         binary_provider::entry_t entry;
         tie(name, entry) = fdesc;
-        this->fmap.value()[entry.address] = name;
+        this->fmap.value()[entry.address] = { name, lt };
       }
     };
-    for_functions(ep->functions());
-    for_functions(ep->functions_dynamic());
+    for_functions(ep->functions(), STATIC);
+    for_functions(ep->functions_dynamic(), DYNAMIC);
   }
   return reference_wrapper<fmap_t>(this->fmap.value());
 }

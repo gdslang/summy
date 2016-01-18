@@ -55,3 +55,9 @@ shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::allocator(size_
 
   return malloc_summary;
 }
+
+std::shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::no_effect() {
+  shared_ptr<summary_memory_state> no_effect_summary = shared_ptr<summary_memory_state>(summary_dstack::sms_top(sm));
+
+  return no_effect_summary;
+}

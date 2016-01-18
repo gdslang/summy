@@ -19,5 +19,6 @@ public:
   summary_dstack_stubs(shared_ptr<static_memory> sm) : sm(sm) {}
 
   std::shared_ptr<summary_memory_state> allocator(size_t allocation_site, size_t size);
+  std::shared_ptr<summary_memory_state> no_effect();
 };
 }
