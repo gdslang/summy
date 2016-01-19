@@ -106,14 +106,14 @@ int main(int argc, char **argv) {
   size_t size = (function.offset - section_offset) + function.size + 1000;
   if(size > section_size) size = section_size;
 
-  auto f_dyn = elfp.functions_dynamic();
-  for(auto t : f_dyn) {
-    string name;
-    binary_provider::entry_t e;
-    tie(name, e) = t;
-    cout << name << "@0x" << hex << e.address << dec << endl;
-  }
-  return 0;
+//  auto f_dyn = elfp.functions_dynamic();
+//  for(auto t : f_dyn) {
+//    string name;
+//    binary_provider::entry_t e;
+//    tie(name, e) = t;
+//    cout << name << "@0x" << hex << e.address << dec << endl;
+//  }
+//  return 0;
 
   g.set_code(buffer, size, section_address);
   if(g.seek(function.address)) {
