@@ -70,6 +70,7 @@ void fixpoint::iterate() {
          */
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         auto evaluated = constraint();
+
         //        cout << "++++++++++++++++++++++++" << endl;
 
 //            cout << "Evaluated: " << *evaluated << endl;
@@ -85,7 +86,7 @@ void fixpoint::iterate() {
          */
         //        cout << "Current: " << *current << endl;
         if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
-//                    cout << "Back jump from " << node_other << " to " << node_id << endl;
+                    cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
@@ -105,6 +106,10 @@ void fixpoint::iterate() {
           accumulator = evaluated;
           accumulator_set = true;
         }
+
+
+        if(node_id == 42)
+          cout << "grrrr_acc: " << *evaluated << endl;
 
         //        cout << "accumulator (after):" << endl << *accumulator << endl;
       };
