@@ -53,11 +53,15 @@ struct io_region {
   region_t &out_r;
   std::experimental::optional<std::string> name;
 
-  io_region operator=(io_region other) {
-    return io_region(other.in_r, other.out_r, other.name);
+  io_region &operator=(io_region const &other) {
+    this->in_r = other.in_r;
+    this->out_r = other.out_r;
+    this->name = other.name;
+    return *this;
   }
 
-  field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr(id_shared_t)> ptr_ct_out);
+  field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
+    std::function<ptr(id_shared_t)> ptr_ct_out);
   field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement);
 
   io_region(region_t &in_r, region_t &out_r) : in_r(in_r), out_r(out_r){};

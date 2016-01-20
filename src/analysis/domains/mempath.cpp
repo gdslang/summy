@@ -77,7 +77,7 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
   //  from = from->copy();
   ptr_set_t aliases_from;
 
-  //  cout << *from << endl;
+//    cout << *from << endl;
   assert(path.size() > 0);
 
   struct work_item {
@@ -89,7 +89,9 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
   auto step = [&](size_t index, io_region &from_io, int64_t offset_alias) {
     int64_t offset = path[index].offset + offset_alias;
     size_t size = path[index].size;
+    cout << "offset: " << offset << ", size: " << size << endl;
     auto field_it = from_io.out_r.find(offset);
+//    cout << *field_it->second.num_id << endl;
     field f;
     if(field_it == from_io.out_r.end())
       f = from_io.insert(from->child_state, offset, size, false);
@@ -97,7 +99,9 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
       f = field_it->second;
     if(f.size != size) f = from_io.insert(from->child_state, offset, size, true);
     num_var f_var = num_var(f.num_id);
+    cout << f_var << endl;
     ptr_set_t aliases = from->queryAls(&f_var);
+    cout << aliases << endl;
     if(index + 1 >= path.size())
       aliases_from.insert(aliases.begin(), aliases.end());
     else
@@ -109,6 +113,7 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
 
   while(work.size() > 0) {
     work_item wi = work.back();
+    cout << "{" << wi.index << ", " << wi.aliases << "}" << endl;
     work.pop_back();
     for(auto &alias : wi.aliases) {
       optional<int64_t> offset;
@@ -123,12 +128,22 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
       });
       alias.offset->accept(vsv);
       summy::rreil::id_visitor idv;
-      idv._([&](ptr_memory_id *mid) {
+      auto valid_ptr = [&]() {
         if(offset) {
+          cout << *from << endl;
+          cout << "deref key: " << *alias.id << endl;
+          cout << "deref: " << *from->output.deref.at(alias.id).at(0).num_id << endl;
+
+          from_io = from->region_by_id(&relation::get_deref, alias.id);
+          cout << "deref: " << *from_io.out_r.at(0).num_id << endl;
+          cout << "deref: " << *from->region_by_id(&relation::get_deref, alias.id).out_r.at(0).num_id << endl;
+
           from_io = from->region_by_id(&relation::get_deref, alias.id);
           step(wi.index, from_io, offset.value());
         }
-      });
+      };
+      idv._([&](ptr_memory_id *mid) { valid_ptr(); });
+      idv._([&](allocation_memory_id *mid) { valid_ptr(); });
       idv._default([&](id *_id) {
         /*
          * Warning?
@@ -202,14 +217,18 @@ void analysis::mempath::propagate(ptr_set_t aliases_from_immediate, summary_memo
 
 std::experimental::optional<set<mempath>> analysis::mempath::propagate(
   summary_memory_state *from, summary_memory_state *to) const {
-  //  cout << "propagate from" << endl;
-  //  cout << *from << endl;
+//  cout << "propagate " << *this << " from" << endl;
+//  cout << *from << endl;
 
   ptr_set_t aliases_from = resolve(from);
+
+  cout << "aliases_from: " << aliases_from << endl;
 
   ptr_set_t aliases_from_immediate;
   ptr_set_t aliases_from_symbolic;
   tie(aliases_from_immediate, aliases_from_symbolic) = split(aliases_from);
+
+  cout << "imms: " << aliases_from_immediate << endl;
 
   propagate(aliases_from_immediate, to);
 
@@ -223,13 +242,14 @@ std::experimental::optional<set<mempath>> analysis::mempath::propagate(
 }
 
 std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary_memory_state *state) {
-  //  cout << "std::set<mempath> analysis::mempath::from_aliases()" << endl;
+  cout << "std::set<mempath> analysis::mempath::from_aliases()" << endl;
   set<mempath> result;
   for(auto &alias : aliases) {
     if(*alias == *special_ptr::_nullptr || *alias == *special_ptr::badptr) continue;
+    cout << *alias << endl;
     bool found = false;
-    for(region_map_t::iterator region_it = state->input.regions.begin(); region_it != state->input.regions.end();
-        region_it++) {
+    auto for_region_mapping = [&](region_map_t::iterator region_it) {
+      cout << "region: " << *region_it->first << endl;
       vector<mempath::step> steps;
       function<bool(region_map_t::iterator &)> handle_region;
       handle_region = [&](region_map_t::iterator &region_it) {
@@ -248,11 +268,31 @@ std::set<mempath> analysis::mempath::from_aliases(api::id_set_t aliases, summary
         return false;
       };
       if(handle_region(region_it)) {
+        cout << mempath(region_it->first, steps) << endl;
         result.insert(mempath(region_it->first, steps));
         found = true;
-        break;
+        return true;
       }
-    }
+      return false;
+    };
+    for(region_map_t::iterator region_it = state->input.regions.begin(); region_it != state->input.regions.end();
+        region_it++)
+      if(for_region_mapping(region_it)) break;
+//    if(!found)
+//      for(region_map_t::iterator region_it = state->input.deref.begin(); region_it != state->input.deref.end();
+//          region_it++) {
+//        if(*alias == *region_it->first) {
+//          result.insert(mempath(region_it->first, vector<mempath::step> {step(0, 64)}));
+//          found = true;
+//          break;
+//        }
+//        id_visitor idv;
+//        bool ptr_mem = false;
+//        idv._([&](ptr_memory_id *pid) { ptr_mem = true; });
+//        region_it->first->accept(idv);
+//        if(!ptr_mem)
+//          if(for_region_mapping(region_it)) break;
+//      }
     if(!found) {
       cout << "analysis::mempath::from_pointers() - Warning: Unable to find pointer." << endl;
     }

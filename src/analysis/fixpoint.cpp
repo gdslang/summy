@@ -49,7 +49,7 @@ void fixpoint::iterate() {
     else
       node_iterations[node_id] = 0;
 
-//    cout << "Next node: " << node_id << endl;
+    cout << "Next node: " << node_id << endl;
 //        if(node_id == 84)
 //          cout << *analysis->get(node_id) << endl;
 //        if(max_iter() > 20)
