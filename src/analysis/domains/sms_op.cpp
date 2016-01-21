@@ -66,8 +66,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   //    cout << "apply_summary" << endl;
   //    cout << "caller:" << endl
   //         << *caller << endl;
-//  cout << "summary: " << endl
-//       << *summary << endl;
+  //  cout << "summary: " << endl
+  //       << *summary << endl;
 
   //    caller->check_consistency();
   //    summary->check_consistency();
@@ -303,10 +303,12 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
         ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
 
         ptr_set_t aliases_c;
+        ptr_set_t aliases_s_heap;
         for(auto &alias_s : aliases_s) {
           summy::rreil::id_visitor idv;
           bool heap_allocated = false;
           idv._([&](allocation_memory_id *alloc) {
+            aliases_s_heap.insert(alias_s);
             aliases_c.insert(alias_s);
             heap_allocated = true;
           });
@@ -328,20 +330,38 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
         vs_shared_t value_summary = summary->child_state->queryVal(nv_s);
         num_expr *value_summary_expr = new num_expr_lin(new num_linear_vs(value_summary));
 
-        summary_memory_state::updater_t strong = [&](api::num_var *nv_fld_c) {
+        auto add_heapbad = [&](api::num_var *nv_fld_c) {
+          bool tainted = false;
+          if(aliases_s_heap.size() > 0) {
+            ptr_set_t fld_aliases_c = caller->child_state->queryAls(nv_fld_c);
+            id_set_t fld_aliases_c_ids;
+            for(auto &alias : fld_aliases_c)
+              fld_aliases_c_ids.insert(alias.id);
+            for(auto &alloc : aliases_s_heap) {
+              if(fld_aliases_c_ids.find(alloc.id) != fld_aliases_c_ids.end()) tainted = true;
+            }
+          }
           //        cout << "strong for " << *nv_me << ": " << aliases_me << endl;
+          ptr_set_t aliases_c_assignment = aliases_c;
+          if(tainted) aliases_c_assignment.insert(ptr(special_ptr::badptr, vs_finite::zero));
+          return aliases_c_assignment;
+        };
+
+        summary_memory_state::updater_t strong = [&](api::num_var *nv_fld_c) {
+          ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
           return_site->child_state->kill({nv_fld_c});
           if(aliases_c.size() > 0)
-            return_site->child_state->assign(nv_fld_c, aliases_c);
+            return_site->child_state->assign(nv_fld_c, aliases_c_assignment);
           else
             return_site->child_state->assign(nv_fld_c, value_summary_expr);
         };
         summary_memory_state::updater_t weak = [&](api::num_var *nv_fld_c) {
           //        cout << "weak for " << *nv_me << ": " << aliases_me << endl;
-          if(aliases_c.size() > 0) {
+          ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
+          if(aliases_c_assignment.size() > 0) {
             ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
             return_site->child_state->kill({nv_fld_c});
-            aliases_joined_c.insert(aliases_c.begin(), aliases_c.end());
+            aliases_joined_c.insert(aliases_c_assignment.begin(), aliases_c_assignment.end());
             return_site->child_state->assign(nv_fld_c, aliases_joined_c);
           } else {
             vs_shared_t value_caller = return_site->child_state->queryVal(nv_fld_c);
@@ -634,7 +654,8 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
            * ids. Therefore, we add deref regions with equal ids to the worklist. If a_b is true, the region
            * pair has already been handled when a_b was false.
            */
-          if(a_b) continue;
+          if(a_b)
+          continue;
 
 
         auto &regions_first_out = first_out.at(regions_first_it->first);
