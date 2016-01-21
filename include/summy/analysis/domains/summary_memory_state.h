@@ -31,6 +31,8 @@
 #include <string>
 #include <experimental/optional>
 
+#include <new>
+
 namespace analysis {
 
 struct relation {
@@ -53,11 +55,27 @@ struct io_region {
   region_t &out_r;
   std::experimental::optional<std::string> name;
 
-  io_region &operator=(io_region const &other) {
-    this->in_r = other.in_r;
-    this->out_r = other.out_r;
-    this->name = other.name;
+  io_region &operator=(io_region &&other) {
+    if(this != &other) {
+      this->~io_region();
+      new(this) io_region(other);
+    }
     return *this;
+  }
+
+  io_region &operator=(io_region &other) {
+    if(this != &other) {
+      this->~io_region();
+      new(this) io_region(other);
+    }
+    //    memcpy(this, &other, sizeof(io_region));
+    return *this;
+  }
+
+  io_region(io_region &other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {
+  }
+
+  io_region(io_region &&other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {
   }
 
   field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
