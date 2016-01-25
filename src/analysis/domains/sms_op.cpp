@@ -291,106 +291,136 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   //       << *return_site << endl;
 
   num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
-  auto process_region =
-    [&](summary_memory_state::regions_getter_t getter, ptr_set_t &region_aliases_c, region_t &region) {
-      for(auto &field_mapping_s : region) {
-        field &f_s = field_mapping_s.second;
-        //      id_shared_t id_me = me_copy->transVar(region_key, field_mapping_s.first, f_s.size);
+  auto process_region = [&](summary_memory_state::regions_getter_t getter, ptr_set_t &region_aliases_c,
+    region_t &region_si, region_t &region_so) {
+    for(auto &field_mapping_s : region_so) {
+      field &f_s = field_mapping_s.second;
+      //      id_shared_t id_me = me_copy->transVar(region_key, field_mapping_s.first, f_s.size);
 
-        //      cout << "    " << *id_me << endl;
+      //      cout << "    " << *id_me << endl;
 
-        num_var *nv_s = new num_var(f_s.num_id);
-        ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
+      num_var *nv_s = new num_var(f_s.num_id);
+      ptr_set_t aliases_s = summary->child_state->queryAls(nv_s);
 
-        ptr_set_t aliases_c;
-        ptr_set_t aliases_s_heap;
-        for(auto &alias_s : aliases_s) {
-          summy::rreil::id_visitor idv;
-          bool heap_allocated = false;
-          idv._([&](allocation_memory_id *alloc) {
-            aliases_s_heap.insert(alias_s);
-            aliases_c.insert(alias_s);
-            heap_allocated = true;
-          });
-          alias_s.id->accept(idv);
-          if(heap_allocated) continue;
-          //          idv._default([&](id *_) {
-          auto aliases_mapped_it = ptr_map.find(alias_s.id);
-          ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
-          //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
-          //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) <<
-          //        endl;
-          if(aliases_mapped_it != ptr_map.end())
-            for(auto alias_c_next : aliases_c_next)
-              aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
-          //          });
-          //          alias_s.id->accept(idv);
-        }
-
-        vs_shared_t value_summary = summary->child_state->queryVal(nv_s);
-        num_expr *value_summary_expr = new num_expr_lin(new num_linear_vs(value_summary));
-
-        auto add_heapbad = [&](api::num_var *nv_fld_c) {
-          bool tainted = false;
-          if(aliases_s_heap.size() > 0) {
-            ptr_set_t fld_aliases_c = caller->child_state->queryAls(nv_fld_c);
-            id_set_t fld_aliases_c_ids;
-            for(auto &alias : fld_aliases_c)
-              fld_aliases_c_ids.insert(alias.id);
-            for(auto &alloc : aliases_s_heap) {
-              if(fld_aliases_c_ids.find(alloc.id) != fld_aliases_c_ids.end()) tainted = true;
-            }
-          }
-          //        cout << "strong for " << *nv_me << ": " << aliases_me << endl;
-          ptr_set_t aliases_c_assignment = aliases_c;
-          if(tainted) aliases_c_assignment.insert(ptr(special_ptr::badptr, vs_finite::zero));
-          return aliases_c_assignment;
-        };
-
-        summary_memory_state::updater_t strong = [&](api::num_var *nv_fld_c) {
-          ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
-          return_site->child_state->kill({nv_fld_c});
-          if(aliases_c.size() > 0)
-            return_site->child_state->assign(nv_fld_c, aliases_c_assignment);
-          else
-            return_site->child_state->assign(nv_fld_c, value_summary_expr);
-        };
-        summary_memory_state::updater_t weak = [&](api::num_var *nv_fld_c) {
-          //        cout << "weak for " << *nv_me << ": " << aliases_me << endl;
-          ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
-          if(aliases_c_assignment.size() > 0) {
-            ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
-            return_site->child_state->kill({nv_fld_c});
-            aliases_joined_c.insert(aliases_c_assignment.begin(), aliases_c_assignment.end());
-            return_site->child_state->assign(nv_fld_c, aliases_joined_c);
-          } else {
-            vs_shared_t value_caller = return_site->child_state->queryVal(nv_fld_c);
-            return_site->child_state->kill({nv_fld_c});
-            num_expr *value_joined_expr =
-              new num_expr_lin(new num_linear_vs(value_set::join(value_summary, value_caller)));
-            return_site->child_state->assign(nv_fld_c, value_joined_expr);
-            delete value_joined_expr;
-          }
-        };
-        ptr_set_t region_aliases_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_aliases_c);
-
-        //      cout << "~~~" << region_aliases_c_offset_bits << ":" << f_s.size << endl;
-        return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak, true, true);
-
-        delete value_summary_expr;
-        delete nv_s;
+      ptr_set_t aliases_c;
+      ptr_set_t aliases_s_heap;
+      for(auto &alias_s : aliases_s) {
+        summy::rreil::id_visitor idv;
+        bool heap_allocated = false;
+        idv._([&](allocation_memory_id *alloc) {
+          aliases_s_heap.insert(alias_s);
+          aliases_c.insert(alias_s);
+          heap_allocated = true;
+        });
+        alias_s.id->accept(idv);
+        if(heap_allocated) continue;
+        //          idv._default([&](id *_) {
+        auto aliases_mapped_it = ptr_map.find(alias_s.id);
+        ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
+        //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
+        //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) <<
+        //        endl;
+        if(aliases_mapped_it != ptr_map.end())
+          for(auto alias_c_next : aliases_c_next)
+            aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
+        //          });
+        //          alias_s.id->accept(idv);
       }
-    };
+
+      /*
+       * If a heap pointer is re-introduced by the summary we have to be careful
+       * since we actually get a summary memory region for the heap region now
+       * in the caller state. We represent this by adding the bad pointer to the
+       * respective alias set in the caller state. We have to add the bad pointer,
+       * if we find a heap pointer in the alias set of the caller and the summary,
+       * but not the input of the summary. In the following lines, we calculate the
+       * set of heap ids that we find in the output of the summary, but not in its
+       * input.
+       */
+      id_set_t aliases_s_heap_ids_diff;
+      if(aliases_s_heap.size() > 0) {
+        id_set_t aliases_so_heap_ids;
+        for(auto &alias : aliases_s_heap)
+          aliases_so_heap_ids.insert(alias.id);
+
+        id_set_t aliases_si_heap_ids;
+        field &f_si = region_si.at(field_mapping_s.first);
+        num_var f_si_var(f_si.num_id);
+        ptr_set_t aliases_si_heap = summary->child_state->queryAls(&f_si_var);
+        for(auto &alias : aliases_si_heap)
+          aliases_si_heap_ids.insert(alias.id);
+
+        set_difference(aliases_so_heap_ids.begin(), aliases_so_heap_ids.end(), aliases_si_heap_ids.begin(),
+          aliases_si_heap_ids.end(), inserter(aliases_s_heap_ids_diff, aliases_s_heap_ids_diff.begin()));
+      }
+
+      vs_shared_t value_summary = summary->child_state->queryVal(nv_s);
+      num_expr *value_summary_expr = new num_expr_lin(new num_linear_vs(value_summary));
+
+      /*
+       * The following function is used to check whether a certain caller state variable
+       * is pointing to a summary heap region. This is the case if see a re-introduction
+       * of an existing heap region.
+       */
+      auto add_heapbad = [&](api::num_var *nv_fld_c) {
+        bool tainted = false;
+        if(aliases_s_heap_ids_diff.size() > 0) {
+          ptr_set_t fld_aliases_c = caller->child_state->queryAls(nv_fld_c);
+          for(auto &alias : fld_aliases_c)
+            if(aliases_s_heap_ids_diff.find(alias.id) != aliases_s_heap_ids_diff.end()) tainted = true;
+        }
+        //        cout << "strong for " << *nv_me << ": " << aliases_me << endl;
+        ptr_set_t aliases_c_assignment = aliases_c;
+        if(tainted) aliases_c_assignment.insert(ptr(special_ptr::badptr, vs_finite::zero));
+        return aliases_c_assignment;
+      };
+
+      summary_memory_state::updater_t strong = [&](api::num_var *nv_fld_c) {
+        ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
+        return_site->child_state->kill({nv_fld_c});
+        if(aliases_c.size() > 0)
+          return_site->child_state->assign(nv_fld_c, aliases_c_assignment);
+        else
+          return_site->child_state->assign(nv_fld_c, value_summary_expr);
+      };
+      summary_memory_state::updater_t weak = [&](api::num_var *nv_fld_c) {
+        //        cout << "weak for " << *nv_me << ": " << aliases_me << endl;
+        ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
+        if(aliases_c_assignment.size() > 0) {
+          ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
+          return_site->child_state->kill({nv_fld_c});
+          aliases_joined_c.insert(aliases_c_assignment.begin(), aliases_c_assignment.end());
+          return_site->child_state->assign(nv_fld_c, aliases_joined_c);
+        } else {
+          vs_shared_t value_caller = return_site->child_state->queryVal(nv_fld_c);
+          return_site->child_state->kill({nv_fld_c});
+          num_expr *value_joined_expr =
+            new num_expr_lin(new num_linear_vs(value_set::join(value_summary, value_caller)));
+          return_site->child_state->assign(nv_fld_c, value_joined_expr);
+          delete value_joined_expr;
+        }
+      };
+      ptr_set_t region_aliases_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_aliases_c);
+
+      //      cout << "~~~" << region_aliases_c_offset_bits << ":" << f_s.size << endl;
+      return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak, true, true);
+
+      delete value_summary_expr;
+      delete nv_s;
+    }
+  };
 
   for(auto &region_mapping_so : summary->output.regions) {
     id_shared_t region_key = region_mapping_so.first;
+    region_t &region_si = summary->input.regions.at(region_key);
 
     ptr_set_t region_aliases_c = ptr_set_t({ptr(region_key, vs_finite::zero)});
-    process_region(&relation::get_regions, region_aliases_c, region_mapping_so.second);
+    process_region(&relation::get_regions, region_aliases_c, region_si, region_mapping_so.second);
   }
 
   for(auto &deref_mapping_so : summary->output.deref) {
     id_shared_t region_key = deref_mapping_so.first;
+    region_t &region_si = summary->input.deref.at(region_key);
 
     auto region_aliases_c_it = ptr_map.find(region_key);
     /*
@@ -399,7 +429,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
      */
     if(region_aliases_c_it == ptr_map.end()) continue;
     ptr_set_t &region_aliases_c = region_aliases_c_it->second;
-    process_region(&relation::get_deref, region_aliases_c, deref_mapping_so.second);
+    process_region(&relation::get_deref, region_aliases_c, region_si, deref_mapping_so.second);
   }
   delete _top;
 
