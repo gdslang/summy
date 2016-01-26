@@ -550,7 +550,11 @@ void als_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *
   //  assert(elements.find(to->get_id()) == elements.end());
   auto from_it = from_state_als->elements.find(from->get_id());
   //  assert(from_it != from_state_als->elements.end());
-  if(from_it != from_state_als->elements.end()) elements[to->get_id()] = from_it->second;
+  if(from_it != from_state_als->elements.end()) {
+    auto elem = elements.at(to->get_id());
+    elem = from_it->second;
+    elem.insert(special_ptr::badptr);
+  }
 
   child_state->copy_paste(to, from, from_state_als->child_state);
 }
