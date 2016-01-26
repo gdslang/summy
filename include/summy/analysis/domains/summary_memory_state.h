@@ -72,11 +72,9 @@ struct io_region {
     return *this;
   }
 
-  io_region(io_region &other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {
-  }
+  io_region(io_region &other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {}
 
-  io_region(io_region &&other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {
-  }
+  io_region(io_region &&other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {}
 
   field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
     std::function<ptr(id_shared_t)> ptr_ct_out);
@@ -232,7 +230,7 @@ public:
     relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n);
 
   friend std::tuple<memory_head, numeric_state *, numeric_state *> compat(
-    bool copy_paste, summary_memory_state const *a, summary_memory_state const *b);
+    summary_memory_state const *a, summary_memory_state const *b);
 
   friend class summary_dstack_stubs;
 };

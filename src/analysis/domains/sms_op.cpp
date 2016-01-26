@@ -443,8 +443,14 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return return_site;
 }
 
-num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in, relation &a_out, numeric_state *a_n,
-  relation &b_in, relation &b_out, numeric_state *b_n) {
+num_var_pairs_t(::analysis::compatMatchSeparate)(
+  relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n) {
+  /*
+   * No more copy/paste; later, we can remove this entirely
+   */
+  bool copy_paste = false;
+
+
   /*
    * Find aliases for a specific region of the given summaries. We need both
    * input and output here in order to be able to add pointers that are missing
@@ -780,7 +786,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool copy_paste, relation &a_in
 }
 
 std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
-  bool copy_paste, const summary_memory_state *a, const summary_memory_state *b) {
+  const summary_memory_state *a, const summary_memory_state *b) {
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();
 
@@ -832,7 +838,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   /*
    * The first step is implemented by finding corresponding pointer variables...
    */
-  num_var_pairs_t eq_aliases = compatMatchSeparate(copy_paste, a_input, a_output, a_n, b_input, b_output, b_n);
+  num_var_pairs_t eq_aliases = compatMatchSeparate(a_input, a_output, a_n, b_input, b_output, b_n);
 
   //  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
   //  cout << "before_rename: " << *before_rename << endl;

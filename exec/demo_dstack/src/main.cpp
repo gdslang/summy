@@ -84,13 +84,17 @@ int main(int argc, char **argv) {
   elf_provider elfp = elf_provider(argv[1]);
   bool success;
 
-  binary_provider::entry_t dot_plt;
-  tie(success, dot_plt) = elfp.section(".plt");
-  if(!success) throw string("Invalid section .plt");
-
   binary_provider::entry_t dot_text;
   tie(success, dot_text) = elfp.section(".text");
   if(!success) throw string("Invalid section .text");
+
+  binary_provider::entry_t dot_plt;
+  tie(success, dot_plt) = elfp.section(".plt");
+  if(!success) {
+    dot_plt.address = dot_text.address;
+    dot_plt.size = 0;
+    dot_plt.offset = dot_text.offset;
+  }
 
   assert(dot_plt.address + dot_plt.size == dot_text.address);
   size_t section_size = dot_plt.size + dot_text.size;
@@ -151,7 +155,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 110 || n.get_id() == 38)
+      if(true || n.get_id() == 110 || n.get_id() == 38)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       else
         n.dot(out);
