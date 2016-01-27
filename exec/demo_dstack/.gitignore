@@ -35,4 +35,7 @@
 /test_ufptr_4.o
 /test_vcall
 /test_vcall.o
-
+/test_list_traverse
+/test_list_traverse.o
+/test_multiple_deref
+/test_multiple_deref.o

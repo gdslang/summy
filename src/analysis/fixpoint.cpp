@@ -48,7 +48,7 @@ void fixpoint::iterate() {
     else
       node_iterations[node_id] = 0;
 
-    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
     //        if(node_id == 84)
     //          cout << *analysis->get(node_id) << endl;
     //        if(max_iter() > 20)
@@ -62,7 +62,7 @@ void fixpoint::iterate() {
     if(constraints.size() > 0) {
       shared_ptr<domain_state> current = analysis->get(node_id);
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
-                cout << "Constraint from " << node_other << " to " << node_id << endl;
+//        cout << "Constraint from " << node_other << " to " << node_id << endl;
 
         /*
          * Evaluate constraint
@@ -72,8 +72,8 @@ void fixpoint::iterate() {
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
-        cout << "Evaluated: " << *evaluated << endl;
-        cout << "Current: " << *current << endl;
+//        cout << "Evaluated: " << *evaluated << endl;
+//        cout << "Current: " << *current << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -86,11 +86,12 @@ void fixpoint::iterate() {
          */
         //        cout << "Current: " << *current << endl;
         if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
-                              cout << "Back jump from " << node_other << " to " << node_id << endl;
+//          cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
-                    cout << "Result: " << endl << *evaluated << endl;
+//          cout << "Result: " << endl
+//               << *evaluated << endl;
 
           //                    cout << "Boxed: " << *evaluated << endl;
         }

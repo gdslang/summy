@@ -540,11 +540,6 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
                   b_n->copy_paste(to, from, a_n);
                   delete to;
                   delete from;
-                } else if(widening) {
-                  num_var *inserted_var = new num_var(inserted.num_id);
-                  ptr _bad = ptr(special_ptr::badptr, vs_finite::zero);
-                  b_n->assign(inserted_var, {_bad});
-                  delete inserted_var;
                 }
                 //              });
               });
@@ -561,11 +556,6 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
                   a_n->copy_paste(to, from, b_n);
                   delete to;
                   delete from;
-                } else if(widening) {
-                  num_var *inserted_var = new num_var(inserted.num_id);
-                  ptr _bad = ptr(special_ptr::badptr, vs_finite::zero);
-                  a_n->assign(inserted_var, {_bad});
-                  delete inserted_var;
                 }
                 //              });
 
@@ -662,7 +652,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
       for(auto regions_first_it = first_in.begin(); regions_first_it != first_in.end(); regions_first_it++) {
         auto regions_second_it = second_in.find(regions_first_it->first);
         if(regions_second_it == second_in.end()) {
-          if(widening) continue;
+          if(!a_b && widening) continue;
           tie(regions_second_it, ignore) = second_in.insert(make_pair(regions_first_it->first, region_t()));
           second_out.insert(make_pair(regions_first_it->first, region_t()));
         } else if(a_b)
@@ -772,7 +762,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
         continue;
       }
 
-      if(widening && (deref_a_in_it == a_in.deref.end() || deref_b_in_it == b_in.deref.end())) {
+      if(widening && deref_a_in_it == a_in.deref.end()) {
         delete va;
         delete vb;
         continue;

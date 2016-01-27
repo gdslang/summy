@@ -136,12 +136,12 @@ api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
   return replace_pointers(id_gen_map, l);
 }
 
-als_state *analysis::als_state::domop(domain_state *other, size_t current_node, domopper_t domopper) {
+als_state *analysis::als_state::domop(bool widening, domain_state *other, size_t current_node, domopper_t domopper) {
   als_state const *other_casted = dynamic_cast<als_state *>(other);
   numeric_state *me_compat;
   numeric_state *other_compat;
   elements_t elements_compat;
-  tie(ignore, elements_compat, me_compat, other_compat) = compat(this, other_casted);
+  tie(ignore, elements_compat, me_compat, other_compat) = compat(widening, this, other_casted);
   als_state *result = new als_state((me_compat->*domopper)(other_compat, current_node), elements_compat);
   delete me_compat;
   delete other_compat;
@@ -197,7 +197,7 @@ bool als_state::operator>=(const domain_state &other) const {
   bool als_a_ge_b;
   numeric_state *me_compat;
   numeric_state *other_compat;
-  tie(als_a_ge_b, ignore, me_compat, other_compat) = compat(this, &other_casted);
+  tie(als_a_ge_b, ignore, me_compat, other_compat) = compat(false, this, &other_casted);
   bool child_ge = *me_compat >= *other_compat;
   delete me_compat;
   delete other_compat;
@@ -205,7 +205,7 @@ bool als_state::operator>=(const domain_state &other) const {
 }
 
 als_state *als_state::join(domain_state *other, size_t current_node) {
-  return domop(other, current_node, &numeric_state::join);
+  return domop(false, other, current_node, &numeric_state::join);
 }
 
 als_state *als_state::meet(domain_state *other, size_t current_node) {
@@ -234,11 +234,11 @@ als_state *als_state::meet(domain_state *other, size_t current_node) {
 }
 
 als_state *als_state::widen(domain_state *other, size_t current_node) {
-  return domop(other, current_node, &numeric_state::widen);
+  return domop(true, other, current_node, &numeric_state::widen);
 }
 
 als_state *als_state::narrow(domain_state *other, size_t current_node) {
-  return domop(other, current_node, &numeric_state::narrow);
+  return domop(false, other, current_node, &numeric_state::narrow);
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
@@ -490,17 +490,17 @@ void als_state::equate_kill(num_var_pairs_t vars) {
    */
   auto const &back_map = elements.get_backward();
 
-//  elements_t back_map_old;
-//  for(auto e_mapping : elements)
-//    for(auto elem : e_mapping.second)
-//      back_map_old[elem].insert(e_mapping.first);
-//  for(auto &mapping : back_map_old) {
-//    cout << *mapping.first << " -> {";
-//    for(auto &e : mapping.second)
-//      cout << *e << ", ";
-//    cout << "}, ";
-//  }
-//  cout << endl;
+  //  elements_t back_map_old;
+  //  for(auto e_mapping : elements)
+  //    for(auto elem : e_mapping.second)
+  //      back_map_old[elem].insert(e_mapping.first);
+  //  for(auto &mapping : back_map_old) {
+  //    cout << *mapping.first << " -> {";
+  //    for(auto &e : mapping.second)
+  //      cout << *e << ", ";
+  //    cout << "}, ";
+  //  }
+  //  cout << endl;
 
 
   for(auto var_pair : vars) {
@@ -509,8 +509,8 @@ void als_state::equate_kill(num_var_pairs_t vars) {
 
     vector<id_shared_t> to_replace;
 
-//    cout << "~: " << (back_map.find(b->get_id()) != back_map.end()) << endl;
-//    cout << "+: " << (back_map_old.find(b->get_id()) != back_map_old.end()) << endl;
+    //    cout << "~: " << (back_map.find(b->get_id()) != back_map.end()) << endl;
+    //    cout << "+: " << (back_map_old.find(b->get_id()) != back_map_old.end()) << endl;
 
     auto b_it = back_map.find(b->get_id());
     if(b_it != back_map.end())
@@ -664,9 +664,9 @@ api::num_vars *analysis::als_state::vars() {
 }
 
 void analysis::als_state::collect_ids(std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map) {
-  auto for_elements = [&](auto const& elements) {
-    for(auto const& elements_it : elements) {
-      for(auto const& alias_it : elements_it.second)
+  auto for_elements = [&](auto const &elements) {
+    for(auto const &elements_it : elements) {
+      for(auto const &alias_it : elements_it.second)
         id_map[alias_it.get()].insert((analysis::id_shared_t *)&alias_it);
       id_map[elements_it.first.get()].insert((analysis::id_shared_t *)&elements_it.first);
     }
@@ -695,7 +695,7 @@ ptr_set_t analysis::als_state::normalise(ptr_set_t aliases) {
 }
 
 std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_state::compat(
-  const als_state *a, const als_state *b) {
+  bool widening, const als_state *a, const als_state *b) {
   bool als_a_ge_b = true;
   numeric_state *a_ = a->child_state->copy();
   numeric_state *b_ = b->child_state->copy();
@@ -711,7 +711,7 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
   //    delete top_expr;
   //  };
   auto compat_elements = [&](elements_t const &a_elements, elements_t const &b_elements,
-    function<void(id_set_t const &, id_set_t const &, id_set_t const &)> joined_cb) {
+    function<void(id_set_t const &, id_set_t const &, id_set_t const &)> joined_cb, bool a_b) {
     for(auto &x : a_elements) {
       assert(x.second.size() != 0);
       auto x_b_it = b_elements.find(x.first);
@@ -720,6 +720,7 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
       if(x_b_it == b_elements.end())
         aliases_b.insert(special_ptr::badptr);
       else {
+        if(!a_b) continue;
         assert(x_b_it->second.size() > 0);
         aliases_b = x_b_it->second;
       }
@@ -732,7 +733,15 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
       //        cout << *u << " ";
       //      cout << endl << "is" << endl;
       id_set_t joined;
-      set_union(x.second.begin(), x.second.end(), aliases_b.begin(), aliases_b.end(), inserter(joined, joined.begin()));
+      if(widening) {
+        joined = a_b ? x.second : aliases_b;
+        if(!includes((a_b ? x.second : aliases_b).begin(), (a_b ? x.second : aliases_b).end(),
+             (!a_b ? x.second : aliases_b).begin(), (!a_b ? x.second : aliases_b).end()))
+          joined.insert(special_ptr::badptr);
+      } else {
+        set_union(
+          x.second.begin(), x.second.end(), aliases_b.begin(), aliases_b.end(), inserter(joined, joined.begin()));
+      }
       //      for(auto &u : joined)
       //        cout << *u << " ";
       //      cout << endl;
@@ -743,10 +752,10 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
   compat_elements(
     a->get_elements(), b->get_elements(), [&](id_set_t const &joined, id_set_t const &a, id_set_t const &b) {
       if(joined.size() > a.size()) als_a_ge_b = false;
-    });
+    }, true);
   compat_elements(
     b->get_elements(), a->get_elements(), [&](id_set_t const &joined, id_set_t const &a, id_set_t const &b) {
       if(joined.size() > b.size()) als_a_ge_b = false;
-    });
+    }, false);
   return make_tuple(als_a_ge_b, r, a_, b_);
 }

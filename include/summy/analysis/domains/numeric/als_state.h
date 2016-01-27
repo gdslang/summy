@@ -26,7 +26,7 @@ typedef std::set<id_shared_t, id_less> id_set_t;
 typedef std::tuple<id_shared_t, id_set_t> singleton_t;
 typedef std::tuple_element<0, singleton_t>::type singleton_key_t;
 typedef std::tuple_element<1, singleton_t>::type singleton_value_t;
-//typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> elements_t;
+// typedef std::map<singleton_key_t, singleton_value_t, id_less_no_version> elements_t;
 typedef inverse_set_map<id_shared_t, id_less> elements_t;
 
 /**
@@ -52,7 +52,7 @@ private:
    * Todo: Remove (siehe als_state.cpp oben)
    */
   typedef numeric_state *(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
-  als_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
+  als_state *domop(bool widening, domain_state *other, size_t current_node, domopper_t domopper);
 
 protected:
   void put(std::ostream &out) const;
@@ -91,7 +91,7 @@ public:
   bool cleanup(api::num_var *var);
   void project(api::num_vars *vars);
   api::num_vars *vars();
-  void collect_ids(std::map<gdsl::rreil::id*, std::set<analysis::id_shared_t*>> &id_map);
+  void collect_ids(std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map);
 
   ptr_set_t queryAls(api::num_var *nv);
   summy::vs_shared_t queryVal(api::num_linear *lin);
@@ -104,6 +104,7 @@ public:
    * may in general be a bad idea; maybe, they should be removed.
    */
   static ptr_set_t normalise(ptr_set_t aliases);
-  static std::tuple<bool, elements_t, numeric_state *, numeric_state *> compat(als_state const *a, als_state const *b);
+  static std::tuple<bool, elements_t, numeric_state *, numeric_state *> compat(
+    bool widening, als_state const *a, als_state const *b);
 };
 }
