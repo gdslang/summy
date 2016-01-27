@@ -106,7 +106,7 @@ private:
   relation output;
 
   typedef numeric_state *(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
-  summary_memory_state *domop(domain_state *other, size_t current_node, domopper_t domopper);
+  summary_memory_state *domop(bool widening, domain_state *other, size_t current_node, domopper_t domopper);
   //  summary_memory_state *domop_abstracting(domain_state *other, size_t current_node, domopper_t domopper);
 
   std::unique_ptr<managed_temporary> assign_temporary(
@@ -226,11 +226,11 @@ public:
   static summary_memory_state *bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num);
 
   friend summary_memory_state *apply_summary(summary_memory_state *caller, summary_memory_state *summary);
-  friend num_var_pairs_t matchPointers(
-    relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n);
+  friend num_var_pairs_t matchPointers(bool widening, relation &a_in, relation &a_out, numeric_state *a_n,
+    relation &b_in, relation &b_out, numeric_state *b_n);
 
   friend std::tuple<memory_head, numeric_state *, numeric_state *> compat(
-    summary_memory_state const *a, summary_memory_state const *b);
+    bool widening, summary_memory_state const *a, summary_memory_state const *b);
 
   friend class summary_dstack_stubs;
 };

@@ -49,7 +49,8 @@ analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimenta
   if(r_key) name = r_key.value()->to_string();
 }
 
-field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr(id_shared_t)> ptr_ct) {
+field &analysis::io_region::insert(
+  numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr(id_shared_t)> ptr_ct) {
   //  struct field_desc_t {
   //    int64_t offset;
   //    field f;
@@ -167,9 +168,8 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 }
 
 field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
-  auto ptr_fresh = [](id_shared_t nid_in) {
-    return ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
-  };
+  auto ptr_fresh =
+    [](id_shared_t nid_in) { return ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero); };
   return insert(child_state, offset, size, replacement, ptr_fresh);
 }
 
@@ -178,7 +178,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
  */
 
 summary_memory_state *analysis::summary_memory_state::domop(
-  domain_state *other, size_t current_node, domopper_t domopper) {
+  bool widening, domain_state *other, size_t current_node, domopper_t domopper) {
   //  cout << "JOIN OF" << endl;
   //  cout << *this << endl;
   //  cout << "WITH" << endl;
@@ -192,7 +192,7 @@ summary_memory_state *analysis::summary_memory_state::domop(
   numeric_state *me_compat;
   numeric_state *other_compat;
   memory_head head_compat;
-  tie(head_compat, me_compat, other_compat) = compat(this, other_casted);
+  tie(head_compat, me_compat, other_compat) = compat(widening, this, other_casted);
 
   //  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
 
@@ -751,7 +751,7 @@ bool analysis::summary_memory_state::operator>=(const domain_state &other) const
   summary_memory_state const &other_casted = dynamic_cast<summary_memory_state const &>(other);
   numeric_state *me_compat;
   numeric_state *other_compat;
-  tie(ignore, me_compat, other_compat) = compat(this, &other_casted);
+  tie(ignore, me_compat, other_compat) = compat(false, this, &other_casted);
   bool result = *me_compat >= *other_compat;
   delete me_compat;
   delete other_compat;
@@ -762,20 +762,20 @@ summary_memory_state *analysis::summary_memory_state::join(domain_state *other, 
   summary_memory_state *other_casted = (summary_memory_state *)other;
   if(is_bottom()) return other_casted->copy();
   if(other_casted->is_bottom()) return this->copy();
-  summary_memory_state *result = domop(other, current_node, &numeric_state::join);
+  summary_memory_state *result = domop(false, other, current_node, &numeric_state::join);
   assert(!result->is_bottom());
   return result;
 }
 
 summary_memory_state *analysis::summary_memory_state::widen(domain_state *other, size_t current_node) {
   summary_memory_state *other_casted = (summary_memory_state *)other;
-  summary_memory_state *result = domop(other, current_node, &numeric_state::widen);
+  summary_memory_state *result = domop(true, other, current_node, &numeric_state::widen);
   if(!is_bottom() && !other_casted->is_bottom()) assert(!result->is_bottom());
   return result;
 }
 
 summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other, size_t current_node) {
-  return domop(other, current_node, &numeric_state::narrow);
+  return domop(false, other, current_node, &numeric_state::narrow);
 }
 
 // region_t analysis::summary_memory_state::join_region_aliases(region_t const &r1, region_t const &r2, numeric_state

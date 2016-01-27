@@ -17,8 +17,7 @@ using namespace cfg;
 using namespace std;
 using namespace analysis;
 
-analysis::fixpoint::fixpoint(class fp_analysis *analysis, jd_manager &jd_man) : analysis(analysis), jd_man(jd_man) {
-}
+analysis::fixpoint::fixpoint(class fp_analysis *analysis, jd_manager &jd_man) : analysis(analysis), jd_man(jd_man) {}
 
 void fixpoint::iterate() {
   updated.clear();
@@ -49,11 +48,11 @@ void fixpoint::iterate() {
     else
       node_iterations[node_id] = 0;
 
-//    cout << "Next node: " << node_id << endl;
-//        if(node_id == 84)
-//          cout << *analysis->get(node_id) << endl;
-//        if(max_iter() > 20)
-//          break;
+    cout << "Next node: " << node_id << endl;
+    //        if(node_id == 84)
+    //          cout << *analysis->get(node_id) << endl;
+    //        if(max_iter() > 20)
+    //          break;
 
     bool propagate;
     bool needs_postprocessing = false;
@@ -63,7 +62,7 @@ void fixpoint::iterate() {
     if(constraints.size() > 0) {
       shared_ptr<domain_state> current = analysis->get(node_id);
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
-        //        cout << "Constraint from " << node_other << " to " << node_id << endl;
+                cout << "Constraint from " << node_other << " to " << node_id << endl;
 
         /*
          * Evaluate constraint
@@ -73,7 +72,8 @@ void fixpoint::iterate() {
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
-//            cout << "Evaluated: " << *evaluated << endl;
+        cout << "Evaluated: " << *evaluated << endl;
+        cout << "Current: " << *current << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -86,11 +86,11 @@ void fixpoint::iterate() {
          */
         //        cout << "Current: " << *current << endl;
         if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
-//                    cout << "Back jump from " << node_other << " to " << node_id << endl;
+                              cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
-          //          cout << "Result: " << endl << *evaluated << endl;
+                    cout << "Result: " << endl << *evaluated << endl;
 
           //                    cout << "Boxed: " << *evaluated << endl;
         }
@@ -150,7 +150,7 @@ void fixpoint::iterate() {
         //            cout << "Postproc: " << node_id << endl;
         postprocess_worklist.push(node_id);
       }
-//        cout << node_id << "->" << *accumulator << endl;
+      //        cout << node_id << "->" << *accumulator << endl;
       analysis->update(node_id, accumulator);
       updated.insert(node_id);
     }
@@ -173,7 +173,7 @@ void fixpoint::iterate() {
 }
 
 void fixpoint::notify(const vector<::cfg::update> &updates) {
-//    analysis->update(updates);
+  //    analysis->update(updates);
 
   for(auto &update : updates) {
     seen.erase(update.from);

@@ -31,6 +31,8 @@ global_state *analysis::global_state::join(::analysis::domain_state *other, size
 }
 
 global_state *analysis::global_state::narrow(::analysis::domain_state *other, size_t current_node) {
+  cout << "NARROWING" << endl;
+
   global_state *other_casted = dynamic_cast<global_state *>(other);
 
   summary_memory_state *mstate_narrowed = mstate->narrow(other_casted->mstate, current_node);
@@ -44,6 +46,8 @@ global_state *analysis::global_state::narrow(::analysis::domain_state *other, si
 }
 
 global_state *analysis::global_state::widen(::analysis::domain_state *other, size_t current_node) {
+  cout << "WIDENING" << endl;
+
   global_state *other_casted = dynamic_cast<global_state *>(other);
 
   summary_memory_state *mstate_widened = mstate->widen(other_casted->mstate, current_node);

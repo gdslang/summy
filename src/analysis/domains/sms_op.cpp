@@ -443,8 +443,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return return_site;
 }
 
-num_var_pairs_t(::analysis::compatMatchSeparate)(
-  relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n) {
+num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, relation &a_out, numeric_state *a_n,
+  relation &b_in, relation &b_out, numeric_state *b_n) {
   /*
    * No more copy/paste; later, we can remove this entirely
    */
@@ -528,36 +528,48 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(
 
           field_desc_t ending_first = rpd.ending_first;
           if(ending_first.region_first) {
-            insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-              //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
-              //                            ending_first.offset << endl;
-              field inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
-              //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
-              if(copy_paste) {
-                num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
-                num_var *to = new num_var(inserted.num_id);
-                b_n->copy_paste(to, from, a_n);
-                delete to;
-                delete from;
-              }
-              //              });
-            });
+            insertions.push_back(
+              [copy_paste, widening, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+                //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at " <<
+                //                            ending_first.offset << endl;
+                field inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
+                //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
+                if(copy_paste) {
+                  num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
+                  num_var *to = new num_var(inserted.num_id);
+                  b_n->copy_paste(to, from, a_n);
+                  delete to;
+                  delete from;
+                } else if(widening) {
+                  num_var *inserted_var = new num_var(inserted.num_id);
+                  ptr _bad = ptr(special_ptr::badptr, vs_finite::zero);
+                  b_n->assign(inserted_var, {_bad});
+                  delete inserted_var;
+                }
+                //              });
+              });
           } else {
-            insertions.push_back([copy_paste, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-              //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
-              //                            ending_first.offset << endl;
-              field inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
-              //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
-              if(copy_paste) {
-                num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
-                num_var *to = new num_var(inserted.num_id);
-                a_n->copy_paste(to, from, b_n);
-                delete to;
-                delete from;
-              }
-              //              });
+            insertions.push_back(
+              [copy_paste, widening, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+                //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at " <<
+                //                            ending_first.offset << endl;
+                field inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
+                //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
+                if(copy_paste) {
+                  num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
+                  num_var *to = new num_var(inserted.num_id);
+                  a_n->copy_paste(to, from, b_n);
+                  delete to;
+                  delete from;
+                } else if(widening) {
+                  num_var *inserted_var = new num_var(inserted.num_id);
+                  ptr _bad = ptr(special_ptr::badptr, vs_finite::zero);
+                  a_n->assign(inserted_var, {_bad});
+                  delete inserted_var;
+                }
+                //              });
 
-            });
+              });
           }
         }
       }
@@ -650,6 +662,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(
       for(auto regions_first_it = first_in.begin(); regions_first_it != first_in.end(); regions_first_it++) {
         auto regions_second_it = second_in.find(regions_first_it->first);
         if(regions_second_it == second_in.end()) {
+          if(widening) continue;
           tie(regions_second_it, ignore) = second_in.insert(make_pair(regions_first_it->first, region_t()));
           second_out.insert(make_pair(regions_first_it->first, region_t()));
         } else if(a_b)
@@ -758,6 +771,13 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(
         delete vb;
         continue;
       }
+
+      if(widening && (deref_a_in_it == a_in.deref.end() || deref_b_in_it == b_in.deref.end())) {
+        delete va;
+        delete vb;
+        continue;
+      }
+
       /*
        * If only one pointer p_1 is found in its respective deref map, the other has
        * not been dereferenced. There may be fields in the dereferenced memory of
@@ -786,7 +806,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(
 }
 
 std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
-  const summary_memory_state *a, const summary_memory_state *b) {
+  bool widening, const summary_memory_state *a, const summary_memory_state *b) {
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();
 
@@ -838,7 +858,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   /*
    * The first step is implemented by finding corresponding pointer variables...
    */
-  num_var_pairs_t eq_aliases = compatMatchSeparate(a_input, a_output, a_n, b_input, b_output, b_n);
+  num_var_pairs_t eq_aliases = compatMatchSeparate(widening, a_input, a_output, a_n, b_input, b_output, b_n);
 
   //  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
   //  cout << "before_rename: " << *before_rename << endl;

@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
 
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    analysis_dectran dt(g, false);
+    analysis_dectran dt(g, true);
 
     dt.transduce();
     dt.register_();
@@ -140,13 +140,13 @@ int main(int argc, char **argv) {
     fixpoint fp(&ds, jd_man);
     cfg.register_observer(&fp);
 
-    fp.iterate();
-    cout << "Max its: " << fp.max_iter() << endl;
-
     ofstream dot_noa_fs;
     dot_noa_fs.open("output_noa.dot", ios::out);
     cfg.dot(dot_noa_fs);
     dot_noa_fs.close();
+
+    fp.iterate();
+    cout << "Max its: " << fp.max_iter() << endl;
 
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);
