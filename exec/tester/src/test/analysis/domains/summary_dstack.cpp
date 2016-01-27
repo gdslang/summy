@@ -29,6 +29,7 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <experimental/optional>
 
 using namespace analysis;
 using namespace analysis::api;
@@ -38,6 +39,7 @@ using namespace cfg;
 using namespace summy::rreil;
 
 using namespace std;
+using namespace std::experimental;
 using namespace summy;
 
 class summary_dstack_test : public ::testing::Test {
@@ -1434,7 +1436,7 @@ TEST_F(summary_dstack_test, Ite1) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar, "\n\
 jne else\n\
-movq $10, %rax\n\
+movq $9999, %rax\n\
 jmp end\n\
 else:\n\
 end:\n\
@@ -1443,10 +1445,11 @@ false));
 
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
+  cout << aliases_end_a << endl;
   ASSERT_EQ(aliases_end_a.size(), 2);
 
   bool has_null = false;
-  bool has_reg = false;
+  bool has_reg_deref_ptr = false;
   optional<vs_shared_t> offset;
   for(auto &alias : aliases_end_a) {
     offset = alias.offset;
@@ -1456,14 +1459,18 @@ false));
         has_null = true;
     });
     idv._([&](ptr_memory_id *pid) {
-      id_visitor ptr_id_visitor;
+      summy::rreil::id_visitor ptr_id_visitor;
       ptr_id_visitor._([&](numeric_id *nid) {
-
+        auto name = nid->get_name();
+        if(name && name.value() == "A_q")
+          has_reg_deref_ptr = true;
       });
       pid->get_id()->accept(ptr_id_visitor);
     });
    alias.id->accept(idv);
   }
-
+  ASSERT_TRUE(has_null);
+  ASSERT_TRUE(has_reg_deref_ptr);
+  ASSERT_EQ(*offset.value(), shared_ptr<value_set>(new vs_finite({ 0, 9999 })));
 }
 
