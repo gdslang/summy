@@ -1428,3 +1428,42 @@ int main(int argc, char **argv) {\n\
   ASSERT_TRUE(has_bad);
   ASSERT_TRUE(has_alloc);
 }
+
+TEST_F(summary_dstack_test, Ite1) {
+  // test_ite1.as
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "\n\
+jne else\n\
+movq $10, %rax\n\
+jmp end\n\
+else:\n\
+end:\n\
+nop\n",
+false));
+
+  ptr_set_t aliases_end_a;
+  ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
+  ASSERT_EQ(aliases_end_a.size(), 2);
+
+  bool has_null = false;
+  bool has_reg = false;
+  optional<vs_shared_t> offset;
+  for(auto &alias : aliases_end_a) {
+    offset = alias.offset;
+    summy::rreil::id_visitor idv;
+    idv._([&](special_ptr *spi) {
+      if(*spi == *special_ptr::_nullptr)
+        has_null = true;
+    });
+    idv._([&](ptr_memory_id *pid) {
+      id_visitor ptr_id_visitor;
+      ptr_id_visitor._([&](numeric_id *nid) {
+
+      });
+      pid->get_id()->accept(ptr_id_visitor);
+    });
+   alias.id->accept(idv);
+  }
+
+}
+
