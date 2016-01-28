@@ -8,13 +8,14 @@
 #include <cppgdsl/rreil/id/id.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/numeric_id.h>
+#include <assert.h>
 
 using namespace summy::rreil;
 using namespace std;
 
 void summy::rreil::numeric_id::put(std::ostream &out) {
   out << '#';
-  if(name)
+  if(false && name)
     out << name.value() << (input.value() ? "i" : "");
   else
     out << counter;
@@ -50,6 +51,8 @@ void summy::rreil::numeric_id::accept(gdsl::rreil::id_visitor &v) {
 std::shared_ptr<gdsl::rreil::id> summy::rreil::numeric_id::generate(
   std::experimental::optional<std::string> name, std::experimental::optional<bool> input) {
   static int_t counter = 0;
+  if(counter == 209)
+    cout << "juhu!" << endl;
   return shared_ptr<gdsl::rreil::id>(new numeric_id(counter++, name, input));
 }
 

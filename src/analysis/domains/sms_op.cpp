@@ -450,7 +450,6 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
    */
   bool copy_paste = false;
 
-
   /*
    * Find aliases for a specific region of the given summaries. We need both
    * input and output here in order to be able to add pointers that are missing
@@ -603,22 +602,28 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
             //            cout << "************" << *f_a_nv << ": " << als_a << endl;
             delete f_a_nv;
 
+            cout << "Considering alias set: " << als_a << endl;
+
             ptr p_a = unpack_singleton(als_a);
 
             num_var *f_b_nv = new num_var(f_b.num_id);
             ptr_set_t als_b = b_n->queryAls(f_b_nv);
             delete f_b_nv;
+            cout << "together with: " << als_b << endl;
             ptr p_b = unpack_singleton(als_b);
+
+            assert((*p_a.id == *special_ptr::badptr) == (*p_b.id == *special_ptr::badptr));
 
             /*
              * Todo: Check for badptr?
              */
             if(!(*p_a.id == *special_ptr::badptr) && !((*p_b.id == *special_ptr::badptr))) {
-              //              cout << "pushing aliases... " << endl;
+              cout << "pushing aliases... " << p_a << ", " << p_b << endl;
 
-              //              cout << p_a << endl;
+              //                            cout << p_a << endl;
               assert(*p_a.offset == vs_finite::zero);
               assert(*p_b.offset == vs_finite::zero);
+
 
               upcoming.push_back(make_tuple(new num_var(p_a.id), new num_var(p_b.id)));
             }
@@ -652,7 +657,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
       for(auto regions_first_it = first_in.begin(); regions_first_it != first_in.end(); regions_first_it++) {
         auto regions_second_it = second_in.find(regions_first_it->first);
         if(regions_second_it == second_in.end()) {
-          if(!a_b && widening) continue;
+          //          if(!a_b && widening) continue;
           tie(regions_second_it, ignore) = second_in.insert(make_pair(regions_first_it->first, region_t()));
           second_out.insert(make_pair(regions_first_it->first, region_t()));
         } else if(a_b)
@@ -812,14 +817,17 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     return make_tuple(head, a_n, b_n);
   }
 
+  //  ((summary_memory_state *)a)->check_consistency();
+  //  ((summary_memory_state *)b)->check_consistency();
+
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
-  //    cout << "++++++++++++++++++++++++++++++" << endl;
-  //    cout << "++++++++++++++++++++++++++++++" << endl;
-  //    cout << "++++++++++++++++++++++++++++++" << endl;
-  //    cout << "compat OF" << endl;
-  //    cout << *a << endl;
-  //    cout << "WITH" << endl;
-  //    cout << *b << endl;
+  //  cout << "++++++++++++++++++++++++++++++" << endl;
+  //  cout << "++++++++++++++++++++++++++++++" << endl;
+  //  cout << "++++++++++++++++++++++++++++++" << endl;
+  //  cout << "compat OF" << endl;
+  //  cout << *a << endl;
+  //  cout << "WITH" << endl;
+  //  cout << *b << endl;
   //  }
 
   /*

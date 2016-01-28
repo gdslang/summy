@@ -7,7 +7,7 @@ je end
 mov (%rax), %rbx
 mov %rbx, %rax
 
-inc %r11
+//inc %r11
 jmp head
 end:
 ret
