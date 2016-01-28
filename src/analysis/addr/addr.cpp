@@ -22,13 +22,15 @@ void analysis::addr::addr::add_constraint(size_t from, size_t to, const ::cfg::e
   function<shared_ptr<addr_state>()> transfer_f = [=]() {
     cfg::node *to_node = cfg->get_node_payload(to);
     cfg::node_visitor nv;
-    optional<size_t> address;
-    nv._([&](cfg::address_node *cn) { address = cn->get_address(); });
+    optional<node_addr> address;
+    nv._([&](cfg::address_node *cn) { address = node_addr(cn->get_address(), 0); });
     to_node->accept(nv);
     if(address)
       return make_shared<addr_state>(address.value());
-    else
-      return state[from];
+    else {
+      node_addr addr_parent = state[from]->get_address().value();
+      return make_shared<addr_state>(node_addr(addr_parent.machine, addr_parent.virt + 1));
+    }
   };
   (constraints[to])[from] = transfer_f;
 }
@@ -67,8 +69,8 @@ std::shared_ptr<addr_state> analysis::addr::addr::bottom() {
 std::shared_ptr<addr_state> analysis::addr::addr::start_value(size_t node) {
   cfg::node *node_pl = cfg->get_node_payload(node);
   cfg::node_visitor nv;
-  optional<size_t> address;
-  nv._([&](cfg::address_node *cn) { address = cn->get_address(); });
+  optional<node_addr> address;
+  nv._([&](cfg::address_node *cn) { address = node_addr(cn->get_address(), 0); });
   node_pl->accept(nv);
   return make_shared<addr_state>(address.value());
 }

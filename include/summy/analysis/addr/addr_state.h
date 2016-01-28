@@ -21,17 +21,31 @@
 namespace analysis {
 namespace addr {
 
+struct node_addr {
+  size_t machine;
+  size_t virt;
+
+  node_addr(size_t machine, size_t virt) : machine(machine), virt(virt) {
+  }
+
+  bool operator <(node_addr const& other) const;
+  bool operator <=(node_addr const& other) const;
+  bool operator ==(node_addr const& other) const;
+};
+
+std::ostream &operator<<(std::ostream &out, node_addr const &_this);
+
 class addr_state : public domain_state {
 private:
-  const std::experimental::optional<size_t> address;
+  const std::experimental::optional<node_addr> address;
 
   addr_state *domop(::analysis::domain_state *other);
 public:
-  std::experimental::optional<size_t> const& get_address() {
+  std::experimental::optional<node_addr> const& get_address() {
     return address;
   }
 
-  addr_state(size_t address) :
+  addr_state(node_addr address) :
       domain_state(), address(address) {
   }
 

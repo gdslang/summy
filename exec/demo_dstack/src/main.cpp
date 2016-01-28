@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
 
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    analysis_dectran dt(g, true);
+    analysis_dectran dt(g, false);
 
     dt.transduce();
     dt.register_();

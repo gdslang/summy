@@ -46,7 +46,7 @@ jump_dir jd_manager::jump_direction(size_t from, size_t to) {
 //  cout << (from_address ? from_address.value() : 0) << " / " << (to_address ? to_address.value() : 0)  << endl;
   if(!from_address || !to_address)
     return UNKNOWN;
-  if(to_address.value() < from_address.value())
+  if(to_address.value() <= from_address.value())
     return BACKWARD;
   else
     return FORWARD;

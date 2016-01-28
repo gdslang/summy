@@ -12,6 +12,31 @@
 using namespace std;
 using namespace analysis::addr;
 
+// node_addr
+
+bool analysis::addr::node_addr::operator<(const node_addr &other) const {
+  if(machine < other.machine)
+    return true;
+  else if(machine > other.machine)
+    return false;
+  else return virt < other.virt;
+}
+
+bool analysis::addr::node_addr::operator<=(const node_addr &other) const {
+  return *this < other || *this == other;
+}
+
+bool analysis::addr::node_addr::operator==(const node_addr &other) const {
+  return machine == other.machine && virt == other.virt;
+}
+
+std::ostream &analysis::addr::operator<<(std::ostream &out, const node_addr &_this) {
+  out << _this.machine << ":" << _this.virt;
+  return out;
+}
+
+// addr_state
+
 addr_state *analysis::addr::addr_state::domop(::analysis::domain_state *other) {
   addr_state *other_casted = dynamic_cast<addr_state*>(other);
 
