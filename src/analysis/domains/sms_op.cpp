@@ -651,7 +651,11 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
             }
           }
         } else {
-          //          assert(false);
+          /*
+           * We should only get here if the field contains the bad- or null pointer
+           * as its only alias. In this case, we don't add a partner field during
+           * conflict resolution.
+           */
         }
       }
       ++mri;
@@ -935,7 +939,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
           //            cout << *id << endl;
           //            cout << *rpd.ending_first.f.num_id << endl;
           //          }
-          //          assert(rpd.ending_last);
+//                    assert(rpd.ending_last);
           if(rpd.ending_last) {
             field_desc_t fd_first = rpd.field_first_region().value();
             field_desc_t fd_second = rpd.field_second_region().value();
