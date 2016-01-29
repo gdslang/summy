@@ -50,7 +50,7 @@ analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimenta
 }
 
 field &analysis::io_region::insert(
-  numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr(id_shared_t)> ptr_ct) {
+  numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
   //  struct field_desc_t {
   //    int64_t offset;
   //    field f;
@@ -112,10 +112,10 @@ field &analysis::io_region::insert(
   //  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
   //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)),
   //  vs_finite::zero) << endl;
-  ptr ptr_fresh = ptr_ct(nid_in);
+  ptr_set_t ptr_set_fresh = ptr_set_ct(nid_in);
   ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
   ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
-  child_state->assume(n_in, {ptr_fresh, _nullptr});
+  child_state->assume(n_in, ptr_set_fresh);
 
   /*
    * Todo: size > 64?
@@ -147,7 +147,7 @@ field &analysis::io_region::insert(
     child_state->assign(n_out, temp_expr);
     delete temp_expr;
   } else if(!replacement) {
-    child_state->assume(n_out, {ptr_fresh, _nullptr});
+    child_state->assume(n_out, ptr_set_fresh);
   } else
     child_state->assume(n_out, {badptr});
   //  child_state->assign(n_out, ass_e);
@@ -168,9 +168,13 @@ field &analysis::io_region::insert(
 }
 
 field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
-  auto ptr_fresh =
-    [](id_shared_t nid_in) { return ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero); };
-  return insert(child_state, offset, size, replacement, ptr_fresh);
+  auto ptr_set_fresh =
+    [](id_shared_t nid_in) {
+    ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
+    ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
+    return ptr_set_t({ _nullptr, fresh });
+  };
+  return insert(child_state, offset, size, replacement, ptr_set_fresh);
 }
 
 /*

@@ -536,23 +536,29 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
               alias.id->accept(idv);
             }
 
-            if(has_symbolic)
-              insertions.push_back(
-                [copy_paste, widening, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-                  //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at "
-                  //                            <<
-                  //                            ending_first.offset << endl;
-                  field inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
-                  //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
-                  if(copy_paste) {
-                    num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
-                    num_var *to = new num_var(inserted.num_id);
-                    b_n->copy_paste(to, from, a_n);
-                    delete to;
-                    delete from;
-                  }
-                  //              });
-                });
+            insertions.push_back(
+              [copy_paste, widening, has_symbolic, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+                //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at "
+                //                            <<
+                //                            ending_first.offset << endl;
+                field inserted;
+                if(copy_paste || has_symbolic)
+                  inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
+                else
+                  inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
+                    ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
+                    return ptr_set_t({_badptr});
+                  });
+                //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
+                if(copy_paste) {
+                  num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
+                  num_var *to = new num_var(inserted.num_id);
+                  b_n->copy_paste(to, from, a_n);
+                  delete to;
+                  delete from;
+                }
+                //              });
+              });
           } else {
             num_var ef_var(rpd.ending_first.f.num_id);
             ptr_set_t aliases = b_n->queryAls(&ef_var);
@@ -564,24 +570,31 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
               alias.id->accept(idv);
             }
 
-            if(has_symbolic)
-              insertions.push_back(
-                [copy_paste, widening, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-                  //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at "
-                  //                            <<
-                  //                            ending_first.offset << endl;
-                  field inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
-                  //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
-                  if(copy_paste) {
-                    num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
-                    num_var *to = new num_var(inserted.num_id);
-                    a_n->copy_paste(to, from, b_n);
-                    delete to;
-                    delete from;
-                  }
-                  //              });
+            insertions.push_back(
+              [copy_paste, widening, has_symbolic, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+                //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at "
+                //                            <<
+                //                            ending_first.offset << endl;
+                field inserted;
+                if(copy_paste || has_symbolic)
+                  inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
+                else
+                  inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
+                    ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
+                    return ptr_set_t({_badptr});
+                  });
 
-                });
+                //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
+                if(copy_paste) {
+                  num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
+                  num_var *to = new num_var(inserted.num_id);
+                  a_n->copy_paste(to, from, b_n);
+                  delete to;
+                  delete from;
+                }
+                //              });
+
+              });
           }
         }
       }
@@ -652,10 +665,9 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
           }
         } else {
           /*
-           * We should only get here if the field contains the bad- or null pointer
-           * as its only alias. In this case, we don't add a partner field during
-           * conflict resolution.
+           * We should not get here since we add partner fields above.
            */
+          assert(false);
         }
       }
       ++mri;
@@ -939,17 +951,17 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
           //            cout << *id << endl;
           //            cout << *rpd.ending_first.f.num_id << endl;
           //          }
-//                    assert(rpd.ending_last);
-          if(rpd.ending_last) {
-            field_desc_t fd_first = rpd.field_first_region().value();
-            field_desc_t fd_second = rpd.field_second_region().value();
+          assert(rpd.ending_last);
+          //          if(rpd.ending_last) {
+          field_desc_t fd_first = rpd.field_first_region().value();
+          field_desc_t fd_second = rpd.field_second_region().value();
 
-            id_shared_t id_first = fd_first.f.num_id;
-            id_shared_t id_second = fd_second.f.num_id;
-            if(!(*id_first == *id_second))
-              equate_kill_vars.push_back(make_tuple(new num_var(id_first), new num_var(id_second)));
-            region.insert(make_pair(fd_first.offset, fd_first.f));
-          }
+          id_shared_t id_first = fd_first.f.num_id;
+          id_shared_t id_second = fd_second.f.num_id;
+          if(!(*id_first == *id_second))
+            equate_kill_vars.push_back(make_tuple(new num_var(id_first), new num_var(id_second)));
+          region.insert(make_pair(fd_first.offset, fd_first.f));
+          //          }
         }
         ++mri;
       }
