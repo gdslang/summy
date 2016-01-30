@@ -28,8 +28,11 @@ void analysis::addr::addr::add_constraint(size_t from, size_t to, const ::cfg::e
     if(address)
       return make_shared<addr_state>(address.value());
     else {
-      node_addr addr_parent = state[from]->get_address().value();
-      return make_shared<addr_state>(node_addr(addr_parent.machine, addr_parent.virt + 1));
+      optional<node_addr> addr_parent = state[from]->get_address();
+      if(addr_parent)
+        return make_shared<addr_state>(node_addr(addr_parent.value().machine, addr_parent.value().virt + 1));
+      else
+        return state[from];
     }
   };
   (constraints[to])[from] = transfer_f;
@@ -44,7 +47,7 @@ dependency analysis::addr::addr::gen_dependency(size_t from, size_t to) {
 }
 
 void analysis::addr::addr::init_state() {
-//  cout << "Resize: " << cfg->node_count() << endl;
+  //  cout << "Resize: " << cfg->node_count() << endl;
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
@@ -59,8 +62,7 @@ analysis::addr::addr::addr(cfg::cfg *cfg) : fp_analysis(cfg) {
   init();
 }
 
-analysis::addr::addr::~addr() {
-}
+analysis::addr::addr::~addr() {}
 
 std::shared_ptr<addr_state> analysis::addr::addr::bottom() {
   return make_shared<addr_state>();
@@ -89,8 +91,7 @@ addr_result analysis::addr::addr::result() {
 
 void analysis::addr::addr::put(std::ostream &out) {
   for(size_t i = 0; i < state.size(); i++) {
-    if(i != 0)
-      cout << endl;
+    if(i != 0) cout << endl;
     out << i << ": " << *state[i];
   }
 }

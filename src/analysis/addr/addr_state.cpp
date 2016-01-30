@@ -44,8 +44,11 @@ addr_state *analysis::addr::addr_state::domop(::analysis::domain_state *other) {
     return new addr_state(*other_casted);
   if(!other_casted->address)
     return new addr_state(*this);
-  assert(address == other_casted->address);
-  return new addr_state(*this);
+  auto &addr_value = address.value();
+  auto &addr_value_other = other_casted->address.value();
+  assert(addr_value.machine == addr_value_other.machine);
+  size_t virt = max(addr_value.virt, addr_value_other.virt);
+  return new addr_state(node_addr(addr_value.machine, virt + 1));
 }
 
 addr_state *analysis::addr::addr_state::join(::analysis::domain_state *other, size_t current_node) {
@@ -67,13 +70,14 @@ bool analysis::addr::addr_state::operator>=(const ::analysis::domain_state &othe
     return true;
   else if(!address)
     return false;
-  assert(address == other_casted.address);
-  return true;
+  auto &addr_value = address.value();
+  auto &addr_value_other = other_casted.address.value();
+  return addr_value_other <= addr_value;
 }
 
 void analysis::addr::addr_state::put(std::ostream &out) const {
   if(address)
-    cout << "Some(0x" << hex << address.value() << dec << ")";
+    out << "Some(0x" << hex << address.value() << dec << ")";
   else
-    cout << "None";
+    out << "None";
 }
