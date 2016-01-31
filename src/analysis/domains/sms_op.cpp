@@ -338,11 +338,11 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
        * If a heap pointer is re-introduced by the summary we have to be careful
        * since we actually get a summary memory region for the heap region now
        * in the caller state. We represent this by adding the bad pointer to the
-       * respective alias set in the caller state. We have to add the bad pointer,
-       * if we find a heap pointer in the alias set of the caller and the summary,
-       * but not the input of the summary. In the following lines, we calculate the
-       * set of heap ids that we find in the output of the summary, but not in its
-       * input.
+       * respective alias set in the caller state. We have to add the bad
+       * pointer if we find a heap pointer in the caller state and in an alias
+       * set of the summary, but not the respective input field alias set of the
+       * summary. In the following lines, we calculate the set of heap ids that
+       * we find in the output of the summary, but not in its input.
        */
       id_set_t aliases_s_heap_ids_diff;
       if(aliases_s_heap.size() > 0) {
@@ -360,22 +360,25 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
         set_difference(aliases_so_heap_ids.begin(), aliases_so_heap_ids.end(), aliases_si_heap_ids.begin(),
           aliases_si_heap_ids.end(), inserter(aliases_s_heap_ids_diff, aliases_s_heap_ids_diff.begin()));
       }
-      id_set_t tainted_heap_ids;
+      /*
+       * We conclude that we need to add the bad pointer if we find one of the
+       * aliases in the caller state.
+       */
+      id_set_t reintroduction_heap_ids;
       set_intersection(aliases_s_heap_ids_diff.begin(), aliases_s_heap_ids_diff.end(), caller_alloc_deref.begin(),
-        caller_alloc_deref.end(), inserter(tainted_heap_ids, tainted_heap_ids.begin()), id_less());
-      bool tainted = tainted_heap_ids.size() > 0;
+        caller_alloc_deref.end(), inserter(reintroduction_heap_ids, reintroduction_heap_ids.begin()), id_less());
+      bool heap_reintroduction = reintroduction_heap_ids.size() > 0;
 
       vs_shared_t value_summary = summary->child_state->queryVal(nv_s);
       num_expr *value_summary_expr = new num_expr_lin(new num_linear_vs(value_summary));
 
       /*
-       * The following function is used to check whether a certain caller state variable
-       * is pointing to a summary heap region. This is the case if see a re-introduction
-       * of an existing heap region.
+       * The following function adds the bad pointer to an alias set if a
+       * heap region is re-introduced in the summary.
        */
       auto add_heapbad = [&](api::num_var *nv_fld_c) {
         ptr_set_t aliases_c_assignment = aliases_c;
-        if(tainted) aliases_c_assignment.insert(ptr(special_ptr::badptr, vs_finite::zero));
+        if(heap_reintroduction) aliases_c_assignment.insert(ptr(special_ptr::badptr, vs_finite::zero));
         return aliases_c_assignment;
       };
 
