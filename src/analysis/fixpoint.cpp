@@ -48,7 +48,7 @@ void fixpoint::iterate() {
     else
       node_iterations[node_id] = 0;
 
-    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
     //        if(max_iter() > 20)
     //          break;
@@ -71,7 +71,7 @@ void fixpoint::iterate() {
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
-        cout << "Evaluated: " << *evaluated << endl;
+        //        cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -82,21 +82,22 @@ void fixpoint::iterate() {
         /*
          * Todo: Backward analysis?
          */
-        cout << "Current: " << *current << endl;
+        //        cout << "Current: " << *current << endl;
         if(jd_man.jump_direction(node_other, node_id) == BACKWARD) {
-          cout << "Back jump from " << node_other << " to " << node_id << endl;
+          //          cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
-          cout << "Boxed: " << *evaluated << endl;
+          //          cout << "Boxed: " << *evaluated << endl;
         }
 
         //        cout << "============================" << endl;
-        //                        cout << "evaluated:" << endl << *evaluated << endl;
+//        cout << "evaluated:" << endl
+//             << *evaluated << endl;
 
         if(accumulator_set) {
-          cout << "accumulator:" << endl
-               << *accumulator << endl;
+          //          cout << "accumulator:" << endl
+          //               << *accumulator << endl;
 
           accumulator = shared_ptr<domain_state>(evaluated->join(accumulator.get(), node_id));
         } else {
@@ -147,7 +148,7 @@ void fixpoint::iterate() {
         //            cout << "Postproc: " << node_id << endl;
         postprocess_worklist.push(node_id);
       }
-      cout << node_id << " XX->XX " << *accumulator << endl;
+      //      cout << node_id << " XX->XX " << *accumulator << endl;
       analysis->update(node_id, accumulator);
       updated.insert(node_id);
     }

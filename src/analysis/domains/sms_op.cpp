@@ -63,9 +63,9 @@ ptr analysis::unpack_singleton(ptr_set_t aliases) {
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-  //    cout << "apply_summary" << endl;
-  //    cout << "caller:" << endl
-  //         << *caller << endl;
+//    cout << "apply_summary" << endl;
+//    cout << "caller:" << endl
+//         << *caller << endl;
   //  cout << "summary: " << endl
   //       << *summary << endl;
 
@@ -290,6 +290,13 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   //  cout << "return_site, before app: " << endl
   //       << *return_site << endl;
 
+  id_set_t caller_alloc_deref;
+  for(auto &deref_mapping_c : caller->input.deref) {
+    summy::rreil::id_visitor idv;
+    idv._([&](allocation_memory_id *ami) { caller_alloc_deref.insert(deref_mapping_c.first); });
+    deref_mapping_c.first->accept(idv);
+  }
+
   num_expr *_top = new num_expr_lin(new num_linear_vs(value_set::top));
   auto process_region = [&](summary_memory_state::regions_getter_t getter, ptr_set_t &region_aliases_c,
     region_t &region_si, region_t &region_so) {
@@ -353,6 +360,10 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
         set_difference(aliases_so_heap_ids.begin(), aliases_so_heap_ids.end(), aliases_si_heap_ids.begin(),
           aliases_si_heap_ids.end(), inserter(aliases_s_heap_ids_diff, aliases_s_heap_ids_diff.begin()));
       }
+      id_set_t tainted_heap_ids;
+      set_intersection(aliases_s_heap_ids_diff.begin(), aliases_s_heap_ids_diff.end(), caller_alloc_deref.begin(),
+        caller_alloc_deref.end(), inserter(tainted_heap_ids, tainted_heap_ids.begin()), id_less());
+      bool tainted = tainted_heap_ids.size() > 0;
 
       vs_shared_t value_summary = summary->child_state->queryVal(nv_s);
       num_expr *value_summary_expr = new num_expr_lin(new num_linear_vs(value_summary));
@@ -363,13 +374,6 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
        * of an existing heap region.
        */
       auto add_heapbad = [&](api::num_var *nv_fld_c) {
-        bool tainted = false;
-        if(aliases_s_heap_ids_diff.size() > 0) {
-          ptr_set_t fld_aliases_c = caller->child_state->queryAls(nv_fld_c);
-          for(auto &alias : fld_aliases_c)
-            if(aliases_s_heap_ids_diff.find(alias.id) != aliases_s_heap_ids_diff.end()) tainted = true;
-        }
-        //        cout << "strong for " << *nv_me << ": " << aliases_me << endl;
         ptr_set_t aliases_c_assignment = aliases_c;
         if(tainted) aliases_c_assignment.insert(ptr(special_ptr::badptr, vs_finite::zero));
         return aliases_c_assignment;
@@ -528,21 +532,22 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
           if(ending_first.region_first) {
             num_var ef_var(rpd.ending_first.f.num_id);
             ptr_set_t aliases = a_n->queryAls(&ef_var);
-            bool has_symbolic = false;
+            bool has_no_badnull = false;
             for(auto &alias : aliases) {
+              bool is_no_badnull = true;
               summy::rreil::id_visitor idv;
-              idv._([&](ptr_memory_id *p) { has_symbolic = true; });
-              idv._([&](allocation_memory_id *p) { has_symbolic = true; });
+              idv._([&](special_ptr *p) { is_no_badnull = false; });
               alias.id->accept(idv);
+              if(is_no_badnull) has_no_badnull = true;
             }
 
             insertions.push_back(
-              [copy_paste, widening, has_symbolic, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+              [copy_paste, has_no_badnull, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
                 //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at "
                 //                            <<
                 //                            ending_first.offset << endl;
                 field inserted;
-                if(copy_paste || has_symbolic)
+                if(copy_paste || has_no_badnull)
                   inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
                 else
                   inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
@@ -562,21 +567,22 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
           } else {
             num_var ef_var(rpd.ending_first.f.num_id);
             ptr_set_t aliases = b_n->queryAls(&ef_var);
-            bool has_symbolic = false;
+            bool has_no_badnull = false;
             for(auto &alias : aliases) {
+              bool is_no_badnull = true;
               summy::rreil::id_visitor idv;
-              idv._([&](ptr_memory_id *p) { has_symbolic = true; });
-              idv._([&](allocation_memory_id *p) { has_symbolic = true; });
+              idv._([&](special_ptr *p) { is_no_badnull = false; });
               alias.id->accept(idv);
+              if(is_no_badnull) has_no_badnull = true;
             }
 
             insertions.push_back(
-              [copy_paste, widening, has_symbolic, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
+              [copy_paste, has_no_badnull, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
                 //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at "
                 //                            <<
                 //                            ending_first.offset << endl;
                 field inserted;
-                if(copy_paste || has_symbolic)
+                if(copy_paste || has_no_badnull)
                   inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
                 else
                   inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
@@ -638,14 +644,14 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
             //            cout << "************" << *f_a_nv << ": " << als_a << endl;
             delete f_a_nv;
 
-            cout << "Considering alias set: " << als_a << endl;
+            //            cout << "Considering alias set: " << als_a << endl;
 
             ptr p_a = unpack_singleton(als_a);
 
             num_var *f_b_nv = new num_var(f_b.num_id);
             ptr_set_t als_b = b_n->queryAls(f_b_nv);
             delete f_b_nv;
-            cout << "together with: " << als_b << endl;
+            //            cout << "together with: " << als_b << endl;
             ptr p_b = unpack_singleton(als_b);
 
             //            assert((*p_a.id == *special_ptr::badptr) == (*p_b.id == *special_ptr::badptr));
@@ -654,7 +660,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
              * Todo: Check for badptr?
              */
             if(!(*p_a.id == *special_ptr::badptr) && !((*p_b.id == *special_ptr::badptr))) {
-              cout << "pushing aliases... " << p_a << ", " << p_b << endl;
+              //              cout << "pushing aliases... " << p_a << ", " << p_b << endl;
 
               //                            cout << p_a << endl;
               assert(*p_a.offset == vs_finite::zero);
@@ -806,9 +812,19 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
       }
 
       if(widening && deref_a_in_it == a_in.deref.end()) {
-        delete va;
-        delete vb;
-        continue;
+        /*
+         * During widening, we don't propagate nameless regions,
+         * since this can result in generating more and more regions
+         */
+        bool ptr_mem_region = false;
+        summy::rreil::id_visitor idv;
+        idv._([&](ptr_memory_id *idv) { ptr_mem_region = true; });
+        vb->get_id()->accept(idv);
+        if(ptr_mem_region) {
+          delete va;
+          delete vb;
+          continue;
+        }
       }
 
       /*

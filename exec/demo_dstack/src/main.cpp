@@ -134,11 +134,6 @@ int main(int argc, char **argv) {
     auto &cfg = dt.get_cfg();
     cfg.commit_updates();
 
-    ofstream dot_noa_fs;
-    dot_noa_fs.open("output_noa.dot", ios::out);
-    cfg.dot(dot_noa_fs);
-    dot_noa_fs.close();
-
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se);
     cfg::jd_manager jd_man(&cfg);
@@ -146,6 +141,12 @@ int main(int argc, char **argv) {
     cfg.register_observer(&fp);
 
     fp.iterate();
+
+    ofstream dot_noa_fs;
+    dot_noa_fs.open("output_noa.dot", ios::out);
+    cfg.dot(dot_noa_fs);
+    dot_noa_fs.close();
+
     cout << "Max its: " << fp.max_iter() << endl;
 
     //  cout << "++++++++++" << endl;

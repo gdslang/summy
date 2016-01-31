@@ -1445,7 +1445,6 @@ false));
 
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
-  cout << aliases_end_a << endl;
   ASSERT_EQ(aliases_end_a.size(), 2);
 
   bool has_null = false;
