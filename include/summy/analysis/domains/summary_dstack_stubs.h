@@ -14,9 +14,10 @@ namespace analysis {
 class summary_dstack_stubs {
 private:
   shared_ptr<static_memory> sm;
+  bool warnings;
 
 public:
-  summary_dstack_stubs(shared_ptr<static_memory> sm) : sm(sm) {}
+  summary_dstack_stubs(shared_ptr<static_memory> sm, bool warnings) : sm(sm), warnings(warnings) {}
 
   std::shared_ptr<summary_memory_state> allocator(size_t allocation_site, size_t size);
   std::shared_ptr<summary_memory_state> no_effect();

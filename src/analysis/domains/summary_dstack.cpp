@@ -52,15 +52,14 @@ using namespace summy;
 using namespace std::experimental;
 
 std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *address, size_t node) {
-//  symbol symb;
-//  bool success;
-//  tie(success, symb) = sm->lookup(address);
-//  cout << symb.symbol_name << endl;
-//  cout << hex << address << dec << endl;
+  //  symbol symb;
+  //  bool success;
+  //  tie(success, symb) = sm->lookup(address);
+  //  cout << symb.symbol_name << endl;
+  //  cout << hex << address << dec << endl;
 
   auto functions = sm->functions();
-  if(!functions)
-    return nullopt;
+  if(!functions) return nullopt;
 
   auto f_it = functions.value().get().find((size_t)address);
   if(f_it != functions.value().get().end()) {
@@ -268,17 +267,17 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                * Directly recursive call => We have to rename variables!
                */
               summary.value()->rename();
-//                        if(summary)
-//                          cout << *summary.value();
-//                        if(summary)
-//                          cout << "We have a summary!" << endl;
-//                        else
-//                          cout << "We don't have a summary :-(." << endl;
+            //                        if(summary)
+            //                          cout << *summary.value();
+            //                        if(summary)
+            //                          cout << "We have a summary!" << endl;
+            //                        else
+            //                          cout << "We don't have a summary :-(." << endl;
             //            else
             //              cout << "We don't have a summary :-/" << endl;
             summary_memory_state *summarized = summary ? apply_summary(mstate, summary.value().get()) : bottom->copy();
 
-//            cout << *summarized << endl;
+            //            cout << *summarized << endl;
 
             return shared_ptr<global_state>(
               new global_state(summarized, state_c->get_f_addr(), state_c->get_callers()));
@@ -424,8 +423,8 @@ void analysis::summary_dstack::init_state() {
 }
 
 analysis::summary_dstack::summary_dstack(
-  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const &f_starts)
-    : fp_analysis(cfg), sm(sm), stubs(sm) {
+  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings, std::set<size_t> const &f_starts)
+    : fp_analysis(cfg), sm(sm), warnings(warnings), stubs(sm, warnings) {
   init();
 
   for(auto node_id : f_starts) {
@@ -439,8 +438,8 @@ analysis::summary_dstack::summary_dstack(
   }
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm)
-    : fp_analysis(cfg), sm(sm), stubs(sm) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings)
+    : fp_analysis(cfg), sm(sm), warnings(warnings), stubs(sm, warnings) {
   init();
 
   /*
@@ -455,27 +454,28 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
   state[n->get_id()]->set_f_addr(vs_finite::single(addr.value()));
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg) : summary_dstack(cfg, make_shared<static_dummy>()) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, bool warnings)
+    : summary_dstack(cfg, make_shared<static_dummy>(), warnings) {
   init();
 }
 
 analysis::summary_dstack::~summary_dstack() {}
 
 summary_memory_state *analysis::summary_dstack::sms_bottom() {
-  return sms_bottom(sm);
+  return sms_bottom(sm, warnings);
 }
 
 summary_memory_state *analysis::summary_dstack::sms_top() {
-  return sms_top(sm);
+  return sms_top(sm, warnings);
 }
 
-summary_memory_state *analysis::summary_dstack::sms_bottom(std::shared_ptr<static_memory> sm) {
-  return summary_memory_state::bottom(sm, new equality_state(new als_state(vsd_state::bottom(sm))));
+summary_memory_state *analysis::summary_dstack::sms_bottom(std::shared_ptr<static_memory> sm, bool warnings) {
+  return summary_memory_state::bottom(sm, warnings, new equality_state(new als_state(vsd_state::bottom(sm))));
 }
 
-summary_memory_state *analysis::summary_dstack::sms_top(std::shared_ptr<static_memory> sm) {
+summary_memory_state *analysis::summary_dstack::sms_top(std::shared_ptr<static_memory> sm, bool warnings) {
   summary_memory_state *sms_start =
-    summary_memory_state::start_value(sm, new equality_state(new als_state(vsd_state::top(sm))));
+    summary_memory_state::start_value(sm, warnings, new equality_state(new als_state(vsd_state::top(sm))));
   return sms_start;
 }
 

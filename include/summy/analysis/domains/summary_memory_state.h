@@ -101,6 +101,7 @@ class summary_memory_state : public domain_state, public memory_state_base {
 
 private:
   shared_ptr<static_memory> sm;
+  bool warnings;
 
   relation input;
   relation output;
@@ -163,14 +164,15 @@ protected:
   api::num_linear *transLEInput(id_shared_t var_id, int64_t offset, size_t size);
 
 public:
-  summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, relation input, relation output)
-      : memory_state_base(child_state), sm(sm), input(input), output(output) {}
+  summary_memory_state(
+    shared_ptr<static_memory> sm, bool warnings, numeric_state *child_state, relation input, relation output)
+      : memory_state_base(child_state), sm(sm), warnings(warnings), input(input), output(output) {}
   /**
    * @param start_bottom: true => start value, false => bottom
    */
-  summary_memory_state(shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom);
+  summary_memory_state(shared_ptr<static_memory> sm, bool warnings, numeric_state *child_state, bool start_bottom);
   summary_memory_state(summary_memory_state const &o)
-      : memory_state_base(o.child_state->copy()), sm(o.sm), input(o.input), output(o.output) {}
+      : memory_state_base(o.child_state->copy()), sm(o.sm), warnings(o.warnings), input(o.input), output(o.output) {}
   ~summary_memory_state() {
     delete child_state;
   }
@@ -222,8 +224,8 @@ public:
    * top as numeric state.
    */
   void topify();
-  static summary_memory_state *start_value(shared_ptr<static_memory> sm, numeric_state *start_num);
-  static summary_memory_state *bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num);
+  static summary_memory_state *start_value(shared_ptr<static_memory> sm, bool warnings, numeric_state *start_num);
+  static summary_memory_state *bottom(shared_ptr<static_memory> sm, bool warnings, numeric_state *bottom_num);
 
   friend summary_memory_state *apply_summary(summary_memory_state *caller, summary_memory_state *summary);
   friend num_var_pairs_t matchPointers(bool widening, relation &a_in, relation &a_out, numeric_state *a_n,

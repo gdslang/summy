@@ -49,8 +49,8 @@ analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimenta
   if(r_key) name = r_key.value()->to_string();
 }
 
-field &analysis::io_region::insert(
-  numeric_state *child_state, int64_t offset, size_t size, bool replacement, std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
+field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
+  std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
   //  struct field_desc_t {
   //    int64_t offset;
   //    field f;
@@ -168,11 +168,10 @@ field &analysis::io_region::insert(
 }
 
 field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
-  auto ptr_set_fresh =
-    [](id_shared_t nid_in) {
+  auto ptr_set_fresh = [](id_shared_t nid_in) {
     ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
     ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
-    return ptr_set_t({ _nullptr, fresh });
+    return ptr_set_t({_nullptr, fresh});
   };
   return insert(child_state, offset, size, replacement, ptr_set_fresh);
 }
@@ -201,7 +200,7 @@ summary_memory_state *analysis::summary_memory_state::domop(
   //  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
 
   summary_memory_state *result = new summary_memory_state(
-    sm, (me_compat->*domopper)(other_compat, current_node), head_compat.input, head_compat.output);
+    sm, warnings, (me_compat->*domopper)(other_compat, current_node), head_compat.input, head_compat.output);
   delete me_compat;
   delete other_compat;
   result->cleanup();
@@ -361,12 +360,12 @@ summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handl
   if(ptr_kind) {
     switch(ptr_kind.value()) {
       case NULL_PTR: {
-        cout << "Warning (load/store): Ignoring possible null pointer dereference" << endl;
+        if(warnings) cout << "Warning (load/store): Ignoring possible null pointer dereference" << endl;
         ignore = true;
         break;
       }
       case BAD_PTR: {
-        cout << "Warning (load/store): Ignoring possible bad pointer dereference" << endl;
+        if(warnings) cout << "Warning (load/store): Ignoring possible bad pointer dereference" << endl;
         ignore = true;
         force_weak = true;
         break;
@@ -708,8 +707,8 @@ num_linear *analysis::summary_memory_state::transLEInput(id_shared_t var_id, int
 }
 
 analysis::summary_memory_state::summary_memory_state(
-  shared_ptr<static_memory> sm, numeric_state *child_state, bool start_bottom)
-    : memory_state_base(child_state), sm(sm) {
+  shared_ptr<static_memory> sm, bool warnings, numeric_state *child_state, bool start_bottom)
+    : memory_state_base(child_state), sm(sm), warnings(warnings) {
   if(start_bottom) {
     /*
      * start value
@@ -772,9 +771,9 @@ summary_memory_state *analysis::summary_memory_state::join(domain_state *other, 
 }
 
 summary_memory_state *analysis::summary_memory_state::widen(domain_state *other, size_t current_node) {
-//  cout << "WIDENING OF" << endl;
-//  cout << "THIS: " << *this << endl;
-//  cout << "OTHER: " << *other << endl;
+  //  cout << "WIDENING OF" << endl;
+  //  cout << "THIS: " << *this << endl;
+  //  cout << "OTHER: " << *other << endl;
   summary_memory_state *other_casted = (summary_memory_state *)other;
   summary_memory_state *result = domop(true, other, current_node, &numeric_state::widen);
   if(!is_bottom() && !other_casted->is_bottom()) assert(!result->is_bottom());
@@ -868,12 +867,13 @@ void summary_memory_state::topify() {
 }
 
 summary_memory_state *analysis::summary_memory_state::start_value(
-  shared_ptr<static_memory> sm, numeric_state *start_num) {
-  return new summary_memory_state(sm, start_num, true);
+  shared_ptr<static_memory> sm, bool warnings, numeric_state *start_num) {
+  return new summary_memory_state(sm, warnings, start_num, true);
 }
 
-summary_memory_state *analysis::summary_memory_state::bottom(shared_ptr<static_memory> sm, numeric_state *bottom_num) {
-  return new summary_memory_state(sm, bottom_num, false);
+summary_memory_state *analysis::summary_memory_state::bottom(
+  shared_ptr<static_memory> sm, bool warnings, numeric_state *bottom_num) {
+  return new summary_memory_state(sm, warnings, bottom_num, false);
 }
 
 void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
@@ -970,7 +970,7 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
     bool is_static = false;
     tie(is_static, ignore) = static_address(alias.id);
     if(is_static) {
-      cout << "Warning: Ignoring possible store to static memory" << endl;
+      if(warnings) cout << "Warning: Ignoring possible store to static memory" << endl;
       continue;
     }
 

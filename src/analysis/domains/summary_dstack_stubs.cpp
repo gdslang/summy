@@ -29,14 +29,15 @@ using namespace std;
 using namespace analysis;
 
 shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::allocator(size_t allocation_site, size_t size) {
-  shared_ptr<summary_memory_state> malloc_summary = shared_ptr<summary_memory_state>(summary_dstack::sms_top(sm));
+  shared_ptr<summary_memory_state> malloc_summary =
+    shared_ptr<summary_memory_state>(summary_dstack::sms_top(sm, warnings));
 
   id_shared_t rax = id_shared_t(new gdsl::rreil::arch_id("A"));
   io_region rax_region = malloc_summary->region_by_id(&relation::get_regions, rax);
 
-//  auto allocation_site_ct = [=](id_shared_t nid_in) {
-//    return ptr(shared_ptr<gdsl::rreil::id>(new allocation_memory_id(allocation_site)), vs_finite::zero);
-//  };
+  //  auto allocation_site_ct = [=](id_shared_t nid_in) {
+  //    return ptr(shared_ptr<gdsl::rreil::id>(new allocation_memory_id(allocation_site)), vs_finite::zero);
+  //  };
 
   field &f_out = rax_region.insert(malloc_summary->child_state, 0, 64, false);
   num_var fout_var(f_out.num_id);
@@ -49,7 +50,8 @@ shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::allocator(size_
 
   field &sp_q = sp_region.insert(malloc_summary->child_state, 0, 64, false);
   num_var sp_q_var(sp_q.num_id);
-  num_expr *plus_eight_expr = new num_expr_lin(new num_linear_term(sp_q_var.copy(), new num_linear_vs(vs_finite::single(8))));
+  num_expr *plus_eight_expr =
+    new num_expr_lin(new num_linear_term(sp_q_var.copy(), new num_linear_vs(vs_finite::single(8))));
   malloc_summary->child_state->assign(&sp_q_var, plus_eight_expr);
   delete plus_eight_expr;
 
@@ -57,7 +59,7 @@ shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::allocator(size_
 }
 
 std::shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::no_effect() {
-  shared_ptr<summary_memory_state> no_effect_summary = shared_ptr<summary_memory_state>(summary_dstack::sms_top(sm));
+  shared_ptr<summary_memory_state> no_effect_summary = shared_ptr<summary_memory_state>(summary_dstack::sms_top(sm, warnings));
 
   return no_effect_summary;
 }

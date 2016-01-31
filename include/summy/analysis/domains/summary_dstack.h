@@ -51,6 +51,7 @@ struct function_desc {
 class summary_dstack : public fp_analysis {
 private:
   std::shared_ptr<static_memory> sm;
+  bool warnings;
   std::map<void *, function_desc> function_desc_map;
   std::set<size_t> _dirty_nodes;
   state_t state;
@@ -58,7 +59,7 @@ private:
   summary_dstack_stubs stubs;
   std::experimental::optional<summary_t> get_stub(void *address, size_t node);
 
-  static std::set<void*> unpack_f_addrs(summy::vs_shared_t f_addr);
+  static std::set<void *> unpack_f_addrs(summy::vs_shared_t f_addr);
   //  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);
 
   void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
@@ -69,16 +70,15 @@ private:
   void init_state();
 
 public:
-  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, std::set<size_t> const& f_starts);
-  [[deprecated]]
-  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm);
-  summary_dstack(cfg::cfg *cfg);
+  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings, std::set<size_t> const &f_starts);
+  [[deprecated]] summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings);
+  summary_dstack(cfg::cfg *cfg, bool warnings);
   ~summary_dstack();
 
   summary_memory_state *sms_bottom();
   summary_memory_state *sms_top();
-  static summary_memory_state *sms_bottom(std::shared_ptr<static_memory> sm);
-  static summary_memory_state *sms_top(std::shared_ptr<static_memory> sm);
+  static summary_memory_state *sms_bottom(std::shared_ptr<static_memory> sm, bool warnings);
+  static summary_memory_state *sms_top(std::shared_ptr<static_memory> sm, bool warnings);
   std::shared_ptr<domain_state> bottom();
   std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr, callers_t callers);
   std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr);
