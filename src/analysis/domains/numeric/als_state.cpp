@@ -738,6 +738,11 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
       //      cout << endl << "is" << endl;
       id_set_t joined;
       if(widening) {
+        /*
+         * Todo: We could disallow alias set growth during widening only with respect to
+         * dynamically created pointers; heap pointers and numeric pointers cannot grow
+         * the state unboundedly.
+         */
         joined = a_b ? x.second : aliases_b;
         if(!includes((a_b ? x.second : aliases_b).begin(), (a_b ? x.second : aliases_b).end(),
              (!a_b ? x.second : aliases_b).begin(), (!a_b ? x.second : aliases_b).end()))
