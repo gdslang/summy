@@ -63,9 +63,9 @@ ptr analysis::unpack_singleton(ptr_set_t aliases) {
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
   summary_memory_state *return_site = caller->copy();
 
-//    cout << "apply_summary" << endl;
-//    cout << "caller:" << endl
-//         << *caller << endl;
+  //    cout << "apply_summary" << endl;
+  //    cout << "caller:" << endl
+  //         << *caller << endl;
   //  cout << "summary: " << endl
   //       << *summary << endl;
 
@@ -529,12 +529,14 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
         }
       } else {
         resolve_collision();
+
         if(!rpd.ending_last) {
           //          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
           field_desc_t ending_first = rpd.ending_first;
-          if(ending_first.region_first) {
+
+          auto add_insertions = [&](numeric_state *x_n, numeric_state *y_n, io_region *io_rx, io_region *io_ry) {
             num_var ef_var(rpd.ending_first.f.num_id);
-            ptr_set_t aliases = a_n->queryAls(&ef_var);
+            ptr_set_t aliases = x_n->queryAls(&ef_var);
             bool has_no_badnull = false;
             for(auto &alias : aliases) {
               bool is_no_badnull = true;
@@ -545,66 +547,31 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
             }
 
             insertions.push_back(
-              [copy_paste, has_no_badnull, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-                //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_rb at "
-                //                            <<
-                //                            ending_first.offset << endl;
+              [copy_paste, has_no_badnull, io_rx, io_ry, x_n, y_n, ending_first /*, &copy_pasters*/]() {
                 field inserted;
                 if(copy_paste || has_no_badnull)
-                  inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false);
+                  inserted = io_ry->insert(y_n, ending_first.offset, ending_first.f.size, false);
                 else
-                  inserted = io_rb.insert(b_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
-                    ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
-                    return ptr_set_t({_badptr});
-                  });
-                //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
-                if(copy_paste) {
-                  num_var *from = new num_var(io_ra.out_r.at(ending_first.offset).num_id);
-                  num_var *to = new num_var(inserted.num_id);
-                  b_n->copy_paste(to, from, a_n);
-                  delete to;
-                  delete from;
-                }
-                //              });
-              });
-          } else {
-            num_var ef_var(rpd.ending_first.f.num_id);
-            ptr_set_t aliases = b_n->queryAls(&ef_var);
-            bool has_no_badnull = false;
-            for(auto &alias : aliases) {
-              bool is_no_badnull = true;
-              summy::rreil::id_visitor idv;
-              idv._([&](special_ptr *p) { is_no_badnull = false; });
-              alias.id->accept(idv);
-              if(is_no_badnull) has_no_badnull = true;
-            }
-
-            insertions.push_back(
-              [copy_paste, has_no_badnull, &io_ra, &io_rb, &a_n, &b_n, ending_first /*, &copy_pasters*/]() {
-                //                            cout << "Insertion of " << *ending_first.f.num_id << " into io_ra at "
-                //                            <<
-                //                            ending_first.offset << endl;
-                field inserted;
-                if(copy_paste || has_no_badnull)
-                  inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false);
-                else
-                  inserted = io_ra.insert(a_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
+                  inserted = io_ry->insert(y_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
                     ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
                     return ptr_set_t({_badptr});
                   });
 
-                //              copy_pasters.push_back([&io_ra, &io_rb, &a_n, &b_n, ending_first, inserted]() {
                 if(copy_paste) {
-                  num_var *from = new num_var(io_rb.out_r.at(ending_first.offset).num_id);
+                  num_var *from = new num_var(io_rx->out_r.at(ending_first.offset).num_id);
                   num_var *to = new num_var(inserted.num_id);
-                  a_n->copy_paste(to, from, b_n);
+                  y_n->copy_paste(to, from, x_n);
                   delete to;
                   delete from;
                 }
-                //              });
 
               });
-          }
+          };
+
+          if(ending_first.region_first)
+            add_insertions(a_n, b_n, &io_ra, &io_rb);
+          else
+            add_insertions(b_n, a_n, &io_rb, &io_ra);
         }
       }
       ++mri;
