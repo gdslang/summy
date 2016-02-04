@@ -1324,7 +1324,7 @@ ret",
   ASSERT_EQ(ar.max_it, 3);
 }
 
-TEST_F(summary_dstack_test, Malloc1) {
+TEST_F(summary_dstack_test, Malloc) {
   // test_malloc.c
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state(ar, "#include <stdlib.h>\n\
@@ -1362,7 +1362,7 @@ int main(void) {\n\
   ASSERT_TRUE(is_alloc);
 }
 
-TEST_F(summary_dstack_test, Malloc2) {
+TEST_F(summary_dstack_test, MallocInitList) {
   // test_malloc2.c
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state(ar, "\n\
@@ -1379,6 +1379,7 @@ int main(int argc, char **argv) {\n\
   __asm volatile ( \"after_head_malloc:\" );\n\
   head->next = NULL;\n\
   for(int i = 0; i < argc; i++) {\n\
+    __asm volatile ( \"before_next_malloc:\" );\n\
     struct node *next = malloc(sizeof(struct node));\n\
     __asm volatile ( \"after_next_malloc:\" );\n\
     next->next = head;\n\
@@ -1392,11 +1393,11 @@ int main(int argc, char **argv) {\n\
   ASSERT_NO_FATAL_FAILURE(query_als(a_after_head_malloc, ar, "after_head_malloc", "A"));
   ASSERT_EQ(a_after_head_malloc.size(), 2);
   bool has_null = false;
-  bool has_alloc = false;
+  unsigned char allocs = 0;
   for(auto &ptr : a_after_head_malloc) {
     summy::rreil::id_visitor idv;
     idv._([&](allocation_memory_id *alloc_id) {
-      has_alloc = true;
+      allocs++;
     });
     idv._([&](special_ptr *pid) {
       if(*pid == *special_ptr::_nullptr)
@@ -1405,18 +1406,18 @@ int main(int argc, char **argv) {\n\
     ptr.id->accept(idv);
   }
   ASSERT_TRUE(has_null);
-  ASSERT_TRUE(has_alloc);
+  ASSERT_EQ(allocs, 1);
 
   ptr_set_t a_after_next_malloc;
   ASSERT_NO_FATAL_FAILURE(query_als(a_after_next_malloc, ar, "after_next_malloc", "A"));
   ASSERT_EQ(a_after_next_malloc.size(), 3);
   has_null = false;
   bool has_bad = false;
-  has_alloc = false;
+  allocs = 0;
   for(auto &ptr : a_after_next_malloc) {
     summy::rreil::id_visitor idv;
     idv._([&](allocation_memory_id *alloc_id) {
-      has_alloc = true;
+      allocs++;
     });
     idv._([&](special_ptr *pid) {
       if(*pid == *special_ptr::_nullptr)
@@ -1428,7 +1429,61 @@ int main(int argc, char **argv) {\n\
   }
   ASSERT_TRUE(has_null);
   ASSERT_TRUE(has_bad);
-  ASSERT_TRUE(has_alloc);
+  ASSERT_EQ(allocs, 1);
+}
+
+TEST_F(summary_dstack_test, ListTraverse) {
+  // test_malloc2.c
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state(ar, "\n\
+#include <stdlib.h>\n\
+\n\
+struct node;\n\
+\n\
+struct node {\n\
+  struct node *next;\n\
+};\n\
+\n\
+int main(int argc, char **argv) {\n\
+  struct node head;\n\
+  struct node *last = head.next;\n\
+  for(int i = 0; i < argc; i++) {\n\
+    __asm volatile ( \"before_reassignment:\" );\n\
+    __asm volatile ( \"movq %0, %%r11\"\n\
+    : \"=a\" (x)\n\
+    : \"a\" (x)\n\
+    : \"r11\");\n\
+    last = last->next;\n\
+    __asm volatile ( \"movq %0, %%r11\"\n\
+    : \"=a\" (x)\n\
+    : \"a\" (x)\n\
+    : \"r11\");\n\
+    __asm volatile ( \"after_reassignment:\" );\n\
+  }\n\
+  return (int)last;\n\
+}",
+    C, false, 1));
+
+//  ptr_set_t a_after_head_malloc;
+//  ASSERT_NO_FATAL_FAILURE(query_als(a_after_head_malloc, ar, "after_head_malloc", "A"));
+//  ASSERT_EQ(a_after_head_malloc.size(), 2);
+//  bool has_null = false;
+//  unsigned char allocs = 0;
+//  for(auto &ptr : a_after_head_malloc) {
+//    summy::rreil::id_visitor idv;
+//    idv._([&](allocation_memory_id *alloc_id) {
+//      allocs++;
+//    });
+//    idv._([&](special_ptr *pid) {
+//      if(*pid == *special_ptr::_nullptr)
+//        has_null = true;
+//    });
+//    ptr.id->accept(idv);
+//  }
+//  ASSERT_TRUE(has_null);
+//  ASSERT_EQ(allocs, 1);
+
+  ASSERT_EQ(ar.max_it, 3);
 }
 
 TEST_F(summary_dstack_test, Ite1) {
