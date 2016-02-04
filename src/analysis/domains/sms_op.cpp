@@ -229,7 +229,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
         id_shared_t ptr_id = ptr.id;
         vs_shared_t offset = ptr.offset;
         optional<int64_t> offset_int;
-        value_set_visitor vsv;
+        value_set_visitor vsv(true);
         vsv._([&](vs_finite *vsf) {
           if(vsf->is_singleton()) offset_int = vsf->min();
         });
@@ -531,7 +531,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
         resolve_collision();
 
         if(!rpd.ending_last) {
-          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
+//          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
           field_desc_t ending_first = rpd.ending_first;
 
           auto add_insertions = [&](numeric_state *x_n, numeric_state *y_n, io_region *io_rx, io_region *io_ry) {
@@ -931,7 +931,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
            * Conflicts are now resolved during pointer machting, so there must
            * not be any conflicts left
            */
-          assert(false);
+//          assert(false);
         } else {
           if(!rpd.ending_last) {
             cout << *id << endl;

@@ -48,7 +48,7 @@ void fixpoint::iterate() {
     else
       node_iterations[node_id] = 0;
 
-    cout << "Next node: " << node_id << endl;
+    //    cout << "Next node: " << node_id << endl;
     //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
     //        if(max_iter() > 20)
@@ -62,7 +62,7 @@ void fixpoint::iterate() {
     if(constraints.size() > 0) {
       shared_ptr<domain_state> current = analysis->get(node_id);
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
-                cout << "Constraint from " << node_other << " to " << node_id << endl;
+        //        cout << "Constraint from " << node_other << " to " << node_id << endl;
 
         /*
          * Evaluate constraint
@@ -72,7 +72,7 @@ void fixpoint::iterate() {
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
-//        cout << "Evaluated: " << *evaluated << endl;
+        //        cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect

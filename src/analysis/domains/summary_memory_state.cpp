@@ -85,13 +85,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     }
   }
 
-  if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size) {
-    cout << "FOUND SUITING";
-    return out_r.find(offset)->second;
-  }
-
-  cout << offset << " /: " << size << endl;
-  cout << "CONT: " << contiguous << endl;
+  if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size) return out_r.find(offset)->second;
 
   id_shared_t nid_in = name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
   id_shared_t nid_out = name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
@@ -970,7 +964,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
 
 void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_getter_t getter, size_t size,
   updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
-      cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
+  //  cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
   bool bottom_before = is_bottom();
 
   bool force_weak = false;
@@ -1025,22 +1019,23 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
       /*
        * Todo: The code below is broken.
        */
-//      switch(o->get_open_dir()) {
-//        case UPWARD: {
-//          for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++)
-//            if(field_it->first + field_it->second.size > o->get_limit()) topify(io.out_r, field_it->first, size);
-//          break;
-//        }
-//        case DOWNWARD: {
-//          for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++) {
-//            if(field_it->first < o->get_limit())
-//              topify(io.out_r, field_it->first, size);
-//            else if(field_it->first < o->get_limit() + size)
-//              topify(io.out_r, field_it->first, size);
-//          }
-//          break;
-//        }
-//      }
+      //      switch(o->get_open_dir()) {
+      //        case UPWARD: {
+      //          for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++)
+      //            if(field_it->first + field_it->second.size > o->get_limit()) topify(io.out_r, field_it->first,
+      //            size);
+      //          break;
+      //        }
+      //        case DOWNWARD: {
+      //          for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++) {
+      //            if(field_it->first < o->get_limit())
+      //              topify(io.out_r, field_it->first, size);
+      //            else if(field_it->first < o->get_limit() + size)
+      //              topify(io.out_r, field_it->first, size);
+      //          }
+      //          break;
+      //        }
+      //      }
 
     });
     vsv._([&](vs_top *t) {
