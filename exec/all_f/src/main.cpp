@@ -100,12 +100,12 @@ int main(int argc, char **argv) {
   g.set_code(buffer, section.size, section.address);
 
   try {
-    sweep sweep(g, false);
-    sweep.transduce();
-    analysis::fcollect::fcollect fc(&sweep.get_cfg());
-    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-    fixpoint fp_collect(&fc, jd_man_fc);
-    fp_collect.iterate();
+//    sweep sweep(g, false);
+//    sweep.transduce();
+//    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+//    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+//    fixpoint fp_collect(&fc, jd_man_fc);
+//    fp_collect.iterate();
 
 //    for(size_t address : fc.result().result)
 //      cout << hex << address << dec << endl;
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
 //    return 0;
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-    summary_dstack ds(&cfg, se, dt.get_f_heads());
+    summary_dstack ds(&cfg, se, true, dt.get_f_heads());
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
 
@@ -194,5 +194,6 @@ int main(int argc, char **argv) {
 
   g.set_code(NULL, 0, 0);
   free(buffer);
+
   return 0;
 }

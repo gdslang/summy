@@ -52,6 +52,19 @@ jump_dir jd_manager::jump_direction(size_t from, size_t to) {
     return FORWARD;
 }
 
+size_t jd_manager::machine_address_of(size_t node) {
+  if(notified) {
+    notified = false;
+    fp.iterate();
+  }
+  analysis::addr::addr_result ar = addr.result();
+  auto node_addr =  ar.result.at(node)->get_address();
+  if(node_addr)
+    return node_addr.value().machine;
+  else
+    return 0;
+}
+
 void jd_manager::notify(const std::vector<update> &updates) {
   addr.analysis::fp_analysis::update(updates);
   notified = true;

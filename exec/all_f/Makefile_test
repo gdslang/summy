@@ -1,0 +1,50 @@
+# vim: noexpandtab
+
+_CC ?= clang
+_CPP ?= clang++
+LIBDS=-L../..
+LIBS=
+LIBFLAGS=$(LIBDS) $(LIBS)
+LDFLAGS=
+INCDS=
+OPT ?= 1
+CFLAGS=$(CFLAGS_EXTRA) -c -mcmodel=large -O$(OPT) -std=c11 -fno-inline -fno-optimize-sibling-calls -w $(INCDS)
+CPPFLAGS=$(CPPFLAGS_EXTRA) -c -mcmodel=large -O$(OPT) -std=c++11 -fno-inline -fno-optimize-sibling-calls $(INCDS)
+
+SPRE=.
+HPRE=.
+BPRE=.
+
+CSOURCES=$(shell find $(SPRE)/ -type f -name 'test_*.c')
+CPPSOURCES=$(shell find $(SPRE)/ -type f -name 'test_*.cpp')
+
+CEXES=$(CSOURCES:$(SPRE)/%.c=%)
+CPPEXES=$(CPPSOURCES:$(SPRE)/%.cpp=%)
+
+all: pre-build $(CEXES) $(CPPEXES)
+
+#SDIRS=$(shell find $(SPRE)/ -type d)
+#BDIRS=$(SDIRS:$(SPRE)/%=$(BPRE)/%)
+
+pre-build:
+
+COBJECTS=$(CSOURCES:$(SPRE)/%.c=$(BPRE)/%.o)
+CPPOBJECTS=$(CPPSOURCES:$(SPRE)/%.cpp=$(BPRE)/%.o)
+OBJECTS=$(COBJECTS) $(CPPOBJECTS)
+
+$(CEXES): $(BPRE)/% : $(SPRE)/%.o
+	$(_CC) $(LDFLAGS) $< $(LIBFLAGS) -o $@
+
+$(CPPEXES): $(BPRE)/% : $(SPRE)/%.o
+	$(_CPP) $(LDFLAGS) $< $(LIBFLAGS) -o $@
+
+-include ${COBJECTS:.o=.d}
+$(COBJECTS): $(BPRE)/%.o : $(SPRE)/%.c
+	$(_CC) $(CFLAGS) $< -o $@
+
+-include ${CPPOBJECTS:.o=.d}
+$(CPPOBJECTS): $(BPRE)/%.o : $(SPRE)/%.cpp
+	$(_CPP) $(CPPFLAGS) $< -o $@
+
+clean:
+	rm -rf $(COBJECTS) $(CPPOBJECTS) $(CEXES) $(CPPEXES)

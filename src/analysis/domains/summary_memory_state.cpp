@@ -85,7 +85,13 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     }
   }
 
-  if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size) return out_r.find(offset)->second;
+  if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size) {
+    cout << "FOUND SUITING";
+    return out_r.find(offset)->second;
+  }
+
+  cout << offset << " /: " << size << endl;
+  cout << "CONT: " << contiguous << endl;
 
   id_shared_t nid_in = name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
   id_shared_t nid_out = name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
@@ -730,11 +736,17 @@ void analysis::summary_memory_state::check_consistency() {
     assert(output.regions.empty());
   }
   //    cout << "check_consistency..." << *this << endl;
-  auto check_regions = [&](region_map_t &regions) {
-    for(auto &region_it : regions) {
+  auto check_regions = [&](region_map_t &regions_in, region_map_t &regions_out) {
+    for(auto &region_it : regions_in) {
+      auto region_out_it = regions_out.find(region_it.first);
+      assert(region_out_it != regions_out.end());
+
       //      cout << *region_it.first << endl;
       optional<int64_t> first_free;
       for(auto &f_it : region_it.second) {
+        auto f_out_it = region_out_it->second.find(f_it.first);
+        assert(f_out_it != region_out_it->second.end());
+
         if(first_free) assert(f_it.first >= first_free.value());
         first_free = f_it.first + (int64_t)f_it.second.size;
         num_var *nv = new num_var(f_it.second.num_id);
@@ -746,8 +758,8 @@ void analysis::summary_memory_state::check_consistency() {
       }
     }
   };
-  check_regions(input.regions);
-  check_regions(input.deref);
+  check_regions(input.regions, output.regions);
+  check_regions(input.deref, output.deref);
 }
 
 bool analysis::summary_memory_state::operator>=(const domain_state &other) const {
@@ -958,7 +970,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
 
 void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_getter_t getter, size_t size,
   updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
-  //    cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
+      cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
   bool bottom_before = is_bottom();
 
   bool force_weak = false;
@@ -1008,22 +1020,27 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
     vsv._([&](vs_open *o) {
       singleton = false;
       if(!handle_conflicts) return;
-      switch(o->get_open_dir()) {
-        case UPWARD: {
-          for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++)
-            if(field_it->first + field_it->second.size > o->get_limit()) topify(io.out_r, field_it->first, size);
-          break;
-        }
-        case DOWNWARD: {
-          for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++) {
-            if(field_it->first < o->get_limit())
-              topify(io.out_r, field_it->first, size);
-            else if(field_it->first < o->get_limit() + size)
-              topify(io.out_r, field_it->first, size);
-          }
-          break;
-        }
-      }
+      if(warnings) cout << "Warning (store): Ignoring store to an open interval offset" << endl;
+      _continue = true;
+      /*
+       * Todo: The code below is broken.
+       */
+//      switch(o->get_open_dir()) {
+//        case UPWARD: {
+//          for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++)
+//            if(field_it->first + field_it->second.size > o->get_limit()) topify(io.out_r, field_it->first, size);
+//          break;
+//        }
+//        case DOWNWARD: {
+//          for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++) {
+//            if(field_it->first < o->get_limit())
+//              topify(io.out_r, field_it->first, size);
+//            else if(field_it->first < o->get_limit() + size)
+//              topify(io.out_r, field_it->first, size);
+//          }
+//          break;
+//        }
+//      }
 
     });
     vsv._([&](vs_top *t) {

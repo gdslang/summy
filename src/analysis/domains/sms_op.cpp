@@ -518,7 +518,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
 
       if(rpd.collision) {
         if(rpd.ending_last) {
-          //          cout << "Collision (first) from " << from_current << " s:" << rpd.ending_first.f.size << endl;
+          //          cout << "Collision (first) from " << "from_current" << " s:" << rpd.ending_first.f.size << endl;
           //          cout << "Collision (second) from " << rpd.ending_last.value().offset << " s:" <<
           //          rpd.ending_last.value().f.size << endl;
           int64_t from_current = std::min(rpd.ending_first.offset, rpd.ending_last->offset);
@@ -531,7 +531,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
         resolve_collision();
 
         if(!rpd.ending_last) {
-          //          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
+          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
           field_desc_t ending_first = rpd.ending_first;
 
           auto add_insertions = [&](numeric_state *x_n, numeric_state *y_n, io_region *io_rx, io_region *io_ry) {
@@ -841,8 +841,8 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     return make_tuple(head, a_n, b_n);
   }
 
-  //  ((summary_memory_state *)a)->check_consistency();
-  //  ((summary_memory_state *)b)->check_consistency();
+//    ((summary_memory_state *)a)->check_consistency();
+//    ((summary_memory_state *)b)->check_consistency();
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
   //  cout << "++++++++++++++++++++++++++++++" << endl;
@@ -933,10 +933,10 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
            */
           assert(false);
         } else {
-          //          if(!rpd.ending_last) {
-          //            cout << *id << endl;
-          //            cout << *rpd.ending_first.f.num_id << endl;
-          //          }
+          if(!rpd.ending_last) {
+            cout << *id << endl;
+            cout << *rpd.ending_first.f.num_id << endl;
+          }
           assert(rpd.ending_last);
           //          if(rpd.ending_last) {
           field_desc_t fd_first = rpd.field_first_region().value();

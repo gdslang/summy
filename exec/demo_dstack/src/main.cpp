@@ -140,12 +140,12 @@ int main(int argc, char **argv) {
     fixpoint fp(&ds, jd_man);
     cfg.register_observer(&fp);
 
-    fp.iterate();
-
     ofstream dot_noa_fs;
     dot_noa_fs.open("output_noa.dot", ios::out);
     cfg.dot(dot_noa_fs);
     dot_noa_fs.close();
+
+    fp.iterate();
 
     cout << "Max its: " << fp.max_iter() << endl;
 
