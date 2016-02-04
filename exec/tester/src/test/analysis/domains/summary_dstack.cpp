@@ -81,11 +81,7 @@ struct _analysis_result {
   }
 };
 
-enum language_t {
-  ASSEMBLY,
-  C,
-  CPP
-};
+enum language_t { ASSEMBLY, C, CPP };
 
 static void state(_analysis_result &r, string program, language_t lang, bool gdsl_optimize, uint8_t compiler_opt) {
   SCOPED_TRACE("state()");
@@ -359,34 +355,34 @@ static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string lab
   query_deref_als(aliases, ar, mstate, _ptr);
 }
 
-static void query_deref_region(region_t &region, _analysis_result &ar, string label, string arch_id_name) {
-  SCOPED_TRACE("query_deref_region()");
-
-  auto analy_r = ar.ds_analyzed->result();
-
-  bool found;
-  binary_provider::entry_t e;
-  tie(found, e) = ar.elfp->symbol(label);
-  ASSERT_TRUE(found);
-
-  auto addr_it = ar.addr_node_map.find(e.address);
-  ASSERT_NE(addr_it, ar.addr_node_map.end());
-
-  ASSERT_GT(analy_r.result.size(), addr_it->second);
-
-  //  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
-
-  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
-  ptr_set_t aliases = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryAls(a);
-
-  ASSERT_EQ(aliases.size(), 1);
-  ptr const &_ptr = *aliases.begin();
-  ASSERT_EQ(*_ptr.offset, vs_finite::zero);
-
-  region = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->query_deref_output(_ptr.id);
-
-  delete a;
-}
+// static void query_deref_region(region_t &region, _analysis_result &ar, string label, string arch_id_name) {
+//  SCOPED_TRACE("query_deref_region()");
+//
+//  auto analy_r = ar.ds_analyzed->result();
+//
+//  bool found;
+//  binary_provider::entry_t e;
+//  tie(found, e) = ar.elfp->symbol(label);
+//  ASSERT_TRUE(found);
+//
+//  auto addr_it = ar.addr_node_map.find(e.address);
+//  ASSERT_NE(addr_it, ar.addr_node_map.end());
+//
+//  ASSERT_GT(analy_r.result.size(), addr_it->second);
+//
+//  //  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
+//
+//  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
+//  ptr_set_t aliases = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryAls(a);
+//
+//  ASSERT_EQ(aliases.size(), 1);
+//  ptr const &_ptr = *aliases.begin();
+//  ASSERT_EQ(*_ptr.offset, vs_finite::zero);
+//
+//  region = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->query_deref_output(_ptr.id);
+//
+//  delete a;
+//}
 
 static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
   SCOPED_TRACE("query_als()");
@@ -434,6 +430,50 @@ static void isTop(bool &result, _analysis_result &ar, string label) {
   result = (*state <= *top) && (*top <= *state);
 
   delete top;
+}
+
+static void assert_ptrs(optional<vs_shared_t> &offset, ptr_set_t &ptrs, bool expect_null, bool expect_bad, unsigned expect_allocs,
+  unsigned expect_anon, optional<string> ptr_name = nullopt) {
+  ASSERT_EQ(ptrs.size(), (expect_null ? 1 : 0) + (expect_bad ? 1 : 0) + expect_allocs + expect_anon);
+  bool has_null = false;
+  bool has_bad = false;
+  unsigned allocs = 0;
+  unsigned anon = 0;
+  bool has_name = false;
+  for(auto &ptr : ptrs) {
+    offset = ptr.offset;
+    summy::rreil::id_visitor idv;
+    idv._([&](allocation_memory_id *alloc_id) { allocs++; });
+    idv._([&](ptr_memory_id *pid) {
+      anon++;
+      if(ptr_name) {
+        summy::rreil::id_visitor ptr_id_visitor;
+        ptr_id_visitor._([&](numeric_id *nid) {
+          auto name = nid->get_name();
+          if(name && name.value() == ptr_name.value()) has_name = true;
+        });
+        pid->get_id()->accept(ptr_id_visitor);
+      }
+    });
+    idv._([&](special_ptr *pid) {
+      if(*pid == *special_ptr::_nullptr)
+        has_null = true;
+      else if(*pid == *special_ptr::badptr)
+        has_bad = true;
+    });
+    ptr.id->accept(idv);
+  }
+  ASSERT_EQ(has_null, expect_null);
+  ASSERT_EQ(has_bad, expect_bad);
+  ASSERT_EQ(allocs, expect_allocs);
+  ASSERT_EQ(anon, expect_anon);
+  ASSERT_EQ(has_name, ptr_name ? true : false);
+}
+
+static void assert_ptrs(ptr_set_t &ptrs, bool expect_null, bool expect_bad, unsigned expect_allocs,
+  unsigned expect_anon, optional<string> ptr_name = nullopt) {
+  optional<vs_shared_t> offset;
+  assert_ptrs(offset, ptrs, expect_null, expect_bad, expect_allocs, expect_anon, ptr_name);
 }
 
 TEST_F(summary_dstack_test, FromDstack_Basics) {
@@ -1202,7 +1242,8 @@ int main() {\n\
 \n\
    __asm volatile ( \"end:\" );\n\
      return 0;\n\
-}", false));
+}",
+    false));
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
@@ -1232,7 +1273,8 @@ int main() {\n\
 \n\
   __asm volatile ( \"end:\" );\n\
   return 0;\n\
-}", false));
+}",
+    false));
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
@@ -1262,7 +1304,8 @@ int main() {\n\
 \n\
   __asm volatile ( \"end:\" );\n\
   return 0;\n\
-}", false));
+}",
+    false));
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
@@ -1296,11 +1339,12 @@ int main() {\n\
 \n\
 __asm volatile ( \"end:\" );\n\
   return 0;\n\
-}", false));
+}",
+    false));
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
-  ASSERT_EQ(*r, make_shared<vs_finite>(vs_finite::elements_t { 84, 141, 198}));
+  ASSERT_EQ(*r, make_shared<vs_finite>(vs_finite::elements_t{84, 141, 198}));
 }
 
 TEST_F(summary_dstack_test, LoopWideningNarrowing) {
@@ -1355,9 +1399,7 @@ int main(void) {\n\
 
   summy::rreil::id_visitor idv;
   bool is_alloc = false;
-  idv._([&](allocation_memory_id *alloc_id) {
-    is_alloc = true;
-  });
+  idv._([&](allocation_memory_id *alloc_id) { is_alloc = true; });
   alloc_ptr.id->accept(idv);
   ASSERT_TRUE(is_alloc);
 }
@@ -1391,45 +1433,13 @@ int main(int argc, char **argv) {\n\
 
   ptr_set_t a_after_head_malloc;
   ASSERT_NO_FATAL_FAILURE(query_als(a_after_head_malloc, ar, "after_head_malloc", "A"));
-  ASSERT_EQ(a_after_head_malloc.size(), 2);
-  bool has_null = false;
-  unsigned char allocs = 0;
-  for(auto &ptr : a_after_head_malloc) {
-    summy::rreil::id_visitor idv;
-    idv._([&](allocation_memory_id *alloc_id) {
-      allocs++;
-    });
-    idv._([&](special_ptr *pid) {
-      if(*pid == *special_ptr::_nullptr)
-        has_null = true;
-    });
-    ptr.id->accept(idv);
-  }
-  ASSERT_TRUE(has_null);
-  ASSERT_EQ(allocs, 1);
+  assert_ptrs(a_after_head_malloc, true, false, 1, 0);
 
   ptr_set_t a_after_next_malloc;
   ASSERT_NO_FATAL_FAILURE(query_als(a_after_next_malloc, ar, "after_next_malloc", "A"));
-  ASSERT_EQ(a_after_next_malloc.size(), 3);
-  has_null = false;
-  bool has_bad = false;
-  allocs = 0;
-  for(auto &ptr : a_after_next_malloc) {
-    summy::rreil::id_visitor idv;
-    idv._([&](allocation_memory_id *alloc_id) {
-      allocs++;
-    });
-    idv._([&](special_ptr *pid) {
-      if(*pid == *special_ptr::_nullptr)
-        has_null = true;
-      else if(*pid == *special_ptr::badptr)
-        has_bad = true;
-    });
-    ptr.id->accept(idv);
-  }
-  ASSERT_TRUE(has_null);
-  ASSERT_TRUE(has_bad);
-  ASSERT_EQ(allocs, 1);
+  assert_ptrs(a_after_next_malloc, true, true, 1, 0);
+
+  ASSERT_EQ(ar.max_it, 3);
 }
 
 TEST_F(summary_dstack_test, ListTraverse) {
@@ -1448,15 +1458,15 @@ int main(int argc, char **argv) {\n\
   struct node head;\n\
   struct node *last = head.next;\n\
   for(int i = 0; i < argc; i++) {\n\
-    __asm volatile ( \"before_reassignment:\" );\n\
     __asm volatile ( \"movq %0, %%r11\"\n\
-    : \"=a\" (x)\n\
-    : \"a\" (x)\n\
+    : \"=a\" (last)\n\
+    : \"a\" (last)\n\
     : \"r11\");\n\
+    __asm volatile ( \"before_reassignment:\" );\n\
     last = last->next;\n\
     __asm volatile ( \"movq %0, %%r11\"\n\
-    : \"=a\" (x)\n\
-    : \"a\" (x)\n\
+    : \"=a\" (last)\n\
+    : \"a\" (last)\n\
     : \"r11\");\n\
     __asm volatile ( \"after_reassignment:\" );\n\
   }\n\
@@ -1464,24 +1474,13 @@ int main(int argc, char **argv) {\n\
 }",
     C, false, 1));
 
-//  ptr_set_t a_after_head_malloc;
-//  ASSERT_NO_FATAL_FAILURE(query_als(a_after_head_malloc, ar, "after_head_malloc", "A"));
-//  ASSERT_EQ(a_after_head_malloc.size(), 2);
-//  bool has_null = false;
-//  unsigned char allocs = 0;
-//  for(auto &ptr : a_after_head_malloc) {
-//    summy::rreil::id_visitor idv;
-//    idv._([&](allocation_memory_id *alloc_id) {
-//      allocs++;
-//    });
-//    idv._([&](special_ptr *pid) {
-//      if(*pid == *special_ptr::_nullptr)
-//        has_null = true;
-//    });
-//    ptr.id->accept(idv);
-//  }
-//  ASSERT_TRUE(has_null);
-//  ASSERT_EQ(allocs, 1);
+  ptr_set_t r11_before_reassignment;
+  ASSERT_NO_FATAL_FAILURE(query_als(r11_before_reassignment, ar, "before_reassignment", "R11"));
+  assert_ptrs(r11_before_reassignment, true, true, 0, 1);
+
+  ptr_set_t r11_after_reassignment;
+  ASSERT_NO_FATAL_FAILURE(query_als(r11_after_reassignment, ar, "after_reassignment", "R11"));
+  assert_ptrs(r11_after_reassignment, true, false, 0, 1);
 
   ASSERT_EQ(ar.max_it, 3);
 }
@@ -1496,35 +1495,11 @@ jmp end\n\
 else:\n\
 end:\n\
 nop\n",
-false));
+    false));
 
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
-  ASSERT_EQ(aliases_end_a.size(), 2);
-
-  bool has_null = false;
-  bool has_reg_deref_ptr = false;
   optional<vs_shared_t> offset;
-  for(auto &alias : aliases_end_a) {
-    offset = alias.offset;
-    summy::rreil::id_visitor idv;
-    idv._([&](special_ptr *spi) {
-      if(*spi == *special_ptr::_nullptr)
-        has_null = true;
-    });
-    idv._([&](ptr_memory_id *pid) {
-      summy::rreil::id_visitor ptr_id_visitor;
-      ptr_id_visitor._([&](numeric_id *nid) {
-        auto name = nid->get_name();
-        if(name && name.value() == "A_q")
-          has_reg_deref_ptr = true;
-      });
-      pid->get_id()->accept(ptr_id_visitor);
-    });
-   alias.id->accept(idv);
-  }
-  ASSERT_TRUE(has_null);
-  ASSERT_TRUE(has_reg_deref_ptr);
-  ASSERT_EQ(*offset.value(), shared_ptr<value_set>(new vs_finite({ 0, 9999 })));
+  assert_ptrs(offset, aliases_end_a, true, false, 0, 1, string("A_q"));
+  ASSERT_EQ(*offset.value(), shared_ptr<value_set>(new vs_finite({0, 9999})));
 }
-
