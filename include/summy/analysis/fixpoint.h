@@ -28,6 +28,8 @@ private:
   std::set<size_t> updated;
   cfg::jd_manager &jd_man;
 
+  bool widening;
+
   fp_priority_queue worklist;
 
   std::map<size_t, size_t> node_iterations;
@@ -35,7 +37,7 @@ public:
   virtual ~fixpoint() {
   }
 
-  fixpoint(class fp_analysis *analysis, cfg::jd_manager &jd_man);
+  fixpoint(class fp_analysis *analysis, cfg::jd_manager &jd_man, bool widening = true);
 
   void iterate();
   void notify(std::vector<cfg::update> const &updates);

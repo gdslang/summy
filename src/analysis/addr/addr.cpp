@@ -12,6 +12,13 @@
 #include <summy/cfg/node/node_visitor.h>
 #include <functional>
 #include <experimental/optional>
+#include <assert.h>
+#include <summy/cfg/edge/edge.h>
+#include <summy/cfg/edge/edge_visitor.h>
+
+using cfg::edge_visitor;
+using cfg::stmt_edge;
+using cfg::cond_edge;
 
 using namespace std;
 using namespace analysis;
@@ -25,13 +32,24 @@ void analysis::addr::addr::add_constraint(size_t from, size_t to, const ::cfg::e
     optional<node_addr> address;
     nv._([&](cfg::address_node *cn) { address = node_addr(cn->get_address(), 0); });
     to_node->accept(nv);
-    if(address)
-      return make_shared<addr_state>(address.value());
-    else {
-      optional<node_addr> addr_parent = state[from]->get_address();
-      if(addr_parent)
-        return make_shared<addr_state>(node_addr(addr_parent.value().machine, addr_parent.value().virt + 1));
-      else
+    if(address) {
+      addr_virt_counter_map[address.value().machine] = 1;
+      return make_shared<addr_state>(address.value(), path_virts_s(), get_next_virt);
+    } else {
+      bool incr_virt = false;
+      edge_visitor ev;
+      ev._([&](const stmt_edge *edge) {
+        incr_virt = true;
+      });
+      ev._([&](const cond_edge *edge) {
+        incr_virt = true;
+      });
+
+      e->accept(ev);
+      auto parent = state[from];
+      if(parent->get_address() && incr_virt) {
+        return shared_ptr<addr_state>(parent->next_virt());
+      } else
         return state[from];
     }
   };
@@ -59,13 +77,22 @@ void analysis::addr::addr::init_state() {
 }
 
 analysis::addr::addr::addr(cfg::cfg *cfg) : fp_analysis(cfg) {
+  get_next_virt = [&](size_t address) {
+    auto it = addr_virt_counter_map.find(address);
+//    assert(it != addr_virt_counter_map.end());
+    if(it != addr_virt_counter_map.end())
+      it->second++;
+    else
+      tie(it, ignore) = addr_virt_counter_map.insert(make_pair(address, 1));
+    return it->second;
+  };
   init();
 }
 
 analysis::addr::addr::~addr() {}
 
 std::shared_ptr<addr_state> analysis::addr::addr::bottom() {
-  return make_shared<addr_state>();
+  return make_shared<addr_state>(get_next_virt);
 }
 
 std::shared_ptr<addr_state> analysis::addr::addr::start_value(size_t node) {
@@ -74,7 +101,7 @@ std::shared_ptr<addr_state> analysis::addr::addr::start_value(size_t node) {
   optional<node_addr> address;
   nv._([&](cfg::address_node *cn) { address = node_addr(cn->get_address(), 0); });
   node_pl->accept(nv);
-  return make_shared<addr_state>(address.value());
+  return make_shared<addr_state>(address.value(), path_virts_s(), get_next_virt);
 }
 
 std::shared_ptr<domain_state> analysis::addr::addr::get(size_t node) {

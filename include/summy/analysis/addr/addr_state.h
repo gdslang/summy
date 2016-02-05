@@ -16,61 +16,78 @@
 #include <tuple>
 #include <ostream>
 #include <memory>
+#include <stdint.h>
 #include <experimental/optional>
 
 namespace analysis {
 namespace addr {
 
+typedef std::function<size_t(size_t)> get_next_virt_t;
+
+struct path_virts_s {
+  static const size_t n = 4;
+  static const size_t size_singleton_bits = sizeof(uint64_t)*8;
+
+  uint64_t data[n];
+
+  path_virts_s(uint64_t a, uint64_t b, uint64_t c, uint64_t d);
+  path_virts_s() : path_virts_s(1, 0, 0, 0) {}
+  path_virts_s(const path_virts_s &path_virts);
+
+  uint64_t &operator[](size_t index);
+  uint64_t const& operator[](size_t index) const;
+};
+
 struct node_addr {
   size_t machine;
   size_t virt;
 
-  node_addr(size_t machine, size_t virt) : machine(machine), virt(virt) {
-  }
+  node_addr(size_t machine, size_t virt) : machine(machine), virt(virt) {}
 
-  bool operator <(node_addr const& other) const;
-  bool operator <=(node_addr const& other) const;
-  bool operator ==(node_addr const& other) const;
+  bool operator<(node_addr const &other) const;
+  bool operator<=(node_addr const &other) const;
+  bool operator==(node_addr const &other) const;
 };
 
 std::ostream &operator<<(std::ostream &out, node_addr const &_this);
 
 class addr_state : public domain_state {
 private:
+  const path_virts_s path_virts;
   const std::experimental::optional<node_addr> address;
+  const get_next_virt_t get_next_virt;
 
   addr_state *domop(::analysis::domain_state *other);
+
 public:
-  std::experimental::optional<node_addr> const& get_address() {
+  std::experimental::optional<node_addr> const &get_address() {
     return address;
   }
 
-  addr_state(node_addr address) :
-      domain_state(), address(address) {
-  }
+  addr_state(node_addr address, path_virts_s path_virts, get_next_virt_t get_next_virt)
+      : domain_state(), path_virts(path_virts), address(address), get_next_virt(get_next_virt) {}
 
   /*
    * Copy constructor
    */
-  addr_state(addr_state &e) :
-      domain_state(e), address(e.address) {
-  }
+  addr_state(addr_state &e)
+      : domain_state(e), path_virts(e.path_virts), address(e.address), get_next_virt(e.get_next_virt) {}
 
   /**
    * Bottom constructor
    */
-  addr_state() :
-      domain_state(), address(std::experimental::nullopt) {
-  }
+  addr_state(get_next_virt_t get_next_virt)
+      : domain_state(), path_virts({0, 0, 0, 0}), address(std::experimental::nullopt), get_next_virt(get_next_virt) {}
 
   virtual addr_state *join(::analysis::domain_state *other, size_t current_node);
   virtual addr_state *narrow(::analysis::domain_state *other, size_t current_node);
   virtual addr_state *widen(::analysis::domain_state *other, size_t current_node);
 
+  addr_state *next_virt();
+
   virtual bool operator>=(::analysis::domain_state const &other) const;
 
   virtual void put(std::ostream &out) const;
 };
-
 }
 }

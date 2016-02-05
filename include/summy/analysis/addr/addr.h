@@ -13,6 +13,7 @@
 #include <vector>
 #include <functional>
 #include <set>
+#include <map>
 #include <ostream>
 #include <cppgdsl/rreil/id/id.h>
 #include <memory>
@@ -30,6 +31,8 @@ struct addr_result : public ::analysis::analysis_result<state_t> {
 class addr: public fp_analysis {
 private:
   state_t state;
+  std::map<size_t, size_t> addr_virt_counter_map;
+  get_next_virt_t get_next_virt;
 
   virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   virtual void remove_constraint(size_t from, size_t to);
@@ -39,7 +42,7 @@ public:
   addr(cfg::cfg *cfg);
   ~addr();
 
-  static std::shared_ptr<addr_state> bottom();
+  std::shared_ptr<addr_state> bottom();
   std::shared_ptr<addr_state> start_value(size_t node);
 
   std::shared_ptr<domain_state> get(size_t node);

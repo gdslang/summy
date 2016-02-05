@@ -931,7 +931,7 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
            * Conflicts are now resolved during pointer machting, so there must
            * not be any conflicts left
            */
-//          assert(false);
+          assert(false);
         } else {
           if(!rpd.ending_last) {
             cout << *id << endl;
