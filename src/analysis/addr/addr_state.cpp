@@ -14,11 +14,11 @@ using namespace analysis::addr;
 
 // path_virts
 
-analysis::addr::path_virts_s::path_virts_s(uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
+analysis::addr::path_virts_s::path_virts_s(uint64_t a) {
+  assert(path_virts_s::n > 0);
   data[0] = a;
-  data[1] = b;
-  data[2] = c;
-  data[3] = d;
+  for(size_t i = 1; i < path_virts_s::n; i++)
+    data[i] = 0;
 }
 
 analysis::addr::path_virts_s::path_virts_s(const path_virts_s &path_virts) {
@@ -32,6 +32,38 @@ uint64_t &analysis::addr::path_virts_s::operator[](size_t index) {
 
 uint64_t const &analysis::addr::path_virts_s::operator[](size_t index) const {
   return data[index];
+}
+
+bool analysis::addr::path_virts_s::operator<=(path_virts_s const& other) const {
+  bool subset = true;
+  for(size_t i = 0; i < path_virts_s::n; i++) {
+    //    if(!i) cout << "0x" << hex << path_virts[i] << " <==> " << other_casted->path_virts[i] << endl;
+    subset = subset && ((this->data[i] & other[i]) == this->data[i]);
+  }
+  return subset;
+}
+
+path_virts_s analysis::addr::path_virts_s::insert(size_t virt) const {
+  assert(virt < path_virts_s::n * path_virts_s::size_singleton_bits);
+  path_virts_s path_virts = *this;
+  for(size_t i = 0; i < path_virts_s::n; i++)
+    if(i == virt / path_virts_s::size_singleton_bits)
+      path_virts[i] |= (uint64_t)1 << (virt % path_virts_s::size_singleton_bits);
+  return path_virts;
+}
+
+path_virts_s analysis::addr::path_virts_s::_union(path_virts_s const& virts_other) const {
+  path_virts_s path_virts;
+  for(size_t i = 0; i < path_virts_s::n; i++)
+    path_virts[i] = this->data[i] | virts_other[i];
+  return path_virts;
+}
+
+std::ostream &analysis::addr::operator<<(std::ostream &out, const path_virts_s &_this) {
+  out << "0x";
+  for(size_t i = path_virts_s::n; i > 0; --i)
+    if(_this[i - 1] != 0) out << _this[i - 1];
+  return out;
 }
 
 // node_addr
@@ -66,40 +98,23 @@ addr_state *analysis::addr::addr_state::domop(::analysis::domain_state *other) {
   if(!this->address) return new addr_state(*other_casted);
   if(!other_casted->address) return new addr_state(*this);
 
-  bool me_subset = true;
-  for(size_t i = 0; i < path_virts_s::n; i++) {
-    if(!i)
-      cout << "0x" << hex << path_virts[i] << " <==> " << other_casted->path_virts[i] << endl;
-    me_subset = me_subset && ((path_virts[i] & other_casted->path_virts[i]) == path_virts[i]);
-  }
-  if(me_subset) return new addr_state(*this);
-
-  bool other_subset = true;
-  for(size_t i = 0; i < path_virts_s::n; i++)
-    other_subset = other_subset && ((other_casted->path_virts[i] & path_virts[i]) == other_casted->path_virts[i]);
-
-  if(other_subset) return new addr_state(*other_casted);
+  if(this->path_virts <= other_casted->path_virts)
+    return new addr_state(*this);
+  else if(other_casted->path_virts <= this->path_virts)
+    return new addr_state(*other_casted);
 
   auto &addr_value = address.value();
   auto &addr_value_other = other_casted->address.value();
   assert(addr_value.machine == addr_value_other.machine);
-//  size_t virt = get_next_virt(addr_value.machine);
   size_t virt = max(addr_value.virt, addr_value_other.virt);
-  cout << "MACHINE: " << addr_value.machine << endl;
-  assert(virt < path_virts_s::n * path_virts_s::size_singleton_bits);
-  path_virts_s path_virts;
-  for(size_t i = 0; i < path_virts_s::n; i++) {
-    path_virts[i] = this->path_virts[i] | other_casted->path_virts[i];
-//    if(i == virt / path_virts_s::size_singleton_bits)
-//      path_virts[i] |= (uint64_t)1 << (virt % path_virts_s::size_singleton_bits);
-  }
-  return new addr_state(node_addr(addr_value.machine, virt), path_virts, get_next_virt);
+  path_virts_s virts_unioned = this->path_virts._union(other_casted->path_virts);
+  return new addr_state(node_addr(addr_value.machine, virt), virts_unioned, get_next_virt);
 }
 
 addr_state *analysis::addr::addr_state::join(::analysis::domain_state *other, size_t current_node) {
-  cout << *this << " LUP " << *other << endl;
+  //  cout << *this << " LUP " << *other << endl;
   auto r = domop(other);
-  cout << "  = " << *r << endl;
+  //  cout << "  = " << *r << endl;
   return r;
 }
 
@@ -114,14 +129,7 @@ addr_state *analysis::addr::addr_state::widen(::analysis::domain_state *other, s
 addr_state *analysis::addr::addr_state::next_virt() {
   size_t machine = this->address.value().machine;
   size_t next_virt = get_next_virt(machine);
-  cout << "MACHINE: " << machine << endl;
-  assert(next_virt < path_virts_s::n * path_virts_s::size_singleton_bits);
-
-  path_virts_s path_virts = this->path_virts;
-  for(size_t i = 0; i < path_virts_s::n; i++)
-    if(i == next_virt / path_virts_s::size_singleton_bits)
-      path_virts[i] |= (uint64_t)1 << (next_virt % path_virts_s::size_singleton_bits);
-
+  path_virts_s path_virts = this->path_virts.insert(next_virt);
   return new addr_state(node_addr(machine, next_virt), path_virts, get_next_virt);
 }
 
@@ -139,7 +147,7 @@ bool analysis::addr::addr_state::operator>=(const ::analysis::domain_state &othe
 
 void analysis::addr::addr_state::put(std::ostream &out) const {
   if(address)
-    out << "Some(0x" << hex << address.value() << ", 0x" << path_virts[0] << dec << ")";
+    out << "Some(addr=0x" << hex << address.value() << ", virts=" << path_virts << dec << ")";
   else
     out << "None";
 }

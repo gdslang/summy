@@ -34,7 +34,7 @@ void analysis::addr::addr::add_constraint(size_t from, size_t to, const ::cfg::e
     to_node->accept(nv);
     if(address) {
       addr_virt_counter_map[address.value().machine] = 1;
-      return make_shared<addr_state>(address.value(), path_virts_s(), get_next_virt);
+      return make_shared<addr_state>(address.value(), get_next_virt);
     } else {
       bool incr_virt = false;
       edge_visitor ev;
@@ -101,7 +101,7 @@ std::shared_ptr<addr_state> analysis::addr::addr::start_value(size_t node) {
   optional<node_addr> address;
   nv._([&](cfg::address_node *cn) { address = node_addr(cn->get_address(), 0); });
   node_pl->accept(nv);
-  return make_shared<addr_state>(address.value(), path_virts_s(), get_next_virt);
+  return make_shared<addr_state>(address.value(), get_next_virt);
 }
 
 std::shared_ptr<domain_state> analysis::addr::addr::get(size_t node) {

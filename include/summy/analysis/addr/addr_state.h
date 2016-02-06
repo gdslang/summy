@@ -26,17 +26,24 @@ typedef std::function<size_t(size_t)> get_next_virt_t;
 
 struct path_virts_s {
   static const size_t n = 4;
-  static const size_t size_singleton_bits = sizeof(uint64_t)*8;
+  static const size_t size_singleton_bits = sizeof(uint64_t) * 8;
 
   uint64_t data[n];
 
-  path_virts_s(uint64_t a, uint64_t b, uint64_t c, uint64_t d);
-  path_virts_s() : path_virts_s(1, 0, 0, 0) {}
+  path_virts_s(uint64_t a);
+  path_virts_s() : path_virts_s(1) {}
   path_virts_s(const path_virts_s &path_virts);
 
   uint64_t &operator[](size_t index);
-  uint64_t const& operator[](size_t index) const;
+  uint64_t const &operator[](size_t index) const;
+
+  bool operator <=(path_virts_s const& other) const;
+
+  path_virts_s insert(size_t virt) const;
+  path_virts_s _union(path_virts_s const& virts_other) const;
 };
+
+std::ostream &operator<<(std::ostream &out, path_virts_s const &_this);
 
 struct node_addr {
   size_t machine;
@@ -59,13 +66,16 @@ private:
 
   addr_state *domop(::analysis::domain_state *other);
 
+  addr_state(node_addr address, path_virts_s path_virts, get_next_virt_t get_next_virt)
+      : domain_state(), path_virts(path_virts), address(address), get_next_virt(get_next_virt) {}
+
 public:
   std::experimental::optional<node_addr> const &get_address() {
     return address;
   }
 
-  addr_state(node_addr address, path_virts_s path_virts, get_next_virt_t get_next_virt)
-      : domain_state(), path_virts(path_virts), address(address), get_next_virt(get_next_virt) {}
+  addr_state(node_addr address, get_next_virt_t get_next_virt)
+      : domain_state(), path_virts(path_virts_s()), address(address), get_next_virt(get_next_virt) {}
 
   /*
    * Copy constructor
@@ -77,7 +87,7 @@ public:
    * Bottom constructor
    */
   addr_state(get_next_virt_t get_next_virt)
-      : domain_state(), path_virts({0, 0, 0, 0}), address(std::experimental::nullopt), get_next_virt(get_next_virt) {}
+      : domain_state(), path_virts(0), address(std::experimental::nullopt), get_next_virt(get_next_virt) {}
 
   virtual addr_state *join(::analysis::domain_state *other, size_t current_node);
   virtual addr_state *narrow(::analysis::domain_state *other, size_t current_node);
