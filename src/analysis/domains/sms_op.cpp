@@ -463,7 +463,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
    * in one of the regions.
    */
   auto compatMatchSeparateRegion = [&](io_region &io_ra, io_region &io_rb) {
-    //    cout << "Next region" << endl;
+//    cout << "Next region" << endl;
 
     num_var_pairs_t upcoming;
 
@@ -485,15 +485,19 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
 
     auto resolve_collision = [&]() {
       if(collision) {
-        //        cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
-        conflict_resolvers.push_back([&]() {
+//        cout << "Adding conflict resolver for collision from " << collision->from << " to " << collision->to << endl;
+        conflict_resolvers.push_back([&io_ra, &a_n, &io_rb, &b_n, collision]() {
+          auto collision_v = collision.value();
+//          cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
           //          summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
           //          summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
           //          cout << "a: " << *a_sms_before << endl;
           //          cout << "b: " << *b_sms_before << endl;
 
-          io_ra.insert(a_n, collision->from, collision->to - collision->from + 1, true);
-          io_rb.insert(b_n, collision->from, collision->to - collision->from + 1, true);
+//          cout << "Resolving in a..." << endl;
+          io_ra.insert(a_n, collision_v.from, collision_v.to - collision_v.from + 1, true);
+//          cout << "Resolving in b..." << endl;
+          io_rb.insert(b_n, collision_v.from, collision_v.to - collision_v.from + 1, true);
 
           //          summary_memory_state *a_sms_after = new summary_memory_state(NULL, a_n, a_in, a_out);
           //          summary_memory_state *b_sms_after = new summary_memory_state(NULL, b_n, b_in, b_out);
@@ -531,7 +535,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
         resolve_collision();
 
         if(!rpd.ending_last) {
-//          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
+          //          cout << "fr: " << *rpd.ending_first.f.num_id << " at " << rpd.ending_first.offset << endl;
           field_desc_t ending_first = rpd.ending_first;
 
           auto add_insertions = [&](numeric_state *x_n, numeric_state *y_n, io_region *io_rx, io_region *io_ry) {
@@ -841,17 +845,22 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     return make_tuple(head, a_n, b_n);
   }
 
-//    ((summary_memory_state *)a)->check_consistency();
-//    ((summary_memory_state *)b)->check_consistency();
+//  ((summary_memory_state *)a)->check_consistency();
+//  ((summary_memory_state *)b)->check_consistency();
+
+//  static int c = 0;
+//  printf("%d\n", c++);
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  cout << "++++++++++++++++++++++++++++++" << endl;
-  //  cout << "compat OF" << endl;
-  //  cout << *a << endl;
-  //  cout << "WITH" << endl;
-  //  cout << *b << endl;
+//  if(c == 1688) {
+//    cout << "compat OF" << endl;
+//    cout << *a << endl;
+//    cout << "WITH" << endl;
+//    cout << *b << endl;
+//  }
   //  }
 
   /*
@@ -931,12 +940,13 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
            * Conflicts are now resolved during pointer machting, so there must
            * not be any conflicts left
            */
+          cout << *id << endl;
           assert(false);
         } else {
-          if(!rpd.ending_last) {
-            cout << *id << endl;
-            cout << *rpd.ending_first.f.num_id << endl;
-          }
+          //          if(!rpd.ending_last) {
+          //            cout << *id << endl;
+          //            cout << *rpd.ending_first.f.num_id << endl;
+          //          }
           assert(rpd.ending_last);
           //          if(rpd.ending_last) {
           field_desc_t fd_first = rpd.field_first_region().value();

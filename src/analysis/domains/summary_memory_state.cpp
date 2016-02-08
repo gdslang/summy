@@ -94,6 +94,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   vector<num_var *> kill_vars;
   for(auto offset : offsets) {
+//    cout << "REMOVING AT OFFSET " << offset << endl;
     auto in_it = in_r.find(offset);
     auto out_it = out_r.find(offset);
     num_var *in_var = new num_var(in_it->second.num_id);
