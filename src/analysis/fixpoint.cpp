@@ -47,7 +47,7 @@ void fixpoint::iterate() {
     if(nits_it != node_iterations.end())
       nits_it->second++;
     else
-      node_iterations[node_id] = 0;
+      node_iterations[node_id] = 1;
 
 //    cout << "Next node: " << node_id << endl;
     //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
@@ -142,7 +142,6 @@ void fixpoint::iterate() {
        */
       propagate = false;
 
-
     //    cout << "Propagate: " << propagate << endl;
 
     if(propagate) {
@@ -185,8 +184,22 @@ void fixpoint::notify(const vector<::cfg::update> &updates) {
 }
 
 size_t analysis::fixpoint::max_iter() {
+//  map<size_t, set<size_t>> back;
+
   size_t max = 0;
-  for(auto nits_it : node_iterations)
-    if(nits_it.second > max) max = nits_it.second;
+  for(auto nits_it : node_iterations) {
+//    back[nits_it.second].insert(nits_it.first);
+    if(nits_it.second > max) {
+      max = nits_it.second;
+    }
+  }
+
+//  for(auto it : back) {
+//    cout << it.first << " its: ";
+//    for(auto it2 : it.second)
+//      cout << it2 << ", ";
+//    cout << endl;
+//  }
+
   return max;
 }

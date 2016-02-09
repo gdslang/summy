@@ -1365,7 +1365,7 @@ ret",
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
   ASSERT_EQ(*r, vs_finite::single(100));
 
-  ASSERT_EQ(ar.max_it, 3);
+  ASSERT_EQ(ar.max_it, 4);
 }
 
 TEST_F(summary_dstack_test, Malloc) {
@@ -1439,7 +1439,7 @@ int main(int argc, char **argv) {\n\
   ASSERT_NO_FATAL_FAILURE(query_als(a_after_next_malloc, ar, "after_next_malloc", "A"));
   assert_ptrs(a_after_next_malloc, true, true, 1, 0);
 
-  ASSERT_EQ(ar.max_it, 3);
+  ASSERT_EQ(ar.max_it, 4);
 }
 
 TEST_F(summary_dstack_test, ListTraverse) {
@@ -1482,7 +1482,7 @@ int main(int argc, char **argv) {\n\
   ASSERT_NO_FATAL_FAILURE(query_als(r11_after_reassignment, ar, "after_reassignment", "R11"));
   assert_ptrs(r11_after_reassignment, true, false, 0, 1);
 
-  ASSERT_EQ(ar.max_it, 3);
+  ASSERT_EQ(ar.max_it, 4);
 }
 
 TEST_F(summary_dstack_test, Ite1) {

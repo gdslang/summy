@@ -81,7 +81,8 @@ std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *
     }
 
     if(f_it->second.lt == DYNAMIC) {
-      cout << "Warning: Ignoring call to " << name << "." << endl;
+      if(warnings)
+        cout << "Warning: Ignoring call to " << name << "." << endl;
       return stubs.no_effect();
     }
   }

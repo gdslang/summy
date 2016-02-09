@@ -110,14 +110,14 @@ int main(int argc, char **argv) {
   size_t size = (function.offset - section_offset) + function.size + 1000;
   if(size > section_size) size = section_size;
 
-//  auto f_dyn = elfp.functions_dynamic();
-//  for(auto t : f_dyn) {
-//    string name;
-//    binary_provider::entry_t e;
-//    tie(name, e) = t;
-//    cout << name << "@0x" << hex << e.address << dec << endl;
-//  }
-//  return 0;
+  //  auto f_dyn = elfp.functions_dynamic();
+  //  for(auto t : f_dyn) {
+  //    string name;
+  //    binary_provider::entry_t e;
+  //    tie(name, e) = t;
+  //    cout << name << "@0x" << hex << e.address << dec << endl;
+  //  }
+  //  return 0;
 
   g.set_code(buffer, size, section_address);
   if(g.seek(function.address)) {
@@ -135,17 +135,17 @@ int main(int argc, char **argv) {
     cfg.commit_updates();
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-    summary_dstack ds(&cfg, se, true);
+    summary_dstack ds(&cfg, se, false);
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
     cfg.register_observer(&fp);
+
+    fp.iterate();
 
     ofstream dot_noa_fs;
     dot_noa_fs.open("output_noa.dot", ios::out);
     cfg.dot(dot_noa_fs);
     dot_noa_fs.close();
-
-    fp.iterate();
 
     cout << "Max its: " << fp.max_iter() << endl;
 
@@ -156,9 +156,8 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 84 || n.get_id() == 142 || true)
-//        out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-      out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *jd_man.address_of(n.get_id()) << "\"]";
+      if(n.get_id() == 154) out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+      //      out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *jd_man.address_of(n.get_id()) << "\"]";
       else
         n.dot(out);
     });
