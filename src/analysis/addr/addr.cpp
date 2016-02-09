@@ -5,14 +5,14 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/addr/addr.h>
-#include <summy/analysis/addr/addr_state.h>
 #include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <functional>
 #include <experimental/optional>
 #include <assert.h>
+#include <summy/analysis/addr/addr.h>
+#include <summy/analysis/addr/addr_state.h>
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/edge/edge_visitor.h>
 

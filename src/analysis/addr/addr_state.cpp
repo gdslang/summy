@@ -5,9 +5,9 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/addr/addr_state.h>
 #include <iostream>
 #include <assert.h>
+#include <summy/analysis/addr/addr_state.h>
 
 using namespace std;
 using namespace analysis::addr;
