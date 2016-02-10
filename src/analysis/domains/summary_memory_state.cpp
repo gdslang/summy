@@ -94,7 +94,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   vector<num_var *> kill_vars;
   for(auto offset : offsets) {
-//    cout << "REMOVING AT OFFSET " << offset << endl;
+    //    cout << "REMOVING AT OFFSET " << offset << endl;
     auto in_it = in_r.find(offset);
     auto out_it = out_r.find(offset);
     num_var *in_var = new num_var(in_it->second.num_id);
@@ -755,6 +755,17 @@ void analysis::summary_memory_state::check_consistency() {
   };
   check_regions(input.regions, output.regions);
   check_regions(input.deref, output.deref);
+
+  id_shared_t sp = id_shared_t(new gdsl::rreil::arch_id("SP"));
+  auto sp_it = output.regions.find(sp);
+  if(sp_it != output.regions.end()) {
+    num_var nv(sp_it->second.at(0).num_id);
+    ptr_set_t aliases_sp = child_state->queryAls(&nv);
+    if(aliases_sp.size() != 2) cout << aliases_sp << endl;
+    assert(aliases_sp.size() == 2);
+    for(auto p : aliases_sp)
+      assert(!(*p.id == *special_ptr::badptr));
+  }
 }
 
 bool analysis::summary_memory_state::operator>=(const domain_state &other) const {

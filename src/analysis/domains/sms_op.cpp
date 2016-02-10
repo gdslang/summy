@@ -325,11 +325,13 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
         auto aliases_mapped_it = ptr_map.find(alias_s.id);
         ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
         //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
-        //        cout << "search result for " << *_ptr.id << ": " << (aliases_mapped_it != alias_map.end()) <<
-        //        endl;
+        cout << "search result for " << *alias_s.id << ": " << (aliases_mapped_it != ptr_map.end()) << endl;
         if(aliases_mapped_it != ptr_map.end())
-          for(auto alias_c_next : aliases_c_next)
+          for(auto alias_c_next : aliases_c_next) {
+            cout << *alias_c_next.offset << " + " << *alias_s.offset << " = "
+                 << *(*alias_c_next.offset + alias_s.offset) << endl;
             aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
+          }
         //          });
         //          alias_s.id->accept(idv);
       }
@@ -463,7 +465,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
    * in one of the regions.
    */
   auto compatMatchSeparateRegion = [&](io_region &io_ra, io_region &io_rb) {
-//    cout << "Next region" << endl;
+    //    cout << "Next region" << endl;
 
     num_var_pairs_t upcoming;
 
@@ -485,18 +487,19 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
 
     auto resolve_collision = [&]() {
       if(collision) {
-//        cout << "Adding conflict resolver for collision from " << collision->from << " to " << collision->to << endl;
+        //        cout << "Adding conflict resolver for collision from " << collision->from << " to " << collision->to
+        //        << endl;
         conflict_resolvers.push_back([&io_ra, &a_n, &io_rb, &b_n, collision]() {
           auto collision_v = collision.value();
-//          cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
+          //          cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
           //          summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
           //          summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
           //          cout << "a: " << *a_sms_before << endl;
           //          cout << "b: " << *b_sms_before << endl;
 
-//          cout << "Resolving in a..." << endl;
+          //          cout << "Resolving in a..." << endl;
           io_ra.insert(a_n, collision_v.from, collision_v.to - collision_v.from + 1, true);
-//          cout << "Resolving in b..." << endl;
+          //          cout << "Resolving in b..." << endl;
           io_rb.insert(b_n, collision_v.from, collision_v.to - collision_v.from + 1, true);
 
           //          summary_memory_state *a_sms_after = new summary_memory_state(NULL, a_n, a_in, a_out);
@@ -845,22 +848,22 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     return make_tuple(head, a_n, b_n);
   }
 
-//  ((summary_memory_state *)a)->check_consistency();
-//  ((summary_memory_state *)b)->check_consistency();
+  //  ((summary_memory_state *)a)->check_consistency();
+  //  ((summary_memory_state *)b)->check_consistency();
 
-//  static int c = 0;
-//  printf("%d\n", c++);
+  //  static int c = 0;
+  //  printf("%d\n", c++);
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  cout << "++++++++++++++++++++++++++++++" << endl;
-//  if(c == 1688) {
-//    cout << "compat OF" << endl;
-//    cout << *a << endl;
-//    cout << "WITH" << endl;
-//    cout << *b << endl;
-//  }
+  //  if(c == 1688) {
+  //    cout << "compat OF" << endl;
+  //    cout << *a << endl;
+  //    cout << "WITH" << endl;
+  //    cout << *b << endl;
+  //  }
   //  }
 
   /*

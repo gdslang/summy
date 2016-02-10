@@ -49,11 +49,10 @@ void fixpoint::iterate() {
     else
       node_iterations[node_id] = 1;
 
-//    cout << "Next node: " << node_id << endl;
+    cout << "Next node: " << node_id << endl;
+//    if(node_id == 11) cout << "NODE 11!!" << endl;
     //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
-    //        if(max_iter() > 20)
-    //          break;
 
     bool propagate;
     bool needs_postprocessing = false;
@@ -73,7 +72,8 @@ void fixpoint::iterate() {
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
-        //        cout << "Evaluated: " << *evaluated << endl;
+                if(node_id == 65) cout << "Evaluated: " << *evaluated << endl;
+                if(node_id == 67) cout << "Evaluated: " << *evaluated << endl;
 
         /*
          * Apply box operator if this edge is a 'back edge' with respect
@@ -84,13 +84,14 @@ void fixpoint::iterate() {
         /*
          * Todo: Backward analysis?
          */
-        //        cout << "Current: " << *current << endl;
         if(widening && jd_man.jump_direction(node_other, node_id) == BACKWARD) {
-//          cout << "Back jump from " << node_other << " to " << node_id << endl;
+          cout << "Current: " << *current << endl;
+          cout << "Evaluated: " << *evaluated << endl;
+          //          cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
           tie(boxed, needs_postprocessing) = current->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
-          //          cout << "Boxed: " << *evaluated << endl;
+          cout << "Boxed: " << *evaluated << endl;
         }
 
         //        cout << "============================" << endl;
@@ -142,29 +143,31 @@ void fixpoint::iterate() {
        */
       propagate = false;
 
-    //    cout << "Propagate: " << propagate << endl;
+    //     cout << "Propagate: " << propagate << endl;
 
     if(propagate) {
       if(needs_postprocessing) {
         //            cout << "Postproc: " << node_id << endl;
         postprocess_worklist.push(node_id);
       }
-//      cout << node_id << " current " << *analysis->get(node_id) << endl;
-//      cout << node_id << " XX->XX " << *accumulator << endl;
+            cout << node_id << " current " << *analysis->get(node_id) << endl;
+            cout << node_id << " XX->XX " << *accumulator << endl;
       analysis->update(node_id, accumulator);
       updated.insert(node_id);
     }
 
+    //    cout << "Seen: " << (seen.find(node_id) != seen.end()) << endl;
+
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
       for(auto dependant : dependants) {
-        //        cout << "Pushing " << dependant << endl;
+        //        cout << "Pushing " << dependant << " as dep. of " << node_id << endl;
         worklist.push(dependant);
       }
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {
-      //            cout << "Adding dirty node: " << dirty << endl;
+      //      cout << "Adding dirty node: " << dirty << endl;
       worklist.push(dirty);
     }
 
@@ -184,22 +187,22 @@ void fixpoint::notify(const vector<::cfg::update> &updates) {
 }
 
 size_t analysis::fixpoint::max_iter() {
-//  map<size_t, set<size_t>> back;
+  map<size_t, set<size_t>> back;
 
   size_t max = 0;
   for(auto nits_it : node_iterations) {
-//    back[nits_it.second].insert(nits_it.first);
+    back[nits_it.second].insert(nits_it.first);
     if(nits_it.second > max) {
       max = nits_it.second;
     }
   }
 
-//  for(auto it : back) {
-//    cout << it.first << " its: ";
-//    for(auto it2 : it.second)
-//      cout << it2 << ", ";
-//    cout << endl;
-//  }
+  for(auto it : back) {
+    cout << it.first << " its: ";
+    for(auto it2 : it.second)
+      cout << it2 << ", ";
+    cout << endl;
+  }
 
   return max;
 }
