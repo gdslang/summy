@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include <summy/analysis/caller/caller.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/summary_dstack_stubs.h>
 #include <summy/analysis/fp_analysis.h>
@@ -54,11 +55,13 @@ private:
   bool warnings;
   std::map<void *, function_desc> function_desc_map;
   std::set<size_t> _dirty_nodes;
+//  caller::caller caller_analysis;
   state_t state;
 
   summary_dstack_stubs stubs;
   std::experimental::optional<summary_t> get_stub(void *address, size_t node);
 
+  std::set<size_t> get_callers(std::shared_ptr<global_state> state);
   static std::set<void *> unpack_f_addrs(summy::vs_shared_t f_addr);
   //  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);
 
@@ -80,7 +83,6 @@ public:
   static summary_memory_state *sms_bottom(std::shared_ptr<static_memory> sm, bool warnings);
   static summary_memory_state *sms_top(std::shared_ptr<static_memory> sm, bool warnings);
   std::shared_ptr<domain_state> bottom();
-  std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr, callers_t callers);
   std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr);
 
   std::shared_ptr<domain_state> get(size_t node);

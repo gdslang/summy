@@ -25,6 +25,7 @@
 #include <summy/value_set/value_set_visitor.h>
 #include <functional>
 #include <assert.h>
+#include <bjutil/printer.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/sms_op.h>
 #include <summy/rreil/id/memory_id.h>
@@ -89,6 +90,21 @@ std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *
   return nullopt;
 }
 
+std::set<size_t> analysis::summary_dstack::get_callers(std::shared_ptr<global_state> state) {
+  vs_shared_t f_addrs = state->get_f_addr();
+  callers_t callers;
+  value_set_visitor vsv;
+  vsv._([&](vs_finite *vf) {
+    for(size_t f_addr : vf->get_elements()) {
+      size_t head_id = this->function_desc_map.at((void*)f_addr).head_id;
+      for(size_t parent : cfg->in_edges(head_id))
+        callers.insert(parent);
+    }
+  });
+  f_addrs->accept(vsv);
+  return callers;
+}
+
 set<void *> analysis::summary_dstack::unpack_f_addrs(summy::vs_shared_t f_addr) {
   set<void *> addresses;
   value_set_visitor vsv(true);
@@ -121,7 +137,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       summary_memory_state *mstate_new = state_c->get_mstate()->copy();
       cb(mstate_new);
       shared_ptr<global_state> global_new =
-        shared_ptr<global_state>(new global_state(mstate_new, state_c->get_f_addr(), state_c->get_callers()));
+        shared_ptr<global_state>(new global_state(mstate_new, state_c->get_f_addr()));
       return global_new;
     };
   };
@@ -168,14 +184,15 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
              */
             set<void *> callers_addrs_trans = f_addrs;
             vector<size_t> callers_rest;
-            callers_rest.insert(callers_rest.begin(), state_c->get_callers().begin(), state_c->get_callers().end());
+            callers_t caller_callers = get_callers(state_c);
+            callers_rest.insert(callers_rest.begin(), caller_callers.begin(), caller_callers.end());
             while(!callers_rest.empty()) {
               size_t caller = callers_rest.back();
               callers_rest.pop_back();
               set<void *> caller_f_addrs = unpack_f_addrs(this->state[caller]->get_f_addr());
               callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
-              callers_t &caller_callers = this->state[caller]->get_callers();
-              callers_rest.insert(callers_rest.begin(), caller_callers.begin(), caller_callers.end());
+              callers_t caller_caller_callers = get_callers(this->state[caller]);
+              callers_rest.insert(callers_rest.begin(), caller_caller_callers.begin(), caller_caller_callers.end());
             }
 
             ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
@@ -281,7 +298,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //            cout << *summarized << endl;
 
             return shared_ptr<global_state>(
-              new global_state(summarized, state_c->get_f_addr(), state_c->get_callers()));
+              new global_state(summarized, state_c->get_f_addr()));
           };
           break;
         }
@@ -297,7 +314,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               //              shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
               //            else
               fd_it->second.summary_nodes.insert(to);
-              for(auto caller : state_c->get_callers())
+              callers_t caller_callers = get_callers(state_c);
+              for(auto caller : caller_callers)
                 assert_dependency(gen_dependency(to, caller));
             }
             return state_c;
@@ -336,7 +354,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         dest->accept(nv);
         assert(is_addr_node);
         state_new =
-          dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address), callers_t{from}));
+          dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
 
         auto &desc = this->function_desc_map.at(address);
         if(desc.field_reqs.size() > 0) {
@@ -481,16 +499,11 @@ summary_memory_state *analysis::summary_dstack::sms_top(std::shared_ptr<static_m
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::bottom() {
-  return shared_ptr<domain_state>(new global_state(sms_bottom(), value_set::bottom, callers_t{}));
-}
-
-std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t f_addr, callers_t callers) {
-  return shared_ptr<domain_state>(new global_state(sms_top(), f_addr, callers));
+  return shared_ptr<domain_state>(new global_state(sms_bottom(), value_set::bottom));
 }
 
 std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t f_addr) {
-  //  cout << "start_value()" << endl;
-  return start_value(f_addr, callers_t{});
+  return shared_ptr<domain_state>(new global_state(sms_top(), f_addr));
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {

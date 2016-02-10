@@ -26,7 +26,6 @@ class global_state: public domain_state {
 private:
   summary_memory_state *mstate;
   summy::vs_shared_t f_addr;
-  callers_t callers;
 public:
   summary_memory_state *get_mstate() {
     return mstate;
@@ -40,16 +39,12 @@ public:
     this->f_addr = f_addr;
   }
 
-  callers_t &get_callers() {
-    return callers;
-  }
-
-  global_state(summary_memory_state *mstate, summy::vs_shared_t f_addr, callers_t callers) :
-      mstate(mstate), f_addr(f_addr), callers(callers) {
+  global_state(summary_memory_state *mstate, summy::vs_shared_t f_addr) :
+      mstate(mstate), f_addr(f_addr) {
   }
 
   global_state(global_state const& o) :
-      mstate(o.mstate->copy()), f_addr(o.f_addr), callers(o.callers) {
+      mstate(o.mstate->copy()), f_addr(o.f_addr) {
   }
 
   ~global_state();
