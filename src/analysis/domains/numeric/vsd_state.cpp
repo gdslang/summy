@@ -406,7 +406,7 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
       //  vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
     }
   });
-  vsv._default([&](value_set *v) { symbol_offsets[special_ptr::badptr].push_back(vs_finite::zero); });
+  vsv._default([&](value_set *v) { symbol_offsets[special_ptr::_nullptr].push_back(nv_val); });
   nv_val->accept(vsv);
 
   ptr_set_t result;

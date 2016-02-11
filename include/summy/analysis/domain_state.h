@@ -38,6 +38,9 @@ public:
   bool operator<=(domain_state const &other) const;
   bool operator==(domain_state const &other) const;
 
+  virtual void check_consistency() {
+  }
+
   friend std::ostream &operator<< (std::ostream &out, domain_state const &_this);
 };
 

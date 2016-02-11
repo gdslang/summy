@@ -152,6 +152,8 @@ void fixpoint::iterate() {
       }
             cout << node_id << " current " << *analysis->get(node_id) << endl;
             cout << node_id << " XX->XX " << *accumulator << endl;
+      accumulator->check_consistency();
+      cout << "FOOOO" << endl;
       analysis->update(node_id, accumulator);
       updated.insert(node_id);
     }
