@@ -28,7 +28,7 @@ static std::vector<uint8_t> asm_compile(std::string _asm, bool objcopy) {
     exit([&]() { system("rm program.asm"); });
 
     if(system("as program.asm -o program.elf")) throw string("Unable to compile assembly program");
-    exit([&]() { system("rm program.elf"); });
+//    exit([&]() { system("rm program.elf"); });
 
     string file;
     if(objcopy) {

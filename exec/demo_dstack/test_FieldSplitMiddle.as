@@ -1,2 +1,2 @@
-mov $20, %rax
-mov $99, %ah
+first: mov $20, %rax
+seciond: mov $99, %ah
