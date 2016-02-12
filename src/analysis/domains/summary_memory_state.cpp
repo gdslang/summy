@@ -213,7 +213,7 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
     int64_t offset_current = out_r_it->first;
     if(offset_current >= offset + (int64_t)size) break;
 
-//    cout << "OC: " << offset_current << endl;
+    cout << "In the way: offset:" << offset_current << " size: " << out_r_it->second.size << endl;
 
     if(offset_current < offset) prefix_needed = true;
     if(!offset_first) offset_first = offset_current;
@@ -256,6 +256,9 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
 
   assert(offset_first);
   assert(total_size);
+
+  cout << "offset_first: " << offset_first.value() << endl;
+  cout << "total_size: " << total_size.value() << endl;
 
   //    contiguous = contiguous && (offset_next == offset + size);
 
@@ -375,18 +378,18 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
     child_state->assume(n_out, ptr_set_fresh);
   } else {
     if(fd_before) {
-//      cout << "Have before!" << endl;
+      cout << "Have before!" << endl;
       id_shared_t nid_out_before =
-        name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
+        name ? numeric_id::generate(name.value(), fd_before.value().offset, fd_before.value().size, false) : numeric_id::generate();
       out_r.insert(make_pair(fd_before.value().offset, field{fd_before.value().size, nid_out_before}));
       num_var n_out_before(nid_out_before);
       child_state->assume(&n_out_before, {badptr});
     }
     child_state->assume(n_out, {badptr});
     if(fd_after) {
-//      cout << "Have after!" << endl;
+      cout << "Have after! offset: " << fd_after.value().offset << ", size: " << fd_after.value().size << endl;
       id_shared_t nid_out_after =
-        name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
+        name ? numeric_id::generate(name.value(), fd_after.value().offset, fd_after.value().size, false) : numeric_id::generate();
       out_r.insert(make_pair(fd_after.value().offset, field{fd_after.value().size, nid_out_after}));
       num_var n_out_after(nid_out_after);
       child_state->assume(&n_out_after, {badptr});
@@ -933,7 +936,7 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
     if(overlap_region(io.out_r, offset, size))
       return new num_linear_vs(value_set::top);
     else {
-      field &f = io.insert(child_state, offset, size, false);
+      field &f = io.insert_new(child_state, offset, size, false);
       return new num_linear_term(new num_var(f.num_id));
     }
   } else

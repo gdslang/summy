@@ -39,7 +39,7 @@ shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::allocator(size_
   //    return ptr(shared_ptr<gdsl::rreil::id>(new allocation_memory_id(allocation_site)), vs_finite::zero);
   //  };
 
-  field &f_out = rax_region.insert(malloc_summary->child_state, 0, 64, false);
+  field &f_out = rax_region.insert_new(malloc_summary->child_state, 0, 64, false);
   num_var fout_var(f_out.num_id);
   ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
   ptr alloc_ptr = ptr(shared_ptr<gdsl::rreil::id>(new allocation_memory_id(allocation_site)), vs_finite::zero);
@@ -48,7 +48,7 @@ shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::allocator(size_
   id_shared_t sp = id_shared_t(new gdsl::rreil::arch_id("SP"));
   io_region sp_region = malloc_summary->region_by_id(&relation::get_regions, sp);
 
-  field &sp_q = sp_region.insert(malloc_summary->child_state, 0, 64, false);
+  field &sp_q = sp_region.insert_new(malloc_summary->child_state, 0, 64, false);
   num_var sp_q_var(sp_q.num_id);
   num_expr *plus_eight_expr =
     new num_expr_lin(new num_linear_term(sp_q_var.copy(), new num_linear_vs(vs_finite::single(8))));

@@ -491,14 +491,51 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
         //        << endl;
         conflict_resolvers.push_back([&io_ra, &a_n, &io_rb, &b_n, collision]() {
           auto collision_v = collision.value();
-          //          cout << "Resolving collision from " << collision->from << " to " << collision->to << endl;
-          //          summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
-          //          summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
-          //          cout << "a: " << *a_sms_before << endl;
-          //          cout << "b: " << *b_sms_before << endl;
+          cout << "Resolving collision from " << collision_v.from << " to " << collision_v.to << endl;
+          //                    summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
+          //                    summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
+          //                    cout << "a: " << *a_sms_before << endl;
+          //                    cout << "b: " << *b_sms_before << endl;
 
           //          cout << "Resolving in a..." << endl;
+          {
+            auto old_it = io_ra.in_r.begin();
+            while(old_it != io_ra.in_r.end()) {
+              cout << "Field from " << old_it->first << " with size " << old_it->second.size << endl;
+              old_it++;
+            }
+          }
+
+          region_t io_ra_in = io_ra.in_r;
+          region_t io_ra_out = io_ra.out_r;
+          io_region io_copy = io_region(io_ra_in, io_ra_out);
+
           io_ra.insert(a_n, collision_v.from, collision_v.to - collision_v.from + 1, true);
+          io_copy.insert_new(a_n, collision_v.from, collision_v.to - collision_v.from + 1, true);
+
+          bool problem = false;
+          auto new_it = io_ra_in.begin();
+          auto old_it = io_ra.in_r.begin();
+          while(new_it != io_ra_in.end() && old_it != io_ra.in_r.end()) {
+            cout << "Old field from " << old_it->first << " with size " << old_it->second.size << endl;
+            cout << "New field from " << new_it->first << " with size " << new_it->second.size << endl;
+            if(new_it->first != old_it->first) {
+              cout << "DIFF OFFSET: " << new_it->first << " / " << old_it->first << endl;
+              problem = true;
+            }
+            old_it++;
+            new_it++;
+          }
+          while(new_it != io_ra_in.end()) {
+            cout << "New field from " << new_it->first << " with size " << new_it->second.size << endl;
+            new_it++;
+          }
+          while(old_it != io_ra.in_r.end()) {
+            cout << "Old field from " << old_it->first << " with size " << old_it->second.size << endl;
+            old_it++;
+          }
+          assert(!problem);
+
           //          cout << "Resolving in b..." << endl;
           io_rb.insert(b_n, collision_v.from, collision_v.to - collision_v.from + 1, true);
 
@@ -525,13 +562,16 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
 
       if(rpd.collision) {
         if(rpd.ending_last) {
-          //          cout << "Collision (first) from " << "from_current" << " s:" << rpd.ending_first.f.size << endl;
-          //          cout << "Collision (second) from " << rpd.ending_last.value().offset << " s:" <<
-          //          rpd.ending_last.value().f.size << endl;
+//          cout << "Collision (first) from "
+//               << "from_current"
+//               << " s:" << rpd.ending_first.f.size << endl;
+//          cout << "Collision (second) from " << rpd.ending_last.value().offset
+//               << " s:" << rpd.ending_last.value().f.size << endl;
           int64_t from_current = std::min(rpd.ending_first.offset, rpd.ending_last->offset);
           int64_t from = collision ? collision->from : from_current;
-          size_t size = rpd.ending_first.f.size;
-          if(rpd.ending_last) size = std::max(size, rpd.ending_last->f.size);
+          size_t size = rpd.ending_first.offset + rpd.ending_first.f.size - from;
+          if(rpd.ending_last) size = std::max(size, rpd.ending_last + rpd.ending_last->f.size - from);
+          assert(size > 0);
           collision = collision_t{from, from_current + (int64_t)size - 1};
         }
       } else {
@@ -557,9 +597,9 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
               [copy_paste, has_no_badnull, io_rx, io_ry, x_n, y_n, ending_first /*, &copy_pasters*/]() {
                 field inserted;
                 if(copy_paste || has_no_badnull)
-                  inserted = io_ry->insert(y_n, ending_first.offset, ending_first.f.size, false);
+                  inserted = io_ry->insert_new(y_n, ending_first.offset, ending_first.f.size, false);
                 else
-                  inserted = io_ry->insert(y_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
+                  inserted = io_ry->insert_new(y_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
                     ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
                     return ptr_set_t({_badptr});
                   });
