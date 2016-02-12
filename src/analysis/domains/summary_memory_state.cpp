@@ -179,7 +179,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
 field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
   std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
-  cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << endl;
+//  cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << endl;
   //  struct field_desc_t {
   //    int64_t offset;
   //    field f;
@@ -195,12 +195,12 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
   /*
    * Check whether preceeding fields overlaps; in this case, we include the preceeding field
    */
-  cout << "??? end? " << (out_r_it == out_r.end()) << endl;
-  cout << "??? begin? " << (out_r_it == out_r.begin()) << endl;
-  cout << "??? size? " << (out_r.size()) << endl;
+//  cout << "??? end? " << (out_r_it == out_r.end()) << endl;
+//  cout << "??? begin? " << (out_r_it == out_r.begin()) << endl;
+//  cout << "??? size? " << (out_r.size()) << endl;
   if(out_r_it != out_r.begin() && (out_r_it == out_r.end() || out_r_it->first > offset)) {
     --out_r_it;
-    cout << ":-( " << out_r_it->first << endl;
+//    cout << ":-( " << out_r_it->first << endl;
     if(out_r_it->first + (int64_t)out_r_it->second.size <= offset) out_r_it++;
   }
 
@@ -213,7 +213,7 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
     int64_t offset_current = out_r_it->first;
     if(offset_current >= offset + (int64_t)size) break;
 
-    cout << "OC: " << offset_current << endl;
+//    cout << "OC: " << offset_current << endl;
 
     if(offset_current < offset) prefix_needed = true;
     if(!offset_first) offset_first = offset_current;
@@ -259,10 +259,10 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
 
   //    contiguous = contiguous && (offset_next == offset + size);
 
-  if(replaced.size() == 1) {
-  cout << "offsets[0]: " << offsets[0] << endl;
-  cout << "offset: " << offset << endl;
-  }
+//  if(replaced.size() == 1) {
+//  cout << "offsets[0]: " << offsets[0] << endl;
+//  cout << "offset: " << offset << endl;
+//  }
 
   if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size) return out_r.find(offset)->second;
 
@@ -289,7 +289,7 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
     in_r.insert(make_pair(offset, f_before));
     ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
     ptr_set_t ptr_set = ptr_set_t({_nullptr, fresh});
-//    child_state->assume(&n_in, ptr_set);
+    child_state->assume(&n_in, ptr_set);
     return ptr_set;
   };
 
@@ -337,7 +337,7 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
   id_shared_t nid_out = name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
   num_var *n_out = new num_var(nid_out);
 
-  cout << "contiguous=" << contiguous << endl;
+//  cout << "contiguous=" << contiguous << endl;
 
   /*
    * Todo: size > 64?
@@ -375,21 +375,21 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
     child_state->assume(n_out, ptr_set_fresh);
   } else {
     if(fd_before) {
-      cout << "Have before!" << endl;
+//      cout << "Have before!" << endl;
       id_shared_t nid_out_before =
         name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
       out_r.insert(make_pair(fd_before.value().offset, field{fd_before.value().size, nid_out_before}));
       num_var n_out_before(nid_out_before);
-//      child_state->assume(&n_out_before, {badptr});
+      child_state->assume(&n_out_before, {badptr});
     }
     child_state->assume(n_out, {badptr});
     if(fd_after) {
-      cout << "Have after!" << endl;
+//      cout << "Have after!" << endl;
       id_shared_t nid_out_after =
         name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
       out_r.insert(make_pair(fd_after.value().offset, field{fd_after.value().size, nid_out_after}));
       num_var n_out_after(nid_out_after);
-//      child_state->assume(&n_out_after, {badptr});
+      child_state->assume(&n_out_after, {badptr});
     }
   }
   //  child_state->assign(n_out, ass_e);

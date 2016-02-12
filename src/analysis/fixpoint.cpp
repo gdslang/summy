@@ -49,7 +49,7 @@ void fixpoint::iterate() {
     else
       node_iterations[node_id] = 1;
 
-    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
     //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
     //        if(max_iter() > 20)
