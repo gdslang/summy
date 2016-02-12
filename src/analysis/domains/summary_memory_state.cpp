@@ -67,8 +67,10 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   /*
    * Check whether preceeding fields overlaps; in this case, we include the preceeding field
    */
-  if(out_r_it != out_r.begin() && out_r_it->first > offset) {
+  cout << "??? " << (out_r_it == out_r.end()) << endl;
+  if(out_r_it != out_r.begin() && (out_r_it == out_r.end() || out_r_it->first > offset)) {
     --out_r_it;
+    cout << ":-( " << out_r_it->first << endl;
     if(out_r_it->first + (int64_t)out_r_it->second.size <= offset) out_r_it++;
   }
 
@@ -79,6 +81,10 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   for(; out_r_it != out_r.end(); out_r_it++) {
     int64_t offset_current = out_r_it->first;
+    if(offset_current >= offset + (int64_t)size) break;
+
+    cout << "OC: " << offset_current << endl;
+
     if(offset_current < offset) prefix_needed = true;
     if(!offset_first) offset_first = offset_current;
     field &f = out_r_it->second;
@@ -87,7 +93,6 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     else
       total_size = total_size.value() + f.size;
 
-    if(offset_current >= offset + (int64_t)size) break;
     offsets.push_back(offset_current);
     if(contiguous) {
       if(offset_current == offset_next) {
@@ -105,15 +110,20 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     assert(total_size);
     int64_t offset_after_existing = offset_first.value() + total_size.value();
     int64_t offset_after_new = offset + size;
-    if(offset_after_existing > offset_after_new)
+    if(offset_after_existing > offset_after_new) {
       contiguous = false;
-    else if(offset_after_new > offset_after_existing) {
+      suffix_needed = true;
+    } else if(offset_after_new > offset_after_existing) {
       contiguous = false;
       total_size = total_size.value() + (offset_after_new - offset_after_existing);
       suffix_needed = true;
     }
   }
-  //  contiguous = contiguous && (offset_next == offset + size);
+
+  assert(offset_first);
+  assert(total_size);
+
+  //    contiguous = contiguous && (offset_next == offset + size);
 
   if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size) return out_r.find(offset)->second;
 
@@ -140,7 +150,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     in_r.insert(make_pair(offset, f_before));
     ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
     ptr_set_t ptr_set = ptr_set_t({_nullptr, fresh});
-    child_state->assume(&n_in, ptr_set);
+//    child_state->assume(&n_in, ptr_set);
     return ptr_set;
   };
 
@@ -152,9 +162,11 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   optional<field_desc> fd_before;
   if(prefix_needed) {
-    fd_before.value().offset = offset_first.value();
-    fd_before.value().size = offset - offset_first.value();
-    fd_before.value().ptr_set = insert_in(fd_before.value().offset, fd_before.value().size);
+    field_desc fd;
+    fd.offset = offset_first.value();
+    fd.size = offset - offset_first.value();
+    fd.ptr_set = insert_in(fd.offset, fd.size);
+    fd_before = fd;
   }
 
   id_shared_t nid_in = name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
@@ -176,9 +188,11 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   optional<field_desc> fd_after;
   if(suffix_needed) {
-    fd_after.value().offset = offset + size;
-    fd_after.value().size = (offset_first.value() + total_size.value()) - fd_after.value().offset;
-    fd_after.value().ptr_set = insert_in(fd_after.value().offset, fd_after.value().size);
+    field_desc fd;
+    fd.offset = offset + size;
+    fd.size = (offset_first.value() + total_size.value()) - fd.offset;
+    fd.ptr_set = insert_in(fd.offset, fd.size);
+    fd_after = fd;
   }
 
   id_shared_t nid_out = name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
@@ -190,6 +204,9 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
    * Todo: size > 64?
    */
   if(contiguous && replaced.size() > 0 && size <= 64) {
+    assert(!fd_before);
+    assert(!fd_after);
+
     optional<num_var *> temp;
     for(size_t i = replaced.size(); i > 0; i--) {
       field f = replaced[i - 1];
@@ -219,19 +236,21 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     child_state->assume(n_out, ptr_set_fresh);
   } else {
     if(fd_before) {
+      cout << "Have before!" << endl;
       id_shared_t nid_out_before =
         name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
       out_r.insert(make_pair(fd_before.value().offset, field{fd_before.value().size, nid_out_before}));
       num_var n_out_before(nid_out_before);
-      child_state->assume(&n_out_before, {badptr});
+//      child_state->assume(&n_out_before, {badptr});
     }
     child_state->assume(n_out, {badptr});
     if(fd_after) {
+      cout << "Have after!" << endl;
       id_shared_t nid_out_after =
         name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
       out_r.insert(make_pair(fd_after.value().offset, field{fd_after.value().size, nid_out_after}));
       num_var n_out_after(nid_out_after);
-      child_state->assume(&n_out_after, {badptr});
+//      child_state->assume(&n_out_after, {badptr});
     }
   }
   //  child_state->assign(n_out, ass_e);
@@ -837,18 +856,18 @@ void analysis::summary_memory_state::check_consistency() {
   check_regions(input.regions, output.regions);
   check_regions(input.deref, output.deref);
 
-  id_shared_t sp = id_shared_t(new gdsl::rreil::arch_id("SP"));
-  auto sp_it = output.regions.find(sp);
-  if(sp_it != output.regions.end()) {
-    num_var nv(sp_it->second.at(0).num_id);
-    ptr_set_t aliases_sp = child_state->queryAls(&nv);
-    cout << nv << endl;
-    cout << aliases_sp << endl;
-    cout << *child_state << endl;
-    assert(aliases_sp.size() == 2);
-    for(auto p : aliases_sp)
-      assert(!(*p.id == *special_ptr::badptr));
-  }
+  //  id_shared_t sp = id_shared_t(new gdsl::rreil::arch_id("SP"));
+  //  auto sp_it = output.regions.find(sp);
+  //  if(sp_it != output.regions.end()) {
+  //    num_var nv(sp_it->second.at(0).num_id);
+  //    ptr_set_t aliases_sp = child_state->queryAls(&nv);
+  //    cout << nv << endl;
+  //    cout << aliases_sp << endl;
+  //    cout << *child_state << endl;
+  //    assert(aliases_sp.size() == 2);
+  //    for(auto p : aliases_sp)
+  //      assert(!(*p.id == *special_ptr::badptr));
+  //  }
 }
 
 bool analysis::summary_memory_state::operator>=(const domain_state &other) const {
