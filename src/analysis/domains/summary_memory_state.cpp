@@ -51,134 +51,6 @@ analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimenta
 
 field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
   std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
-  //  struct field_desc_t {
-  //    int64_t offset;
-  //    field f;
-  //  };
-
-  vector<int64_t> offsets;
-  vector<field> replaced;
-  bool contiguous = true;
-  int64_t offset_next = offset;
-
-  auto out_r_it = out_r.lower_bound(offset);
-
-  /*
-   * Check whether preceeding fields overlaps; in this case, we include the preceeding field
-   */
-  if(out_r_it != out_r.begin() && out_r_it->first > offset) {
-    --out_r_it;
-    if(out_r_it->first + (int64_t)out_r_it->second.size <= offset) out_r_it++;
-  }
-
-  for(; out_r_it != out_r.end(); out_r_it++) {
-    int64_t offset_current = out_r_it->first;
-    if(offset_current >= offset + (int64_t)size) break;
-    offsets.push_back(offset_current);
-    if(contiguous) {
-      if(offset_current == offset_next) {
-        field &f = out_r_it->second;
-        replaced.push_back(f);
-        offset_next += f.size;
-      } else
-        contiguous = false;
-    }
-  }
-
-  if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size) return out_r.find(offset)->second;
-
-  id_shared_t nid_in = name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
-  id_shared_t nid_out = name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
-  num_var *n_in = new num_var(nid_in);
-  num_var *n_out = new num_var(nid_out);
-
-  vector<num_var *> kill_vars;
-  for(auto offset : offsets) {
-//    cout << "REMOVING AT OFFSET " << offset << endl;
-    auto in_it = in_r.find(offset);
-    auto out_it = out_r.find(offset);
-    num_var *in_var = new num_var(in_it->second.num_id);
-    num_var *out_var = new num_var(out_it->second.num_id);
-    kill_vars.push_back(in_var);
-    kill_vars.push_back(out_var);
-    in_r.erase(in_it);
-    out_r.erase(out_it);
-  }
-
-  /*
-   * We do not assign from the input to the output so that there is no equality relation between the input
-   * and output. Equality relations result in tests to apply to all equal variables which, in turn, may result
-   * in input variables to get their aliasing relations or offsets constrained.
-   */
-  //  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
-  //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)),
-  //  vs_finite::zero) << endl;
-  ptr_set_t ptr_set_fresh = ptr_set_ct(nid_in);
-  ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
-  ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
-  child_state->assume(n_in, ptr_set_fresh);
-
-  /*
-   * Todo: size > 64?
-   */
-  if(contiguous && replaced.size() > 0 && size <= 64) {
-    optional<num_var *> temp;
-    for(size_t i = replaced.size(); i > 0; i--) {
-      field f = replaced[i - 1];
-      if(temp) {
-        num_expr *shift =
-          new num_expr_bin(new num_linear_term((*temp)->copy()), SHL, new num_linear_vs(vs_finite::single(f.size)));
-        id_shared_t temp_next = numeric_id::generate();
-        num_var *temp_var = new num_var(temp_next);
-        child_state->assign(temp_var, shift);
-        //        cout << "assign " << *temp_var << " = " << *shift << endl;
-        num_expr *addition =
-          new num_expr_lin(new num_linear_term(1, temp_var->copy(), new num_linear_term(new num_var(f.num_id))));
-        child_state->assign(*temp, addition);
-        //        cout << "assign " << **temp << " = " << *addition << endl;
-        child_state->kill({temp_var});
-        delete addition;
-        delete temp_var;
-        delete shift;
-      } else {
-        temp = new num_var(f.num_id);
-      }
-    }
-    num_expr *temp_expr = new num_expr_lin(new num_linear_term(*temp));
-    child_state->assign(n_out, temp_expr);
-    delete temp_expr;
-  } else if(!replacement) {
-    child_state->assume(n_out, ptr_set_fresh);
-  } else
-    child_state->assume(n_out, {badptr});
-  //  child_state->assign(n_out, ass_e);
-
-  in_r.insert(make_pair(offset, field{size, nid_in}));
-  region_t::iterator field_out_it;
-  tie(field_out_it, ignore) = out_r.insert(make_pair(offset, field{size, nid_out}));
-
-  delete n_in;
-  delete n_out;
-  //  delete ass_e;
-
-  child_state->kill(kill_vars);
-  for(num_var *var : kill_vars)
-    delete var;
-
-  return field_out_it->second;
-}
-
-field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
-  auto ptr_set_fresh = [](id_shared_t nid_in) {
-    ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
-    ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
-    return ptr_set_t({_nullptr, fresh});
-  };
-  return insert(child_state, offset, size, replacement, ptr_set_fresh);
-}
-
-field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
-  std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
 //  cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << endl;
   //  struct field_desc_t {
   //    int64_t offset;
@@ -411,13 +283,13 @@ field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offse
   return field_out_it->second;
 }
 
-field &analysis::io_region::insert_new(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
+field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
   auto ptr_set_fresh = [](id_shared_t nid_in) {
     ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
     ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
     return ptr_set_t({_nullptr, fresh});
   };
-  return insert_new(child_state, offset, size, replacement, ptr_set_fresh);
+  return insert(child_state, offset, size, replacement, ptr_set_fresh);
 }
 
 
@@ -844,7 +716,7 @@ optional<id_shared_t> analysis::summary_memory_state::transVarReg(
       if(in.conflict) return nullopt;
     }
     optional<id_shared_t> r;
-    field &f = io.insert_new(child_state, offset, size, false);
+    field &f = io.insert(child_state, offset, size, false);
     r = f.num_id;
 
 //  rt_result_t in = retrieve_kill(io.in_r, offset, size, handle_conflict);
@@ -936,7 +808,7 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
     if(overlap_region(io.out_r, offset, size))
       return new num_linear_vs(value_set::top);
     else {
-      field &f = io.insert_new(child_state, offset, size, false);
+      field &f = io.insert(child_state, offset, size, false);
       return new num_linear_term(new num_var(f.num_id));
     }
   } else

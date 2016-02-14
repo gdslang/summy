@@ -80,10 +80,6 @@ struct io_region {
     std::function<ptr_set_t(id_shared_t)> ptr_set_ct);
   field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement);
 
-  field &insert_new(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
-    std::function<ptr_set_t(id_shared_t)> ptr_set_ct);
-  field &insert_new(numeric_state *child_state, int64_t offset, size_t size, bool replacement);
-
   io_region(region_t &in_r, region_t &out_r) : in_r(in_r), out_r(out_r){};
   io_region(region_t &in_r, region_t &out_r, std::experimental::optional<id_shared_t const> r_key);
   io_region(region_t &in_r, region_t &out_r, std::experimental::optional<std::string> name)
