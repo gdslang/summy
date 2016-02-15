@@ -498,9 +498,9 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
           //                    cout << "b: " << *b_sms_before << endl;
 
           //          cout << "Resolving in a..." << endl;
-          io_ra.insert(a_n, collision_v.from, collision_v.to - collision_v.from + 1, true);
+          io_ra.insert(a_n, collision_v.from, collision_v.to - collision_v.from + 1, true, true);
           //          cout << "Resolving in b..." << endl;
-          io_rb.insert(b_n, collision_v.from, collision_v.to - collision_v.from + 1, true);
+          io_rb.insert(b_n, collision_v.from, collision_v.to - collision_v.from + 1, true, true);
 
           //          summary_memory_state *a_sms_after = new summary_memory_state(NULL, a_n, a_in, a_out);
           //          summary_memory_state *b_sms_after = new summary_memory_state(NULL, b_n, b_in, b_out);
@@ -525,11 +525,11 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
 
       if(rpd.collision) {
         if(rpd.ending_last) {
-//          cout << "Collision (first) from "
-//               << "from_current"
-//               << " s:" << rpd.ending_first.f.size << endl;
-//          cout << "Collision (second) from " << rpd.ending_last.value().offset
-//               << " s:" << rpd.ending_last.value().f.size << endl;
+          //          cout << "Collision (first) from "
+          //               << "from_current"
+          //               << " s:" << rpd.ending_first.f.size << endl;
+          //          cout << "Collision (second) from " << rpd.ending_last.value().offset
+          //               << " s:" << rpd.ending_last.value().f.size << endl;
           int64_t from_current = std::min(rpd.ending_first.offset, rpd.ending_last->offset);
           int64_t from = collision ? collision->from : from_current;
           size_t size = rpd.ending_first.offset + rpd.ending_first.f.size - from;
@@ -560,12 +560,12 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
               [copy_paste, has_no_badnull, io_rx, io_ry, x_n, y_n, ending_first /*, &copy_pasters*/]() {
                 field inserted;
                 if(copy_paste || has_no_badnull)
-                  inserted = io_ry->insert(y_n, ending_first.offset, ending_first.f.size, false);
+                  inserted = io_ry->insert(y_n, ending_first.offset, ending_first.f.size, false, true).value();
                 else
-                  inserted = io_ry->insert(y_n, ending_first.offset, ending_first.f.size, false, [](auto...) {
+                  inserted = io_ry->insert(y_n, ending_first.offset, ending_first.f.size, false, true, [](auto...) {
                     ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
                     return ptr_set_t({_badptr});
-                  });
+                  }).value();
 
                 if(copy_paste) {
                   num_var *from = new num_var(io_rx->out_r.at(ending_first.offset).num_id);

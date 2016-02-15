@@ -76,9 +76,10 @@ struct io_region {
 
   io_region(io_region &&other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {}
 
-  field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
-    std::function<ptr_set_t(id_shared_t)> ptr_set_ct);
-  field &insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement);
+  std::experimental::optional<field> insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
+    bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct);
+  std::experimental::optional<field> insert(
+    numeric_state *child_state, int64_t offset, size_t size, bool replacement, bool handle_conflicts);
 
   io_region(region_t &in_r, region_t &out_r) : in_r(in_r), out_r(out_r){};
   io_region(region_t &in_r, region_t &out_r, std::experimental::optional<id_shared_t const> r_key);
@@ -149,8 +150,6 @@ protected:
     bool conflict;
     region_t::iterator field_it;
   };
-  rt_result_t retrieve_kill(region_t &region, int64_t offset, size_t size, bool handle_conflict);
-  region_t::iterator retrieve_kill(region_t &region, int64_t offset, size_t size);
   void topify(region_t &region, int64_t offset, size_t size);
   std::experimental::optional<id_shared_t> transVarReg(io_region io, int64_t offset, size_t size, bool handle_conflict);
   id_shared_t transVarReg(io_region io, int64_t offset, size_t size);

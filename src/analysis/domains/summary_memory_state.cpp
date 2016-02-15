@@ -49,9 +49,9 @@ analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimenta
   if(r_key) name = r_key.value()->to_string();
 }
 
-field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
-  std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
-//  cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << endl;
+optional<field> analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
+  bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
+  //  cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << endl;
   //  struct field_desc_t {
   //    int64_t offset;
   //    field f;
@@ -67,12 +67,12 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   /*
    * Check whether preceeding fields overlaps; in this case, we include the preceeding field
    */
-//  cout << "??? end? " << (out_r_it == out_r.end()) << endl;
-//  cout << "??? begin? " << (out_r_it == out_r.begin()) << endl;
-//  cout << "??? size? " << (out_r.size()) << endl;
+  //  cout << "??? end? " << (out_r_it == out_r.end()) << endl;
+  //  cout << "??? begin? " << (out_r_it == out_r.begin()) << endl;
+  //  cout << "??? size? " << (out_r.size()) << endl;
   if(out_r_it != out_r.begin() && (out_r_it == out_r.end() || out_r_it->first > offset)) {
     --out_r_it;
-//    cout << ":-( " << out_r_it->first << endl;
+    //    cout << ":-( " << out_r_it->first << endl;
     if(out_r_it->first + (int64_t)out_r_it->second.size <= offset) out_r_it++;
   }
 
@@ -134,12 +134,14 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
 
   //    contiguous = contiguous && (offset_next == offset + size);
 
-//  if(replaced.size() == 1) {
-//  cout << "offsets[0]: " << offsets[0] << endl;
-//  cout << "offset: " << offset << endl;
-//  }
+  //  if(replaced.size() == 1) {
+  //  cout << "offsets[0]: " << offsets[0] << endl;
+  //  cout << "offset: " << offset << endl;
+  //  }
 
   if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size) return out_r.find(offset)->second;
+  else if(!handle_conflicts && replaced.size() > 0)
+    return nullopt;
 
   vector<num_var *> kill_vars;
   for(auto offset : offsets) {
@@ -212,7 +214,7 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   id_shared_t nid_out = name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
   num_var *n_out = new num_var(nid_out);
 
-//  cout << "contiguous=" << contiguous << endl;
+  //  cout << "contiguous=" << contiguous << endl;
 
   /*
    * Todo: size > 64?
@@ -252,7 +254,8 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     if(fd_before) {
       cout << "Have before!" << endl;
       id_shared_t nid_out_before =
-        name ? numeric_id::generate(name.value(), fd_before.value().offset, fd_before.value().size, false) : numeric_id::generate();
+        name ? numeric_id::generate(name.value(), fd_before.value().offset, fd_before.value().size, false)
+             : numeric_id::generate();
       out_r.insert(make_pair(fd_before.value().offset, field{fd_before.value().size, nid_out_before}));
       num_var n_out_before(nid_out_before);
       child_state->assume(&n_out_before, {badptr});
@@ -261,7 +264,8 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
     if(fd_after) {
       cout << "Have after! offset: " << fd_after.value().offset << ", size: " << fd_after.value().size << endl;
       id_shared_t nid_out_after =
-        name ? numeric_id::generate(name.value(), fd_after.value().offset, fd_after.value().size, false) : numeric_id::generate();
+        name ? numeric_id::generate(name.value(), fd_after.value().offset, fd_after.value().size, false)
+             : numeric_id::generate();
       out_r.insert(make_pair(fd_after.value().offset, field{fd_after.value().size, nid_out_after}));
       num_var n_out_after(nid_out_after);
       child_state->assume(&n_out_after, {badptr});
@@ -283,13 +287,14 @@ field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, s
   return field_out_it->second;
 }
 
-field &analysis::io_region::insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement) {
+optional<field> analysis::io_region::insert(
+  numeric_state *child_state, int64_t offset, size_t size, bool replacement, bool handle_conflicts) {
   auto ptr_set_fresh = [](id_shared_t nid_in) {
     ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
     ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
     return ptr_set_t({_nullptr, fresh});
   };
-  return insert(child_state, offset, size, replacement, ptr_set_fresh);
+  return insert(child_state, offset, size, replacement, handle_conflicts, ptr_set_fresh);
 }
 
 
@@ -549,7 +554,7 @@ static bool overlap(size_t from_a, size_t size_a, size_t from_b, size_t size_b) 
 
 bool analysis::summary_memory_state::overlap_region(region_t &region, int64_t offset, size_t size) {
   /*
-   * Todo: uncopy from retrieve_kill()?
+   * Todo: uncopy from io_region::insert()?
    */
   bool _overlap = false;
 
@@ -568,131 +573,6 @@ bool analysis::summary_memory_state::overlap_region(region_t &region, int64_t of
   return _overlap;
 }
 
-// region_t analysis::summary_memory_state::merge_memory(id_shared_t addr_a, region_t &r_b) {
-//  io_region io_a = dereference(addr_a);
-//
-//  region_t merged;
-//
-//  auto a_it = io_a.out_r.begin();
-//  auto b_it = r_b.begin();
-//  while(a_it != io_a.out_r.end() && b_it != r_b.end()) {
-//    int64_t offset_a = a_it->first;
-//    int64_t offset_b = b_it->first;
-//    if(offset_a < offset_b)
-//      a_it++;
-//    else if(offset_b < offset_a)
-//      b_it++;
-//    else {
-//      field &f_a = a_it->second;
-//      field &f_b = b_it->second;
-//      if(f_a.size == f_b.size) {
-//        id_shared_t n_id = numeric_id::generate();
-//
-//        num_var *n_var = new num_var(n_id);
-//        num_expr *expr_a = new num_expr_lin(new num_linear_term(new num_var(f_a.num_id)));
-//        num_expr *expr_b = new num_expr_lin(new num_linear_term(new num_var(f_b.num_id)));
-//        child_state->assign(n_var, expr_a);
-//        child_state->weak_assign(n_var, expr_b);
-//        delete expr_b;
-//        delete expr_a;
-//        delete n_var;
-//
-//        merged.insert(make_pair(offset_a, field { f_a.size, n_id } ));
-//      }
-//      a_it++;
-//      b_it++;
-//    }
-//  }
-//
-////  id_shared_t merged_key = make_shared<memory_id>(0, numeric_id::generate());
-////  input.deref.insert(make_pair(merged_key, merged));
-////  /*
-////   * Todo: Same numeric variables in input and output?
-////   */
-////  output.deref.insert(make_pair(merged_key, merged));
-//
-//  return merged;
-//}
-//
-// region_t analysis::summary_memory_state::merge_memory(id_shared_t addr_a, id_shared_t addr_b) {
-//  io_region io_b = dereference(addr_b);
-//
-//  return merge_memory(addr_a, io_b.out_r);
-//}
-
-/*
- * Todo: Work on io_region, keep more relations between input and output
- *
- * Todo: Merge with io_region::insert?!
- */
-summary_memory_state::rt_result_t analysis::summary_memory_state::retrieve_kill(
-  region_t &region, int64_t offset, size_t size, bool handle_conflict) {
-  //    cout << "before: " << endl << *this << endl;
-  //  cout << "retrieve_kill() " << offset << " / " << size << endl;
-
-  bool conflict = false;
-  bool found = false;
-  id_shared_t num_id;
-  vector<num_var *> dead_num_vars;
-  vector<tuple<int64_t, size_t>> replacements;
-  auto field_it = region.upper_bound(offset);
-
-  //  if(field_it == region.end())
-  //    cout << "Upper bound is region end" << endl;
-  //  else
-  //    cout << "Upper bound: " << field_it->second;
-
-  if(field_it != region.begin()) --field_it;
-  while(field_it != region.end()) {
-    bool erase = false;
-    int64_t offset_next = field_it->first;
-    field &f_next = field_it->second;
-    //    cout << "Considering " << offset_next << " / " << f_next.size << endl;
-    if(offset_next == offset && f_next.size == size) {
-      found = true;
-      num_id = f_next.num_id;
-      break;
-    } else if(overlap(offset_next, f_next.size, offset, size)) {
-      conflict = true;
-      if(!handle_conflict) break;
-      if(offset_next < offset) {
-        size_t first_size = offset - offset_next;
-        replacements.push_back(make_tuple(offset_next, first_size));
-        if(f_next.size > size + first_size)
-          replacements.push_back(make_tuple(offset + size, f_next.size - size - first_size));
-      } else if(f_next.size > size)
-        replacements.push_back(make_tuple(offset + size, f_next.size - size));
-
-      dead_num_vars.push_back(new num_var(f_next.num_id));
-      erase = true;
-    }
-    if(offset_next >= offset + size) break;
-    if(erase)
-      region.erase(field_it++);
-    else
-      field_it++;
-  }
-  child_state->kill(dead_num_vars);
-  for(auto var : dead_num_vars)
-    delete var;
-  for(auto repl : replacements) {
-    int64_t offset;
-    size_t size;
-    tie(offset, size) = repl;
-    region.insert(make_pair(offset, field{size, numeric_id::generate()}));
-  }
-
-  //  cout << "after: " << endl << *this << endl;
-  //  cout << "Found: " << found << endl;
-
-  if(!found) return rt_result_t{conflict, region.end()};
-  return rt_result_t{conflict, field_it};
-}
-
-region_t::iterator analysis::summary_memory_state::retrieve_kill(region_t &region, int64_t offset, size_t size) {
-  return retrieve_kill(region, offset, size, true).field_it;
-}
-
 void analysis::summary_memory_state::topify(region_t &region, int64_t offset, size_t size) {
   auto field_it = retrieve_kill(region, offset, size);
   if(field_it != region.end()) {
@@ -707,34 +587,12 @@ void analysis::summary_memory_state::topify(region_t &region, int64_t offset, si
 
 optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   io_region io, int64_t offset, size_t size, bool handle_conflict) {
-//  cout << "BEFORE: " << endl;
-//  cout << *this << endl;
-    if(!handle_conflict) {
-      rt_result_t in = retrieve_kill(io.in_r, offset, size, false);
-      rt_result_t out = retrieve_kill(io.out_r, offset, size, false);
-      assert(in.conflict == out.conflict);
-      if(in.conflict) return nullopt;
-    }
-    optional<id_shared_t> r;
-    field &f = io.insert(child_state, offset, size, false);
-    r = f.num_id;
-
-//  rt_result_t in = retrieve_kill(io.in_r, offset, size, handle_conflict);
-//  rt_result_t out = retrieve_kill(io.out_r, offset, size, handle_conflict);
-//  assert(in.conflict == out.conflict);
-//  if(in.conflict && !handle_conflict) return nullopt;
-//  optional<id_shared_t> r;
-//  if(in.field_it == io.in_r.end()) {
-//    assert(out.field_it == io.out_r.end());
-//    field &f = io.insert(child_state, offset, size, in.conflict);
-//    r = f.num_id;
-//  } else {
-//    assert(out.field_it != io.out_r.end());
-//    r = out.field_it->second.num_id;
-//  }
-//    cout << "AFTER: " << endl;
-//    cout << *this << endl;
-  return r;
+  optional<id_shared_t> r;
+  optional<field> f = io.insert(child_state, offset, size, false, handle_conflict);
+  if(f)
+    return f.value().num_id;
+  else
+    return nullopt;
 }
 
 id_shared_t analysis::summary_memory_state::transVarReg(io_region io, int64_t offset, size_t size) {
@@ -808,7 +666,7 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
     if(overlap_region(io.out_r, offset, size))
       return new num_linear_vs(value_set::top);
     else {
-      field &f = io.insert(child_state, offset, size, false);
+      field f = io.insert(child_state, offset, size, false, true).value();
       return new num_linear_term(new num_var(f.num_id));
     }
   } else
