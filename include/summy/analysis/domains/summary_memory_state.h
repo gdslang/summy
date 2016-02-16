@@ -50,6 +50,9 @@ struct relation {
   void clear();
 };
 
+/*
+ * This structure implements a view on a region that combines the input and output part.
+ */
 struct io_region {
   region_t &in_r;
   region_t &out_r;
@@ -76,9 +79,17 @@ struct io_region {
 
   io_region(io_region &&other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {}
 
-  std::experimental::optional<field> insert(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
+  /**
+   * This function retrieves a field at a given offset and with a given size.
+   *
+   * @param replacement a boolean value indicating whether this field should be considered to be
+   * a replacement for one or more existing fields.
+   * @param handle_conflicts a boolean value indicating whether conflicts are handled; if conflict handling
+   * is disabled, the region is never changed in case of a conflict.
+   */
+  std::experimental::optional<field> retrieve_field(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
     bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct);
-  std::experimental::optional<field> insert(
+  std::experimental::optional<field> retrieve_field(
     numeric_state *child_state, int64_t offset, size_t size, bool replacement, bool handle_conflicts);
 
   io_region(region_t &in_r, region_t &out_r) : in_r(in_r), out_r(out_r){};
@@ -142,7 +153,6 @@ protected:
   void initialize_static(io_region io, void *address, size_t offset, size_t size);
 
   std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
-  bool overlap_region(region_t &region, int64_t offset, size_t size);
 
   //  region_t merge_memory(id_shared_t addr_a, region_t &r);
   //  region_t merge_memory(id_shared_t addr_a, id_shared_t addr_b);
@@ -150,7 +160,7 @@ protected:
     bool conflict;
     region_t::iterator field_it;
   };
-  void topify(region_t &region, int64_t offset, size_t size);
+  void topify(io_region &region, int64_t offset, size_t size);
   std::experimental::optional<id_shared_t> transVarReg(io_region io, int64_t offset, size_t size, bool handle_conflict);
   id_shared_t transVarReg(io_region io, int64_t offset, size_t size);
   id_shared_t transVar(id_shared_t var_id, int64_t offset, size_t size);
