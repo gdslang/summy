@@ -189,15 +189,20 @@ void fixpoint::notify(const vector<::cfg::update> &updates) {
 }
 
 size_t analysis::fixpoint::max_iter() {
-  map<size_t, set<size_t>> back;
-
   size_t max = 0;
   for(auto nits_it : node_iterations) {
-    back[nits_it.second].insert(nits_it.first);
-    if(nits_it.second > max) {
+    if(nits_it.second > max)
       max = nits_it.second;
-    }
   }
+
+  return max;
+}
+
+void analysis::fixpoint::print_distribution() {
+  map<size_t, set<size_t>> back;
+
+  for(auto nits_it : node_iterations)
+    back[nits_it.second].insert(nits_it.first);
 
   for(auto it : back) {
     cout << it.first << " its: ";
@@ -205,6 +210,4 @@ size_t analysis::fixpoint::max_iter() {
       cout << it2 << ", ";
     cout << endl;
   }
-
-  return max;
 }

@@ -325,11 +325,11 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
         auto aliases_mapped_it = ptr_map.find(alias_s.id);
         ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
         //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
-        cout << "search result for " << *alias_s.id << ": " << (aliases_mapped_it != ptr_map.end()) << endl;
+//        cout << "search result for " << *alias_s.id << ": " << (aliases_mapped_it != ptr_map.end()) << endl;
         if(aliases_mapped_it != ptr_map.end())
           for(auto alias_c_next : aliases_c_next) {
-            cout << *alias_c_next.offset << " + " << *alias_s.offset << " = "
-                 << *(*alias_c_next.offset + alias_s.offset) << endl;
+//            cout << *alias_c_next.offset << " + " << *alias_s.offset << " = "
+//                 << *(*alias_c_next.offset + alias_s.offset) << endl;
             aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
           }
         //          });
@@ -491,7 +491,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
         //        << endl;
         conflict_resolvers.push_back([&io_ra, &a_n, &io_rb, &b_n, collision]() {
           auto collision_v = collision.value();
-          cout << "Resolving collision from " << collision_v.from << " to " << collision_v.to << endl;
+//          cout << "Resolving collision from " << collision_v.from << " to " << collision_v.to << endl;
           //                    summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
           //                    summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
           //                    cout << "a: " << *a_sms_before << endl;

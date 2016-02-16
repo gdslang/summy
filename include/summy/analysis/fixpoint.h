@@ -51,6 +51,7 @@ public:
    * node
    */
   size_t max_iter();
+  void print_distribution();
 };
 
 }
