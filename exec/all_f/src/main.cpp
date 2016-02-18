@@ -115,6 +115,8 @@ int main(int argc, char **argv) {
     analysis_dectran dt(g, false);
     dt.register_();
 
+    int n = 0;
+
     cout << "*** Function from ELF data..." << endl;
     auto functions = elfp.functions();
     for(auto f : functions) {
@@ -134,10 +136,15 @@ int main(int argc, char **argv) {
         dt.transduce_function(e.address, name);
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
+
+        if(n++ == 100)
+          break;
       } catch(string &s) {
         cout << "\t Unable to seek!" << endl;
       }
     }
+
+    return 0;
 
     cout << "*** Additionally collected functions..." << endl;
     for(size_t address : fstarts) {

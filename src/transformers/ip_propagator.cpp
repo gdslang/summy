@@ -34,7 +34,7 @@ std::tuple<bool, int_t> ip_propagator::evaluate(int_t ip_value, gdsl::rreil::exp
 std::vector<int_t> *ip_propagator::analyze_ip() {
   vector<int_t> *result = new vector<int_t>(cfg->node_count());
   vector<bool> *calculated = new vector<bool>(cfg->node_count(), false);
-  for(auto node : *cfg) {
+  for(auto node : cfg_view) {
     size_t id = node->get_id();
     node_visitor nv;
     nv._([&](address_node *sn) {
