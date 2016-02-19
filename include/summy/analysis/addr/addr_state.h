@@ -64,6 +64,8 @@ private:
   const std::experimental::optional<node_addr> address;
   const get_next_virt_t get_next_virt;
 
+  std::experimental::optional<size_t> next_virt_value;
+
   addr_state *domop(::analysis::domain_state *other);
 
   addr_state(node_addr address, path_virts_s path_virts, get_next_virt_t get_next_virt)

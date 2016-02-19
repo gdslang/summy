@@ -123,9 +123,7 @@ int main(int argc, char **argv) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
-//      if(name != "deregister_tm_clones" && name != "__do_global_dtors_aux" && name != "_start")
-//        continue;
-//      if(name != "__libc_csu_init") {
+//      if(name != "vex128_q__closure") {
 //        continue;
 //      }
 //      if(name != "main" && name != "foo")
@@ -136,15 +134,10 @@ int main(int argc, char **argv) {
         dt.transduce_function(e.address, name);
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
-
-        if(n++ == 100)
-          break;
       } catch(string &s) {
         cout << "\t Unable to seek!" << endl;
       }
     }
-
-    return 0;
 
     cout << "*** Additionally collected functions..." << endl;
     for(size_t address : fstarts) {
@@ -167,18 +160,18 @@ int main(int argc, char **argv) {
 
 //    return 0;
 
+    ofstream dot_noa_fs;
+    dot_noa_fs.open("output_noa.dot", ios::out);
+    cfg.dot(dot_noa_fs);
+    dot_noa_fs.close();
+
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-    summary_dstack ds(&cfg, se, true, dt.get_f_heads());
+    summary_dstack ds(&cfg, se, false, dt.get_f_heads());
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
 
     fp.iterate();
     cout << "Max its: " << fp.max_iter() << endl;
-
-    ofstream dot_noa_fs;
-    dot_noa_fs.open("output_noa.dot", ios::out);
-    cfg.dot(dot_noa_fs);
-    dot_noa_fs.close();
 
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);

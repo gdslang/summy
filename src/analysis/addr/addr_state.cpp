@@ -112,9 +112,9 @@ addr_state *analysis::addr::addr_state::domop(::analysis::domain_state *other) {
 }
 
 addr_state *analysis::addr::addr_state::join(::analysis::domain_state *other, size_t current_node) {
-  //  cout << *this << " LUP " << *other << endl;
+//    cout << *this << " LUB " << *other << endl;
   auto r = domop(other);
-  //  cout << "  = " << *r << endl;
+//    cout << "  = " << *r << endl;
   return r;
 }
 
@@ -128,9 +128,10 @@ addr_state *analysis::addr::addr_state::widen(::analysis::domain_state *other, s
 
 addr_state *analysis::addr::addr_state::next_virt() {
   size_t machine = this->address.value().machine;
-  size_t next_virt = get_next_virt(machine);
-  path_virts_s path_virts = this->path_virts.insert(next_virt);
-  return new addr_state(node_addr(machine, next_virt), path_virts, get_next_virt);
+  if(!this->next_virt_value)
+    this->next_virt_value = get_next_virt(machine);
+  path_virts_s path_virts = this->path_virts.insert(next_virt_value.value());
+  return new addr_state(node_addr(machine, next_virt_value.value()), path_virts, get_next_virt);
 }
 
 bool analysis::addr::addr_state::operator>=(const ::analysis::domain_state &other) const {
