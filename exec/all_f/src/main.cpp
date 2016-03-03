@@ -100,16 +100,16 @@ int main(int argc, char **argv) {
   g.set_code(buffer, section.size, section.address);
 
   try {
-    sweep sweep(g, false);
-    sweep.transduce();
-    analysis::fcollect::fcollect fc(&sweep.get_cfg());
-    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-    fixpoint fp_collect(&fc, jd_man_fc);
-    fp_collect.iterate();
+//    sweep sweep(g, false);
+//    sweep.transduce();
+//    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+//    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+//    fixpoint fp_collect(&fc, jd_man_fc);
+//    fp_collect.iterate();
 
-    for(size_t address : fc.result().result)
-      cout << hex << address << dec << endl;
-    set<size_t> fstarts = fc.result().result;
+//    for(size_t address : fc.result().result)
+//      cout << hex << address << dec << endl;
+    set<size_t> fstarts;// = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
     analysis_dectran dt(g, false);
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
       } catch(string &s) {
-        cout << "\t Unable to seek!" << endl;
+//        cout << "\t Unable to seek!" << endl;
       }
     }
     if(functions.size() == 0) {
@@ -148,13 +148,13 @@ int main(int argc, char **argv) {
 
     cout << "*** Additionally collected functions..." << endl;
     for(size_t address : fstarts) {
-      cout << hex << address << dec << endl;
+//      cout << hex << address << dec << endl;
       try {
         dt.transduce_function(address);
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
       } catch(string &s) {
-        cout << "\t Unable to seek!" << endl;
+//        cout << "\t Unable to seek!" << endl;
       }
     }
 

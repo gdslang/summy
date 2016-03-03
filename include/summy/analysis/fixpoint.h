@@ -33,6 +33,7 @@ private:
   fp_priority_queue worklist;
 
   std::map<size_t, size_t> node_iterations;
+  size_t max_its;
 public:
   virtual ~fixpoint() {
   }
@@ -52,6 +53,7 @@ public:
    */
   size_t max_iter();
   void print_distribution();
+  double avg_iteration_count();
 };
 
 }

@@ -18,7 +18,7 @@ using namespace std;
 using namespace analysis;
 
 analysis::fixpoint::fixpoint(class fp_analysis *analysis, jd_manager &jd_man, bool widening)
-    : analysis(analysis), jd_man(jd_man), widening(widening) {}
+    : analysis(analysis), jd_man(jd_man), widening(widening), max_its(0) {}
 
 void fixpoint::iterate() {
   updated.clear();
@@ -44,14 +44,26 @@ void fixpoint::iterate() {
     size_t node_id = worklist.pop();
 
     auto nits_it = node_iterations.find(node_id);
-    if(nits_it != node_iterations.end())
+    if(nits_it != node_iterations.end()) {
       nits_it->second++;
-    else
+      if(nits_it->second > max_its) {
+        cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
+        cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
+        max_its = nits_it->second;
+      }
+    } else
       node_iterations[node_id] = 1;
+
+    static size_t machine_address_last = 0;
+    size_t machine_address_current = jd_man.machine_address_of(node_id);
+    if(machine_address_current != machine_address_last) {
+      machine_address_last = machine_address_current;
+      cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
+    }
 
     //    cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
-//    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+    //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
 
     bool propagate;
@@ -209,4 +221,11 @@ void analysis::fixpoint::print_distribution() {
       cout << it2 << ", ";
     cout << endl;
   }
+}
+
+double analysis::fixpoint::avg_iteration_count() {
+  double sum = 0;
+  for(auto nits_it : node_iterations)
+    sum += nits_it.second;
+  return sum/node_iterations.size();
 }
