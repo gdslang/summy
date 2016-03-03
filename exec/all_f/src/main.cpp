@@ -100,16 +100,16 @@ int main(int argc, char **argv) {
   g.set_code(buffer, section.size, section.address);
 
   try {
-//    sweep sweep(g, false);
-//    sweep.transduce();
-//    analysis::fcollect::fcollect fc(&sweep.get_cfg());
-//    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-//    fixpoint fp_collect(&fc, jd_man_fc);
-//    fp_collect.iterate();
+    sweep sweep(g, false);
+    sweep.transduce();
+    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+    fixpoint fp_collect(&fc, jd_man_fc);
+    fp_collect.iterate();
 
-//    for(size_t address : fc.result().result)
-//      cout << hex << address << dec << endl;
-    set<size_t> fstarts;// = fc.result().result;
+    for(size_t address : fc.result().result)
+      cout << hex << address << dec << endl;
+    set<size_t> fstarts = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
     analysis_dectran dt(g, false);
@@ -138,6 +138,13 @@ int main(int argc, char **argv) {
         cout << "\t Unable to seek!" << endl;
       }
     }
+    if(functions.size() == 0) {
+      size_t entry_address = elfp.entry_address();
+      fstarts.erase(entry_address);
+      dt.transduce_function(entry_address, string("@@_entry"));
+      auto &cfg = dt.get_cfg();
+      cfg.commit_updates();
+    }
 
     cout << "*** Additionally collected functions..." << endl;
     for(size_t address : fstarts) {
@@ -160,18 +167,21 @@ int main(int argc, char **argv) {
 
 //    return 0;
 
-    ofstream dot_noa_fs;
-    dot_noa_fs.open("output_noa.dot", ios::out);
-    cfg.dot(dot_noa_fs);
-    dot_noa_fs.close();
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, false, dt.get_f_heads());
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man);
 
+    cout << "Starting main analysis." << endl;
+
     fp.iterate();
     cout << "Max its: " << fp.max_iter() << endl;
+
+    ofstream dot_noa_fs;
+    dot_noa_fs.open("output_noa.dot", ios::out);
+    cfg.dot(dot_noa_fs);
+    dot_noa_fs.close();
 
     //  cout << "++++++++++" << endl;
     //  ds.put(cout);

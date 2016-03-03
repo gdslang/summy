@@ -40,16 +40,16 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
       rreil = b.get_statements();
     } else {
       gdsl::instruction insn = gdsl.decode();
-      //      printf("Instruction: %s\n", insn.to_string().c_str());
-      //      printf("---------------------------------\n");
+//            printf("Instruction: %s\n", insn.to_string().c_str());
+//            printf("---------------------------------\n");
       rreil = insn.translate();
     }
 
     gdsl.reset_heap();
 
-    //  printf("RReil (no transformations):\n");
-    //  for(statement *s : *rreil)
-    //    printf("%s\n", s->to_string().c_str());
+//    printf("RReil (no transformations):\n");
+    //    for(statement *s : *rreil)
+    //      printf("%s\n", s->to_string().c_str());
 
     prog.push_back(make_tuple(ip, rreil));
   } while(decode_multiple && gdsl.bytes_left() > 0);
