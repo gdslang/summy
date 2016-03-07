@@ -61,7 +61,7 @@ void fixpoint::iterate() {
       cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
     }
 
-    //    cout << "Next node: " << node_id << endl;
+    cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
     //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
@@ -128,7 +128,7 @@ void fixpoint::iterate() {
         process_constraint(constraint_it->first, constraint_it->second);
       if(analysis->record_stop_commit()) {
         for(size_t node : analysis->pending()) {
-          //    cout << "New node: " << node << endl;
+          cout << "====> Pushing node: " << node << endl;
           //    cout << this << endl;
           worklist.push(node);
         }
@@ -159,7 +159,7 @@ void fixpoint::iterate() {
 
     if(propagate) {
       if(needs_postprocessing) {
-        //            cout << "Postproc: " << node_id << endl;
+        cout << "====> Postproc: " << node_id << endl;
         postprocess_worklist.push(node_id);
       }
       //            cout << node_id << " current " << *analysis->get(node_id) << endl;
@@ -175,13 +175,13 @@ void fixpoint::iterate() {
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
       for(auto dependant : dependants) {
-        //        cout << "Pushing " << dependant << " as dep. of " << node_id << endl;
+        cout << "====>  Pushing " << dependant << " as dep. of " << node_id << endl;
         worklist.push(dependant);
       }
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {
-      //      cout << "Adding dirty node: " << dirty << endl;
+      cout << "====> Adding dirty node: " << dirty << endl;
       worklist.push(dirty);
     }
 
@@ -227,5 +227,5 @@ double analysis::fixpoint::avg_iteration_count() {
   double sum = 0;
   for(auto nits_it : node_iterations)
     sum += nits_it.second;
-  return sum/node_iterations.size();
+  return sum / node_iterations.size();
 }
