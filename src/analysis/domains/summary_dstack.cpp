@@ -124,6 +124,7 @@ void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, 
   if(!includes(fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
     fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
     _dirty_nodes.insert(fd.head_id);
+    cout << "Added dirty node because of reqs..." << endl;
   }
 }
 

@@ -54,6 +54,10 @@ void fixpoint::iterate() {
     } else
       node_iterations[node_id] = 1;
 
+    if(max_its > 2000)
+      break;
+    // Neue Maschinenadressen ausgeben für Fortschritt...?
+
     static size_t machine_address_last = 0;
     size_t machine_address_current = jd_man.machine_address_of(node_id);
     if(machine_address_current != machine_address_last) {
