@@ -53,6 +53,7 @@ public:
    */
   size_t max_iter();
   void print_distribution();
+  void print_distribution_total();
   double avg_iteration_count();
 };
 

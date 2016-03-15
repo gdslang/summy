@@ -43,6 +43,11 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = worklist.pop();
 
+//    cout << "Next node: " << node_id << endl;
+    //    if(node_id == 11) cout << "NODE 11!!" << endl;
+    //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+    //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
+
     auto nits_it = node_iterations.find(node_id);
     if(nits_it != node_iterations.end()) {
       nits_it->second++;
@@ -50,25 +55,26 @@ void fixpoint::iterate() {
         cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
         cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
         max_its = nits_it->second;
+        print_distribution_total();
       }
     } else
       node_iterations[node_id] = 1;
 
-    if(max_its > 2000)
-      break;
+//    if(max_its > 2000)
+//      break;
     // Neue Maschinenadressen ausgeben für Fortschritt...?
 
-    static size_t machine_address_last = 0;
-    size_t machine_address_current = jd_man.machine_address_of(node_id);
-    if(machine_address_current != machine_address_last) {
-      machine_address_last = machine_address_current;
-      cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
-    }
+//    if(nits_it->second > 20) {
+//      cout << "Node: " << node_id << endl;
+//      static size_t machine_address_last = 0;
+//      size_t machine_address_current = jd_man.machine_address_of(node_id);
+//      if(machine_address_current != machine_address_last) {
+//        machine_address_last = machine_address_current;
+//        cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
+//      }
+//    }
 
-    cout << "Next node: " << node_id << endl;
-    //    if(node_id == 11) cout << "NODE 11!!" << endl;
-    //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
-    //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
+
 
     bool propagate;
     bool needs_postprocessing = false;
@@ -132,10 +138,11 @@ void fixpoint::iterate() {
         process_constraint(constraint_it->first, constraint_it->second);
       if(analysis->record_stop_commit()) {
         for(size_t node : analysis->pending()) {
-          cout << "====> Pushing node: " << node << endl;
+//          cout << "====> Pushing node: " << node << endl;
           //    cout << this << endl;
           worklist.push(node);
         }
+        analysis->clear_pending();
       }
 
       //      cout << "Current: " << *current << endl;
@@ -163,7 +170,7 @@ void fixpoint::iterate() {
 
     if(propagate) {
       if(needs_postprocessing) {
-        cout << "====> Postproc: " << node_id << endl;
+//        cout << "====> Postproc: " << node_id << endl;
         postprocess_worklist.push(node_id);
       }
       //            cout << node_id << " current " << *analysis->get(node_id) << endl;
@@ -179,13 +186,13 @@ void fixpoint::iterate() {
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
       for(auto dependant : dependants) {
-        cout << "====>  Pushing " << dependant << " as dep. of " << node_id << endl;
+//        cout << "====>  Pushing " << dependant << " as dep. of " << node_id << endl;
         worklist.push(dependant);
       }
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {
-      cout << "====> Adding dirty node: " << dirty << endl;
+//      cout << "====> Adding dirty node: " << dirty << endl;
       worklist.push(dirty);
     }
 
@@ -223,6 +230,24 @@ void analysis::fixpoint::print_distribution() {
     cout << it.first << " its: ";
     for(auto it2 : it.second)
       cout << it2 << ", ";
+    cout << endl;
+  }
+}
+
+void analysis::fixpoint::print_distribution_total() {
+  map<size_t, size_t> back;
+
+  for(auto nits_it : node_iterations) {
+    auto back_it = back.find(nits_it.second);
+    if(back_it != back.end())
+      back_it->second += 1;
+    else
+      back[nits_it.second] = 1;
+  }
+
+  for(auto it : back) {
+    cout << it.first << " its: ";
+    cout << it.second;
     cout << endl;
   }
 }
