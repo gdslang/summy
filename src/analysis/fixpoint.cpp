@@ -12,6 +12,7 @@
 #include <summy/cfg/jd_manager.h>
 #include <queue>
 #include <iostream>
+#include <assert.h>
 
 using namespace cfg;
 using namespace std;
@@ -23,11 +24,16 @@ analysis::fixpoint::fixpoint(class fp_analysis *analysis, jd_manager &jd_man, bo
 void fixpoint::iterate() {
   updated.clear();
   node_iterations.clear();
-  worklist = fp_priority_queue(analysis->pending(), analysis->get_fixpoint_node_comparer());
+  set<size_t> pending = analysis->pending();
+  worklist = fp_priority_queue(analysis->get_fixpoint_node_comparer());
   analysis->clear_pending();
   fp_priority_queue postprocess_worklist(analysis->get_fixpoint_node_comparer());
 
   auto end = [&]() {
+//    cout << "wl: " << worklist.size() << endl;
+//    cout << "pp: " << postprocess_worklist.size() << endl;
+    if(!pending.empty())
+      return false;
     if(worklist.empty()) {
       if(postprocess_worklist.empty())
         return true;
@@ -40,8 +46,20 @@ void fixpoint::iterate() {
       return false;
   };
 
+  auto next = [&]() {
+    if(!worklist.empty())
+        return worklist.pop();
+    else {
+      auto it = pending.begin();
+      assert(it != pending.end());
+      size_t next_element = *it;
+      pending.erase(it);
+      return next_element;
+    }
+  };
+
   while(!end()) {
-    size_t node_id = worklist.pop();
+    size_t node_id = next();
 
 //    cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
@@ -140,7 +158,8 @@ void fixpoint::iterate() {
         for(size_t node : analysis->pending()) {
 //          cout << "====> Pushing node: " << node << endl;
           //    cout << this << endl;
-          worklist.push(node);
+          //worklist.push(node);
+          pending.insert(node);
         }
         analysis->clear_pending();
       }
