@@ -74,6 +74,9 @@ void fixpoint::iterate() {
         cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
         max_its = nits_it->second;
         print_distribution_total();
+//        if(max_its > 22) {
+//          cout << *analysis->get(node_id) << endl;
+//        }
       }
     } else
       node_iterations[node_id] = 1;
