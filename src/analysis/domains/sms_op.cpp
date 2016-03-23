@@ -452,12 +452,13 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return return_site;
 }
 
-num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, relation &a_out, numeric_state *a_n,
+std::tuple<bool, num_var_pairs_t> (::analysis::compatMatchSeparate)(bool widening, relation &a_in, relation &a_out, numeric_state *a_n,
   relation &b_in, relation &b_out, numeric_state *b_n) {
   /*
    * No more copy/paste; later, we can remove this entirely
    */
   bool copy_paste = false;
+  bool conflicts = false;
 
   /*
    * Find aliases for a specific region of the given summaries. We need both
@@ -487,6 +488,7 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
 
     auto resolve_collision = [&]() {
       if(collision) {
+        conflicts = true;
         //        cout << "Adding conflict resolver for collision from " << collision->from << " to " << collision->to
         //        << endl;
         conflict_resolvers.push_back([&io_ra, &a_n, &io_rb, &b_n, collision]() {
@@ -831,10 +833,10 @@ num_var_pairs_t(::analysis::compatMatchSeparate)(bool widening, relation &a_in, 
     }
   }
 
-  return result;
+  return make_tuple(conflicts, result);
 }
 
-std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
+std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   bool widening, const summary_memory_state *a, const summary_memory_state *b) {
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();
@@ -843,12 +845,12 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
     memory_head head;
     head.input = b->input;
     head.output = b->output;
-    return make_tuple(head, a_n, b_n);
+    return make_tuple(false, head, a_n, b_n);
   } else if(b->is_bottom()) {
     memory_head head;
     head.input = a->input;
     head.output = a->output;
-    return make_tuple(head, a_n, b_n);
+    return make_tuple(false, head, a_n, b_n);
   }
 
   //  ((summary_memory_state *)a)->check_consistency();
@@ -895,7 +897,9 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   /*
    * The first step is implemented by finding corresponding pointer variables...
    */
-  num_var_pairs_t eq_aliases = compatMatchSeparate(widening, a_input, a_output, a_n, b_input, b_output, b_n);
+  num_var_pairs_t eq_aliases;
+  bool conflicts;
+  tie(conflicts, eq_aliases)= compatMatchSeparate(widening, a_input, a_output, a_n, b_input, b_output, b_n);
 
   //  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
   //  cout << "before_rename: " << *before_rename << endl;
@@ -1019,5 +1023,5 @@ std::tuple<memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
   //    cout << "++++++++++++++++++++++++++++++" << endl;
   //    cout << "++++++++++++++++++++++++++++++" << endl;
   //  }
-  return make_tuple(head, a_n, b_n);
+  return make_tuple(conflicts, head, a_n, b_n);
 }

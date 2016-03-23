@@ -317,7 +317,7 @@ summary_memory_state *analysis::summary_memory_state::domop(
   numeric_state *me_compat;
   numeric_state *other_compat;
   memory_head head_compat;
-  tie(head_compat, me_compat, other_compat) = compat(widening, this, other_casted);
+  tie(ignore, head_compat, me_compat, other_compat) = compat(widening, this, other_casted);
 
   //  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
 
@@ -727,7 +727,10 @@ bool analysis::summary_memory_state::operator>=(const domain_state &other) const
   summary_memory_state const &other_casted = dynamic_cast<summary_memory_state const &>(other);
   numeric_state *me_compat;
   numeric_state *other_compat;
-  tie(ignore, me_compat, other_compat) = compat(false, this, &other_casted);
+  bool conflicts;
+  tie(conflicts, ignore, me_compat, other_compat) = compat(false, this, &other_casted);
+  if(conflicts)
+    return false;
   bool result = *me_compat >= *other_compat;
   delete me_compat;
   delete other_compat;

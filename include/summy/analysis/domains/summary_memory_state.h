@@ -240,7 +240,7 @@ public:
   friend num_var_pairs_t matchPointers(bool widening, relation &a_in, relation &a_out, numeric_state *a_n,
     relation &b_in, relation &b_out, numeric_state *b_n);
 
-  friend std::tuple<memory_head, numeric_state *, numeric_state *> compat(
+  friend std::tuple<bool, memory_head, numeric_state *, numeric_state *> compat(
     bool widening, summary_memory_state const *a, summary_memory_state const *b);
 
   friend class summary_dstack_stubs;
