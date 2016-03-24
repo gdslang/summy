@@ -62,7 +62,7 @@ void fixpoint::iterate() {
 
     //    cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
-//    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
 
     auto nits_it = node_iterations.find(node_id);
