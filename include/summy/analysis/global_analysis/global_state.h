@@ -55,6 +55,8 @@ public:
 
   virtual bool operator>=(::analysis::domain_state const &other) const;
 
+  void check_consistency();
+
   virtual void put(std::ostream &out) const;
 };
 

@@ -325,11 +325,11 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
         auto aliases_mapped_it = ptr_map.find(alias_s.id);
         ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
         //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
-//        cout << "search result for " << *alias_s.id << ": " << (aliases_mapped_it != ptr_map.end()) << endl;
+        //        cout << "search result for " << *alias_s.id << ": " << (aliases_mapped_it != ptr_map.end()) << endl;
         if(aliases_mapped_it != ptr_map.end())
           for(auto alias_c_next : aliases_c_next) {
-//            cout << *alias_c_next.offset << " + " << *alias_s.offset << " = "
-//                 << *(*alias_c_next.offset + alias_s.offset) << endl;
+            //            cout << *alias_c_next.offset << " + " << *alias_s.offset << " = "
+            //                 << *(*alias_c_next.offset + alias_s.offset) << endl;
             aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
           }
         //          });
@@ -452,8 +452,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return return_site;
 }
 
-std::tuple<bool, num_var_pairs_t> (::analysis::compatMatchSeparate)(bool widening, relation &a_in, relation &a_out, numeric_state *a_n,
-  relation &b_in, relation &b_out, numeric_state *b_n) {
+std::tuple<bool, num_var_pairs_t>(::analysis::compatMatchSeparate)(bool widening, relation &a_in, relation &a_out,
+  numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n) {
   /*
    * No more copy/paste; later, we can remove this entirely
    */
@@ -493,7 +493,7 @@ std::tuple<bool, num_var_pairs_t> (::analysis::compatMatchSeparate)(bool widenin
         //        << endl;
         conflict_resolvers.push_back([&io_ra, &a_n, &io_rb, &b_n, collision]() {
           auto collision_v = collision.value();
-//          cout << "Resolving collision from " << collision_v.from << " to " << collision_v.to << endl;
+          //          cout << "Resolving collision from " << collision_v.from << " to " << collision_v.to << endl;
           //                    summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
           //                    summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
           //                    cout << "a: " << *a_sms_before << endl;
@@ -564,10 +564,11 @@ std::tuple<bool, num_var_pairs_t> (::analysis::compatMatchSeparate)(bool widenin
                 if(copy_paste || has_no_badnull)
                   inserted = io_ry->retrieve_field(y_n, ending_first.offset, ending_first.f.size, false, true).value();
                 else
-                  inserted = io_ry->retrieve_field(y_n, ending_first.offset, ending_first.f.size, false, true, [](auto...) {
-                    ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
-                    return ptr_set_t({_badptr});
-                  }).value();
+                  inserted =
+                    io_ry->retrieve_field(y_n, ending_first.offset, ending_first.f.size, false, true, [](auto...) {
+                      ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
+                      return ptr_set_t({_badptr});
+                    }).value();
 
                 if(copy_paste) {
                   num_var *from = new num_var(io_rx->out_r.at(ending_first.offset).num_id);
@@ -626,8 +627,6 @@ std::tuple<bool, num_var_pairs_t> (::analysis::compatMatchSeparate)(bool widenin
             //            cout << "************" << *f_a_nv << ": " << als_a << endl;
             delete f_a_nv;
 
-            //            cout << "Considering alias set: " << als_a << endl;
-
             ptr p_a = unpack_singleton(als_a);
 
             num_var *f_b_nv = new num_var(f_b.num_id);
@@ -642,7 +641,7 @@ std::tuple<bool, num_var_pairs_t> (::analysis::compatMatchSeparate)(bool widenin
              * Todo: Check for badptr?
              */
             if(!(*p_a.id == *special_ptr::badptr) && !((*p_b.id == *special_ptr::badptr))) {
-              //              cout << "pushing aliases... " << p_a << ", " << p_b << endl;
+//              cout << "pushing aliases... " << p_a << ", " << p_b << endl;
 
               //                            cout << p_a << endl;
               assert(*p_a.offset == vs_finite::zero);
@@ -705,17 +704,33 @@ std::tuple<bool, num_var_pairs_t> (::analysis::compatMatchSeparate)(bool widenin
   auto init_from_deref_no_ptr =
     [&](region_map_t &first_in, region_map_t &first_out, region_map_t &second_in, region_map_t &second_out, bool a_b) {
       for(auto regions_first_it = first_in.begin(); regions_first_it != first_in.end(); regions_first_it++) {
+
+        /*
+         * We don't identify ptr memory regions by name. We only add ptr memory regions
+         * if found during memory matching. If there is matching ptr memory region in the
+         * state, this may be a dangling, older version of the existing memory region. We could
+         * do one of the following:
+         *
+         * - Do we want to do a three-way-join of the two non-dangling memory regions (one of them
+         * may have been introduced freshly) and the dangling region?
+         * - We need to decide on whether to keep dangling regions or not (they may still be referenced in the
+         * output). Right now they seem to be discarded.
+         * - Especially if we decide to keep dangling regions, we need to get rid of them sometime,
+         * possibly during widening.
+         */
+        bool is_ptr_var = false;
+        summy::rreil::id_visitor idv;
+        idv._([&](ptr_memory_id *pmid) { is_ptr_var = true; });
+        regions_first_it->first->accept(idv);
+        if(is_ptr_var) continue;
+
         auto regions_second_it = second_in.find(regions_first_it->first);
         if(regions_second_it == second_in.end()) {
           /*
            * Deref regions referenced by pointers are only added if matched in the input. Therefore,
            * here we only add if the region key is not a ptr_memory_id.
            */
-          bool is_ptr_var = false;
-          summy::rreil::id_visitor idv;
-          idv._([&](ptr_memory_id *pmid) { is_ptr_var = true; });
-          regions_first_it->first->accept(idv);
-          if(is_ptr_var) continue;
+
           tie(regions_second_it, ignore) = second_in.insert(make_pair(regions_first_it->first, region_t()));
           second_out.insert(make_pair(regions_first_it->first, region_t()));
         } else
@@ -853,8 +868,8 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
     return make_tuple(false, head, a_n, b_n);
   }
 
-  //  ((summary_memory_state *)a)->check_consistency();
-  //  ((summary_memory_state *)b)->check_consistency();
+  //    ((summary_memory_state *)a)->check_consistency();
+  //    ((summary_memory_state *)b)->check_consistency();
 
   //  static int c = 0;
   //  printf("%d\n", c++);
@@ -864,10 +879,10 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  if(c == 1688) {
-  //    cout << "compat OF" << endl;
-  //    cout << *a << endl;
-  //    cout << "WITH" << endl;
-  //    cout << *b << endl;
+//  cout << "compat OF" << endl;
+//  cout << *a << endl;
+//  cout << "WITH" << endl;
+//  cout << *b << endl;
   //  }
   //  }
 
@@ -899,7 +914,12 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
    */
   num_var_pairs_t eq_aliases;
   bool conflicts;
-  tie(conflicts, eq_aliases)= compatMatchSeparate(widening, a_input, a_output, a_n, b_input, b_output, b_n);
+  tie(conflicts, eq_aliases) = compatMatchSeparate(widening, a_input, a_output, a_n, b_input, b_output, b_n);
+
+  summary_memory_state *x = new summary_memory_state(a->sm, false, a_n, a_input, a_output);
+  summary_memory_state *y = new summary_memory_state(b->sm, false, b_n, b_input, b_output);
+
+
 
   //  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
   //  cout << "before_rename: " << *before_rename << endl;
@@ -909,12 +929,17 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
    * in the deref map need to be replaced.
    */
   b_n->equate_kill(eq_aliases);
-  a_n->equate_kill(eq_aliases);
+//  a_n->equate_kill(eq_aliases);
+
+//  cout << *x << endl;
+//  cout << "GRRRRRRR" << endl;
+//  cout << *y << endl;
+
   for(auto &eq_alias : eq_aliases) {
     num_var *alias_a;
     num_var *alias_b;
     tie(alias_a, alias_b) = eq_alias;
-    //    cout << "eq_alias: " << *alias_a << ", " << *alias_b << endl;
+//    cout << "eq_alias: " << *alias_a << " <- " << *alias_b << endl;
     rename_rk(b_input, alias_b->get_id(), alias_a->get_id());
     rename_rk(b_output, alias_b->get_id(), alias_a->get_id());
     delete alias_a;

@@ -100,17 +100,17 @@ int main(int argc, char **argv) {
   g.set_code(buffer, section.size, section.address);
 
   try {
-//    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
-//    sweep sweep(g, false);
-//    sweep.transduce();
-//    analysis::fcollect::fcollect fc(&sweep.get_cfg());
-//    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-//    fixpoint fp_collect(&fc, jd_man_fc);
-//    fp_collect.iterate();
+    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
+    sweep sweep(g, false);
+    sweep.transduce();
+    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+    fixpoint fp_collect(&fc, jd_man_fc);
+    fp_collect.iterate();
 
-//    for(size_t address : fc.result().result)
-//      cout << hex << address << dec << endl;
-    set<size_t> fstarts;// = fc.result().result;
+    for(size_t address : fc.result().result)
+      cout << hex << address << dec << endl;
+    set<size_t> fstarts = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
     analysis_dectran dt(g, false);
@@ -124,9 +124,9 @@ int main(int argc, char **argv) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
-      if(name != "mkN") {
-        continue;
-      }
+//      if(name != "mkN") {
+//        continue;
+//      }
 //      if(name != "main" && name != "foo")
 //        continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;

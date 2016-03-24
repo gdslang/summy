@@ -56,6 +56,10 @@ bool analysis::global_state::operator >=(const ::analysis::domain_state &other) 
   return f_addr_ge && (*other_casted.f_addr <= f_addr) && (*mstate >= *other_casted.mstate);
 }
 
+void analysis::global_state::check_consistency() {
+  mstate->check_consistency();
+}
+
 void analysis::global_state::put(std::ostream &out) const {
   out << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
   out << *mstate << endl;
