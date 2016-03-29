@@ -452,8 +452,8 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return return_site;
 }
 
-std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(bool widening, relation &a_in, relation &a_out,
-  numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n) {
+std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(bool widening, relation &a_in,
+  relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n) {
   /*
    * No more copy/paste; later, we can remove this entirely
    */
@@ -468,7 +468,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
    * in one of the regions.
    */
   auto compatMatchSeparateRegion = [&](io_region &io_ra, io_region &io_rb) {
-    //    cout << "Next region" << endl;
+    cout << "Next region" << endl;
 
     num_var_pairs_t upcoming;
 
@@ -519,13 +519,15 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
 
-      //      cout << "Next it, collision: " << rpd.collision << endl;
-      //      if(rpd.field_first_region())
-      //        cout << "First region: offset: " << rpd.field_first_region()->offset
-      //             << ", size: " << rpd.field_first_region()->f.size << endl;
-      //      if(rpd.field_second_region())
-      //        cout << "Second region: offset: " << rpd.field_second_region()->offset
-      //             << ", size: " << rpd.field_second_region()->f.size << endl;
+      cout << "Next it, collision: " << rpd.collision << endl;
+      if(rpd.field_first_region())
+        cout << "First region field: " << *rpd.field_first_region()->f.num_id
+             << ", offset: " << rpd.field_first_region()->offset << ", size: " << rpd.field_first_region()->f.size
+             << endl;
+      if(rpd.field_second_region())
+        cout << "Second region field: " << *rpd.field_second_region()->f.num_id
+             << ", offset: " << rpd.field_second_region()->offset << ", size: " << rpd.field_second_region()->f.size
+             << endl;
 
       if(rpd.collision) {
         if(rpd.ending_last) {
@@ -643,7 +645,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
              * Todo: Check for badptr?
              */
             if(!(*p_a.id == *special_ptr::badptr) && !((*p_b.id == *special_ptr::badptr))) {
-//              cout << "pushing aliases... " << p_a << ", " << p_b << endl;
+              //              cout << "pushing aliases... " << p_a << ", " << p_b << endl;
 
               //                            cout << p_a << endl;
               assert(*p_a.offset == vs_finite::zero);
@@ -672,13 +674,12 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
     io_region io_ra;
     io_region io_rb;
 
-//    region_pair(region_pair &o) : io_ra(o.io_ra), io_rb(o.io_rb) {
-//    }
+    //    region_pair(region_pair &o) : io_ra(o.io_ra), io_rb(o.io_rb) {
+    //    }
   };
   queue<region_pair> worklist;
   auto wl_push = [&](id_shared_t key, region_pair rp) {
     merged_region_keys.insert(key);
-//    worklist.push(region_pair{rp.io_ra, rp.io_rb});
     worklist.push(rp);
   };
 
@@ -851,6 +852,8 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
       auto &deref_b_out = b_out.deref.at(vb->get_id());
       io_region io_a = io_region(deref_a_in_it->second, deref_a_out);
       io_region io_b = io_region(deref_b_in_it->second, deref_b_out);
+      cout << "Pushing pair for " << *deref_a_in_it->first << endl;
+      cout << "Current queue size: " << worklist.size() << endl;
       wl_push(deref_a_in_it->first, region_pair{io_a, io_b});
 
       delete va;
@@ -889,10 +892,10 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  if(c == 1688) {
-//  cout << "compat OF" << endl;
-//  cout << *a << endl;
-//  cout << "WITH" << endl;
-//  cout << *b << endl;
+  cout << "compat OF" << endl;
+  cout << *a << endl;
+  cout << "WITH" << endl;
+  cout << *b << endl;
   //  }
   //  }
 
@@ -925,10 +928,8 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   num_var_pairs_t eq_aliases;
   id_set_t merged_region_keys;
   bool conflicts;
-  tie(conflicts, eq_aliases, merged_region_keys) = compatMatchSeparate(widening, a_input, a_output, a_n, b_input, b_output, b_n);
-
-  summary_memory_state *x = new summary_memory_state(a->sm, false, a_n, a_input, a_output);
-  summary_memory_state *y = new summary_memory_state(b->sm, false, b_n, b_input, b_output);
+  tie(conflicts, eq_aliases, merged_region_keys) =
+    compatMatchSeparate(widening, a_input, a_output, a_n, b_input, b_output, b_n);
 
   //  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
   //  cout << "before_rename: " << *before_rename << endl;
@@ -938,17 +939,19 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
    * in the deref map need to be replaced.
    */
   b_n->equate_kill(eq_aliases);
-//  a_n->equate_kill(eq_aliases);
+  //  a_n->equate_kill(eq_aliases);
 
-//  cout << *x << endl;
-//  cout << "GRRRRRRR" << endl;
-//  cout << *y << endl;
+  //  summary_memory_state *x = new summary_memory_state(a->sm, false, a_n, a_input, a_output);
+  //  summary_memory_state *y = new summary_memory_state(b->sm, false, b_n, b_input, b_output);
+  //  cout << *x << endl;
+  //  cout << "GRRRRRRR" << endl;
+  //  cout << *y << endl;
 
   for(auto &eq_alias : eq_aliases) {
     num_var *alias_a;
     num_var *alias_b;
     tie(alias_a, alias_b) = eq_alias;
-//    cout << "eq_alias: " << *alias_a << " <- " << *alias_b << endl;
+    //    cout << "eq_alias: " << *alias_a << " <- " << *alias_b << endl;
     rename_rk(b_input, alias_b->get_id(), alias_a->get_id());
     rename_rk(b_output, alias_b->get_id(), alias_a->get_id());
     delete alias_a;
@@ -1017,8 +1020,10 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
       result_map.insert(make_pair(id, region));
     };
     for(auto &region_it : a_map) {
+      if(merged_region_keys.find(region_it.first) == merged_region_keys.end()) continue;
       auto region_b_it = b_map.find(region_it.first);
-      if(region_b_it != b_map.end()) handle_region(region_it.first, region_it.second, region_b_it->second);
+      assert(region_b_it != b_map.end());
+      handle_region(region_it.first, region_it.second, region_b_it->second);
       //      else {
       //        bool insert_other = true;
       //        summy::rreil::id_visitor idv;
