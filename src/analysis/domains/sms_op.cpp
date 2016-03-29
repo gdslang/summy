@@ -452,13 +452,15 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   return return_site;
 }
 
-std::tuple<bool, num_var_pairs_t>(::analysis::compatMatchSeparate)(bool widening, relation &a_in, relation &a_out,
+std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(bool widening, relation &a_in, relation &a_out,
   numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n) {
   /*
    * No more copy/paste; later, we can remove this entirely
    */
   bool copy_paste = false;
   bool conflicts = false;
+
+  id_set_t merged_region_keys;
 
   /*
    * Find aliases for a specific region of the given summaries. We need both
@@ -669,8 +671,17 @@ std::tuple<bool, num_var_pairs_t>(::analysis::compatMatchSeparate)(bool widening
   struct region_pair {
     io_region io_ra;
     io_region io_rb;
+
+    region_pair(const region_pair &o) : io_ra(o.io_ra), io_rb(o.io_rb) {
+    }
   };
   queue<region_pair> worklist;
+  auto wl_push = [&](id_shared_t key, region_pair rp) {
+    merged_region_keys.insert(key);
+//    worklist.push(region_pair{rp.io_ra, rp.io_rb});
+    region_pair rp2 = rp;
+    worklist.push(rp2);
+  };
 
   /*
    * We first need to add all pointers referenced in the register part of the
@@ -693,9 +704,9 @@ std::tuple<bool, num_var_pairs_t>(::analysis::compatMatchSeparate)(bool widening
         io_region io_first = io_region(regions_first_it->second, regions_first_out, regions_first_it->first);
         io_region io_second = io_region(regions_second_it->second, regions_second_out, regions_second_it->first);
         if(a_b)
-          worklist.push(region_pair{io_first, io_second});
+          wl_push(regions_first_it->first, region_pair{io_first, io_second});
         else
-          worklist.push(region_pair{io_second, io_first});
+          wl_push(regions_second_it->first, region_pair{io_second, io_first});
       }
     };
   init_from_regions(a_in.regions, a_out.regions, b_in.regions, b_out.regions, true);
@@ -748,9 +759,9 @@ std::tuple<bool, num_var_pairs_t>(::analysis::compatMatchSeparate)(bool widening
         io_region io_first = io_region(regions_first_it->second, regions_first_out);
         io_region io_second = io_region(regions_second_it->second, regions_second_out);
         if(a_b)
-          worklist.push(region_pair{io_first, io_second});
+          wl_push(regions_first_it->first, region_pair{io_first, io_second});
         else
-          worklist.push(region_pair{io_second, io_first});
+          wl_push(regions_second_it->first, region_pair{io_second, io_first});
       }
     };
   init_from_deref_no_ptr(a_in.deref, a_out.deref, b_in.deref, b_out.deref, true);
@@ -841,14 +852,14 @@ std::tuple<bool, num_var_pairs_t>(::analysis::compatMatchSeparate)(bool widening
       auto &deref_b_out = b_out.deref.at(vb->get_id());
       io_region io_a = io_region(deref_a_in_it->second, deref_a_out);
       io_region io_b = io_region(deref_b_in_it->second, deref_b_out);
-      worklist.push(region_pair{io_a, io_b});
+      wl_push(deref_a_in_it->first, region_pair{io_a, io_b});
 
       delete va;
       delete vb;
     }
   }
 
-  return make_tuple(conflicts, result);
+  return make_tuple(conflicts, result, merged_region_keys);
 }
 
 std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
@@ -913,13 +924,12 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
    * The first step is implemented by finding corresponding pointer variables...
    */
   num_var_pairs_t eq_aliases;
+  id_set_t merged_region_keys;
   bool conflicts;
-  tie(conflicts, eq_aliases) = compatMatchSeparate(widening, a_input, a_output, a_n, b_input, b_output, b_n);
+  tie(conflicts, eq_aliases, merged_region_keys) = compatMatchSeparate(widening, a_input, a_output, a_n, b_input, b_output, b_n);
 
   summary_memory_state *x = new summary_memory_state(a->sm, false, a_n, a_input, a_output);
   summary_memory_state *y = new summary_memory_state(b->sm, false, b_n, b_input, b_output);
-
-
 
   //  summary_memory_state *before_rename = new summary_memory_state(a->sm, b_n, b_input, b_output);
   //  cout << "before_rename: " << *before_rename << endl;
@@ -978,10 +988,10 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
           cout << *id << endl;
           assert(false);
         } else {
-          //          if(!rpd.ending_last) {
-          //            cout << *id << endl;
-          //            cout << *rpd.ending_first.f.num_id << endl;
-          //          }
+          if(!rpd.ending_last) {
+            cout << *id << endl;
+            cout << *rpd.ending_first.f.num_id << endl;
+          }
           assert(rpd.ending_last);
           //          if(rpd.ending_last) {
           field_desc_t fd_first = rpd.field_first_region().value();

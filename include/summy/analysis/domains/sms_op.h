@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include <tuple>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/domains/numeric/numeric_state.h>
 #include <summy/analysis/domains/ptr_set.h>
+#include <summy/analysis/domains/api/numeric/num_var.h>
+#include <tuple>
 
 namespace analysis {
 
@@ -32,7 +33,7 @@ summary_memory_state *apply_summary(summary_memory_state *caller, summary_memory
  *
  * @return pair of variables that correspond to each other in the respective memory states
  */
-std::tuple<bool, num_var_pairs_t> compatMatchSeparate(bool widening, relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in,
+std::tuple<bool, num_var_pairs_t, api::id_set_t> compatMatchSeparate(bool widening, relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in,
   relation &b_out, numeric_state *b_n);
 std::tuple<bool, memory_head, numeric_state *, numeric_state *> compat(
   bool widening, summary_memory_state const *a, summary_memory_state const *b);
