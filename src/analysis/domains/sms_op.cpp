@@ -672,15 +672,14 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
     io_region io_ra;
     io_region io_rb;
 
-    region_pair(const region_pair &o) : io_ra(o.io_ra), io_rb(o.io_rb) {
-    }
+//    region_pair(region_pair &o) : io_ra(o.io_ra), io_rb(o.io_rb) {
+//    }
   };
   queue<region_pair> worklist;
   auto wl_push = [&](id_shared_t key, region_pair rp) {
     merged_region_keys.insert(key);
 //    worklist.push(region_pair{rp.io_ra, rp.io_rb});
-    region_pair rp2 = rp;
-    worklist.push(rp2);
+    worklist.push(rp);
   };
 
   /*

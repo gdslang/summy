@@ -77,6 +77,8 @@ struct io_region {
 
   io_region(io_region &other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {}
 
+  io_region(io_region const &other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {}
+
   io_region(io_region &&other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {}
 
   /**
