@@ -737,8 +737,11 @@ bool analysis::summary_memory_state::operator>=(const domain_state &other) const
   numeric_state *other_compat;
   bool conflicts;
   tie(conflicts, ignore, me_compat, other_compat) = compat(false, this, &other_casted);
-  if(conflicts)
+  if(conflicts) {
+    delete me_compat;
+    delete other_compat;
     return false;
+  }
   bool result = *me_compat >= *other_compat;
   delete me_compat;
   delete other_compat;
