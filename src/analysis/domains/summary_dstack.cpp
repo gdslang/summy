@@ -183,7 +183,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             /*
              * Todo: This is an expensive hack to recognize recursion
              */
-            bool recursion = false;
             set<void *> callers_addrs_trans = f_addrs;
             vector<size_t> callers_rest;
             callers_t caller_callers = get_callers(state_c);
@@ -197,8 +196,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               set_intersection(caller_f_addrs.begin(), caller_f_addrs.end(), callers_addrs_trans.begin(),
                 callers_addrs_trans.end(), inserter(intersection, intersection.begin()));
               if(intersection.size() > 0) {
-                recursion = true;
-                break;
+                continue;
               }
 
               callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
@@ -230,7 +228,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               vsv._([&](vs_finite *vsf) {
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char *)text_address + offset;
-                  if(recursion || callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
+                  if(callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
                     cout << "Warning: Ignoring recursive call." << endl;
                     continue;
                   }
