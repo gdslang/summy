@@ -468,7 +468,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
    * in one of the regions.
    */
   auto compatMatchSeparateRegion = [&](io_region &io_ra, io_region &io_rb) {
-    cout << "Next region" << endl;
+//    cout << "Next region" << endl;
 
     num_var_pairs_t upcoming;
 
@@ -519,15 +519,15 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
 
-      cout << "Next it, collision: " << rpd.collision << endl;
-      if(rpd.field_first_region())
-        cout << "First region field: " << *rpd.field_first_region()->f.num_id
-             << ", offset: " << rpd.field_first_region()->offset << ", size: " << rpd.field_first_region()->f.size
-             << endl;
-      if(rpd.field_second_region())
-        cout << "Second region field: " << *rpd.field_second_region()->f.num_id
-             << ", offset: " << rpd.field_second_region()->offset << ", size: " << rpd.field_second_region()->f.size
-             << endl;
+//      cout << "Next it, collision: " << rpd.collision << endl;
+//      if(rpd.field_first_region())
+//        cout << "First region field: " << *rpd.field_first_region()->f.num_id
+//             << ", offset: " << rpd.field_first_region()->offset << ", size: " << rpd.field_first_region()->f.size
+//             << endl;
+//      if(rpd.field_second_region())
+//        cout << "Second region field: " << *rpd.field_second_region()->f.num_id
+//             << ", offset: " << rpd.field_second_region()->offset << ", size: " << rpd.field_second_region()->f.size
+//             << endl;
 
       if(rpd.collision) {
         if(rpd.ending_last) {
@@ -851,9 +851,9 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
       auto &deref_b_out = b_out.deref.at(vb->get_id());
       io_region io_a = io_region(deref_a_in_it->second, deref_a_out);
       io_region io_b = io_region(deref_b_in_it->second, deref_b_out);
-      cout << "Pushing pair for " << *deref_a_in_it->first << "/" << *deref_b_in_it->first << endl;
-      cout << "Current queue size: " << worklist.size() << endl;
-      cout << "io_b.in_r.size(): " << io_b.in_r.size() << endl;
+//      cout << "Pushing pair for " << *deref_a_in_it->first << "/" << *deref_b_in_it->first << endl;
+//      cout << "Current queue size: " << worklist.size() << endl;
+//      cout << "io_b.in_r.size(): " << io_b.in_r.size() << endl;
       wl_push(deref_a_in_it->first, region_pair{io_a, io_b});
 
       delete va;
@@ -892,10 +892,10 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  if(c == 1688) {
-  cout << "compat OF" << endl;
-  cout << *a << endl;
-  cout << "WITH" << endl;
-  cout << *b << endl;
+//  cout << "compat OF" << endl;
+//  cout << *a << endl;
+//  cout << "WITH" << endl;
+//  cout << *b << endl;
   //  }
   //  }
 
@@ -913,6 +913,15 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
 
   auto rename_rk = [&](relation &rel, id_shared_t from, id_shared_t to) {
     //    cout << "rename_rk " << *from << " / " << *to << endl;
+//    assert(rel.deref.find(to) == rel.deref.end());
+    if(rel.deref.find(to) != rel.deref.end()) {
+      /*
+       * Todo: Dangling regions are not removed properly. This way, the can be
+       * propagated back to somewhere they used to exist. This needs to
+       * be fixed!
+       */
+      cout << "Bug todo: Rename target already exists!" << endl;
+    }
 
     auto rel_it = rel.deref.find(from);
     if(rel_it != rel.deref.end()) {

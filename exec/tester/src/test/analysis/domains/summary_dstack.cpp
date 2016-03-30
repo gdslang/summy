@@ -30,6 +30,7 @@
 #include <set>
 #include <algorithm>
 #include <experimental/optional>
+#include <summy/test/analysis/domains/common.h>
 
 using namespace analysis;
 using namespace analysis::api;
@@ -52,120 +53,6 @@ protected:
 
   virtual void TearDown() {}
 };
-
-struct _analysis_result {
-  analysis_dectran *dt;
-
-  summary_dstack *ds_analyzed;
-  map<size_t, size_t> addr_node_map;
-  elf_provider *elfp;
-
-  size_t max_it;
-
-  _analysis_result() {
-    dt = NULL;
-    ds_analyzed = NULL;
-    elfp = NULL;
-    max_it = 0;
-  }
-
-  ~_analysis_result() {
-    delete ds_analyzed;
-    delete elfp;
-    delete dt;
-
-    ds_analyzed = NULL;
-    elfp = NULL;
-    dt = NULL;
-    max_it = 0;
-  }
-};
-
-enum language_t { ASSEMBLY, C, CPP };
-
-static void state(_analysis_result &r, string program, language_t lang, bool gdsl_optimize, uint8_t compiler_opt) {
-  SCOPED_TRACE("state()");
-
-  switch(lang) {
-    case ASSEMBLY: {
-      string ___asm = program;
-      r.elfp = asm_compile_elfp(___asm);
-      break;
-    }
-    case C: {
-      string filename = c_compile(program, compiler_opt);
-      r.elfp = new elf_provider(filename.c_str());
-      break;
-    }
-    case CPP: {
-      string filename = cpp_compile(program, compiler_opt);
-      r.elfp = new elf_provider(filename.c_str());
-      break;
-    }
-  }
-
-  //  binary_provider::entry_t e;
-  //  tie(ignore, e) = elfp->entry("foo");
-  //  cout << e.address << " " << e.offset << " " << e.size << endl;
-
-  //  auto compiled = asm_compile(___asm);
-
-  gdsl::bare_frontend f("current");
-  gdsl::gdsl g(&f);
-
-  binary_provider::entry_t section;
-  bool success;
-  tie(success, section) = r.elfp->section(".text");
-  if(!success) throw string("Invalid section .text");
-
-  binary_provider::entry_t function;
-  tie(ignore, function) = r.elfp->symbol("main");
-
-  //  unsigned char *buffer = (unsigned char*)malloc(section.size);
-  //  memcpy(buffer, elfp.get_data().data + section.offset, section.size);
-
-  size_t size = (function.offset - section.offset) + function.size + 1000;
-  if(size > section.size) size = section.size;
-
-  g.set_code(r.elfp->get_data().data + section.offset, size, section.address);
-  if(g.seek(function.address)) {
-    throw string("Unable to seek to given function_name");
-  }
-
-  r.dt = new analysis_dectran(g, gdsl_optimize);
-  r.dt->transduce();
-  r.dt->register_();
-
-  auto &cfg = r.dt->get_cfg();
-  cfg.commit_updates();
-
-  shared_ptr<static_memory> se = make_shared<static_elf>(r.elfp);
-  r.ds_analyzed = new summary_dstack(&cfg, se, false);
-  jd_manager jd_man(&cfg);
-  fixpoint fp(r.ds_analyzed, jd_man);
-  cfg.register_observer(&fp);
-  fp.iterate();
-
-  for(auto *node : cfg) {
-    node_visitor nv;
-    nv._([&](address_node *an) { r.addr_node_map[an->get_address()] = an->get_id(); });
-    node->accept(nv);
-  }
-
-  r.max_it = fp.max_iter();
-}
-
-static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = false) {
-  state(r, _asm, ASSEMBLY, gdsl_optimize, 1);
-}
-
-static void state_c(_analysis_result &r, string c, bool gdsl_optimize = false) {
-  state(r, c, C, gdsl_optimize, 1);
-}
-
-static void state_cpp(_analysis_result &r, string c, bool gdsl_optimize = false) {
-  state(r, c, CPP, gdsl_optimize, 1);
-}
 
 static void query_val(
   vs_shared_t &r, _analysis_result &ar, string label, string arch_id_name, size_t offset, size_t size) {
