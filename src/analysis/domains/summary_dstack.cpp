@@ -31,6 +31,7 @@
 #include <summy/rreil/id/memory_id.h>
 #include <algorithm>
 #include <experimental/optional>
+#include <iterator>
 
 using cfg::address_node;
 using cfg::cond_edge;
@@ -82,8 +83,7 @@ std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *
     }
 
     if(f_it->second.lt == DYNAMIC) {
-      if(warnings)
-        cout << "Warning: Ignoring call to " << name << "." << endl;
+      if(warnings) cout << "Warning: Ignoring call to " << name << "." << endl;
       return stubs.no_effect();
     }
   }
@@ -96,7 +96,7 @@ std::set<size_t> analysis::summary_dstack::get_callers(std::shared_ptr<global_st
   value_set_visitor vsv;
   vsv._([&](vs_finite *vf) {
     for(size_t f_addr : vf->get_elements()) {
-      size_t head_id = this->function_desc_map.at((void*)f_addr).head_id;
+      size_t head_id = this->function_desc_map.at((void *)f_addr).head_id;
       for(size_t parent : cfg->in_edges(head_id))
         callers.insert(parent);
     }
@@ -183,6 +183,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             /*
              * Todo: This is an expensive hack to recognize recursion
              */
+            bool recursion = false;
             set<void *> callers_addrs_trans = f_addrs;
             vector<size_t> callers_rest;
             callers_t caller_callers = get_callers(state_c);
@@ -191,6 +192,15 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               size_t caller = callers_rest.back();
               callers_rest.pop_back();
               set<void *> caller_f_addrs = unpack_f_addrs(this->state[caller]->get_f_addr());
+
+              set<void *> intersection;
+              set_intersection(caller_f_addrs.begin(), caller_f_addrs.end(), callers_addrs_trans.begin(),
+                callers_addrs_trans.end(), inserter(intersection, intersection.begin()));
+              if(intersection.size() > 0) {
+                recursion = true;
+                break;
+              }
+
               callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
               callers_t caller_caller_callers = get_callers(this->state[caller]);
               callers_rest.insert(callers_rest.begin(), caller_caller_callers.begin(), caller_caller_callers.end());
@@ -220,7 +230,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               vsv._([&](vs_finite *vsf) {
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char *)text_address + offset;
-                  if(callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
+                  if(recursion || callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
                     cout << "Warning: Ignoring recursive call." << endl;
                     continue;
                   }
@@ -298,8 +308,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
             //            cout << *summarized << endl;
 
-            return shared_ptr<global_state>(
-              new global_state(summarized, state_c->get_f_addr()));
+            return shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr()));
           };
           break;
         }
@@ -354,8 +363,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         });
         dest->accept(nv);
         assert(is_addr_node);
-        state_new =
-          dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
+        state_new = dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
 
         auto &desc = this->function_desc_map.at(address);
         if(desc.field_reqs.size() > 0) {

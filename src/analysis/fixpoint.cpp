@@ -60,9 +60,9 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-    //    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
-//    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+    //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
 
     auto nits_it = node_iterations.find(node_id);
@@ -142,13 +142,13 @@ void fixpoint::iterate() {
         if(accumulator_set) {
           //                    cout << "accumulator:" << endl
           //                         << *accumulator << endl;
-//          accumulator->check_consistency();
-//          evaluated->check_consistency();
+          //          accumulator->check_consistency();
+          //          evaluated->check_consistency();
 
           accumulator = shared_ptr<domain_state>(evaluated->join(accumulator.get(), node_id));
-//          cout << *accumulator << endl;
+          //          cout << *accumulator << endl;
 
-//          accumulator->check_consistency();
+          //          accumulator->check_consistency();
 
         } else {
           accumulator = evaluated;
@@ -201,7 +201,7 @@ void fixpoint::iterate() {
       }
       //            cout << node_id << " current " << *analysis->get(node_id) << endl;
       //            cout << node_id << " XX->XX " << *accumulator << endl;
-//      accumulator->check_consistency();
+      //      accumulator->check_consistency();
       //      cout << "FOOOO" << endl;
       analysis->update(node_id, accumulator);
       updated.insert(node_id);
