@@ -779,7 +779,6 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
   while(!worklist.empty()) {
     region_pair rp = worklist.front();
     worklist.pop();
-
     /*
      * We first collect all equalities of the current region.
      */
@@ -852,8 +851,9 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
       auto &deref_b_out = b_out.deref.at(vb->get_id());
       io_region io_a = io_region(deref_a_in_it->second, deref_a_out);
       io_region io_b = io_region(deref_b_in_it->second, deref_b_out);
-      cout << "Pushing pair for " << *deref_a_in_it->first << endl;
+      cout << "Pushing pair for " << *deref_a_in_it->first << "/" << *deref_b_in_it->first << endl;
       cout << "Current queue size: " << worklist.size() << endl;
+      cout << "io_b.in_r.size(): " << io_b.in_r.size() << endl;
       wl_push(deref_a_in_it->first, region_pair{io_a, io_b});
 
       delete va;

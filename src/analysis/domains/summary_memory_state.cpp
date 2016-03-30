@@ -281,6 +281,9 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
   //  delete ass_e;
 
   child_state->kill(kill_vars);
+  /*
+   * Todo: Also kill aliases of input here => memory regions can be garbage-collected later
+   */
   for(num_var *var : kill_vars)
     delete var;
 
