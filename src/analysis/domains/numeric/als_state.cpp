@@ -480,6 +480,19 @@ void als_state::kill(std::vector<api::num_var *> vars) {
     auto var_it = elements.find(var->get_id());
     if(var_it != elements.end()) elements.erase(var_it);
   }
+  auto const &back_map = elements.get_backward();
+  for(auto &var : vars) {
+    auto back_it = back_map.find(var->get_id());
+    if(back_it != back_map.end()) {
+      auto pre_images = back_it->second;
+      for(auto &pre_image : pre_images) {
+        auto aliases = elements.at(pre_image);
+        aliases.erase(var->get_id());
+        aliases.insert(special_ptr::badptr);
+      }
+    }
+  }
+
   child_state->kill(vars);
 }
 

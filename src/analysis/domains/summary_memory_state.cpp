@@ -150,6 +150,11 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
     auto in_it = in_r.find(offset);
     auto out_it = out_r.find(offset);
     num_var *in_var = new num_var(in_it->second.num_id);
+
+    id_shared_t in_alias = unpack_singleton(child_state->queryAls(in_var)).id;
+    num_var *in_alias_var = new num_var(in_alias);
+    kill_vars.push_back(in_alias_var);
+
     num_var *out_var = new num_var(out_it->second.num_id);
     kill_vars.push_back(in_var);
     kill_vars.push_back(out_var);
