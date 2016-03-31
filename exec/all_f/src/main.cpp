@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
     set<size_t> fstarts = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    analysis_dectran dt(g, false);
+    analysis_dectran dt(g, true);
     dt.register_();
 
     int n = 0;
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
-//      if(name != "rope_print") {
+//      if(name != "push") {
 //        continue;
 //      }
 //      if(name != "main" && name != "foo")
@@ -177,6 +177,9 @@ int main(int argc, char **argv) {
     cout << "\033[1;31mStarting main analysis.\033[0m" << endl;
 
     fp.iterate();
+
+    cout << "\033[1;31mEnd of main analysis.\033[0m" << endl;
+    fp.print_distribution_total();
     cout << "Max its: " << fp.max_iter() << endl;
 
     ofstream dot_noa_fs;

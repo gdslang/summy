@@ -60,9 +60,12 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-//    cout << "Next node: " << node_id << endl;
+//        cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
-    //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+//    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+//    machine_addresses.insert(jd_man.machine_address_of(node_id));
+//    if(machine_addresses.size() % 1000 == 0)
+//      cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
 
     auto nits_it = node_iterations.find(node_id);
@@ -77,6 +80,8 @@ void fixpoint::iterate() {
         //          cout << *analysis->get(node_id) << endl;
         //        }
       }
+//      if(nits_it->second > 3)
+//        continue;
     } else
       node_iterations[node_id] = 1;
 

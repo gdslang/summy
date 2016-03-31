@@ -914,17 +914,18 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   auto rename_rk = [&](relation &rel, id_shared_t from, id_shared_t to) {
     //    cout << "rename_rk " << *from << " / " << *to << endl;
 //    assert(rel.deref.find(to) == rel.deref.end());
-    if(rel.deref.find(to) != rel.deref.end()) {
-      /*
-       * Todo: Dangling regions are not removed properly. This way, the can be
-       * propagated back to somewhere they used to exist. This needs to
-       * be fixed!
-       */
-      cout << "Bug todo: Rename target already exists!" << endl;
-    }
-
     auto rel_it = rel.deref.find(from);
     if(rel_it != rel.deref.end()) {
+      if(rel.deref.find(to) != rel.deref.end()) {
+        /*
+         * Todo: Dangling regions are not removed properly. This way, the can be
+         * propagated back to somewhere they used to exist. This needs to
+         * be fixed!
+         */
+        cout << "Bug todo: Rename target already exists!" << endl;
+        rel.deref.erase(to);
+      }
+
       region_t region = rel_it->second;
       rel.deref.erase(rel_it);
       rel.deref.insert(make_pair(to, region));

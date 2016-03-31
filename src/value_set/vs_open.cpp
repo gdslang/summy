@@ -339,7 +339,8 @@ vs_shared_t summy::vs_open::meet(const vs_open *vsf) const {
               elements.insert(i);
             return make_shared<vs_finite>(elements);
           } else
-            throw string("summy::vs_open::meet()");
+            return make_shared<vs_open>(*this);
+            //throw string("summy::vs_open::meet()");
         }
       }
       break;
