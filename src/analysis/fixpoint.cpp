@@ -60,28 +60,30 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-//        cout << "Next node: " << node_id << endl;
+    //        cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
-//    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
-//    machine_addresses.insert(jd_man.machine_address_of(node_id));
-//    if(machine_addresses.size() % 1000 == 0)
-//      cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
+    //    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+    //    machine_addresses.insert(jd_man.machine_address_of(node_id));
+    //    if(machine_addresses.size() % 1000 == 0)
+    //      cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
 
     auto nits_it = node_iterations.find(node_id);
     if(nits_it != node_iterations.end()) {
       nits_it->second++;
-      if(nits_it->second > max_its) {
-        cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
-        cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
+      if(nits_it->second > max_its || nits_it->second > 12) {
+//        cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
+//        cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
         max_its = nits_it->second;
-        print_distribution_total();
-        //        if(max_its > 22) {
-        //          cout << *analysis->get(node_id) << endl;
-        //        }
+//        print_distribution_total();
+        if(node_id == 7600) {
+          cout << "node id: " << node_id << endl;
+          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+          cout << *analysis->get(node_id) << endl;
+        }
       }
-//      if(nits_it->second > 3)
-//        continue;
+      //      if(nits_it->second > 3)
+      //        continue;
     } else
       node_iterations[node_id] = 1;
 

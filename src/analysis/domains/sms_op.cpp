@@ -468,7 +468,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
    * in one of the regions.
    */
   auto compatMatchSeparateRegion = [&](io_region &io_ra, io_region &io_rb) {
-//    cout << "Next region" << endl;
+    //    cout << "Next region" << endl;
 
     num_var_pairs_t upcoming;
 
@@ -495,7 +495,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
         //        << endl;
         conflict_resolvers.push_back([&io_ra, &a_n, &io_rb, &b_n, collision]() {
           auto collision_v = collision.value();
-          //          cout << "Resolving collision from " << collision_v.from << " to " << collision_v.to << endl;
+//          cout << "Resolving collision from " << collision_v.from << " to " << collision_v.to << endl;
           //                    summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
           //                    summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
           //                    cout << "a: " << *a_sms_before << endl;
@@ -515,19 +515,30 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
       }
     };
 
+//    cout << "a before:";
+//    for(auto r_it : io_ra.in_r)
+//      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
+//    cout << endl;
+//    cout << "b before:";
+//    for(auto r_it : io_rb.in_r)
+//      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
+//    cout << endl;
+
     merge_region_iterator mri(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
 
-//      cout << "Next it, collision: " << rpd.collision << endl;
-//      if(rpd.field_first_region())
-//        cout << "First region field: " << *rpd.field_first_region()->f.num_id
-//             << ", offset: " << rpd.field_first_region()->offset << ", size: " << rpd.field_first_region()->f.size
-//             << endl;
-//      if(rpd.field_second_region())
-//        cout << "Second region field: " << *rpd.field_second_region()->f.num_id
-//             << ", offset: " << rpd.field_second_region()->offset << ", size: " << rpd.field_second_region()->f.size
-//             << endl;
+      //      cout << "Next it, collision: " << rpd.collision << endl;
+      //      if(rpd.field_first_region())
+      //        cout << "First region field: " << *rpd.field_first_region()->f.num_id
+      //             << ", offset: " << rpd.field_first_region()->offset << ", size: " <<
+      //             rpd.field_first_region()->f.size
+      //             << endl;
+      //      if(rpd.field_second_region())
+      //        cout << "Second region field: " << *rpd.field_second_region()->f.num_id
+      //             << ", offset: " << rpd.field_second_region()->offset << ", size: " <<
+      //             rpd.field_second_region()->f.size
+      //             << endl;
 
       if(rpd.collision) {
         if(rpd.ending_last) {
@@ -540,8 +551,8 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
           int64_t from = collision ? collision->from : from_current;
           size_t size = rpd.ending_first.offset + rpd.ending_first.f.size - from;
           if(rpd.ending_last) size = std::max(size, rpd.ending_last->offset + rpd.ending_last->f.size - from);
-          assert(size > 0);
-          collision = collision_t{from, from_current + (int64_t)size - 1};
+          assert((int64_t)size > 0);
+          collision = collision_t{from, from + (int64_t)size - 1};
         }
       } else {
         resolve_collision();
@@ -604,8 +615,17 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
     for(auto conflict_resolver : conflict_resolvers)
       conflict_resolver();
 
+//    cout << "a:";
+//    for(auto r_it : io_ra.in_r)
+//      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
+//    cout << endl;
+//    cout << "b:";
+//    for(auto r_it : io_rb.in_r)
+//      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
+//    cout << endl;
+
     /*
-     * and finally retrieve all matching pointer variables. Keep in mind
+     * ... and finally retrieve all matching pointer variables. Keep in mind
      * that there is always at most one alias per numeric variable in
      * the input.
      */
@@ -613,7 +633,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
       region_pair_desc_t rpd = *mri;
 
-      //      cout << "Var first: " << *rpd.ending_first.f.num_id << endl;
+      //            cout << "Var first: " << *rpd.ending_first.f.num_id << endl;
       //      cout << "Offset/size first: " << rpd.ending_first.offset << " / " << rpd.ending_first.f.size << endl;
       //      if(rpd.ending_last)
       //        cout << "Offset/size last: " << rpd.ending_last.value().offset << " / " <<
@@ -851,9 +871,9 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
       auto &deref_b_out = b_out.deref.at(vb->get_id());
       io_region io_a = io_region(deref_a_in_it->second, deref_a_out);
       io_region io_b = io_region(deref_b_in_it->second, deref_b_out);
-//      cout << "Pushing pair for " << *deref_a_in_it->first << "/" << *deref_b_in_it->first << endl;
-//      cout << "Current queue size: " << worklist.size() << endl;
-//      cout << "io_b.in_r.size(): " << io_b.in_r.size() << endl;
+      //      cout << "Pushing pair for " << *deref_a_in_it->first << "/" << *deref_b_in_it->first << endl;
+      //      cout << "Current queue size: " << worklist.size() << endl;
+      //      cout << "io_b.in_r.size(): " << io_b.in_r.size() << endl;
       wl_push(deref_a_in_it->first, region_pair{io_a, io_b});
 
       delete va;
@@ -913,7 +933,7 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
 
   auto rename_rk = [&](relation &rel, id_shared_t from, id_shared_t to) {
     //    cout << "rename_rk " << *from << " / " << *to << endl;
-//    assert(rel.deref.find(to) == rel.deref.end());
+    //    assert(rel.deref.find(to) == rel.deref.end());
     auto rel_it = rel.deref.find(from);
     if(rel_it != rel.deref.end()) {
       if(rel.deref.find(to) != rel.deref.end()) {

@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
-//      if(name != "push") {
+//      if(name != "p_slash_66_slash_f3Action2" && name != "p_slash_66_slash_f3_slash_f2Action8" && name != "with_f3") {
 //        continue;
 //      }
 //      if(name != "main" && name != "foo")

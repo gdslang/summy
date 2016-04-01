@@ -16,6 +16,7 @@ std::tuple<domain_state*, bool> domain_state::box(domain_state *other, size_t cu
 //  cout << *other << endl;
   if(*other <= *this) {
 //    cout << "NARROWING" << endl;
+//    cout << "Narrowing no more :-(" << endl;
     return make_tuple(this->narrow(other, current_node), false);
   } else {
 //    cout << "WIDENING" << endl;
