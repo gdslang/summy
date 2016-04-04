@@ -889,6 +889,47 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();
 
+
+  struct field_converage {
+    int64_t from;
+    size_t size;
+
+    field_converage(region_t const &r) {
+      auto it = r.begin();
+      if(it == r.end()) {
+        from = size = 0;
+        return;
+      }
+      from = it->first;
+//      bits = it->second.size;
+      int64_t end = from + it->second.size - 1;
+      it++;
+      while(it != r.end()) {
+        end = it->first + it->second.size - 1;
+//        bits += it->second.size;
+        it++;
+      }
+      size = end - from + 1;
+    }
+
+    field_converage(field_converage const& o) : from(o.from), size(o.size) {
+    }
+
+    field_converage(int64_t from, size_t size) : from(from), size(size) {
+    }
+
+    static field_converage max(field_converage x, field_converage y) {
+      return field_converage(std::min(x.from, y.from), std::max(x.size, y.size));
+    }
+  };
+  map<id_shared_t, field_converage, id_less_no_version> field_counts;
+  for(auto r_it : a->input.deref)
+    field_counts.insert(pair<id_shared_t, field_converage>(r_it.first, field_converage(r_it.second)));
+  for(auto r_it : b->input.deref) {
+    auto fc_it = field_counts.find(r_it.first);
+    field_counts.insert(pair<id_shared_t, field_converage>(r_it.first, field_converage(r_it.second)));
+  }
+
   if(a->is_bottom()) {
     memory_head head;
     head.input = b->input;
