@@ -918,16 +918,27 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
     field_converage(int64_t from, size_t size) : from(from), size(size) {
     }
 
+    bool operator==(field_converage &o) {
+      return from == o.from && size == o.size;
+    }
+
     static field_converage max(field_converage x, field_converage y) {
       return field_converage(std::min(x.from, y.from), std::max(x.size, y.size));
     }
   };
   map<id_shared_t, field_converage, id_less_no_version> field_counts;
-  for(auto r_it : a->input.deref)
+  for(auto r_it : a->input.regions) {
+//    cout << "Adding " << *r_it.first << endl;
     field_counts.insert(pair<id_shared_t, field_converage>(r_it.first, field_converage(r_it.second)));
-  for(auto r_it : b->input.deref) {
+  }
+  for(auto r_it : b->input.regions) {
+//    cout << "Adding2 " << *r_it.first << endl;
+    field_converage fc_new = field_converage(field_converage(r_it.second));
     auto fc_it = field_counts.find(r_it.first);
-    field_counts.insert(pair<id_shared_t, field_converage>(r_it.first, field_converage(r_it.second)));
+    if(fc_it == field_counts.end())
+      field_counts.insert(pair<id_shared_t, field_converage>(r_it.first, fc_new));
+    else
+      fc_it->second = field_converage::max(fc_it->second, fc_new);
   }
 
   if(a->is_bottom()) {
@@ -1122,6 +1133,16 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   head.output.regions = join_region_map(a_output.regions, b_output.regions, false);
   //  cout << "output_deref" << endl;
   head.output.deref = join_region_map(a_output.deref, b_output.deref, false);
+
+
+  assert(head.input.regions.size() >= max(a->input.regions.size(), b->input.regions.size()));
+  for(auto r_it : head.input.regions) {
+    auto fc_it = field_counts.find(r_it.first);
+    if(fc_it == field_counts.end())
+      cout << *r_it.first << endl;
+    assert(fc_it != field_counts.end());
+    assert(field_converage(r_it.second) == fc_it->second);
+  }
 
   //  if(!a_n->is_bottom() && !b_n->is_bottom()) {
   //    cout << "Result #1" << endl;
