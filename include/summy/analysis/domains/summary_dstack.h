@@ -93,6 +93,8 @@ public:
 
   std::set<size_t> dirty_nodes();
 
+  virtual void check_consistency();
+
   void put(std::ostream &out);
 };
 

@@ -573,6 +573,14 @@ std::set<size_t> analysis::summary_dstack::dirty_nodes() {
   return dirty_nodes;
 }
 
+void analysis::summary_dstack::check_consistency() {
+  /*
+   * Todo: Mittels einer extra Knotenliste soll sichergestellt werden,
+   * dass Felder nicht verschwinden zwischen den Iterationen
+   */
+}
+
+
 void analysis::summary_dstack::put(std::ostream &out) {
   for(size_t i = 0; i < state.size(); i++)
     out << "Node " << i << ": " << endl

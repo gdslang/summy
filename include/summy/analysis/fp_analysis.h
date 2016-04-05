@@ -91,6 +91,9 @@ public:
 
   virtual node_compare_t get_fixpoint_node_comparer();
 
+  virtual void check_consistency() {
+  }
+
   virtual void put(std::ostream &out) = 0;
   friend std::ostream &operator<< (std::ostream &out, fp_analysis &_this);
 };
