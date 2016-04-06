@@ -5,7 +5,7 @@
  *      Author: Julian Kranz
  */
 
-#include <include/summy/rreil/sexpr/value_set_sexpr.h>
+#include <summy/rreil/sexpr/value_set_sexpr.h>
 #include <summy/rreil/sexpr/sexpr_visitor.h>
 
 using gdsl::rreil::sexpr_visitor;
