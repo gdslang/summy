@@ -11,8 +11,8 @@ SPRE=src
 HPRE=include
 BPRE=build
 
-CSOURCES=$(shell find $(SPRE)/ -type f -name '*.c')
-CPPSOURCES=$(shell find $(SPRE)/ -type f -name '*.cpp')
+CSOURCES=$(shell find $(SPRE)/ -type f -name '*.c' | grep -v ismt)
+CPPSOURCES=$(shell find $(SPRE)/ -type f -name '*.cpp' | grep -v ismt)
 
 all: pre-build $(LIBRARY)
 

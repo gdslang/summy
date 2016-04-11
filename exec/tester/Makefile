@@ -4,7 +4,7 @@ CC=gcc
 #CC=clang
 CPP=clang++
 LIBDS=-L../..
-LIBS=-lsummy -lbjutil -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lcvc4 -lgmp -lgtest -lpthread -lelf
+LIBS=-lsummy -lbjutil -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lgmp -lgtest -lpthread -lelf
 LIBFLAGS=$(LIBDS) $(LIBS)
 LDFLAGS=
 INCDS=-I../../include -Iinclude
@@ -17,8 +17,8 @@ SPRE=src
 HPRE=include
 BPRE=build
 
-CSOURCES=$(shell find $(SPRE)/ -type f -name '*.c')
-CPPSOURCES=$(shell find $(SPRE)/ -type f -name '*.cpp')
+CSOURCES=$(shell find $(SPRE)/ -type f -name '*.c' | grep -v ismt)
+CPPSOURCES=$(shell find $(SPRE)/ -type f -name '*.cpp' | grep -v ismt)
 
 all: pre-build $(EXECUTABLE)
 
