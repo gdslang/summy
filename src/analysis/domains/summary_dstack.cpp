@@ -226,8 +226,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               if(!is_valid_code_address) continue;
               value_set_visitor vsv;
               vsv._([&](vs_finite *vsf) {
+                cout << "-----" << endl;
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char *)text_address + offset;
+                  cout << "Looking up summary for " << hex << address << dec << endl;
                   if(callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
                     cout << "Warning: Ignoring recursive call." << endl;
                     continue;
@@ -274,6 +276,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     }
                   }
                 }
+                cout << "-----" << endl;
               });
               ptr.offset->accept(vsv);
               //              cout << ptr << endl;
@@ -323,8 +326,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               //            else
               fd_it->second.summary_nodes.insert(to);
               callers_t caller_callers = get_callers(state_c);
-              for(auto caller : caller_callers)
+              for(auto caller : caller_callers) {
+                cout << "Return-propagating from " << hex << f_addr << " to " << caller << dec << endl;
                 assert_dependency(gen_dependency(to, caller));
+              }
             }
             return state_c;
           };

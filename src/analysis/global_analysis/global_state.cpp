@@ -12,6 +12,8 @@
 using namespace std;
 using namespace analysis;
 using namespace summy;
+using namespace std::experimental;
+
 
 analysis::global_state::~global_state() {
   delete this->mstate;
@@ -57,6 +59,11 @@ bool analysis::global_state::operator >=(const ::analysis::domain_state &other) 
 }
 
 void analysis::global_state::check_consistency() {
+  static optional<summy::vs_shared_t> f_addr_last;
+  if(!f_addr_last || !(*f_addr_last.value() == f_addr)) {
+    cout << "Inside function: 0x" << hex << *f_addr << dec << endl;
+    f_addr_last = f_addr;
+  }
   mstate->check_consistency();
 }
 
