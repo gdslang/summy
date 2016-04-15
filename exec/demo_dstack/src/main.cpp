@@ -163,6 +163,12 @@ int main(int argc, char **argv) {
     });
     dot_fs.close();
 
+    unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg();
+    ofstream dot_machine_fs;
+    dot_machine_fs.open("output_machine.dot", ios::out);
+    machine_cfg->dot(dot_machine_fs);
+    dot_machine_fs.close();
+
   } catch(string s) {
     cout << "Exception: " << s << endl;
     exit(1);

@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <functional>
 #include <experimental/optional>
+#include <memory>
 
 #include <cppgdsl/rreil/statement/statement.h>
 
@@ -131,6 +132,7 @@ public:
   update_pop push_updates();
 
   edge_set_t adjacencies(std::set<size_t> nodes);
+  std::unique_ptr<cfg::cfg> machine_cfg();
 
   typedef std::function<void(node&, std::ostream&)> node_callback_t;
   typedef std::function<void(edge_id, std::ostream&)> edge_callback_t;

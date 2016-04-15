@@ -101,7 +101,6 @@ void fixpoint::iterate() {
     //      }
     //    }
 
-
     bool propagate;
     bool needs_postprocessing = false;
     shared_ptr<domain_state> accumulator;
