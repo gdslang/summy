@@ -61,8 +61,13 @@ ptr analysis::unpack_singleton(ptr_set_t aliases) {
 }
 
 summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, summary_memory_state *summary) {
+
   summary_memory_state *return_site = caller->copy();
 
+  if(summary->is_bottom()) {
+    return_site->bottomify();
+    return return_site;
+  }
   //    cout << "apply_summary" << endl;
   //    cout << "caller:" << endl
   //         << *caller << endl;

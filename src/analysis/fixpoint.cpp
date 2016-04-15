@@ -62,7 +62,7 @@ void fixpoint::iterate() {
 
     //            cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
-        cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+//        cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    machine_addresses.insert(jd_man.machine_address_of(node_id));
     //    if(machine_addresses.size() % 1000 == 0)
     //      cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
@@ -72,10 +72,10 @@ void fixpoint::iterate() {
     if(nits_it != node_iterations.end()) {
       nits_it->second++;
       if(nits_it->second > max_its || nits_it->second > 12) {
-        //        cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
-        //        cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
+                cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
+                cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
         max_its = nits_it->second;
-        //        print_distribution_total();
+                print_distribution_total();
         //        if(node_id == 7600) {
         //          cout << "node id: " << node_id << endl;
         //          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
@@ -109,7 +109,7 @@ void fixpoint::iterate() {
     auto &constraints = analysis->constraints_at(node_id);
     if(constraints.size() > 0) {
       shared_ptr<domain_state> current = analysis->get(node_id);
-      current->check_consistency();
+//      current->check_consistency();
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
         //        cout << "Constraint from " << node_other << " to " << node_id << endl;
 

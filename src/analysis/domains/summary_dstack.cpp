@@ -82,6 +82,11 @@ std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *
       return stubs.allocator(node, 0);
     }
 
+    string longjmp = "longjmp";
+    if(name.compare(0, longjmp.length(), longjmp) == 0) {
+      return nullopt;
+    }
+
     if(f_it->second.lt == DYNAMIC) {
       if(warnings) cout << "Warning: Ignoring call to " << name << "." << endl;
       return stubs.no_effect();
@@ -124,7 +129,7 @@ void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, 
   if(!includes(fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
     fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
     _dirty_nodes.insert(fd.head_id);
-    cout << "Added dirty node because of reqs..." << endl;
+//    cout << "Added dirty node because of reqs..." << endl;
   }
 }
 
@@ -226,12 +231,12 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               if(!is_valid_code_address) continue;
               value_set_visitor vsv;
               vsv._([&](vs_finite *vsf) {
-                cout << "-----" << endl;
+//                cout << "-----" << endl;
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char *)text_address + offset;
-                  cout << "Looking up summary for " << hex << address << dec << endl;
+//                  cout << "Looking up summary for " << hex << address << dec << endl;
                   if(callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
-                    cout << "Warning: Ignoring recursive call." << endl;
+//                    cout << "Warning: Ignoring recursive call." << endl;
                     continue;
                   }
                   auto add_summary = [&](summary_memory_state *next) {
@@ -276,7 +281,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     }
                   }
                 }
-                cout << "-----" << endl;
+//                cout << "-----" << endl;
               });
               ptr.offset->accept(vsv);
               //              cout << ptr << endl;
@@ -327,7 +332,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               fd_it->second.summary_nodes.insert(to);
               callers_t caller_callers = get_callers(state_c);
               for(auto caller : caller_callers) {
-                cout << "Return-propagating from " << hex << f_addr << " to " << caller << dec << endl;
+//                cout << "Return-propagating from " << hex << f_addr << " to " << caller << dec << endl;
                 assert_dependency(gen_dependency(to, caller));
               }
             }
