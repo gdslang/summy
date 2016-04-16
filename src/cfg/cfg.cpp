@@ -277,9 +277,8 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg() {
       });
       node_payloads[child]->accept(nv_child);
       if(child_is_addr) {
-        cout << "Edge from " << next.parent.value() << " to " << child << endl;
-        //          cout << "Edge from " << *node_payloads[next.parent.value()] << " to " << *node_payloads[child] <<
-        //          endl;
+        //        cout << "Edge from " << next.parent.value() << " to " << child << endl;
+        cout << "Edge from " << *node_payloads[next.parent.value()] << " to " << *node_payloads[child] << endl;
         size_t from = get_node_new(next.parent.value());
         size_t to = get_node_new(child);
         edge_copy_visitor ecv;

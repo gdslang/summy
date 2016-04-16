@@ -17,6 +17,8 @@ class node_visitor;
 class node {
 private:
   size_t id;
+
+  virtual void put(std::ostream &out);
 public:
   node(size_t id) :
       id(id) {
@@ -30,6 +32,11 @@ public:
 
   virtual void dot(std::ostream &stream);
   virtual void accept(node_visitor &v);
+
+  friend std::ostream &operator<< (std::ostream &out, node &_this);
 };
 
+std::ostream &operator<<(std::ostream &out, node &_this);
+
 }
+

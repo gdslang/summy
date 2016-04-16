@@ -12,10 +12,28 @@
 using std::dec;
 using std::hex;
 
+void cfg::address_node::put(std::ostream &out) {
+  out << "AddressNode(" << get_id() << ", 0x" << hex << address << dec << ", ";
+  if(name)
+    out << name.value() << ", ";
+  switch(decs) {
+    case DECODED:
+      out << "DECODED";
+      break;
+    case DECODABLE:
+      out << "DECODABLE";
+      break;
+    case UNDEFINED:
+      out << "UNDEFINED";
+      break;
+  }
+  out << ")";
+}
+
+
 void cfg::address_node::dot(std::ostream &stream) {
   stream << get_id() << " [label=\"" << get_id() << " ~ ";
-  if(name)
-    stream << name.value() << ":";
+  if(name) stream << name.value() << ":";
   stream << "0x" << hex << address << dec << "\", shape=box";
   switch(decs) {
     case DECODED: {

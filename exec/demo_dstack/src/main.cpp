@@ -89,14 +89,14 @@ int main(int argc, char **argv) {
   if(!success) throw string("Invalid section .text");
 
   binary_provider::entry_t dot_plt;
-  tie(success, dot_plt) = elfp.section(".plt");
-  if(!success) {
+//  tie(success, dot_plt) = elfp.section(".plt");
+//  if(!success) {
     dot_plt.address = dot_text.address;
     dot_plt.size = 0;
     dot_plt.offset = dot_text.offset;
-  }
+//  }
 
-  assert(dot_plt.address + dot_plt.size == dot_text.address);
+//  assert(dot_plt.address + dot_plt.size == dot_text.address);
   size_t section_size = dot_plt.size + dot_text.size;
   size_t section_offset = dot_plt.offset;
   size_t section_address = dot_plt.address;

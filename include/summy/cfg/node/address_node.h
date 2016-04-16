@@ -21,6 +21,7 @@ private:
   decoding_state decs;
   std::experimental::optional<std::string> name;
 
+  virtual void put(std::ostream &out);
 public:
   address_node(size_t id, size_t address, decoding_state decs) : node(id), address(address), decs(decs) {}
 
