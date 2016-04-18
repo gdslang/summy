@@ -32,7 +32,7 @@ size_t analysis_dectran::initial_cfg(
   vector<transformer *> transformers;
   transformers.push_back(new decomposer(&cfg, head_node));
   transformers.push_back(new goto_ip_adder(&cfg, head_node));
-  transformers.push_back(new ip_propagator(&cfg, head_node));
+  transformers.push_back(new ip_propagator(&cfg, head_node, speculative_decoding));
   //  transformers.push_back(new trivial_connector(&cfg));
   for(auto t : transformers) {
     t->transform();
@@ -47,8 +47,8 @@ size_t analysis_dectran::initial_cfg(
   return head_node;
 }
 
-analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized)
-    : dectran(cfg, gdsl, blockwise_optimized), big_step::big_step(cfg), tc(&cfg), cfg() {}
+analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
+    : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding), big_step::big_step(cfg), tc(&cfg), cfg() {}
 
 void analysis_dectran::transduce(bool decode_multiple, std::experimental::optional<std::string> function_name) {
   size_t head_node = initial_cfg(cfg, decode_multiple, function_name);

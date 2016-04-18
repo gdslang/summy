@@ -189,7 +189,7 @@ cfg::edge_set_t cfg::cfg::adjacencies(std::set<size_t> nodes) {
   return result;
 }
 
-std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg() {
+std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
   set<size_t> possible_roots;
   for(size_t i = 0; i < node_payloads.size(); i++)
     possible_roots.insert(i);
@@ -233,27 +233,23 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg() {
           auto next_it = possible_roots.begin();
           size_t next = *next_it;
           node_visitor nv;
-          nv._([&](address_node *nv) {
-            is_addr = true;
-          });
+          nv._([&](address_node *nv) { is_addr = true; });
           node_payloads[next]->accept(nv);
           possible_roots.erase(next_it);
-          if(!is_addr)
-            continue;
+          if(!is_addr) continue;
           return node_parent(next);
         }
         return nullopt;
       } else {
-        node_parent np = bfs_queue.back();
+        node_parent np = bfs_queue.front();
         bfs_queue.pop();
         return np;
       }
     }();
-    if(!next_opt)
-      break;
+    if(!next_opt) break;
     node_parent next = next_opt.value();
 
-//    cout << "Next node: " << next.node << endl;
+    //    cout << "Next node: " << *node_payloads[next.node] << endl;
 
     node_visitor nv;
     nv._([&](address_node *nv) {
@@ -262,13 +258,16 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg() {
     });
     node_payloads[next.node]->accept(nv);
 
+    assert(next.parent);
+//    cout << "parent: " << *node_payloads[next.parent.value()] << endl;
+
     for(auto edge_it : *edge_payloads.at(next.node)) {
       size_t child = edge_it.first;
       if(seen.find(child) == seen.end()) {
         bfs_queue.push(node_parent(child, next.parent));
         seen.insert(child);
       }
-      //        cout << "child: " << child << endl;
+      //      cout << "child: " << child << " / " << *node_payloads[child] << endl;
       node_visitor nv_child;
       bool child_is_addr = false;
       nv_child._([&](address_node *nv) {
@@ -276,9 +275,18 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg() {
         child_is_addr = true;
       });
       node_payloads[child]->accept(nv_child);
-      if(child_is_addr) {
+
+      edge_visitor ev;
+      bool is_call_target_edge = false;
+      ev._([&](call_edge const *ce) {
+        if(ce->is_target_edge())
+          is_call_target_edge = true;
+      });
+      edge_it.second->accept(ev);
+
+      if(child_is_addr && (call_targets || !is_call_target_edge)) {
         //        cout << "Edge from " << next.parent.value() << " to " << child << endl;
-        cout << "Edge from " << *node_payloads[next.parent.value()] << " to " << *node_payloads[child] << endl;
+//        cout << "Edge from " << *node_payloads[next.parent.value()] << " to " << *node_payloads[child] << endl;
         size_t from = get_node_new(next.parent.value());
         size_t to = get_node_new(child);
         edge_copy_visitor ecv;

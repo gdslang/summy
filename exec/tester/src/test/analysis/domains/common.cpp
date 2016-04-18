@@ -85,7 +85,7 @@ void state(_analysis_result &r, string program, language_t lang, bool gdsl_optim
     throw string("Unable to seek to given function_name");
   }
 
-  r.dt = new analysis_dectran(g, gdsl_optimize);
+  r.dt = new analysis_dectran(g, gdsl_optimize, true);
   r.dt->transduce();
   r.dt->register_();
 

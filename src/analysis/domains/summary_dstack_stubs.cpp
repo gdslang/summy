@@ -60,6 +60,10 @@ shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::allocator(size_
 
 std::shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::no_effect() {
   shared_ptr<summary_memory_state> no_effect_summary = shared_ptr<summary_memory_state>(summary_dstack::sms_top(sm, warnings));
-
   return no_effect_summary;
+}
+
+std::shared_ptr<summary_memory_state> analysis::summary_dstack_stubs::bottomifier() {
+  shared_ptr<summary_memory_state> bottom_summary = shared_ptr<summary_memory_state>(summary_dstack::sms_bottom(sm, warnings));
+  return bottom_summary;
 }

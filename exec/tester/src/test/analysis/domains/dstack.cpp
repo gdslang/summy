@@ -106,7 +106,7 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
 
   g.set_code(compiled.data(), compiled.size(), 0);
 
-  r.dt = new analysis_dectran(g, gdsl_optimize);
+  r.dt = new analysis_dectran(g, gdsl_optimize, true);
   r.dt->transduce();
   r.dt->register_();
 

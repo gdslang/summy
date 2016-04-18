@@ -21,5 +21,6 @@ public:
 
   std::shared_ptr<summary_memory_state> allocator(size_t allocation_site, size_t size);
   std::shared_ptr<summary_memory_state> no_effect();
+  std::shared_ptr<summary_memory_state> bottomifier();
 };
 }

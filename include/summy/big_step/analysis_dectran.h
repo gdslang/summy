@@ -28,7 +28,7 @@ private:
     cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
 
 public:
-  analysis_dectran(gdsl::gdsl &g, bool blockwise_optimized);
+  analysis_dectran(gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding);
 
   std::set<size_t> const &get_unresolved() {
     return unresolved;

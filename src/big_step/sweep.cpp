@@ -30,7 +30,7 @@ size_t sweep::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental
 
   vector<transformer *> transformers;
   transformers.push_back(new decomposer(&cfg));
-  transformers.push_back(new ip_propagator(&cfg));
+  transformers.push_back(new ip_propagator(&cfg, speculative_decoding));
   for(auto t : transformers) {
     t->transform();
     delete t;
@@ -44,8 +44,8 @@ size_t sweep::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental
   return head_node;
 }
 
-sweep::sweep(gdsl::gdsl &gdsl, bool blockwise_optimized)
-    : dectran(cfg, gdsl, blockwise_optimized), cfg() {
+sweep::sweep(gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
+    : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding), cfg() {
 
 }
 

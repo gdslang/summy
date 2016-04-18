@@ -93,7 +93,7 @@ void ip_propagator::transform() {
         sv._([&](branch *b) {
           if(b->get_hint() == gdsl::rreil::BRANCH_HINT_CALL) {
             size_t an_id = cfg->create_node([&](size_t id) {
-              return new address_node(id, (*ips)[edge_it->first], UNDEFINED);
+              return new address_node(id, (*ips)[edge_it->first], speculative_decoding ? DECODABLE : UNDEFINED);
             });
             cfg->update_edge(edge_it->first, an_id, new class call_edge(false));
           }

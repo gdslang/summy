@@ -20,11 +20,12 @@ private:
   bool blockwise_optimized;
 
 protected:
+  bool speculative_decoding;
   gdsl::gdsl &gdsl;
 
   cfg::translated_program_t decode_translate(bool decode_multiple);
   virtual size_t initial_cfg(
     cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
 public:
-  dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized);
+  dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding);
 };

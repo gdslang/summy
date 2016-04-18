@@ -20,10 +20,16 @@ extern "C" {
 
 class ip_propagator : public transformer {
 private:
+  bool speculative_decoding;
   std::tuple<bool, int_t> evaluate(int_t ip_value, gdsl::rreil::expr *e);
   std::vector<int_t> *analyze_ip();
 public:
-  using transformer::transformer;
+  ip_propagator(cfg::cfg *cfg, bool speculative_decoding) :
+      transformer(cfg), speculative_decoding(speculative_decoding) {
+  }
+  ip_propagator(cfg::cfg *cfg, size_t root, bool speculative_decoding) :
+      transformer(cfg, root), speculative_decoding(speculative_decoding) {
+  }
 
   virtual void transform();
 };

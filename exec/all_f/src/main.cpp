@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
 
   try {
     cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
-    sweep sweep(g, false);
+    sweep sweep(g, false, true);
     sweep.transduce();
     analysis::fcollect::fcollect fc(&sweep.get_cfg());
     cfg::jd_manager jd_man_fc(&sweep.get_cfg());
@@ -110,10 +110,10 @@ int main(int argc, char **argv) {
 
 //    for(size_t address : fc.result().result)
 //      cout << hex << address << dec << endl;
-    set<size_t> fstarts;// = fc.result().result;
+    set<size_t> fstarts = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    analysis_dectran dt(g, true);
+    analysis_dectran dt(g, true, true);
     dt.register_();
 
     int n = 0;
@@ -127,8 +127,8 @@ int main(int argc, char **argv) {
 //      if(name != "p_slash_66_slash_f3Action2" && name != "p_slash_66_slash_f3_slash_f2Action8" && name != "with_f3") {
 //        continue;
 //      }
-      if(name != "_slash_vex_slash_0f_slash_vexv")
-        continue;
+//      if(name != "_slash_vex_slash_0f_slash_vexv")
+//        continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
         fstarts.erase(e.address);
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
     });
     dot_fs.close();
 
-    unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg();
+    unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg(false);
     ofstream dot_machine_fs;
     dot_machine_fs.open("output_machine.dot", ios::out);
     machine_cfg->dot(dot_machine_fs);

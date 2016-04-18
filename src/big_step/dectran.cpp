@@ -100,5 +100,5 @@ size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experiment
   return head_node;
 }
 
-dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized)
-    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl) {}
+dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
+    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl), speculative_decoding(speculative_decoding) {}

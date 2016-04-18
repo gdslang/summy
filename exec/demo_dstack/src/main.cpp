@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
 
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    analysis_dectran dt(g, false);
+    analysis_dectran dt(g, false, true);
 
     dt.transduce();
     dt.register_();
@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
     });
     dot_fs.close();
 
-    unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg();
+    unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg(false);
     ofstream dot_machine_fs;
     dot_machine_fs.open("output_machine.dot", ios::out);
     machine_cfg->dot(dot_machine_fs);

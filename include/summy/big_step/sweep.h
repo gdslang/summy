@@ -24,7 +24,9 @@ private:
     cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
 
 public:
-  sweep(gdsl::gdsl &g, bool blockwise_optimized);
+  sweep(gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding);
+  virtual ~sweep() {
+  }
 
   cfg::cfg &get_cfg() {
     return cfg;
