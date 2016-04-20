@@ -21,6 +21,6 @@ void cfg::node_copy_visitor::visit(node *n) {
 }
 
 void cfg::node_copy_visitor::visit(address_node *n) {
-  if(address_node_ctor != NULL) _node = address_node_ctor(node_id(n), n->get_address(), n->get_decs());
-  else _node = new address_node(node_id(n), n->get_address(), n->get_decs());
+  if(address_node_ctor != NULL) _node = address_node_ctor(node_id(n), n->get_address(), n->get_decs(), n->get_name());
+  else _node = new address_node(node_id(n), n->get_address(), n->get_decs(), n->get_name());
 }

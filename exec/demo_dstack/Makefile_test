@@ -8,8 +8,8 @@ LIBFLAGS=$(LIBDS) $(LIBS)
 LDFLAGS=
 INCDS=
 OPT ?= 1
-CFLAGS=$(CFLAGS_EXTRA) -c -mcmodel=large -O$(OPT) -std=c11 -fno-inline -fno-optimize-sibling-calls -w $(INCDS)
-CPPFLAGS=$(CPPFLAGS_EXTRA) -c -mcmodel=large -O$(OPT) -std=c++11 -fno-inline -fno-optimize-sibling-calls $(INCDS)
+CFLAGS=$(CFLAGS_EXTRA) -g3 -c -mcmodel=large -O$(OPT) -std=c11 -fno-inline -fno-optimize-sibling-calls -w $(INCDS)
+CPPFLAGS=$(CPPFLAGS_EXTRA) -g3 -c -mcmodel=large -O$(OPT) -std=c++11 -fno-inline -fno-optimize-sibling-calls $(INCDS)
 
 SPRE=.
 HPRE=.

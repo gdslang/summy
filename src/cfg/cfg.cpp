@@ -213,9 +213,9 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
       size_t node_new = cfg_new->create_node([&](size_t id) {
         bool is_addr = false;
         node_copy_visitor ncv;
-        ncv._([&](size_t _, size_t addr, decoding_state dec_state) {
+        ncv._([&](size_t _, size_t addr, decoding_state dec_state, optional<string> name) {
           is_addr = true;
-          return new address_node(id, addr, dec_state);
+          return new address_node(id, addr, dec_state, name);
         });
         node_payloads[node_old]->accept(ncv);
         assert(is_addr);

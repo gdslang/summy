@@ -36,6 +36,10 @@ public:
     return decs;
   }
 
+  std::experimental::optional<std::string> get_name() {
+    return name;
+  }
+
   //  void set_decoded(bool decoded) {
   //    return this->decoded = decoded;
   //  }
