@@ -29,6 +29,14 @@ using namespace gdsl::rreil;
 using namespace std;
 using namespace std::experimental;
 
+dec_interval::dec_interval(int_t from, int_t to) : from(from), to(to) {
+
+}
+
+bool dec_interval::operator <(const dec_interval &other) {
+  return from < other.from;
+}
+
 cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   cfg::translated_program_t prog;
   if(gdsl.bytes_left() <= 0) throw string("Unable to decode");

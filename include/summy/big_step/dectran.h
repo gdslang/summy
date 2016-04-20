@@ -13,6 +13,15 @@
 #include <experimental/optional>
 
 #include <set>
+#include <cppgdsl/gdsl.h>
+
+struct dec_interval {
+  int_t from;
+  int_t to;
+
+  dec_interval(int_t from, int_t to);
+  bool operator <(dec_interval const& other);
+};
 
 class dectran {
 private:
@@ -28,4 +37,6 @@ protected:
     cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
 public:
   dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding);
+  virtual ~dectran() {
+  }
 };
