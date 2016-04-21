@@ -24,18 +24,18 @@ equality_state *analysis::equality_state::join_widen(domain_state *other, size_t
   back_map_t back_map_joined;
   eq_elements_t eq_elements_joined;
   for(auto &back_mapping : back_map) {
-    id_set_t const &ids = elements.at(back_mapping.second);
+    id_off_map_t const &ids = elements.at(back_mapping.second);
     auto other_back_mapping = other_casted->back_map.find(back_mapping.first);
     if(other_back_mapping == other_casted->back_map.end()) continue;
-    id_set_t const &ids_other = other_casted->elements.at(other_back_mapping->second);
+    id_off_map_t const &ids_other = other_casted->elements.at(other_back_mapping->second);
 
-    id_set_t ids_joined;
+    id_off_map_t ids_joined;
     set_intersection(
       ids.begin(), ids.end(), ids_other.begin(), ids_other.end(), inserter(ids_joined, ids_joined.begin()));
     if(ids_joined.size() > 1) {
-      id_shared_t rep = *ids_joined.begin();
+      id_shared_t rep = ids_joined.begin()->first;
       for(auto &id_joined : ids_joined)
-        back_map_joined[id_joined] = rep;
+        back_map_joined[id_joined.first] = rep;
       eq_elements_joined[rep] = ids_joined;
     }
   }
@@ -90,7 +90,7 @@ void analysis::equality_state::remove(api::num_var *v) {
   if(id_back_it != back_map.end()) {
     auto id_elements_it = elements.find(id_back_it->second);
     assert(id_elements_it != elements.end());
-    id_set_t &id_elements = id_elements_it->second;
+    id_off_map_t &id_elements = id_elements_it->second;
     id_elements.erase(v->get_id());
     if(id_elements.size() <= 1) {
       if(id_elements.size() == 1) back_map.erase(*id_elements.begin());
@@ -225,7 +225,7 @@ void analysis::equality_state::put(std::ostream &out) const {
   out << "{";
   for(auto &elem : elements) {
     id_shared_t id = elem.first;
-    singleton_value_t const &aliases = elem.second;
+    eq_singleton_value_t const &aliases = elem.second;
     if(!first)
       out << ", ";
     else
@@ -277,11 +277,11 @@ bool analysis::equality_state::operator>=(const domain_state &other) const {
   equality_state const &other_casted = dynamic_cast<equality_state const &>(other);
   if(*child_state >= *other_casted.child_state) {
     for(auto &back_mapping : back_map) {
-      id_set_t const &ids = elements.at(back_mapping.second);
+      id_off_map_t const &ids = elements.at(back_mapping.second);
       if(ids.size() > 1) {
         auto other_back_mapping = other_casted.back_map.find(back_mapping.first);
         if(other_back_mapping == other_casted.back_map.end()) return false;
-        id_set_t const &ids_other = other_casted.elements.at(other_back_mapping->second);
+        id_off_map_t const &ids_other = other_casted.elements.at(other_back_mapping->second);
         if(!includes(ids_other.begin(), ids_other.end(), ids.begin(), ids.end())) return false;
       }
     }
@@ -569,7 +569,7 @@ bool analysis::equality_state::cleanup(api::num_var *var) {
 }
 
 void analysis::equality_state::project(api::num_vars *vars) {
-  id_set_t need_removal;
+  id_off_map_t need_removal;
 
   id_set_t const &p_ids = vars->get_ids();
   for(auto &id_bmapping : back_map)
