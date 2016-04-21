@@ -20,7 +20,8 @@ struct dec_interval {
   int_t to;
 
   dec_interval(int_t from, int_t to);
-  bool operator <(dec_interval const& other);
+  bool operator <(dec_interval const& other) const;
+//  bool operator <(int_t const& v) const;
 };
 
 class dectran {
@@ -28,6 +29,7 @@ private:
   cfg::cfg &cfg;
   bool blockwise_optimized;
 
+  std::set<dec_interval> decoded_intervals;
 protected:
   bool speculative_decoding;
   gdsl::gdsl &gdsl;
@@ -39,4 +41,8 @@ public:
   dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding);
   virtual ~dectran() {
   }
+
+  void print_decoding_holes();
+  int_t bytes_decoded();
+  int_t start_addresses_decoded();
 };

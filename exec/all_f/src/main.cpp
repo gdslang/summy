@@ -100,23 +100,23 @@ int main(int argc, char **argv) {
   g.set_code(buffer, section.size, section.address);
 
   try {
-    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
-    sweep sweep(g, false, true);
-    sweep.transduce();
-    analysis::fcollect::fcollect fc(&sweep.get_cfg());
-    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-    fixpoint fp_collect(&fc, jd_man_fc);
-    fp_collect.iterate();
+//    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
+//    sweep sweep(g, false, true);
+//    sweep.transduce();
+//    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+//    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+//    fixpoint fp_collect(&fc, jd_man_fc);
+//    fp_collect.iterate();
 
 //    for(size_t address : fc.result().result)
 //      cout << hex << address << dec << endl;
-    set<size_t> fstarts = fc.result().result;
+    set<size_t> fstarts;// = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
     analysis_dectran dt(g, true, true);
     dt.register_();
 
-    int n = 0;
+//    int n = 0;
 
     cout << "*** Function from ELF data..." << endl;
     auto functions = elfp.functions();
@@ -129,6 +129,10 @@ int main(int argc, char **argv) {
 //      }
 //      if(name != "_slash_vex_slash_0f_slash_vexv")
 //        continue;
+//      if(name != "sem_movsAction1")
+//        continue;
+      if(name != "rreil_convert_sem_stmt")
+        continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
         fstarts.erase(e.address);
@@ -194,9 +198,9 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 9999 || true)
-//        out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-      out << n.get_id() << " [label=\"" << *jd_man.address_of(n.get_id()) << "\"]";
+      if(n.get_id() == 36)
+        out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+//      out << n.get_id() << " [label=\"" << *jd_man.address_of(n.get_id()) << "\"]";
       else
         n.dot(out);
     });
@@ -208,7 +212,11 @@ int main(int argc, char **argv) {
     machine_cfg->dot(dot_machine_fs);
     dot_machine_fs.close();
 
-
+    printf("Section size: %zu\n", section.size);
+    printf("Decoded bytes: %lld\n", dt.bytes_decoded());
+    printf("Analyzed addresses: %zu\n", fp.analyzed_addresses());
+    printf("Decoded start addresses: %lld\n", dt.start_addresses_decoded());
+    dt.print_decoding_holes();
   } catch(string &s) {
     cout << "Exception: " << s << endl;
     exit(1);

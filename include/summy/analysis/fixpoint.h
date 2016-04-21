@@ -32,7 +32,7 @@ private:
 
   fp_priority_queue worklist;
 
-//  std::set<size_t> machine_addresses;
+  std::set<size_t> machine_addresses;
   std::map<size_t, size_t> node_iterations;
   size_t max_its;
 public:
@@ -56,6 +56,8 @@ public:
   void print_distribution();
   void print_distribution_total();
   double avg_iteration_count();
+
+  size_t analyzed_addresses();
 };
 
 }

@@ -56,6 +56,10 @@ protected:
   virtual void init_fixpoint_pending();
   void init();
 public:
+  cfg::cfg *get_cfg() {
+    return cfg;
+  }
+
   fp_analysis(cfg::cfg *cfg);
   virtual ~fp_analysis() {
   }
