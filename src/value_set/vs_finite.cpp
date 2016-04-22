@@ -5,6 +5,7 @@
  *      Author: Julian Kranz
  */
 
+#include <assert.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
 #include <bjutil/printer.h>
@@ -304,6 +305,28 @@ vs_shared_t summy::vs_finite::meet(const vs_open *vsf) const {
 
 vs_shared_t summy::vs_finite::meet(const vs_top *vsf) const {
   return make_shared<vs_finite>(*this);
+}
+
+vs_shared_t summy::vs_finite::with_sign_size(bool _unsigned, size_t size) const {
+  cout << "Säääääze: " << size << endl;
+  if(size > 64)
+    return value_set::top;
+  else if(size < 64 && size > 0) {
+    assert((size & (size - 1)) == 0);
+    uint64_t mask = ((uint64_t)1 << (uint64_t)size) - 1;
+
+    elements_t elements_new;
+    for(int64_t element : elements) {
+      if(!_unsigned && (element & (1 << (size - 1)))) {
+        cout << mask << endl;
+        cout << (element | ~mask) << endl;
+        elements_new.insert(element | ~mask);
+      }else
+        elements_new.insert(element & mask);
+    }
+    return make_shared<vs_finite>(elements_new);
+  } else
+    return make_shared<vs_finite>(*this);
 }
 
 void summy::vs_finite::accept(value_set_visitor &v) {

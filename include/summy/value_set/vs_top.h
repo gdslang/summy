@@ -49,6 +49,8 @@ public:
   vs_shared_t meet(vs_open const *vsf) const;
   vs_shared_t meet(vs_top const *vsf) const;
 
+  vs_shared_t with_sign_size(bool _unsigned, size_t size) const;
+
   void accept(value_set_visitor &v);
 };
 

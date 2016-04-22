@@ -19,6 +19,13 @@ std::ostream &analysis::api::operator <<(std::ostream &out, num_expr &_this) {
   return out;
 }
 
+void analysis::api::num_expr::put(std::ostream &out) {
+  if(sign_interp) {
+    auto &si = sign_interp.value();
+    out << " [" << (si.signedness == SIGNED ? "SIGNED" : "UNSINGED") << ", " << si.size << "]";
+  }
+}
+
 /*
  * num_exr_cmp
  */
@@ -52,6 +59,7 @@ void analysis::api::num_expr_cmp::put(std::ostream &out) {
     }
   }
   out << " 0";
+  num_expr::put(out);
 }
 
 analysis::api::num_expr_cmp::~num_expr_cmp() {
@@ -103,6 +111,7 @@ num_expr_cmp *analysis::api::num_expr_cmp::equals(num_linear *a, num_linear *b) 
 
 void analysis::api::num_expr_lin::put(std::ostream &out) {
   out << *inner;
+  num_expr::put(out);
 }
 
 analysis::api::num_expr_lin::~num_expr_lin() {
@@ -158,6 +167,7 @@ void analysis::api::num_expr_bin::put(std::ostream &out) {
     }
   }
   out << " " << *opnd2;
+  num_expr::put(out);
 }
 
 analysis::api::num_expr_bin::~num_expr_bin() {

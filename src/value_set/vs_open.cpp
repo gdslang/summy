@@ -4,6 +4,7 @@
  *  Created on: Feb 11, 2015
  *      Author: Julian Kranz
  */
+#include <assert.h>
 #include <summy/value_set/vs_open.h>
 #include <summy/value_set/vs_finite.h>
 #include <algorithm>
@@ -362,6 +363,23 @@ vs_shared_t summy::vs_open::meet(const vs_top *vsf) const {
   return make_shared<vs_open>(*this);
 }
 
+vs_shared_t summy::vs_open::with_sign_size(bool _unsigned, size_t size) const {
+  if(size > 64)
+    return value_set::top;
+  else if(size < 64 && size > 0) {
+    assert(size & (size - 1) == 0);
+    uint64_t mask = (1 << size) - 1;
+    if(_unsigned) {
+      int64_t limit;
+      if(this->limit < 0)
+        limit = 0;
+      else
+        limit = this->limit;
+    }
+    return make_shared<vs_open>(open_dir, limit & mask);
+  } else
+    return make_shared<vs_open>(*this);
+}
 
 void summy::vs_open::accept(value_set_visitor &v) {
   v.visit(this);

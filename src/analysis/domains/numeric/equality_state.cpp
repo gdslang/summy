@@ -48,7 +48,7 @@ equality_state *analysis::equality_state::join_widen(domain_state *other, size_t
 }
 
 api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
-    cout << "simp " << *l << endl;
+  //    cout << "simp " << *l << endl;
   map<id_shared_t, int64_t, id_less> id_scales;
   int64_t offset = 0;
   num_linear *lin_simplified;
@@ -57,7 +57,7 @@ api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
     id_shared_t id = nt->get_var()->get_id();
     auto id_back_it = back_map.find(id);
     if(id_back_it != back_map.end()) {
-      offset += nt->get_scale()*elements.at(id_back_it->second).at(id);
+      offset += nt->get_scale() * elements.at(id_back_it->second).at(id);
       id = id_back_it->second;
     }
     auto id_scales_it = id_scales.find(id);
@@ -69,7 +69,7 @@ api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
   });
   nv._([&](num_linear_vs *ns) {
     lin_simplified = new num_linear_vs((*ns->get_value_set() + vs_finite::single(offset)));
-    cout << "**** " << *ns << " + " << offset << " = " << *lin_simplified << endl;
+    //    cout << "**** " << *ns << " + " << offset << " = " << *lin_simplified << endl;
     for(auto id_scales_mapping : id_scales) {
       int64_t scale = id_scales_mapping.second;
       if(scale == 0) continue;
@@ -77,7 +77,7 @@ api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
     }
   });
   l->accept(nv);
-    cout << "simplified: " << *lin_simplified << endl;
+  //    cout << "simplified: " << *lin_simplified << endl;
   return lin_simplified;
 }
 
@@ -85,7 +85,7 @@ api::num_expr *analysis::equality_state::simplify(api::num_expr *e) {
   num_expr *e_simplified;
   num_visitor nv;
   nv._([&](num_expr_cmp *nec) { e_simplified = new num_expr_cmp(simplify(nec->get_opnd()), nec->get_op()); });
-  nv._([&](num_expr_lin *nel) { e_simplified = new num_expr_lin(simplify(nel->get_inner())); });
+  nv._([&](num_expr_lin *nel) { e_simplified = new num_expr_lin(simplify(nel->get_inner()), e->get_sign_interp()); });
   nv._([&](num_expr_bin *neb) {
     e_simplified = new num_expr_bin(simplify(neb->get_opnd1()), neb->get_op(), simplify(neb->get_opnd2()));
   });
@@ -145,7 +145,7 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
      * 'second' has been inserted by 'rep'?!
      */
     assert(false);
-//    insert(second);
+    //    insert(second);
   }
 }
 
@@ -217,8 +217,7 @@ void analysis::equality_state::assign_lin(
       optional<int64_t> value;
       value_set_visitor vsv(true);
       vsv._([&](vs_finite *vsf) {
-        if(vsf->is_singleton())
-          value = *vsf->get_elements().begin();
+        if(vsf->is_singleton()) value = *vsf->get_elements().begin();
       });
       rest_vs->accept(vsv);
 
@@ -236,7 +235,16 @@ void analysis::equality_state::assign_lin(
 void analysis::equality_state::assign_expr(
   api::num_var *lhs, api::num_expr *rhs, void (equality_state::*assigner)(api::num_var *, api::num_var *, int64_t)) {
   num_visitor nv;
-  nv._([&](num_expr_lin *e) { assign_lin(lhs, e->get_inner(), assigner); });
+  nv._([&](num_expr_lin *e) {
+    if(e->get_sign_interp()) {
+      sign_interp_t si = e->get_sign_interp().value();
+      /*
+       * Todo
+       */
+      remove(lhs);
+    } else
+      assign_lin(lhs, e->get_inner(), assigner);
+  });
   nv._default([&]() { remove(lhs); });
   rhs->accept(nv);
 }
@@ -455,7 +463,8 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
         //        num_expr_cmp *eq_expr = num_expr_cmp::equals(var->copy(), eq_var->copy());
         //        child_state->assume(eq_expr);
         //        delete eq_expr;
-        num_expr *var_e = new num_expr_lin(new num_linear_term(var->copy(), new num_linear_vs(vs_finite::single(equality.second))));
+        num_expr *var_e =
+          new num_expr_lin(new num_linear_term(var->copy(), new num_linear_vs(vs_finite::single(equality.second))));
         child_state->assign(eq_var, var_e);
         delete var_e;
         delete eq_var;

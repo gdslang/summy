@@ -105,6 +105,10 @@ vs_shared_t summy::vs_top::join(const vs_open *vsf) const {
   return value_set::top;
 }
 
+vs_shared_t summy::vs_top::with_sign_size(bool _unsigned, size_t size) const {
+  return value_set::top;
+}
+
 void summy::vs_top::accept(value_set_visitor &v) {
   v.visit(this);
 }

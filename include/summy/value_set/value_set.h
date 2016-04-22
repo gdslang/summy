@@ -104,6 +104,11 @@ public:
   virtual vs_shared_t meet(vs_top const *vsf) const = 0;
   static vs_shared_t meet(vs_shared_t const a, vs_shared_t const b);
 
+  /*
+   * Extension
+   */
+  virtual vs_shared_t with_sign_size(bool _unsigned, size_t size) const = 0;
+
   static vs_shared_t const top;
   static vs_shared_t const bottom;
 };

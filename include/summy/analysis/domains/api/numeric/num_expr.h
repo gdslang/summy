@@ -8,15 +8,37 @@
 #pragma once
 #include <summy/analysis/domains/api/numeric/num_linear.h>
 #include <summy/analysis/domains/api/numeric/num_visitor.h>
+#include <experimental/optional>
 
 namespace analysis {
 namespace api {
 
+enum signedness_t {
+  UNSIGNED,
+  SIGNED
+};
+
+struct sign_interp_t {
+  signedness_t signedness;
+  size_t size;
+
+  sign_interp_t(signedness_t signedness, size_t size) : signedness(signedness), size(size) {
+  }
+};
+
 class num_expr {
 private:
-  virtual void put(std::ostream &out) = 0;
+  std::experimental::optional<sign_interp_t> sign_interp;
 
+protected:
+  virtual void put(std::ostream &out);
 public:
+  std::experimental::optional<sign_interp_t> get_sign_interp() {
+    return sign_interp;
+  }
+
+  num_expr(std::experimental::optional<sign_interp_t> sign_interp = std::experimental::nullopt) : sign_interp(sign_interp) {
+  }
   virtual ~num_expr() {
   }
 
@@ -65,8 +87,8 @@ private:
 
   virtual void put(std::ostream &out);
 public:
-  num_expr_lin(num_linear *inner) :
-      inner(inner) {
+  num_expr_lin(num_linear *inner, std::experimental::optional<sign_interp_t> sign_interp = std::experimental::nullopt) :
+      num_expr(sign_interp), inner(inner) {
   }
   ~num_expr_lin();
 
