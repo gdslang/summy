@@ -93,13 +93,13 @@ void analysis::equality_state::remove(api::num_var *v) {
     id_off_map_t &id_elements = id_elements_it->second;
     id_elements.erase(v->get_id());
     if(id_elements.size() <= 1) {
-      if(id_elements.size() == 1) back_map.erase(*id_elements.begin());
+      if(id_elements.size() == 1) back_map.erase(id_elements.begin()->first);
       elements.erase(id_elements_it);
     } else if(*v->get_id() == *id_back_it->second) {
       // new repr.
-      id_shared_t rep = *id_elements.begin();
+      id_shared_t rep = id_elements.begin()->first;
       for(auto &elem : id_elements)
-        back_map[elem] = rep;
+        back_map[elem.first] = rep;
       elements[rep] = id_elements;
       elements.erase(id_elements_it);
     }
@@ -111,25 +111,20 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
   auto rep = [&](id_shared_t id) {
     auto bm_it = back_map.find(id);
     if(bm_it == back_map.end()) {
-      elements[id] = {id};
+      elements[id] = {make_pair(id, 0)};
       back_map[id] = id;
       return id;
     } else
       return bm_it->second;
   };
-  //  id_set_t vw = id_set_t { rep(v->get_id()), rep(w->get_id()) };
-  //  id_shared_t first;
-  //  id_shared_t second;
-  //  auto vw_it = vw.begin();
-  //  first = *vw_it++;
-  //  second = *vw_it;
+
   id_shared_t first;
   id_shared_t second;
   tie(first, second) = tsortc(id_less(), rep(v->get_id()), rep(w->get_id()));
 
   auto insert = [&](auto id) {
     elements[first].insert(id);
-    back_map[id] = first;
+    back_map[id.first] = first;
   };
 
   auto second_elem_it = elements.find(second);
@@ -137,8 +132,13 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
     for(auto &id : second_elem_it->second)
       insert(id);
     elements.erase(second_elem_it);
-  } else
-    insert(second);
+  } else {
+    /*
+     * 'second' has been inserted by 'rep'?!
+     */
+    assert(false);
+//    insert(second);
+  }
 }
 
 void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs) {
@@ -146,10 +146,14 @@ void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs) 
   auto insert = [&](id_shared_t id, id_shared_t rep) {
     //      cout << "Insert " << *id << " / rep: " << *rep << endl;
     auto rep_it = elements.find(rep);
-    rep_it->second.insert(id);
-    if(**rep_it->second.begin() == *id) {
+    assert(rep_it != elements.end());
+    rep_it->second.insert(make_pair(id, 0));
+    if(*rep_it->second.begin()->first == *id) {
+      /*
+       * If the replaced id has been the representative:
+       */
       for(auto &elem : rep_it->second)
-        back_map[elem] = id;
+        back_map[elem.first] = id;
       elements[id] = rep_it->second;
       elements.erase(rep_it);
     } else
@@ -169,7 +173,7 @@ void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs) 
   auto rhs_back_it = back_map.find(rhs->get_id());
   if(rhs_back_it == back_map.end()) {
     tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs->get_id(), rhs->get_id()));
-    elements[rhs_back_it->second].insert(rhs->get_id());
+    elements[rhs_back_it->second].insert(make_pair(rhs->get_id(), 0));
   }
 
   /*
@@ -236,8 +240,8 @@ void analysis::equality_state::put(std::ostream &out) const {
       if(first)
         first = false;
       else
-        out << ", ";
-      out << *alias;
+        out << ", (";
+      out << *alias.first << " -> " << alias.second << ")";
     }
     out << "}";
   }
@@ -426,11 +430,11 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
     if(back_it != back_map.end()) {
       auto &equalities = elements[back_it->second];
       for(auto equality : equalities) {
-        if(*equality == *var->get_id()) continue;
+        if(*equality.first == *var->get_id()) continue;
         /*
          * Assume or assign?
          */
-        num_var *eq_var = new num_var(equality);
+        num_var *eq_var = new num_var(equality.first);
         //        num_expr_cmp *eq_expr = num_expr_cmp::equals(var->copy(), eq_var->copy());
         //        child_state->assume(eq_expr);
         //        delete eq_expr;
@@ -569,7 +573,7 @@ bool analysis::equality_state::cleanup(api::num_var *var) {
 }
 
 void analysis::equality_state::project(api::num_vars *vars) {
-  id_off_map_t need_removal;
+  id_set_t need_removal;
 
   id_set_t const &p_ids = vars->get_ids();
   for(auto &id_bmapping : back_map)
@@ -591,7 +595,7 @@ api::num_vars *analysis::equality_state::vars() {
 void analysis::equality_state::collect_ids(std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map) {
   for(auto &elements_it : elements) {
     for(auto &eq_it : elements_it.second)
-      id_map[eq_it.get()].insert((analysis::id_shared_t *)&eq_it);
+      id_map[eq_it.first.get()].insert((analysis::id_shared_t *)&eq_it);
     id_map[elements_it.first.get()].insert((analysis::id_shared_t *)&elements_it.first);
   }
   for(auto &back_mapping : back_map) {
