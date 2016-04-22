@@ -137,14 +137,12 @@ summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_expr *exp) {
     }
   });
   exp->accept(nv);
-  cout << "result: " << *result << endl;
-  cout << *exp << endl;
+//  cout << "result: " << *result << endl;
   if(exp->get_sign_interp()) {
-    cout << "SIGN DATA!" << endl;
     sign_interp_t si = exp->get_sign_interp().value();
     result = result->with_sign_size(si.signedness == UNSIGNED, si.size);
   }
-  cout << "result sign interpreted: " << *result << endl;
+//  cout << "result sign interpreted: " << *result << endl;
   return result;
 
 }

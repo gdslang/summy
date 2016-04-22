@@ -308,7 +308,6 @@ vs_shared_t summy::vs_finite::meet(const vs_top *vsf) const {
 }
 
 vs_shared_t summy::vs_finite::with_sign_size(bool _unsigned, size_t size) const {
-  cout << "Säääääze: " << size << endl;
   if(size > 64)
     return value_set::top;
   else if(size < 64 && size > 0) {
@@ -318,8 +317,6 @@ vs_shared_t summy::vs_finite::with_sign_size(bool _unsigned, size_t size) const 
     elements_t elements_new;
     for(int64_t element : elements) {
       if(!_unsigned && (element & (1 << (size - 1)))) {
-        cout << mask << endl;
-        cout << (element | ~mask) << endl;
         elements_new.insert(element | ~mask);
       }else
         elements_new.insert(element & mask);

@@ -150,7 +150,6 @@ analysis::api::num_expr *converter::conv_expr(sexpr *se) {
 }
 
 analysis::api::num_expr *converter::conv_expr(gdsl::rreil::expr *expr) {
-  cout << "EXPR!!!! " << *expr << endl;
   num_expr *result = NULL;
   expr_visitor ev;
   ev._([&](expr_binop *e) {
@@ -201,7 +200,6 @@ analysis::api::num_expr *converter::conv_expr(gdsl::rreil::expr *expr) {
     }
   });
   ev._([&](expr_ext *e) {
-    cout << "Expansion!" << endl;
     size = e->get_fromsize();
     switch(e->get_op()) {
       case EXT_ZX: {
@@ -210,7 +208,6 @@ analysis::api::num_expr *converter::conv_expr(gdsl::rreil::expr *expr) {
         break;
       }
       case EXT_SX: {
-        cout << "Signed expansion!" << endl;
         num_linear *nl_opnd = conv_linear(e->get_opnd());
         result = new num_expr_lin(nl_opnd, sign_interp_t(SIGNED, e->get_fromsize()));
         break;

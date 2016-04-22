@@ -66,7 +66,7 @@ void fixpoint::iterate() {
     nv._([&](address_node *an) { machine_addresses.insert(an->get_address()); });
     analysis->get_cfg()->get_node_payload(node_id)->accept(nv);
 
-    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
     //        cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    machine_addresses.insert(jd_man.machine_address_of(node_id));

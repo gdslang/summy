@@ -314,13 +314,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //            summary_memory_state *summarized = summary ? apply_summary(mstate, summary.value().get()) :
             //            bottom->copy();
             summary_memory_state *summarized = summary ? apply_summary(mstate, summary.value().get()) : mstate->copy();
-//            summary_memory_state *summarized;
-//            if(summary)
-//              summarized = apply_summary(mstate, summary.value().get());
-//            else {
-//              summarized = mstate->copy();
-//              summarized->topify();
-//            }
+            //            summary_memory_state *summarized;
+            //            if(summary)
+            //              summarized = apply_summary(mstate, summary.value().get());
+            //            else {
+            //              summarized = mstate->copy();
+            //              summarized->topify();
+            //            }
 
             //            if(summarized->is_bottom())
             //              cout << "BOTTOM!" << endl;
@@ -357,6 +357,55 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           break;
         }
         case gdsl::rreil::BRANCH_HINT_JUMP: {
+          transfer_f = [=]() {
+            shared_ptr<global_state> state_c = this->state[from];
+            summary_memory_state *mstate = state_c->get_mstate();
+            ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
+
+            //                        cout << *b->get_target() << endl;
+            //                        cout << callee_aliases << endl;
+            for(auto ptr : callee_aliases) {
+
+              summy::rreil::id_visitor idv;
+              bool is_valid_code_address = false;
+              void *text_address;
+              idv._([&](sm_id *sid) {
+                if(sid->get_symbol() == ".text" || sid->get_symbol() == ".plt") {
+                  is_valid_code_address = true;
+                  text_address = sid->get_address();
+                }
+              });
+              ptr.id->accept(idv);
+              if(!is_valid_code_address) continue;
+
+              /*
+               * Todo: Find address nodes globally and reuse them
+               */
+              set<size_t> child_addresses;
+              for(auto edge_it : *cfg->out_edge_payloads(to)) {
+                node_visitor nv;
+                nv._([&](address_node *an) { child_addresses.insert(an->get_address()); });
+                cfg->get_node_payload(edge_it.first)->accept(nv);
+              }
+
+
+              value_set_visitor vsv;
+              vsv._([&](vs_finite *vsf) {
+                //                cout << "-----" << endl;
+                for(int64_t offset : vsf->get_elements()) {
+                  size_t address = (size_t)text_address + offset;
+                  if(child_addresses.find(address) == child_addresses.end()) {
+                    size_t child_id =
+                      cfg->create_node([&](size_t id) { return new address_node(id, address, cfg::DECODABLE); });
+                    cfg->update_edge(to, child_id, new cfg::edge());
+                  }
+                }
+                //                cout << "-----" << endl;
+              });
+              ptr.offset->accept(vsv);
+            }
+            return state_c;
+          };
           break;
         }
       }
