@@ -100,20 +100,20 @@ int main(int argc, char **argv) {
   g.set_code(buffer, section.size, section.address);
 
   try {
-//    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
-//    sweep sweep(g, false, true);
-//    sweep.transduce();
-//    analysis::fcollect::fcollect fc(&sweep.get_cfg());
-//    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-//    fixpoint fp_collect(&fc, jd_man_fc);
-//    fp_collect.iterate();
+    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
+    sweep sweep(g, false, false);
+    sweep.transduce();
+    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+    fixpoint fp_collect(&fc, jd_man_fc);
+    fp_collect.iterate();
 
 //    for(size_t address : fc.result().result)
 //      cout << hex << address << dec << endl;
-    set<size_t> fstarts;// = fc.result().result;
+    set<size_t> fstarts = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    analysis_dectran dt(g, true, true);
+    analysis_dectran dt(g, true, false);
     dt.register_();
 
 //    int n = 0;
@@ -131,8 +131,8 @@ int main(int argc, char **argv) {
 //        continue;
 //      if(name != "sem_movsAction1")
 //        continue;
-      if(name != "rreil_convert_sem_stmt")
-        continue;
+//      if(name != "rreil_convert_sem_stmt")
+//        continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
         fstarts.erase(e.address);
