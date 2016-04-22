@@ -19,7 +19,7 @@ namespace api {
 class num_linear;
 }
 
-typedef std::map<id_shared_t, uint64_t, id_less> id_off_map_t;
+typedef std::map<id_shared_t, int64_t, id_less> id_off_map_t;
 typedef std::tuple<id_shared_t, id_off_map_t> eq_singleton_t;
 typedef std::tuple_element<0, eq_singleton_t>::type eq_singleton_key_t;
 typedef std::tuple_element<1, eq_singleton_t>::type eq_singleton_value_t;
@@ -44,12 +44,12 @@ private:
 //  id_set_t const& lookup(api::num_var *v);
   void remove(api::num_var *v);
   void merge(api::num_var *v, api::num_var *w);
-  void assign_var(api::num_var *lhs, api::num_var *rhs);
-  void weak_assign_var(api::num_var *lhs, api::num_var *rhs);
+  void assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset);
+  void weak_assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset);
   void assign_lin(api::num_var *lhs, api::num_linear *lin,
-      void (equality_state::*assigner)(api::num_var*, api::num_var*));
+      void (equality_state::*assigner)(api::num_var*, api::num_var*, int64_t));
   void assign_expr(api::num_var *lhs, api::num_expr *rhs,
-      void (equality_state::*assigner)(api::num_var*, api::num_var*));
+      void (equality_state::*assigner)(api::num_var*, api::num_var*, int64_t));
 protected:
   void put(std::ostream &out) const;
 public:

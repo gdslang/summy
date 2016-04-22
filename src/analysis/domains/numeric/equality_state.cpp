@@ -12,6 +12,9 @@
 #include <functional>
 #include <algorithm>
 #include <assert.h>
+#include <experimental/optional>
+
+using std::experimental::optional;
 
 using namespace std;
 using namespace analysis;
@@ -45,14 +48,18 @@ equality_state *analysis::equality_state::join_widen(domain_state *other, size_t
 }
 
 api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
-  //  cout << "simp " << *l << endl;
+    cout << "simp " << *l << endl;
   map<id_shared_t, int64_t, id_less> id_scales;
+  int64_t offset = 0;
   num_linear *lin_simplified;
   num_visitor nv;
   nv._([&](num_linear_term *nt) {
     id_shared_t id = nt->get_var()->get_id();
     auto id_back_it = back_map.find(id);
-    if(id_back_it != back_map.end()) id = id_back_it->second;
+    if(id_back_it != back_map.end()) {
+      offset += nt->get_scale()*elements.at(id_back_it->second).at(id);
+      id = id_back_it->second;
+    }
     auto id_scales_it = id_scales.find(id);
     if(id_scales_it == id_scales.end())
       id_scales.insert(make_pair(id, nt->get_scale()));
@@ -61,7 +68,8 @@ api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
     nt->get_next()->accept(nv);
   });
   nv._([&](num_linear_vs *ns) {
-    lin_simplified = ns->copy();
+    lin_simplified = new num_linear_vs((*ns->get_value_set() + vs_finite::single(offset)));
+    cout << "**** " << *ns << " + " << offset << " = " << *lin_simplified << endl;
     for(auto id_scales_mapping : id_scales) {
       int64_t scale = id_scales_mapping.second;
       if(scale == 0) continue;
@@ -69,7 +77,7 @@ api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
     }
   });
   l->accept(nv);
-  //  cout << "simplified: " << *lin_simplified << endl;
+    cout << "simplified: " << *lin_simplified << endl;
   return lin_simplified;
 }
 
@@ -141,13 +149,13 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
   }
 }
 
-void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs) {
+void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset) {
   //    cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << endl;
   auto insert = [&](id_shared_t id, id_shared_t rep) {
     //      cout << "Insert " << *id << " / rep: " << *rep << endl;
     auto rep_it = elements.find(rep);
     assert(rep_it != elements.end());
-    rep_it->second.insert(make_pair(id, 0));
+    rep_it->second.insert(make_pair(id, offset));
     if(*rep_it->second.begin()->first == *id) {
       /*
        * If the replaced id has been the representative:
@@ -187,7 +195,7 @@ void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs) 
   insert(lhs->get_id(), rhs_back_it->second);
 }
 
-void analysis::equality_state::weak_assign_var(api::num_var *lhs, api::num_var *rhs) {
+void analysis::equality_state::weak_assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset) {
   //    cout << "assign in equality_state: " << *lhs << " <- " << *rhs << endl;
   auto lhs_back_it = back_map.find(lhs->get_id());
   if(lhs_back_it != back_map.end()) {
@@ -197,7 +205,7 @@ void analysis::equality_state::weak_assign_var(api::num_var *lhs, api::num_var *
 }
 
 void analysis::equality_state::assign_lin(
-  api::num_var *lhs, api::num_linear *lin, void (equality_state::*assigner)(api::num_var *, api::num_var *)) {
+  api::num_var *lhs, api::num_linear *lin, void (equality_state::*assigner)(api::num_var *, api::num_var *, int64_t)) {
   //  cout << "assign_lin in equality_state " << *lhs << " <- " << *lin << endl;
   num_visitor nv;
   nv._([&](num_linear_term *nt) {
@@ -205,8 +213,17 @@ void analysis::equality_state::assign_lin(
       assign_lin(lhs, nt->get_next(), assigner);
     else if(nt->get_scale() == 1) {
       vs_shared_t rest_vs = queryVal(nt->get_next());
-      if(*rest_vs == vs_finite::single(0))
-        (this->*assigner)(lhs, nt->get_var());
+
+      optional<int64_t> value;
+      value_set_visitor vsv(true);
+      vsv._([&](vs_finite *vsf) {
+        if(vsf->is_singleton())
+          value = *vsf->get_elements().begin();
+      });
+      rest_vs->accept(vsv);
+
+      if(value)
+        (this->*assigner)(lhs, nt->get_var(), value.value());
       else
         remove(lhs);
     } else
@@ -217,7 +234,7 @@ void analysis::equality_state::assign_lin(
 }
 
 void analysis::equality_state::assign_expr(
-  api::num_var *lhs, api::num_expr *rhs, void (equality_state::*assigner)(api::num_var *, api::num_var *)) {
+  api::num_var *lhs, api::num_expr *rhs, void (equality_state::*assigner)(api::num_var *, api::num_var *, int64_t)) {
   num_visitor nv;
   nv._([&](num_expr_lin *e) { assign_lin(lhs, e->get_inner(), assigner); });
   nv._default([&]() { remove(lhs); });
@@ -438,7 +455,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
         //        num_expr_cmp *eq_expr = num_expr_cmp::equals(var->copy(), eq_var->copy());
         //        child_state->assume(eq_expr);
         //        delete eq_expr;
-        num_expr *var_e = new num_expr_lin(new num_linear_term(var->copy()));
+        num_expr *var_e = new num_expr_lin(new num_linear_term(var->copy(), new num_linear_vs(vs_finite::single(equality.second))));
         child_state->assign(eq_var, var_e);
         delete var_e;
         delete eq_var;
@@ -541,7 +558,7 @@ void analysis::equality_state::equate_kill(num_var_pairs_t vars) {
     num_var *lhs;
     num_var *rhs;
     tie(lhs, rhs) = vp;
-    assign_var(lhs, rhs);
+    assign_var(lhs, rhs, 0);
     remove(rhs);
   }
   child_state->equate_kill(vars);

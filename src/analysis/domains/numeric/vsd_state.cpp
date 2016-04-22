@@ -147,8 +147,9 @@ vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t c
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
-  //  cout << "Assign " << *rhs << " to " << *lhs << endl;
+    cout << "Assign " << *rhs << " to " << *lhs << endl;
   vs_shared_t er = num_ev.queryVal(rhs);
+  cout << "\t ==> " << *er << endl;
   if(*er == value_set::bottom) bottomify();
   if(is_bottom()) return;
   elements[lhs->get_id()] = er;
@@ -376,7 +377,7 @@ vsd_state *analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> s
 }
 
 ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
-  //    cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
+//      cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
   vs_shared_t nv_val = queryVal(nv);
 
   //  cout << *nv_val << endl;
@@ -423,7 +424,7 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     result.insert(ptr(so_it.first, offsets_vs.value()));
   }
 
-  //      if(result.size() > 0) cout << "+++" << result << endl;
+        if(result.size() > 0) cout << "+++" << result << endl;
   //  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
 
   return result;
