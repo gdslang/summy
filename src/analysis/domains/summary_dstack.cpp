@@ -400,10 +400,12 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     cfg->update_edge(to, child_id, new cfg::edge());
                   }
                 }
+//                cout << "Adding " << vsf->get_elements().size() << " many dests..." << endl;
                 //                cout << "-----" << endl;
               });
               ptr.offset->accept(vsv);
             }
+            cfg->commit_updates();
             return state_c;
           };
           break;
@@ -484,6 +486,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           }
         }
       }
+//      this->cfg->commit_updates();
       return state_new;
     };
   });

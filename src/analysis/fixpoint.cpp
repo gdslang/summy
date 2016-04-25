@@ -68,10 +68,10 @@ void fixpoint::iterate() {
 
 //    cout << "Next node: " << node_id << endl;
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
-    //        cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+//            cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
     //    machine_addresses.insert(jd_man.machine_address_of(node_id));
     //    if(machine_addresses.size() % 1000 == 0)
-    //      cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
+//          cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
 
     auto nits_it = node_iterations.find(node_id);
@@ -126,7 +126,7 @@ void fixpoint::iterate() {
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
-        //                cout << "Evaluated: " << *evaluated << endl;
+//        cout << "Evaluated: " << *evaluated << endl;
         //                if(node_id == 67) cout << "Evaluated: " << *evaluated << endl;
 
         /*
@@ -175,6 +175,7 @@ void fixpoint::iterate() {
       for(auto constraint_it = constraints.begin(); constraint_it != constraints.end(); constraint_it++)
         process_constraint(constraint_it->first, constraint_it->second);
       if(analysis->record_stop_commit()) {
+//        cout << "Comitted updates..." << endl;
         for(size_t node : analysis->pending()) {
           //                    cout << "====> Pushing node: " << node << endl;
           //    cout << this << endl;
@@ -183,6 +184,8 @@ void fixpoint::iterate() {
         }
         analysis->clear_pending();
       }
+//      else
+//        cout << "Nothing to commit..." << endl;
 
       //      cout << "Current: " << *current << endl;
       //      cout << "Acc: " << *accumulator << endl;
@@ -215,12 +218,13 @@ void fixpoint::iterate() {
       //            cout << node_id << " current " << *analysis->get(node_id) << endl;
       //            cout << node_id << " XX->XX " << *accumulator << endl;
       //      accumulator->check_consistency();
-      //      cout << "FOOOO" << endl;
+//            cout << "Updating..." << endl;
       analysis->update(node_id, accumulator);
       updated.insert(node_id);
     }
 
     //    cout << "Seen: " << (seen.find(node_id) != seen.end()) << endl;
+//    cout << "Number of deps: " << analysis->dependants(node_id).size() << endl;
 
     if(propagate || seen.find(node_id) == seen.end()) {
       auto dependants = analysis->dependants(node_id);
