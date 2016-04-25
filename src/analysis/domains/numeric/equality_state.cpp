@@ -130,9 +130,10 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
   id_shared_t second;
   tie(first, second) = tsortc(id_less(), rep(v->get_id()), rep(w->get_id()));
 
-  auto insert = [&](auto id) {
-    elements[first].insert(id);
-    back_map[id.first] = first;
+  auto insert = [&](auto e) {
+    assert(e.second == 0 || !(*e.first == *first));
+    elements[first].insert(e);
+    back_map[e.first] = first;
   };
 
   auto second_elem_it = elements.find(second);
@@ -150,19 +151,24 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
 }
 
 void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset) {
-      cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << " @" << offset << endl;
+  //      cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << " @" << offset << endl;
+  assert(offset == 0 || !(*lhs->get_id() == *rhs->get_id()));
   auto insert = [&](id_shared_t id, id_shared_t rep) {
-    //      cout << "Insert " << *id << " / rep: " << *rep << endl;
+//    cout << "Insert " << *id << " / rep: " << *rep << endl;
     auto rep_it = elements.find(rep);
     assert(rep_it != elements.end());
     rep_it->second.insert(make_pair(id, offset));
-    if(*rep_it->second.begin()->first == *id) {
+    auto rep_elements_it = rep_it->second.begin();
+    if(*rep_elements_it->first == *id) {
+      int64_t offset_id = rep_elements_it->second;
       /*
        * If the replaced id has been the representative:
        */
       for(auto &elem : rep_it->second)
         back_map[elem.first] = id;
       elements[id] = rep_it->second;
+      for(auto &elem : elements.at(id))
+        elem.second -= offset_id;
       elements.erase(rep_it);
     } else
       back_map[id] = rep;
@@ -182,6 +188,7 @@ void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, 
   if(rhs_back_it == back_map.end()) {
     tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs->get_id(), rhs->get_id()));
     elements[rhs_back_it->second].insert(make_pair(rhs->get_id(), 0));
+//    cout << "Inserting into " << *rhs_back_it->second << ": " << *rhs->get_id() << endl;
   }
 
   /*
@@ -206,7 +213,7 @@ void analysis::equality_state::weak_assign_var(api::num_var *lhs, api::num_var *
 
 void analysis::equality_state::assign_lin(
   api::num_var *lhs, api::num_linear *lin, void (equality_state::*assigner)(api::num_var *, api::num_var *, int64_t)) {
-  //  cout << "assign_lin in equality_state " << *lhs << " <- " << *lin << endl;
+//  cout << "assign_lin in equality_state " << *lhs << " <- " << *lin << endl;
   num_visitor nv;
   nv._([&](num_linear_term *nt) {
     if(nt->get_scale() == 0)
