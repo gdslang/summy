@@ -150,7 +150,7 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
 }
 
 void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset) {
-  //    cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << endl;
+      cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << " @" << offset << endl;
   auto insert = [&](id_shared_t id, id_shared_t rep) {
     //      cout << "Insert " << *id << " / rep: " << *rep << endl;
     auto rep_it = elements.find(rep);
@@ -221,9 +221,13 @@ void analysis::equality_state::assign_lin(
       });
       rest_vs->accept(vsv);
 
-      if(value)
-        (this->*assigner)(lhs, nt->get_var(), value.value());
-      else
+      if(value) {
+        int64_t v = value.value();
+        if(v != 0 && *lhs->get_id() == *nt->get_var()->get_id())
+          remove(lhs);
+        else
+          (this->*assigner)(lhs, nt->get_var(), v);
+      } else
         remove(lhs);
     } else
       remove(lhs);
