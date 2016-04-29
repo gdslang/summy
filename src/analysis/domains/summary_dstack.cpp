@@ -110,6 +110,20 @@ std::set<size_t> analysis::summary_dstack::get_callers(std::shared_ptr<global_st
   return callers;
 }
 
+std::set<size_t> analysis::summary_dstack::get_function_heads(std::shared_ptr<global_state> state) {
+  vs_shared_t f_addrs = state->get_f_addr();
+  callers_t heads;
+  value_set_visitor vsv;
+  vsv._([&](vs_finite *vf) {
+    for(size_t f_addr : vf->get_elements()) {
+      size_t head_id = this->function_desc_map.at((void *)f_addr).head_id;
+      heads.insert(head_id);
+    }
+  });
+  f_addrs->accept(vsv);
+  return heads;
+}
+
 set<void *> analysis::summary_dstack::unpack_f_addrs(summy::vs_shared_t f_addr) {
   set<void *> addresses;
   value_set_visitor vsv(true);
@@ -400,7 +414,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     cfg->update_edge(to, child_id, new cfg::edge());
                   }
                 }
-//                cout << "Adding " << vsf->get_elements().size() << " many dests..." << endl;
+                //                cout << "Adding " << vsf->get_elements().size() << " many dests..." << endl;
                 //                cout << "-----" << endl;
               });
               ptr.offset->accept(vsv);
@@ -486,7 +500,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           }
         }
       }
-//      this->cfg->commit_updates();
+      //      this->cfg->commit_updates();
       return state_new;
     };
   });
@@ -658,6 +672,66 @@ void analysis::summary_dstack::check_consistency() {
    */
 }
 
+optional<size_t> analysis::summary_dstack::get_lowest_function_address(size_t node_id) {
+  if(this->state.size() <= node_id) return nullopt;
+  set<void *> f_addrs = unpack_f_addrs(state[node_id]->get_f_addr());
+  if(f_addrs.size() == 0) return nullopt;
+  return (size_t)*f_addrs.begin();
+}
+
+void analysis::summary_dstack::print_callstack(size_t node_id) {
+  //  cout << *state[node_id] << endl;
+  if(this->state.size() <= node_id) return;
+  set<size_t> callers_current_heads = get_function_heads(state[node_id]);
+  set<size_t> callers_addrs_trans;
+  auto print_node = [&](size_t node_id) {
+    bool handled = false;
+    node_visitor nv;
+    nv._([&](address_node *an) {
+      handled = true;
+      cout << "0x" << hex << an->get_address() << dec << "(" << node_id << ")";
+      if(an->get_name())
+        cout << ": " << an->get_name().value();
+    });
+    cfg->get_node_payload(node_id)->accept(nv);
+    if(!handled)
+      cout << "?(" << node_id << ")";
+  };
+  cout << "----> Call stack for ";
+  print_node(node_id);
+  cout << endl;
+  bool level_first = true;
+  while(!callers_current_heads.empty()) {
+    if(level_first)
+      level_first = false;
+    else
+      cout << endl;
+    bool first = true;
+    for(size_t caller : callers_current_heads) {
+      if(!first)
+        cout << ", ";
+      else
+        first = false;
+      print_node(caller);
+    }
+
+    set<size_t> callers_next_heads;
+    for(size_t caller : callers_current_heads) {
+      set<size_t> callers_next = get_callers(state[caller]);
+      for(auto caller_next : callers_next) {
+        set<size_t> callers_next_heads_current = get_function_heads(state[caller_next]);
+        callers_next_heads.insert(callers_next_heads_current.begin(), callers_next_heads_current.end());
+      }
+    }
+
+    for(auto caller_trans : callers_addrs_trans)
+      callers_next_heads.erase(caller_trans);
+    callers_addrs_trans.insert(callers_next_heads.begin(), callers_next_heads.end());
+    callers_current_heads = callers_next_heads;
+  }
+  cout << endl;
+  cout << "<---- End of call stack" << endl;
+}
 
 void analysis::summary_dstack::put(std::ostream &out) {
   for(size_t i = 0; i < state.size(); i++)

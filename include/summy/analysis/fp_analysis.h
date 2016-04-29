@@ -18,6 +18,7 @@
 #include <functional>
 #include <summy/analysis/fp_priority_queue.h>
 #include <summy/cfg/observer.h>
+#include <summy/analysis/analysis_visitor.h>
 
 using std::shared_ptr;
 
@@ -96,6 +97,10 @@ public:
   virtual node_compare_t get_fixpoint_node_comparer();
 
   virtual void check_consistency() {
+  }
+
+  virtual void accept(analysis_visitor &v) {
+    v.visit(this);
   }
 
   virtual void put(std::ostream &out) = 0;

@@ -55,7 +55,8 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
     if(blockwise_optimized) {
       gdsl::block b = gdsl.decode_translate_block(gdsl::optimization_configuration::CONTEXT |
                                                     gdsl::optimization_configuration::LIVENESS |
-                                                    gdsl::optimization_configuration::FSUBST,
+                                                    gdsl::optimization_configuration::FSUBST |
+                                                    gdsl::optimization_configuration::DELAYEDFSUBST,
         LONG_MAX);
       rreil = b.get_statements();
     } else {

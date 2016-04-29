@@ -88,35 +88,35 @@ int main(int argc, char **argv) {
   tie(success, section) = elfp.section(".text");
   if(!success) throw string("Invalid section .text");
 
-//  binary_provider::entry_t function;
-//  tie(ignore, function) = elfp.symbol("main");
+  //  binary_provider::entry_t function;
+  //  tie(ignore, function) = elfp.symbol("main");
 
   unsigned char *buffer = (unsigned char *)malloc(section.size);
   memcpy(buffer, elfp.get_data().data + section.offset, section.size);
 
-//  size_t size = (function.offset - section.offset) + function.size + 1000;
-//  if(size > section.size) size = section.size;
+  //  size_t size = (function.offset - section.offset) + function.size + 1000;
+  //  if(size > section.size) size = section.size;
 
   g.set_code(buffer, section.size, section.address);
 
   try {
-//    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
-//    sweep sweep(g, false, true);
-//    sweep.transduce();
-//    analysis::fcollect::fcollect fc(&sweep.get_cfg());
-//    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-//    fixpoint fp_collect(&fc, jd_man_fc);
-//    fp_collect.iterate();
+    //    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
+    //    sweep sweep(g, false, true);
+    //    sweep.transduce();
+    //    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+    //    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+    //    fixpoint fp_collect(&fc, jd_man_fc);
+    //    fp_collect.iterate();
 
-//    for(size_t address : fc.result().result)
-//      cout << hex << address << dec << endl;
-    set<size_t> fstarts;// = fc.result().result;
+    //    for(size_t address : fc.result().result)
+    //      cout << hex << address << dec << endl;
+    set<size_t> fstarts; // = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
     analysis_dectran dt(g, true, true);
     dt.register_();
 
-//    int n = 0;
+    //    int n = 0;
 
     cout << "*** Function from ELF data..." << endl;
     auto functions = elfp.functions();
@@ -124,15 +124,17 @@ int main(int argc, char **argv) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
-//      if(name != "p_slash_66_slash_f3Action2" && name != "p_slash_66_slash_f3_slash_f2Action8" && name != "with_f3") {
-//        continue;
-//      }
-//      if(name != "_slash_vex_slash_0f_slash_vexv")
-//        continue;
-//      if(name != "sem_movsAction1")
-//        continue;
-      if(name != "rreil_convert_sem_stmt")
-        continue;
+      //      if(name != "p_slash_66_slash_f3Action2" && name != "p_slash_66_slash_f3_slash_f2Action8" && name !=
+      //      "with_f3") {
+      //        continue;
+      //      }
+      //      if(name != "_slash_vex_slash_0f_slash_vexv")
+      //        continue;
+      //      if(name != "sem_movsAction1")
+      //        continue;
+      //      if(name != "rreil_convert_sem_stmt")
+      //        continue;
+      if(name != "main") continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
         fstarts.erase(e.address);
@@ -140,7 +142,7 @@ int main(int argc, char **argv) {
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
       } catch(string &s) {
-//        cout << "\t Unable to seek!" << endl;
+        //        cout << "\t Unable to seek!" << endl;
       }
     }
     if(functions.size() == 0) {
@@ -153,24 +155,24 @@ int main(int argc, char **argv) {
 
     cout << "*** Additionally collected functions..." << endl;
     for(size_t address : fstarts) {
-//      cout << hex << address << dec << endl;
+      //      cout << hex << address << dec << endl;
       try {
         dt.transduce_function(address);
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
       } catch(string &s) {
-//        cout << "\t Unable to seek!" << endl;
+        //        cout << "\t Unable to seek!" << endl;
       }
     }
 
     auto &cfg = dt.get_cfg();
 
-//    ofstream dot_noa_fs;
-//    dot_noa_fs.open("output_noa.dot", ios::out);
-//    cfg.dot(dot_noa_fs);
-//    dot_noa_fs.close();
+    //    ofstream dot_noa_fs;
+    //    dot_noa_fs.open("output_noa.dot", ios::out);
+    //    cfg.dot(dot_noa_fs);
+    //    dot_noa_fs.close();
 
-//    return 0;
+    //    return 0;
 
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
@@ -200,7 +202,7 @@ int main(int argc, char **argv) {
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
       if(n.get_id() >= 150 && n.get_id() < 175 || n.get_id() == 72)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-//      out << n.get_id() << " [label=\"" << *jd_man.address_of(n.get_id()) << "\"]";
+      //      out << n.get_id() << " [label=\"" << *jd_man.address_of(n.get_id()) << "\"]";
       else
         n.dot(out);
     });

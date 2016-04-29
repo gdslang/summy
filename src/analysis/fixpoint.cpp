@@ -13,8 +13,12 @@
 #include <queue>
 #include <iostream>
 #include <assert.h>
+#include <summy/analysis/domains/summary_dstack.h>
 #include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node_visitor.h>
+#include <experimental/optional>
+
+using std::experimental::optional;
 
 using namespace cfg;
 using namespace std;
@@ -62,6 +66,36 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
+    static optional<size_t> function_last;
+    analysis_visitor av(true);
+    av._([&](summary_dstack *sd) {
+      auto nits_it = node_iterations.find(node_id);
+      if(nits_it != node_iterations.end()) {
+        nits_it->second++;
+        if(nits_it->second > max_its || nits_it->second > 12) {
+          cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
+          cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
+          max_its = nits_it->second;
+          print_distribution_total();
+          //        if(node_id == 7600) {
+          //          cout << "node id: " << node_id << endl;
+//                    cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+          //          cout << *analysis->get(node_id) << endl;
+          //        }
+        }
+        //      if(nits_it->second > 3)
+        //        continue;
+      } else
+        node_iterations[node_id] = 1;
+      optional<size_t> function_current = sd->get_lowest_function_address(node_id);
+      if(function_current && (!function_last || function_last.value() != function_current.value())) {
+        sd->print_callstack(node_id);
+        function_last = function_current;
+      }
+    });
+    analysis->accept(av);
+
+
     node_visitor nv;
     nv._([&](address_node *an) { machine_addresses.insert(an->get_address()); });
     analysis->get_cfg()->get_node_payload(node_id)->accept(nv);
@@ -74,24 +108,7 @@ void fixpoint::iterate() {
 //          cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
     //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
 
-    auto nits_it = node_iterations.find(node_id);
-    if(nits_it != node_iterations.end()) {
-      nits_it->second++;
-      if(nits_it->second > max_its || nits_it->second > 12) {
-        cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
-        cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
-        max_its = nits_it->second;
-        print_distribution_total();
-        //        if(node_id == 7600) {
-        //          cout << "node id: " << node_id << endl;
-        //          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
-        //          cout << *analysis->get(node_id) << endl;
-        //        }
-      }
-      //      if(nits_it->second > 3)
-      //        continue;
-    } else
-      node_iterations[node_id] = 1;
+
 
     //    if(max_its > 2000)
     //      break;

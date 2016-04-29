@@ -25,7 +25,7 @@ namespace addr {
 typedef std::function<size_t(size_t)> get_next_virt_t;
 
 struct path_virts_s {
-  static const size_t n = 5;
+  static const size_t n = 8;
   static const size_t size_singleton_bits = sizeof(uint64_t) * 8;
 
   uint64_t data[n];

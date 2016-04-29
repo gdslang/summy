@@ -318,7 +318,7 @@ vs_shared_t summy::vs_finite::with_sign_size(bool _unsigned, size_t size) const 
     for(int64_t element : elements) {
       if(!_unsigned && (element & (1 << (size - 1)))) {
         elements_new.insert(element | ~mask);
-      }else
+      } else
         elements_new.insert(element & mask);
     }
     return make_shared<vs_finite>(elements_new);
