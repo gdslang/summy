@@ -8,22 +8,25 @@
 #include <algorithm>
 #include <iostream>
 #include <assert.h>
+#include <experimental/optional>
+
+using std::experimental::optional;
 
 using namespace std;
 using namespace analysis;
 
-static node_compare_t node_compare_default = [](size_t const &a, size_t const &b) { return a < b; };
+node_compare_t analysis::node_compare_default = [](size_t const &a, size_t const &b) { return a < b; };
 
-analysis::fp_priority_queue::fp_priority_queue() : comparer(node_compare_default) {}
+analysis::fp_priority_queue::fp_priority_queue() : comparers({node_compare_default}) {}
 
-analysis::fp_priority_queue::fp_priority_queue(std::set<size_t> init) : comparer(node_compare_default) {
+analysis::fp_priority_queue::fp_priority_queue(std::set<size_t> init) : comparers({node_compare_default}) {
   inner.insert(init.begin(), init.end());
 }
 
-analysis::fp_priority_queue::fp_priority_queue(node_compare_t node_compare) : comparer(node_compare) {}
+analysis::fp_priority_queue::fp_priority_queue(std::vector<node_compare_t> node_comparers) : comparers(node_comparers) {}
 
-analysis::fp_priority_queue::fp_priority_queue(std::set<size_t> init, node_compare_t node_compare)
-    : comparer(node_compare) {
+analysis::fp_priority_queue::fp_priority_queue(std::set<size_t> init, std::vector<node_compare_t> node_comparers)
+    : comparers(node_comparers) {
   inner.insert(init.begin(), init.end());
 }
 
@@ -39,7 +42,14 @@ size_t analysis::fp_priority_queue::pop() {
   auto min_it = inner.begin();
   auto it = inner.begin();
   while(it != inner.end()) {
-    if(*it < minimum) {
+    optional<bool> result;
+    for(auto &comparer : comparers) {
+      if(result)
+        break;
+      result = comparer(*it, minimum);
+    }
+    assert(result);
+    if(result.value()) {
       minimum = *it;
       min_it = it;
     }

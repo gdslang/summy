@@ -126,7 +126,16 @@ int main(int argc, char **argv) {
 
   try {
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    analysis_dectran dt(g, false, true);
+    auto functions = elfp.functions();
+    function_map_t function_map;
+    for(auto f : functions) {
+      binary_provider::entry_t e;
+      string name;
+      tie(name, e) = f;
+      function_map[e.address] = name;
+    }
+
+    analysis_dectran dt(g, false, true, function_map);
 
     dt.transduce();
     dt.register_();

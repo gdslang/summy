@@ -110,6 +110,11 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
 }
 
 size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
+  size_t ip = (size_t)gdsl.get_ip();
+  auto fmap_it = fmap.find(ip);
+  if(!name && fmap_it != fmap.end())
+    name = fmap_it->second;
+
   auto prog = decode_translate(decode_multiple);
   size_t head_node = cfg.add_program(prog, name);
 
@@ -139,8 +144,11 @@ size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experiment
   return head_node;
 }
 
+dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap)
+    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl), speculative_decoding(speculative_decoding), fmap(fmap) {}
+
 dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
-    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl), speculative_decoding(speculative_decoding) {}
+    : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding, function_map_t()) {}
 
 void dectran::print_decoding_holes() {
   auto it = decoded_intervals.begin();

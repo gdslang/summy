@@ -621,7 +621,9 @@ summary_dstack_result analysis::summary_dstack::result() {
 }
 
 node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
-  return [=](size_t const &a, size_t const &b) {
+  return [=](size_t const &a, size_t const &b) -> optional<bool> {
+    if(a >= state.size() || b >= state.size())
+      return a < b;
     shared_ptr<global_state> state_a = this->state[a];
     shared_ptr<global_state> state_b = this->state[b];
     //    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
@@ -653,9 +655,9 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
       else if(min_calls_sz_a < min_calls_sz_b)
         return false;
       else
-        return a < b;
+          return nullopt;
     } else
-      return a < b;
+      return nullopt;
   };
 }
 

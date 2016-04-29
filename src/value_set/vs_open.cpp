@@ -367,7 +367,7 @@ vs_shared_t summy::vs_open::with_sign_size(bool _unsigned, size_t size) const {
   if(size > 64)
     return value_set::top;
   else if(size < 64 && size > 0) {
-    assert(size & (size - 1) == 0);
+    assert((size & (size - 1)) == 0);
     uint64_t mask = (1 << size) - 1;
     if(_unsigned) {
       int64_t limit;

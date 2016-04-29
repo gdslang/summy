@@ -13,7 +13,10 @@
 #include <experimental/optional>
 
 #include <set>
+#include <map>
 #include <cppgdsl/gdsl.h>
+
+typedef std::map<size_t, std::string> function_map_t;
 
 struct dec_interval {
   int_t from;
@@ -30,6 +33,8 @@ private:
   bool blockwise_optimized;
 
   std::set<dec_interval> decoded_intervals;
+
+  function_map_t fmap;
 protected:
   bool speculative_decoding;
   gdsl::gdsl &gdsl;
@@ -38,6 +43,7 @@ protected:
   virtual size_t initial_cfg(
     cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
 public:
+  dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap);
   dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding);
   virtual ~dectran() {
   }

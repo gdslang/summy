@@ -47,6 +47,9 @@ size_t analysis_dectran::initial_cfg(
   return head_node;
 }
 
+analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap)
+    : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding, fmap), big_step::big_step(cfg), tc(&cfg), cfg() {}
+
 analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
     : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding), big_step::big_step(cfg), tc(&cfg), cfg() {}
 
