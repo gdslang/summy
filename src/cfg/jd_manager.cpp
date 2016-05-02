@@ -15,11 +15,13 @@
 #include <map>
 #include <set>
 #include <assert.h>
+#include <summy/cfg/edge/edge.h>
+#include <summy/cfg/edge/edge_visitor.h>
 
 using namespace cfg;
 using namespace std;
 
-jd_manager::jd_manager(::cfg::cfg *cfg) : addr(cfg), fp(&addr, *this, false) {
+jd_manager::jd_manager(::cfg::cfg *cfg) : addr(cfg), fp(&addr, *this, false), cfg(cfg) {
   notified = false;
   fp.iterate();
   cfg->register_observer(&fp);
@@ -31,6 +33,18 @@ jump_dir jd_manager::jump_direction(size_t from, size_t to) {
     notified = false;
     fp.iterate();
   }
+
+  bool is_call_edge = false;
+  edge_visitor ev;
+  ev._([&](call_edge const *ce) {
+    is_call_edge = true;
+  });
+  auto edge_it = cfg->out_edge_payloads(from)->find(to);
+  assert(edge_it != cfg->out_edge_payloads(from)->end());
+  edge_it->second->accept(ev);
+  if(is_call_edge)
+    return UNKNOWN;
+
   analysis::addr::addr_result ar = addr.result();
   auto from_address = ar.result.at(from)->get_address();
   auto to_address = ar.result.at(to)->get_address();

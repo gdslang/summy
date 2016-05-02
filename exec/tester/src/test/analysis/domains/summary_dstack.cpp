@@ -1252,7 +1252,12 @@ ret",
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
   ASSERT_EQ(*r, vs_finite::single(100));
 
-  ASSERT_EQ(ar.max_it, 4);
+  /*
+   * There are 4 to 6 iterations depending on whether the necessity for propagation
+   * is checked only at back and call edges, additionally only for non-join points or
+   * for every edge.
+   */
+  ASSERT_EQ(ar.max_it, 5);
 }
 
 TEST_F(summary_dstack_test, Malloc) {

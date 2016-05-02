@@ -30,6 +30,7 @@ private:
   analysis::fixpoint fp;
 
   bool notified;
+  ::cfg::cfg *cfg;
 public:
   jd_manager(::cfg::cfg *cfg);
 
