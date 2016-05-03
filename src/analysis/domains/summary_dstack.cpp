@@ -526,14 +526,8 @@ dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {
 void analysis::summary_dstack::init_state(summy::vs_shared_t f_addr) {
   //  cout << "init_state()" << endl;
 
-  size_t old_size = state.size();
-  state.resize(cfg->node_count());
-  for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end())
-      state[i] = dynamic_pointer_cast<global_state>(start_value(f_addr));
-    else
-      state[i] = dynamic_pointer_cast<global_state>(bottom());
-  }
+  for(size_t i : fixpoint_pending)
+    state[i] = dynamic_pointer_cast<global_state>(start_value(f_addr));
 }
 
 void analysis::summary_dstack::init_state() {
@@ -606,9 +600,11 @@ std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t 
 }
 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
-  //  if(node >= state.size())
-  //    return bottom();
-  return state[node];
+  auto node_it = state.find(node);
+  if(node_it == state.end())
+    return dynamic_pointer_cast<global_state>(bottom());
+  else
+    return state[node];
 }
 
 void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> state) {
@@ -622,10 +618,12 @@ summary_dstack_result analysis::summary_dstack::result() {
 
 node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
   return [=](size_t const &a, size_t const &b) -> optional<bool> {
-    if(a >= state.size() || b >= state.size())
+    auto a_it = state.find(a);
+    auto b_it = state.find(b);
+    if(a_it == state.end() || b_it == state.end())
       return a < b;
-    shared_ptr<global_state> state_a = this->state[a];
-    shared_ptr<global_state> state_b = this->state[b];
+    shared_ptr<global_state> state_a = a_it->second;
+    shared_ptr<global_state> state_b = b_it->second;
     //    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
 
     set<void *> f_addrs_a = unpack_f_addrs(state_a->get_f_addr());
@@ -675,16 +673,18 @@ void analysis::summary_dstack::check_consistency() {
 }
 
 optional<size_t> analysis::summary_dstack::get_lowest_function_address(size_t node_id) {
-  if(this->state.size() <= node_id) return nullopt;
-  set<void *> f_addrs = unpack_f_addrs(state[node_id]->get_f_addr());
+  auto state_node_it = state.find(node_id);
+  if(state_node_it == state.end()) return nullopt;
+  set<void *> f_addrs = unpack_f_addrs(state_node_it->second->get_f_addr());
   if(f_addrs.size() == 0) return nullopt;
   return (size_t)*f_addrs.begin();
 }
 
 void analysis::summary_dstack::print_callstack(size_t node_id) {
   //  cout << *state[node_id] << endl;
-  if(this->state.size() <= node_id) return;
-  set<size_t> callers_current_heads = get_function_heads(state[node_id]);
+  auto state_node_it = state.find(node_id);
+  if(state_node_it == state.end()) return;
+  set<size_t> callers_current_heads = get_function_heads(state_node_it->second);
   set<size_t> callers_addrs_trans;
   auto print_node = [&](size_t node_id) {
     bool handled = false;
@@ -719,9 +719,14 @@ void analysis::summary_dstack::print_callstack(size_t node_id) {
 
     set<size_t> callers_next_heads;
     for(size_t caller : callers_current_heads) {
-      set<size_t> callers_next = get_callers(state[caller]);
+      auto state_caller_it = state.find(caller);
+      if(state_caller_it == state.end()) continue;
+      set<size_t> callers_next = get_callers(state_caller_it->second);
       for(auto caller_next : callers_next) {
-        set<size_t> callers_next_heads_current = get_function_heads(state[caller_next]);
+        auto state_caller_next_it = state.find(caller_next);
+        if(state_caller_next_it == state.end())
+          continue;
+        set<size_t> callers_next_heads_current = get_function_heads(state_caller_next_it->second);
         callers_next_heads.insert(callers_next_heads_current.begin(), callers_next_heads_current.end());
       }
     }
@@ -736,7 +741,7 @@ void analysis::summary_dstack::print_callstack(size_t node_id) {
 }
 
 void analysis::summary_dstack::put(std::ostream &out) {
-  for(size_t i = 0; i < state.size(); i++)
-    out << "Node " << i << ": " << endl
-        << *state[i] << endl;
+  for(auto state_it : state)
+    out << "Node " << state_it.first << ": " << endl
+        << *state_it.second << endl;
 }

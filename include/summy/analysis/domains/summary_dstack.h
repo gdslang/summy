@@ -20,11 +20,12 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <unordered_map>
 #include <experimental/optional>
 
 namespace analysis {
 
-typedef std::vector<std::shared_ptr<global_state>> state_t;
+typedef std::unordered_map<size_t, std::shared_ptr<global_state>> state_t;
 
 struct summary_dstack_result : public ::analysis::analysis_result<state_t> {
   summary_dstack_result(state_t &s) : analysis_result(s) {}

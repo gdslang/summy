@@ -96,6 +96,11 @@ public:
 
   virtual node_compare_t get_fixpoint_node_comparer();
 
+  virtual void ref(size_t node, size_t count) {
+  }
+  virtual void unref(size_t node) {
+  }
+
   virtual void check_consistency() {
   }
 
