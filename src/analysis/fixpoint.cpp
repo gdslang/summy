@@ -160,6 +160,7 @@ void fixpoint::iterate() {
          */
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         auto evaluated = constraint();
+        analysis->unref(node_other);
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
@@ -241,6 +242,9 @@ void fixpoint::iterate() {
       //      cout << "++++++ current:" << endl << *current << endl;
       //      cout << "++++++ acc:" << endl << *accumulator << endl;
 
+      if(backward || constraints.size() != 1)
+        analysis->ref(node_id, nullopt);
+
       propagate = (!backward && constraints.size() == 1) || !(*current == *accumulator);
 
       //      cout << "prop: " << propagate << endl;
@@ -275,6 +279,7 @@ void fixpoint::iterate() {
 //        cout << "====>  Pushing " << dependant << " as dep. of " << node_id << endl;
         worklist.push(dependant);
       }
+      analysis->ref(node_id, dependants.size());
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {

@@ -529,9 +529,10 @@ void analysis::summary_dstack::init_state(summy::vs_shared_t f_addr) {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end())
+    if(fixpoint_pending.find(i) != fixpoint_pending.end()) {
       state[i] = dynamic_pointer_cast<global_state>(start_value(f_addr));
-    else
+      ref(i, nullopt);
+    } else
       state[i] = dynamic_pointer_cast<global_state>(bottom());
   }
 }
@@ -613,7 +614,7 @@ shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
 
 void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> state) {
   this->state[node] = dynamic_pointer_cast<global_state>(state);
-//  this->state[node]->get_mstate()->check_consistency();
+  //  this->state[node]->get_mstate()->check_consistency();
 }
 
 summary_dstack_result analysis::summary_dstack::result() {
@@ -622,8 +623,7 @@ summary_dstack_result analysis::summary_dstack::result() {
 
 node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
   return [=](size_t const &a, size_t const &b) -> optional<bool> {
-    if(a >= state.size() || b >= state.size())
-      return a < b;
+    if(a >= state.size() || b >= state.size()) return a < b;
     shared_ptr<global_state> state_a = this->state[a];
     shared_ptr<global_state> state_b = this->state[b];
     //    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
@@ -655,7 +655,7 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
       else if(min_calls_sz_a < min_calls_sz_b)
         return false;
       else
-          return nullopt;
+        return nullopt;
     } else
       return nullopt;
   };
@@ -672,6 +672,33 @@ void analysis::summary_dstack::check_consistency() {
    * Todo: Mittels einer extra Knotenliste soll sichergestellt werden,
    * dass Felder nicht verschwinden zwischen den Iterationen
    */
+}
+
+void analysis::summary_dstack::ref(size_t node, std::experimental::optional<size_t> count) {
+  if(!count)
+    ref_map[node] = count;
+  else {
+    auto ref_it = ref_map.find(node);
+    if(ref_it == ref_map.end())
+      ref_map[node] = count;
+    else {
+      auto count_current = ref_it->second;
+      if(count_current) ref_it->second = count_current.value() + count.value();
+    }
+  }
+}
+
+void analysis::summary_dstack::unref(size_t node) {
+  auto ref_it = ref_map.find(node);
+  if(ref_it != ref_map.end()) {
+    auto count_current = ref_it->second;
+    if(count_current) {
+      if(count_current.value() > 0)
+        ref_it->second = count_current.value() - 1;
+      else
+        state[node] = dynamic_pointer_cast<global_state>(bottom());
+    }
+  }
 }
 
 optional<size_t> analysis::summary_dstack::get_lowest_function_address(size_t node_id) {
@@ -692,12 +719,10 @@ void analysis::summary_dstack::print_callstack(size_t node_id) {
     nv._([&](address_node *an) {
       handled = true;
       cout << "0x" << hex << an->get_address() << dec << "(" << node_id << ")";
-      if(an->get_name())
-        cout << ": " << an->get_name().value();
+      if(an->get_name()) cout << ": " << an->get_name().value();
     });
     cfg->get_node_payload(node_id)->accept(nv);
-    if(!handled)
-      cout << "?(" << node_id << ")";
+    if(!handled) cout << "?(" << node_id << ")";
   };
   cout << "----> Call stack for ";
   print_node(node_id);

@@ -20,6 +20,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <unordered_map>
 #include <experimental/optional>
 
 namespace analysis {
@@ -58,6 +59,7 @@ private:
   std::set<size_t> _dirty_nodes;
 //  caller::caller caller_analysis;
   state_t state;
+  std::unordered_map<size_t, std::experimental::optional<size_t>> ref_map;
 
   summary_dstack_stubs stubs;
   std::experimental::optional<summary_t> get_stub(void *address, size_t node);
@@ -96,6 +98,9 @@ public:
   std::set<size_t> dirty_nodes();
 
   virtual void check_consistency();
+
+  void ref(size_t node, std::experimental::optional<size_t> count);
+  void unref(size_t node);
 
   std::experimental::optional<size_t> get_lowest_function_address(size_t node_id);
   void print_callstack(size_t node_id);

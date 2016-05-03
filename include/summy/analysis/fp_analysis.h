@@ -99,6 +99,11 @@ public:
   virtual void check_consistency() {
   }
 
+  virtual void ref(size_t node, std::experimental::optional<size_t> count) {
+  }
+  virtual void unref(size_t node) {
+  }
+
   virtual void accept(analysis_visitor &v) {
     v.visit(this);
   }
