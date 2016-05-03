@@ -89,6 +89,8 @@ public:
   std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr);
 
   std::shared_ptr<domain_state> get(size_t node);
+  std::shared_ptr<global_state> get_bot(size_t node);
+  std::experimental::optional<std::shared_ptr<global_state>> get_opt(size_t node);
   void update(size_t node, shared_ptr<domain_state> state);
   summary_dstack_result result();
 
