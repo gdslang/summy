@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() >= 150 && n.get_id() < 175 || n.get_id() == 72)
+      if(true)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       //      out << n.get_id() << " [label=\"" << *jd_man.address_of(n.get_id()) << "\"]";
       else

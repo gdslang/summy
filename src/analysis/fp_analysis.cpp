@@ -179,6 +179,7 @@ void analysis::fp_analysis::clear_pending() {
 }
 
 void analysis::fp_analysis::assert_dependency(dependency dep) {
+  assert(!(dep.source == 166 && dep.sink == 264));
   _dependants[dep.source].insert(dep.sink);
 }
 

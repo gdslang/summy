@@ -148,12 +148,20 @@ void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, 
 }
 
 void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  //  cout << "Adding constraint from " << from << " to " << to << endl;
+  //  cout << cfg->out_edge_payloads(from)->size() << endl;
+  //    cout << "Adding constraint from " << from << " to " << to << endl;
+  //    assert(from != 99 || to != 70);
+  node_visitor nv;
+  nv._([&](address_node *av) {
+    ref(from, nullopt);
+    ref(to, nullopt);
+  });
+  cfg->get_node_payload(to)->accept(nv);
 
-  function<shared_ptr<global_state>()> transfer_f = [=]() { return state[from]; };
+  function<shared_ptr<global_state>()> transfer_f = [=]() { return get_sub(from); };
   auto for_mutable = [&](function<void(summary_memory_state *)> cb) {
     transfer_f = [=]() {
-      shared_ptr<global_state> &state_c = this->state[from];
+      shared_ptr<global_state> state_c = get_sub(from);
       summary_memory_state *mstate_new = state_c->get_mstate()->copy();
       cb(mstate_new);
       shared_ptr<global_state> global_new =
@@ -177,10 +185,12 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     v._([&](load *l) { for_update(l); });
     v._([&](store *s) { for_update(s); });
     v._([&](branch *b) {
+      ref(from, nullopt);
+      ref(to, nullopt);
       switch(b->get_hint()) {
         case gdsl::rreil::BRANCH_HINT_CALL: {
           transfer_f = [=]() {
-            shared_ptr<global_state> state_c = this->state[from];
+            shared_ptr<global_state> state_c = get_sub(from);
             summary_memory_state *mstate = state_c->get_mstate();
 
             for(auto edge_mapping : *cfg->out_edge_payloads(to))
@@ -209,7 +219,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             while(!callers_rest.empty()) {
               size_t caller = callers_rest.back();
               callers_rest.pop_back();
-              set<void *> caller_f_addrs = unpack_f_addrs(this->state[caller]->get_f_addr());
+              set<void *> caller_f_addrs = unpack_f_addrs(get_sub(caller)->get_f_addr());
 
               set<void *> intersection;
               set_intersection(caller_f_addrs.begin(), caller_f_addrs.end(), callers_addrs_trans.begin(),
@@ -219,7 +229,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               }
 
               callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
-              callers_t caller_caller_callers = get_callers(this->state[caller]);
+              callers_t caller_caller_callers = get_callers(get_sub(caller));
               callers_rest.insert(callers_rest.begin(), caller_caller_callers.begin(), caller_caller_callers.end());
             }
 
@@ -267,8 +277,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     if(fd_it != function_desc_map.end()) {
                       auto &f_desc = fd_it->second;
                       for(size_t s_node : f_desc.summary_nodes) {
-                        add_summary(state[s_node]->get_mstate());
-                        if(state_c->get_f_addr() == this->state[s_node]->get_f_addr()) directly_recursive = true;
+                        add_summary(get_sub(s_node)->get_mstate());
+                        if(state_c->get_f_addr() == get_sub(s_node)->get_f_addr()) directly_recursive = true;
                       }
 
                       //                    cout << address << endl;
@@ -349,7 +359,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         }
         case gdsl::rreil::BRANCH_HINT_RET: {
           transfer_f = [=]() {
-            shared_ptr<global_state> state_c = this->state[from];
+            shared_ptr<global_state> state_c = get_sub(from);
             set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
             assert(f_addrs.size() > 0);
             for(auto f_addr : f_addrs) {
@@ -361,8 +371,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               fd_it->second.summary_nodes.insert(to);
               callers_t caller_callers = get_callers(state_c);
               for(auto caller : caller_callers) {
-                //                cout << "Return-propagating from " << hex << f_addr << " to " << caller << dec <<
-                //                endl;
+                cout << "Return-propagating from " << to << " / " << hex << f_addr << " to " << caller << dec << endl;
                 assert_dependency(gen_dependency(to, caller));
               }
             }
@@ -372,7 +381,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         }
         case gdsl::rreil::BRANCH_HINT_JUMP: {
           transfer_f = [=]() {
-            shared_ptr<global_state> state_c = this->state[from];
+            shared_ptr<global_state> state_c = get_sub(from);
             summary_memory_state *mstate = state_c->get_mstate();
             ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
 
@@ -438,6 +447,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     });
   });
   ev._([&](const call_edge *edge) {
+    ref(from, nullopt);
+    ref(to, nullopt);
     //    _call = true;
     transfer_f = [=]() {
       shared_ptr<global_state> state_new;
@@ -464,13 +475,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           for(auto &f : desc.field_reqs) {
             //            cout << f << endl;
             optional<set<mempath>> mempaths_new =
-              f.propagate(state[from_parent]->get_mstate(), state_new->get_mstate());
+              f.propagate(get_sub(from_parent)->get_mstate(), state_new->get_mstate());
             if(mempaths_new) {
               //              cout << "Propagating..." << endl;
               //              for(auto p : mempaths_new.value())
               //                cout << p << endl;
 
-              set<void *> f_addrs = unpack_f_addrs(state[from_parent]->get_f_addr());
+              set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent)->get_f_addr());
               assert(f_addrs.size() > 0);
               for(auto f_addr : f_addrs)
                 propagate_reqs(mempaths_new.value(), f_addr);
@@ -478,7 +489,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           }
         }
       } else {
-        state_new = state[from];
+        state_new = get_sub(from);
         if(!state_new->get_mstate()->is_bottom()) {
           bool needs_decoding = false;
           size_t addr;
@@ -609,11 +620,22 @@ std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
   //  if(node >= state.size())
   //    return bottom();
+  cout << node << endl;
+  assert(erased.find(node) == erased.end());
+  return state[node];
+}
+
+shared_ptr<global_state> analysis::summary_dstack::get_sub(size_t node) {
+  //  if(node >= state.size())
+  //    return bottom();
+  cout << node << endl;
+  assert(erased.find(node) == erased.end());
   return state[node];
 }
 
 void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> state) {
   this->state[node] = dynamic_pointer_cast<global_state>(state);
+  erased.erase(node);
   //  this->state[node]->get_mstate()->check_consistency();
 }
 
@@ -676,7 +698,7 @@ void analysis::summary_dstack::check_consistency() {
 
 void analysis::summary_dstack::ref(size_t node, std::experimental::optional<size_t> count) {
   if(!count)
-    ref_map[node] = count;
+    ref_map[node] = nullopt;
   else {
     auto ref_it = ref_map.find(node);
     if(ref_it == ref_map.end())
@@ -693,10 +715,14 @@ void analysis::summary_dstack::unref(size_t node) {
   if(ref_it != ref_map.end()) {
     auto count_current = ref_it->second;
     if(count_current) {
-      if(count_current.value() > 0)
+      if(count_current.value() > 1)
         ref_it->second = count_current.value() - 1;
-      else
+      else {
+        cout << "Bottomifying node " << node << endl;
         state[node] = dynamic_pointer_cast<global_state>(bottom());
+        erased.insert(node);
+        ref_map.erase(node);
+      }
     }
   }
 }

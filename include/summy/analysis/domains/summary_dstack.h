@@ -59,6 +59,9 @@ private:
   std::set<size_t> _dirty_nodes;
 //  caller::caller caller_analysis;
   state_t state;
+
+  std::set<size_t> erased;
+
   std::unordered_map<size_t, std::experimental::optional<size_t>> ref_map;
 
   summary_dstack_stubs stubs;
@@ -90,6 +93,7 @@ public:
   std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr);
 
   std::shared_ptr<domain_state> get(size_t node);
+  std::shared_ptr<global_state> get_sub(size_t node);
   void update(size_t node, shared_ptr<domain_state> state);
   summary_dstack_result result();
 
