@@ -20,20 +20,19 @@ cfg::phi_assign::phi_assign(gdsl::rreil::variable *lhs, gdsl::rreil::variable *r
   this->rhs = cv.get_variable();
 }
 
-cfg::phi_assign::phi_assign(const phi_assign &a) : phi_assign(a.lhs, a.rhs, a.size) {
-}
+cfg::phi_assign::phi_assign(const phi_assign &a) : phi_assign(a.lhs, a.rhs, a.size) {}
 
 cfg::phi_assign::~phi_assign() {
   delete this->lhs;
   delete this->rhs;
 }
 
-cfg::phi_edge::phi_edge(assignments_t assignments, phi_memory memory) :
-    assignments(assignments), memory(memory) {
-}
+cfg::phi_edge::phi_edge(assignments_t assignments, phi_memory memory) : assignments(assignments), memory(memory) {}
 
-cfg::phi_edge::~phi_edge() {
-}
+cfg::phi_edge::phi_edge(jump_dir jd, assignments_t assignments, phi_memory memory)
+    : edge(jd), assignments(assignments), memory(memory) {}
+
+cfg::phi_edge::~phi_edge() {}
 
 void cfg::phi_edge::dot(std::ostream &stream) const {
   stream << "\"";

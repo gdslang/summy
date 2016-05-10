@@ -19,33 +19,33 @@ void cfg::edge_copy_visitor::visit(const edge *e) {
 }
 
 void cfg::edge_copy_visitor::visit(const stmt_edge *e) {
-  if(stmt_edge_ctor != NULL) _edge = stmt_edge_ctor(e->get_stmt());
+  if(stmt_edge_ctor != NULL) _edge = stmt_edge_ctor(e->get_jump_dir(), e->get_stmt());
   else {
-    _edge = new stmt_edge(e->get_stmt());
+    _edge = new stmt_edge(e->get_jump_dir(), e->get_stmt());
     _default();
   }
 }
 
 void cfg::edge_copy_visitor::visit(const cond_edge *e) {
-  if(cond_edge_ctor != NULL) _edge = cond_edge_ctor(e->get_cond(), e->is_positive());
+  if(cond_edge_ctor != NULL) _edge = cond_edge_ctor(e->get_jump_dir(), e->get_cond(), e->is_positive());
   else {
-    _edge = new cond_edge(e->get_cond(), e->is_positive());
+    _edge = new cond_edge(e->get_jump_dir(), e->get_cond(), e->is_positive());
     _default();
   }
 }
 
 void cfg::edge_copy_visitor::visit(const phi_edge *e) {
-  if(cond_edge_ctor != NULL) _edge = phi_edge_ctor(e->get_assignments(), e->get_memory());
+  if(cond_edge_ctor != NULL) _edge = phi_edge_ctor(e->get_jump_dir(), e->get_assignments(), e->get_memory());
   else {
-    _edge = new phi_edge(e->get_assignments(), e->get_memory());
+    _edge = new phi_edge(e->get_jump_dir(), e->get_assignments(), e->get_memory());
     _default();
   }
 }
 
 void cfg::edge_copy_visitor::visit(const call_edge *e) {
-  if(call_edge_ctor != NULL) _edge = call_edge_ctor(e->is_target_edge());
+  if(call_edge_ctor != NULL) _edge = call_edge_ctor(e->get_jump_dir(), e->is_target_edge());
   else {
-    _edge = new call_edge(e->is_target_edge());
+    _edge = new call_edge(e->get_jump_dir(), e->is_target_edge());
     _default();
   }
 }

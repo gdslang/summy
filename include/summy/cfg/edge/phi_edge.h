@@ -56,6 +56,7 @@ private:
   phi_memory memory;
 public:
   phi_edge(assignments_t assignments, phi_memory memory);
+  phi_edge(jump_dir jd, assignments_t assignments, phi_memory memory);
   ~phi_edge();
 
   assignments_t const &get_assignments() const {

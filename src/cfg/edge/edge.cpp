@@ -34,7 +34,11 @@ cfg::stmt_edge::stmt_edge(gdsl::rreil::statement *stmt) {
   this->stmt = cv.get_statement();
 }
 
-
+cfg::stmt_edge::stmt_edge(jump_dir jd, gdsl::rreil::statement *stmt) : edge(jd) {
+  summy::rreil::copy_visitor cv;
+  stmt->accept(cv);
+  this->stmt = cv.get_statement();
+}
 
 void cfg::stmt_edge::dot(std::ostream &stream) const {
   stream << "\"" << *stmt << "\"";
@@ -49,6 +53,14 @@ void cfg::stmt_edge::accept(edge_visitor &v) const {
  */
 
 cfg::cond_edge::cond_edge(gdsl::rreil::sexpr *cond, bool positive) {
+  this->positive = positive;
+
+  summy::rreil::copy_visitor cv;
+  cond->accept(cv);
+  this->cond = cv.get_sexpr();
+}
+
+cfg::cond_edge::cond_edge(jump_dir jd, gdsl::rreil::sexpr *cond, bool positive) : edge(jd) {
   this->positive = positive;
 
   summy::rreil::copy_visitor cv;
@@ -72,6 +84,9 @@ void cfg::cond_edge::accept(edge_visitor &v) const {
  */
 
 cfg::call_edge::call_edge(bool target_edge) : target_edge(target_edge) {
+}
+
+cfg::call_edge::call_edge(jump_dir jd, bool target_edge) : edge(jd),  target_edge(target_edge) {
 }
 
 cfg::call_edge::~call_edge() {

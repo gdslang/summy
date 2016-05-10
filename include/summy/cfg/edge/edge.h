@@ -47,6 +47,8 @@ private:
   gdsl::rreil::statement *stmt;
 public:
   stmt_edge(gdsl::rreil::statement *stmt);
+  stmt_edge(jump_dir jd, gdsl::rreil::statement *stmt);
+
   ~stmt_edge() {
     delete stmt;
   }
@@ -65,6 +67,7 @@ private:
   bool positive;
 public:
   cond_edge(gdsl::rreil::sexpr *cond, bool positive);
+  cond_edge(jump_dir jd, gdsl::rreil::sexpr *cond, bool positive);
   ~cond_edge() {
     delete cond;
   }
@@ -86,6 +89,7 @@ private:
   bool target_edge;
 public:
   call_edge(bool target_edge);
+  call_edge(jump_dir jd, bool target_edge);
   ~call_edge();
 
   bool is_target_edge() const {
