@@ -28,6 +28,7 @@
 #include <bjutil/printer.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/sms_op.h>
+#include <summy/analysis/ismt/smt_builder.h>
 #include <summy/rreil/id/memory_id.h>
 #include <algorithm>
 #include <experimental/optional>
@@ -102,8 +103,14 @@ std::set<size_t> analysis::summary_dstack::get_callers(std::shared_ptr<global_st
   vsv._([&](vs_finite *vf) {
     for(size_t f_addr : vf->get_elements()) {
       size_t head_id = this->function_desc_map.at((void *)f_addr).head_id;
-      for(size_t parent : cfg->in_edges(head_id))
-        callers.insert(parent);
+      for(size_t parent : cfg->in_edges(head_id)) {
+        cfg::edge const* e = cfg->out_edge_payloads(parent)->at(head_id);
+        edge_visitor ev;
+        ev._([&](cfg::call_edge const* ce) {
+          callers.insert(parent);
+        });
+        e->accept(ev);
+      }
     }
   });
   f_addrs->accept(vsv);
@@ -370,8 +377,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               //            else
               fd_it->second.summary_nodes.insert(to);
               callers_t caller_callers = get_callers(state_c);
-              for(auto caller : caller_callers) {
-                cout << "Return-propagating from " << to << " / " << hex << f_addr << " to " << caller << dec << endl;
+              for(size_t caller : caller_callers) {
+//                cout << "Return-propagating from " << to << " / " << hex << f_addr << dec << " to " << caller << endl;
                 assert_dependency(gen_dependency(to, caller));
               }
             }
@@ -530,7 +537,7 @@ void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
 }
 
 dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {
-  //  cout << "Generating dep. " << from << " to " << to << endl;
+//  cout << "Generating dep. " << from << " to " << to << endl;
   return dependency{from, to};
 }
 
@@ -620,22 +627,20 @@ std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
   //  if(node >= state.size())
   //    return bottom();
-  cout << node << endl;
-  assert(erased.find(node) == erased.end());
+//  assert(erased.find(node) == erased.end());
   return state[node];
 }
 
 shared_ptr<global_state> analysis::summary_dstack::get_sub(size_t node) {
   //  if(node >= state.size())
   //    return bottom();
-  cout << node << endl;
-  assert(erased.find(node) == erased.end());
+//  assert(erased.find(node) == erased.end());
   return state[node];
 }
 
 void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> state) {
   this->state[node] = dynamic_pointer_cast<global_state>(state);
-  erased.erase(node);
+//  erased.erase(node);
   //  this->state[node]->get_mstate()->check_consistency();
 }
 
@@ -718,9 +723,9 @@ void analysis::summary_dstack::unref(size_t node) {
       if(count_current.value() > 1)
         ref_it->second = count_current.value() - 1;
       else {
-        cout << "Bottomifying node " << node << endl;
+//        cout << "Bottomifying node " << node << endl;
         state[node] = dynamic_pointer_cast<global_state>(bottom());
-        erased.insert(node);
+//        erased.insert(node);
         ref_map.erase(node);
       }
     }

@@ -60,7 +60,7 @@ private:
 //  caller::caller caller_analysis;
   state_t state;
 
-  std::set<size_t> erased;
+//  std::set<size_t> erased;
 
   std::unordered_map<size_t, std::experimental::optional<size_t>> ref_map;
 

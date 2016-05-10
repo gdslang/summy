@@ -22,7 +22,7 @@ class call_edge;
 
 class edge_copy_visitor : public edge_visitor {
 public:
-  typedef std::function<edge*()> edge_ctor_t;
+  typedef std::function<edge*(jump_dir)> edge_ctor_t;
   typedef std::function<stmt_edge*(gdsl::rreil::statement *stmt)> stmt_edge_ctor_t;
   typedef std::function<cond_edge*(gdsl::rreil::sexpr *cond, bool positive)> cond_edge_ctor_t;
   typedef std::function<phi_edge*(assignments_t assignments, phi_memory memory)> phi_edge_ctor_t;

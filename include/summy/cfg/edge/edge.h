@@ -15,12 +15,25 @@
 
 namespace cfg {
 
+enum jump_dir {
+  BACKWARD, FORWARD, UNKNOWN
+};
+
 class edge_visitor;
 
 class edge {
 private:
+  jump_dir jd;
 public:
-  edge() {
+  jump_dir get_jump_dir() const {
+    return jd;
+  }
+
+  edge(jump_dir jd) : jd(jd) {
+
+  }
+
+  edge() : jd(UNKNOWN) {
   }
   virtual ~edge() {
   }

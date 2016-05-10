@@ -59,7 +59,7 @@ void decomposer::transform() {
           replace = true;
           replacement = new cond_edge(w->get_cond(), false);
 
-          cfg->update_edge(last_body, node->get_id(), new (class edge)());
+          cfg->update_edge(last_body, node->get_id(), new (class edge)(BACKWARD));
         });
         stmt->accept(v);
       });

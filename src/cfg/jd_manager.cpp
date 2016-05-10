@@ -45,7 +45,10 @@ jump_dir jd_manager::jump_direction(size_t from, size_t to) {
   if(is_call_edge)
     return UNKNOWN;
 
-  analysis::addr::addr_result ar = addr.result();
+  if(edge_it->second->get_jump_dir() == BACKWARD)
+    return BACKWARD;
+
+  analysis::addr_machine::addr_machine_result ar = addr.result();
   auto from_address = ar.result.at(from)->get_address();
   auto to_address = ar.result.at(to)->get_address();
 
@@ -71,20 +74,20 @@ size_t jd_manager::machine_address_of(size_t node) {
     notified = false;
     fp.iterate();
   }
-  analysis::addr::addr_result ar = addr.result();
+  analysis::addr_machine::addr_machine_result ar = addr.result();
   auto node_addr =  ar.result.at(node)->get_address();
   if(node_addr)
-    return node_addr.value().machine;
+    return node_addr.value();
   else
     return 0;
 }
 
-std::shared_ptr<analysis::addr::addr_state> jd_manager::address_of(size_t node) {
+std::shared_ptr<analysis::addr_machine::addr_machine_state> jd_manager::address_of(size_t node) {
   if(notified) {
     notified = false;
     fp.iterate();
   }
-  analysis::addr::addr_result ar = addr.result();
+  analysis::addr_machine::addr_machine_result ar = addr.result();
   auto node_state =  ar.result.at(node);
   return node_state;
 }

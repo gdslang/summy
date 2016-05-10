@@ -11,9 +11,9 @@
 //#include <summy/rreil/copy_visitor.h>
 
 void cfg::edge_copy_visitor::visit(const edge *e) {
-  if(edge_ctor != NULL) _edge = edge_ctor();
+  if(edge_ctor != NULL) _edge = edge_ctor(e->get_jump_dir());
   else {
-    _edge = new edge();
+    _edge = new edge(e->get_jump_dir());
     _default();
   }
 }
