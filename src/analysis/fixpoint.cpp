@@ -81,7 +81,7 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-        cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
 
     static optional<size_t> function_last;
     analysis_visitor av(true);
@@ -103,20 +103,20 @@ void fixpoint::iterate() {
             cout << *analysis->get(node_id) << endl;
           }
         }
-//        if(nits_it->second > 3) continue;
+        //        if(nits_it->second > 3) continue;
       } else
         node_iterations[node_id] = 1;
-//      static size_t machine_address_last = 0;
-//      size_t machine_address_current = jd_man.machine_address_of(node_id);
-//      if(machine_address_current != machine_address_last) {
-//        machine_address_last = machine_address_current;
-//        cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
-//      }
-//      optional<size_t> function_current = sd->get_lowest_function_address(node_id);
-//      if(function_current && (!function_last || function_last.value() != function_current.value())) {
-//        sd->print_callstack(node_id);
-//        function_last = function_current;
-//      }
+      //      static size_t machine_address_last = 0;
+      //      size_t machine_address_current = jd_man.machine_address_of(node_id);
+      //      if(machine_address_current != machine_address_last) {
+      //        machine_address_last = machine_address_current;
+      //        cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
+      //      }
+      //      optional<size_t> function_current = sd->get_lowest_function_address(node_id);
+      //      if(function_current && (!function_last || function_last.value() != function_current.value())) {
+      //        sd->print_callstack(node_id);
+      //        function_last = function_current;
+      //      }
     });
     analysis->accept(av);
 
@@ -161,7 +161,7 @@ void fixpoint::iterate() {
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         auto evaluated = constraint();
         if(constraints.size() == 1)
-          ;//analysis->unref(node_other);
+          analysis->unref(node_other);
         else
           analysis->ref(node_other, nullopt);
 
@@ -185,7 +185,7 @@ void fixpoint::iterate() {
         if(widening && jd == BACKWARD) {
           //          cout << "Current: " << *current << endl;
           //          cout << "Evaluated: " << *evaluated << endl;
-//                    cout << "Back jump from " << node_other << " to " << node_id << endl;
+          //                    cout << "Back jump from " << node_other << " to " << node_id << endl;
           domain_state *boxed;
           tie(boxed, needs_postprocessing) = analysis->get(node_id)->box(evaluated.get(), node_id);
           evaluated = shared_ptr<domain_state>(boxed);
