@@ -399,6 +399,9 @@ void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   //  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
   num_expr *rhs_simplified = simplify(rhs);
   assign_expr(lhs, rhs_simplified, &equality_state::assign_var);
+
+  cout << *rhs_simplified << endl;
+
   child_state->assign(lhs, rhs_simplified);
   delete rhs_simplified;
 }
@@ -463,8 +466,21 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   auto vars = ::vars(cmp);
   for(auto var : vars) {
     auto back_it = back_map.find(var->get_id());
+
+    cout << "var: " << *var->get_id() << endl;
+
     if(back_it != back_map.end()) {
+      cout << "back_it->second: " << *back_it->second << endl;
+
       auto &equalities = elements[back_it->second];
+
+      bool is_representative = (*back_it->second == *var->get_id());
+      optional<int64_t> offset;
+      if(!is_representative) {
+        for(auto equality : equalities)
+          if(*equality.first == *var->get_id()) offset = -equality.second;
+      }
+
       for(auto equality : equalities) {
         if(*equality.first == *var->get_id()) continue;
         /*
@@ -474,8 +490,14 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
         //        num_expr_cmp *eq_expr = num_expr_cmp::equals(var->copy(), eq_var->copy());
         //        child_state->assume(eq_expr);
         //        delete eq_expr;
+
+        cout << *equality.first << ", " << equality.second << endl;
+
         num_expr *var_e =
-          new num_expr_lin(new num_linear_term(var->copy(), new num_linear_vs(vs_finite::single(equality.second))));
+          new num_expr_lin(new num_linear_term(var->copy(), new num_linear_vs(vs_finite::single(offset ? offset.value() : equality.second))));
+
+        cout << *eq_var << " <- " << *var_e << endl;
+
         child_state->assign(eq_var, var_e);
         delete var_e;
         delete eq_var;

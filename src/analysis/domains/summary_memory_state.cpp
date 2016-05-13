@@ -346,6 +346,9 @@ std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_tempor
   converter addr_cv(
     size, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
   num_expr *addr_expr = cvc(addr_cv);
+
+  cout << *addr_expr << endl;
+
   child_state->assign(var, addr_expr);
   delete addr_expr;
 
@@ -1096,11 +1099,17 @@ void analysis::summary_memory_state::assume(gdsl::rreil::sexpr *cond) {
     return;
   }
 
+  cout << *this << endl;
+  cout << *cond << endl;
+
   /*
    * Todo: Is this necessary?
    */
   unique_ptr<managed_temporary> temp = assign_temporary(cond, 1);
   vs_shared_t value = child_state->queryVal(temp->get_var());
+
+  cout << *value << endl;
+
   if(*value == vs_finite::_false) bottomify();
 }
 

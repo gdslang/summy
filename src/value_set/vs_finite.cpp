@@ -339,4 +339,4 @@ vs_shared_t const vs_finite::_false = single(0);
 vs_shared_t const vs_finite::_true_false = value_set::join(_true, _false);
 
 vs_shared_t const vs_finite::zero = make_shared<vs_finite>(elements_t { 0 });
-size_t const vs_finite::max_growth = 100;
+size_t const vs_finite::max_growth = 512;

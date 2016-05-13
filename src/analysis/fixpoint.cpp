@@ -81,7 +81,7 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-    //    cout << "Next node: " << node_id << endl;
+        cout << "Next node: " << node_id << endl;
 
     static optional<size_t> function_last;
     analysis_visitor av(true);
@@ -161,7 +161,7 @@ void fixpoint::iterate() {
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         auto evaluated = constraint();
         if(constraints.size() == 1)
-          analysis->unref(node_other);
+          ;//analysis->unref(node_other);
         else
           analysis->ref(node_other, nullopt);
 
