@@ -57,9 +57,6 @@ api::num_linear *analysis::equality_state::simplify(api::num_linear *l) {
     id_shared_t id = nt->get_var()->get_id();
     auto id_back_it = back_map.find(id);
     if(id_back_it != back_map.end()) {
-      cout << *id_back_it->second << " / " << *id << endl;
-      cout << (elements.find(id_back_it->second) != elements.end()) << endl;
-      cout << (elements.at(id_back_it->second).find(id) != elements.at(id_back_it->second).end()) << endl;
       offset += nt->get_scale() * elements.at(id_back_it->second).at(id);
       id = id_back_it->second;
     }
@@ -123,9 +120,6 @@ void analysis::equality_state::remove(api::num_var *v) {
 }
 
 void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
-  for(auto e : back_map)
-    assert(elements.find(e.second) != elements.end());
-
   auto rep = [&](id_shared_t id) {
     auto bm_it = back_map.find(id);
     if(bm_it == back_map.end()) {
@@ -149,9 +143,6 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
     back_map[e.first] = first;
   };
 
-  for(auto e : back_map)
-    assert(elements.find(e.second) != elements.end());
-
   auto second_elem_it = elements.find(second);
   if(second_elem_it != elements.end()) {
     for(auto &id : second_elem_it->second)
@@ -166,9 +157,6 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
     assert(false);
     //    insert(second);
   }
-
-  for(auto e : back_map)
-    assert(elements.find(e.second) != elements.end());
 }
 
 void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset) {
@@ -418,9 +406,6 @@ equality_state *analysis::equality_state::narrow(domain_state *other, size_t cur
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
   //  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
-  for(auto e : elements)
-    assert(e.second.find(e.first) != e.second.end());
-
   num_expr *rhs_simplified = simplify(rhs);
   assign_expr(lhs, rhs_simplified, &equality_state::assign_var);
 
@@ -441,9 +426,6 @@ void analysis::equality_state::weak_assign(api::num_var *lhs, api::num_expr *rhs
 
 void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   if(is_bottom()) return;
-
-  for(auto e : back_map)
-    assert(elements.find(e.second) != elements.end());
 
   num_var *positive = NULL;
   num_var *negative = NULL;
@@ -476,10 +458,6 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   }
   delete positive;
   delete negative;
-
-  for(auto e : back_map)
-    assert(elements.find(e.second) != elements.end());
-//    assert(e.second.find(e.first) != e.second.end());
 
   /*
    * Next, we hand down the comparison expression to the child
@@ -524,10 +502,6 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
       }
     }
   }
-
-  for(auto e : elements)
-    assert(e.second.find(e.first) != e.second.end());
-
 
   //  /*
   //   * Besser: Statt quadratisch alle Kombinationen zu testen,
