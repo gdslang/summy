@@ -100,17 +100,17 @@ int main(int argc, char **argv) {
   g.set_code(buffer, section.size, section.address);
 
   try {
-    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
-    sweep sweep(g, false, true);
-    sweep.transduce();
-    analysis::fcollect::fcollect fc(&sweep.get_cfg());
-    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-    fixpoint fp_collect(&fc, jd_man_fc);
-    fp_collect.iterate();
+//    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
+//    sweep sweep(g, false, true);
+//    sweep.transduce();
+//    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+//    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+//    fixpoint fp_collect(&fc, jd_man_fc);
+//    fp_collect.iterate();
 
     //    for(size_t address : fc.result().result)
     //      cout << hex << address << dec << endl;
-    set<size_t> fstarts = fc.result().result;
+    set<size_t> fstarts;// = fc.result().result;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
 
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
       function_map[e.address] = name;
     }
 
-    analysis_dectran dt(g, true, true, function_map);
+    analysis_dectran dt(g, true, false, function_map);
     dt.register_();
 
     for(auto f : functions) {
@@ -143,6 +143,8 @@ int main(int argc, char **argv) {
 //      if(name != "sem_movsAction1") continue;
 //      if(name != "_slash_") continue;
 //      if(name != "traverse") continue;
+//      if(name != "alloc") continue;
+      if(name != "del_fields") continue;
 //      if(name != "sweep") continue;
 //            if(name != "rreil_convert_sem_stmt") continue;
       //      if(name != "main") continue;
@@ -211,7 +213,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 56 || n.get_id() == 58)
+      if(n.get_id() == 101 || n.get_id() == 145 || n.get_id() == 147 || n.get_id() == 149 || n.get_id() == 42 || n.get_id() == 100)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
 //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " << *jd_man.address_of(n.get_id()) << "\"]";
       else

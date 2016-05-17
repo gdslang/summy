@@ -129,7 +129,7 @@ void fixpoint::iterate() {
     //    machine_addresses.insert(jd_man.machine_address_of(node_id));
     //    if(machine_addresses.size() % 1000 == 0)
     //          cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
-    //    if(node_id == 26) cout << *analysis->get(node_id) << endl;
+    //cout << *analysis->get(node_id) << endl;
 
 
     //    if(max_its > 2000)
@@ -153,7 +153,7 @@ void fixpoint::iterate() {
 
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
         //        cout << "Constraint from " << node_other << " to " << node_id << endl;
-        //        if(node_id == 97) cout << *analysis->get(node_other) << endl;
+//                cout << *analysis->get(node_other) << endl;
 
         /*
          * Evaluate constraint

@@ -137,7 +137,7 @@ api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
 }
 
 als_state *analysis::als_state::domop(bool widening, domain_state *other, size_t current_node, domopper_t domopper) {
-//  cout << *this << endl << "WIDEN" << endl << *other << endl;
+  //  cout << *this << endl << "WIDEN" << endl << *other << endl;
   als_state const *other_casted = dynamic_cast<als_state *>(other);
   numeric_state *me_compat;
   numeric_state *other_compat;
@@ -574,8 +574,8 @@ void als_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *
 }
 
 ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
-  //    cout << "queryALS for " << *nv << endl;
-  //    cout << "offset: " << *child_state->queryVal(nv) << endl;
+//  cout << "queryALS for " << *nv << endl;
+//  cout << "offset: " << *child_state->queryVal(nv) << endl;
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
   if(id_it == elements.end()) return child_state->queryAls(nv);
@@ -732,10 +732,9 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
 
       id_set_t aliases_b;
       if(x_b_it == b_elements.end()) {
-        if(a_b)
-          als_a_ge_b = false;
+        if(a_b) als_a_ge_b = false;
         continue;
-//        aliases_b.insert(special_ptr::badptr);
+        //        aliases_b.insert(special_ptr::badptr);
       } else {
         if(!a_b) continue;
         assert(x_b_it->second.size() > 0);

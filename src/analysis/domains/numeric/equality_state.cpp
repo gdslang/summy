@@ -114,9 +114,8 @@ void analysis::equality_state::remove(api::num_var *v) {
     back_map.erase(id_back_it);
   }
 
-  for(auto e : elements)
-    assert(e.second.find(e.first) != e.second.end());
-
+  //  for(auto e : elements)
+  //    assert(e.second.find(e.first) != e.second.end());
 }
 
 void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
@@ -134,8 +133,7 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
   id_shared_t second;
   tie(first, second) = tsortc(id_less(), rep(v->get_id()), rep(w->get_id()));
 
-  if(*first == *second)
-    return;
+  if(*first == *second) return;
 
   auto insert = [&](auto e) {
     assert(e.second == 0 || !(*e.first == *first));
@@ -163,7 +161,7 @@ void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, 
   //      cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << " @" << offset << endl;
   assert(offset == 0 || !(*lhs->get_id() == *rhs->get_id()));
   auto insert = [&](id_shared_t id, id_shared_t rep) {
-//    cout << "Insert " << *id << " / rep: " << *rep << endl;
+    //    cout << "Insert " << *id << " / rep: " << *rep << endl;
     auto rep_it = elements.find(rep);
     assert(rep_it != elements.end());
     rep_it->second.insert(make_pair(id, offset));
@@ -197,7 +195,7 @@ void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, 
   if(rhs_back_it == back_map.end()) {
     tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs->get_id(), rhs->get_id()));
     elements[rhs_back_it->second].insert(make_pair(rhs->get_id(), 0));
-//    cout << "Inserting into " << *rhs_back_it->second << ": " << *rhs->get_id() << endl;
+    //    cout << "Inserting into " << *rhs_back_it->second << ": " << *rhs->get_id() << endl;
   }
 
   /*
@@ -222,7 +220,7 @@ void analysis::equality_state::weak_assign_var(api::num_var *lhs, api::num_var *
 
 void analysis::equality_state::assign_lin(
   api::num_var *lhs, api::num_linear *lin, void (equality_state::*assigner)(api::num_var *, api::num_var *, int64_t)) {
-//  cout << "assign_lin in equality_state " << *lhs << " <- " << *lin << endl;
+  //  cout << "assign_lin in equality_state " << *lhs << " <- " << *lin << endl;
   num_visitor nv;
   nv._([&](num_linear_term *nt) {
     if(nt->get_scale() == 0)
@@ -427,6 +425,10 @@ void analysis::equality_state::weak_assign(api::num_var *lhs, api::num_expr *rhs
 void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   if(is_bottom()) return;
 
+  //  for(auto back : back_map) {
+  //    assert(elements.at(back.second).find(back.first) != elements.at(back.second).end());
+  //  }
+
   num_var *positive = NULL;
   num_var *negative = NULL;
 
@@ -452,8 +454,8 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   });
   cmp->get_opnd()->accept(nv);
 
-  if(positive != NULL && negative != NULL) {
-    //    cout << "Merging for " << *cmp << endl;
+  if(positive != NULL && negative != NULL && cmp->get_op() == EQ) {
+//    cout << "Merging for " << *cmp << endl;
     merge(positive, negative);
   }
   delete positive;
@@ -493,9 +495,10 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
         //        child_state->assume(eq_expr);
         //        delete eq_expr;
 
-        num_expr *var_e =
-          new num_expr_lin(new num_linear_term(var->copy(), new num_linear_vs(vs_finite::single(offset ? offset.value() : equality.second))));
+        num_expr *var_e = new num_expr_lin(new num_linear_term(
+          var->copy(), new num_linear_vs(vs_finite::single(offset ? offset.value() : equality.second))));
 
+//        cout << *eq_var << " <- " << *var_e << endl;
         child_state->assign(eq_var, var_e);
         delete var_e;
         delete eq_var;

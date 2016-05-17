@@ -147,9 +147,9 @@ vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t c
 }
 
 void value_sets::vsd_state::assign(num_var *lhs, num_expr *rhs) {
-//    cout << "Assign " << *rhs << " to " << *lhs << endl;
+  //    cout << "Assign " << *rhs << " to " << *lhs << endl;
   vs_shared_t er = num_ev.queryVal(rhs);
-//  cout << "\t ==> " << *er << endl;
+  //  cout << "\t ==> " << *er << endl;
   if(*er == value_set::bottom) bottomify();
   if(is_bottom()) return;
   elements[lhs->get_id()] = er;
@@ -329,12 +329,11 @@ void analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {
 }
 
 void analysis::value_sets::vsd_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) {
-  vsd_state *from_state_vsd = dynamic_cast<vsd_state*>(from_state);
+  vsd_state *from_state_vsd = dynamic_cast<vsd_state *>(from_state);
 
   auto from_it = from_state_vsd->elements.find(from->get_id());
-//  assert(from_it != from_state_vsd->elements.end());
-  if(from_it != from_state_vsd->elements.end())
-    elements[to->get_id()] = from_it->second;
+  //  assert(from_it != from_state_vsd->elements.end());
+  if(from_it != from_state_vsd->elements.end()) elements[to->get_id()] = from_it->second;
 }
 
 bool analysis::value_sets::vsd_state::cleanup(api::num_var *var) {
@@ -377,10 +376,9 @@ vsd_state *analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> s
 }
 
 ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
-//      cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
+//  cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
   vs_shared_t nv_val = queryVal(nv);
-
-  //  cout << *nv_val << endl;
+//  cout << *nv_val << endl;
 
   map<id_shared_t, vector<vs_shared_t>, id_less> symbol_offsets;
 
@@ -424,7 +422,7 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     result.insert(ptr(so_it.first, offsets_vs.value()));
   }
 
-//        if(result.size() > 0) cout << "+++" << result << endl;
+  //        if(result.size() > 0) cout << "+++" << result << endl;
   //  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
 
   return result;
