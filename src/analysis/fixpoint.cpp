@@ -81,8 +81,9 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-//    cout << "Next node: " << node_id << endl;
+    //    cout << "Next node: " << node_id << endl;
 
+    bool _continue = false;
     static optional<size_t> function_last;
     analysis_visitor av(true);
     av._([&](summary_dstack *sd) {
@@ -97,21 +98,19 @@ void fixpoint::iterate() {
           sd->print_callstack(node_id);
           max_its = nits_it->second;
           print_distribution_total();
-          if(node_id == 7600) {
-            cout << "node id: " << node_id << endl;
-            cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
-            cout << *analysis->get(node_id) << endl;
-          }
+//          cout << "node id: " << node_id << endl;
+//          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+//          cout << *analysis->get(node_id) << endl;
         }
-        //        if(nits_it->second > 3) continue;
+//        if(nits_it->second > 20) _continue = true;
       } else
         node_iterations[node_id] = 1;
-      //      static size_t machine_address_last = 0;
-      //      size_t machine_address_current = jd_man.machine_address_of(node_id);
-      //      if(machine_address_current != machine_address_last) {
-      //        machine_address_last = machine_address_current;
-      //        cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
-      //      }
+//      static size_t machine_address_last = 0;
+//      size_t machine_address_current = jd_man.machine_address_of(node_id);
+//      if(machine_address_current != machine_address_last) {
+//        machine_address_last = machine_address_current;
+//        cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
+//      }
       //      optional<size_t> function_current = sd->get_lowest_function_address(node_id);
       //      if(function_current && (!function_last || function_last.value() != function_current.value())) {
       //        sd->print_callstack(node_id);
@@ -119,6 +118,7 @@ void fixpoint::iterate() {
       //      }
     });
     analysis->accept(av);
+    if(_continue) continue;
 
 
     node_visitor nv;
@@ -129,7 +129,7 @@ void fixpoint::iterate() {
     //    machine_addresses.insert(jd_man.machine_address_of(node_id));
     //    if(machine_addresses.size() % 1000 == 0)
     //          cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
-    //cout << *analysis->get(node_id) << endl;
+    // cout << *analysis->get(node_id) << endl;
 
 
     //    if(max_its > 2000)
@@ -153,7 +153,7 @@ void fixpoint::iterate() {
 
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
         //        cout << "Constraint from " << node_other << " to " << node_id << endl;
-//                cout << *analysis->get(node_other) << endl;
+        //                cout << *analysis->get(node_other) << endl;
 
         /*
          * Evaluate constraint

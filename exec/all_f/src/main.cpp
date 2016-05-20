@@ -30,6 +30,7 @@
 #include <summy/analysis/fcollect/fcollect.h>
 #include <summy/big_step/analysis_dectran.h>
 #include <summy/big_step/sweep.h>
+#include <summy/statistics.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
@@ -140,13 +141,16 @@ int main(int argc, char **argv) {
       //      }
       //      if(name != "_slash_vex_slash_0f_slash_vexv")
       //        continue;
-//      if(name != "sem_movsAction1") continue;
-//      if(name != "_slash_") continue;
-//      if(name != "traverse") continue;
-//      if(name != "alloc") continue;
-//      if(name != "del_fields") continue;
-//      if(name != "sweep") continue;
-//            if(name != "rreil_convert_sem_stmt") continue;
+      //      if(name != "sem_movsAction1") continue;
+//            if(name != "_slash_") continue;
+//            if(name != "consume") continue;
+      //      if(name != "traverse") continue;
+      //      if(name != "alloc") continue;
+      //      if(name != "del_fields") continue;
+//            if(name != "sweep") continue;
+//            if(name != "sem_reg_offset") continue;
+//            if(name != "register_from_bits") continue;
+      //            if(name != "rreil_convert_sem_stmt") continue;
       //      if(name != "main") continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
@@ -213,9 +217,10 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 101 || n.get_id() == 145 || n.get_id() == 147 || n.get_id() == 149 || n.get_id() == 42 || n.get_id() == 100)
+      if(n.get_id() == 101 || n.get_id() == 145 || n.get_id() == 147 || n.get_id() == 149 || n.get_id() == 42 ||
+         n.get_id() == 100)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-//            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " << *jd_man.address_of(n.get_id()) << "\"]";
+      //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " << *jd_man.address_of(n.get_id()) << "\"]";
       else
         n.dot(out);
     });
@@ -231,6 +236,13 @@ int main(int argc, char **argv) {
     printf("Decoded bytes: %lld\n", dt.bytes_decoded());
     printf("Analyzed addresses: %zu\n", fp.analyzed_addresses());
     printf("Decoded start addresses: %lld\n", dt.start_addresses_decoded());
+
+    branch_statistics bs(g, ds, jd_man);
+    auto b_stats = bs.get_stats();
+    cout << "Total indirect branches: " << b_stats.total_indirect << endl;
+    cout << "Indirect branches with targets: " << b_stats.with_targets << " ("
+         << (100.0 * b_stats.with_targets / (float)b_stats.total_indirect) << "%)" << endl;
+
     dt.print_decoding_holes();
   } catch(string &s) {
     cout << "Exception: " << s << endl;

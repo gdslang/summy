@@ -52,6 +52,11 @@ jump_dir jd_manager::jump_direction(size_t from, size_t to) {
   auto from_address = ar.result.at(from)->get_address();
   auto to_address = ar.result.at(to)->get_address();
 
+  bool to_is_addr = false;
+  node_visitor nv;
+  nv._([&](address_node *cn) { to_is_addr = true; });
+  cfg->get_node_payload(to)->accept(nv);
+
   /*
    * There should be an address for every node?! => Assertions
    * => No, because the 'address' analysis also uses the
@@ -63,6 +68,8 @@ jump_dir jd_manager::jump_direction(size_t from, size_t to) {
 //  cout << (from_address ? from_address.value() : 0) << " / " << (to_address ? to_address.value() : 0)  << endl;
   if(!from_address || !to_address)
     return UNKNOWN;
+  if(to_is_addr && to_address.value() == from_address.value())
+    return BACKWARD;
   if(to_address.value() < from_address.value())
     return BACKWARD;
   else

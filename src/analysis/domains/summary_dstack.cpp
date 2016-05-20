@@ -192,6 +192,9 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     v._([&](load *l) { for_update(l); });
     v._([&](store *s) { for_update(s); });
     v._([&](branch *b) {
+      if(node_targets.find(from) == node_targets.end())
+        node_targets[from] = set<size_t>();
+
       ref(from, nullopt);
       ref(to, nullopt);
       switch(b->get_hint()) {
@@ -265,6 +268,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 //                cout << "-----" << endl;
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char *)text_address + offset;
+                  node_targets[from].insert((size_t)address);
                   //                  cout << "Looking up summary for " << hex << address << dec << endl;
                   if(callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
                     //                    cout << "Warning: Ignoring recursive call." << endl;
@@ -424,6 +428,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 //                cout << "-----" << endl;
                 for(int64_t offset : vsf->get_elements()) {
                   size_t address = (size_t)text_address + offset;
+                  node_targets[from].insert(address);
                   if(child_addresses.find(address) == child_addresses.end()) {
                     size_t child_id =
                       cfg->create_node([&](size_t id) { return new address_node(id, address, cfg::DECODABLE); });

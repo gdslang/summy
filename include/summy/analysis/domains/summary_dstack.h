@@ -32,6 +32,7 @@ struct summary_dstack_result : public ::analysis::analysis_result<state_t> {
 };
 
 typedef std::shared_ptr<summary_memory_state> summary_t;
+typedef std::map<size_t, std::set<size_t>> node_targets_t;
 
 struct function_desc {
   std::set<size_t> summary_nodes;
@@ -59,6 +60,8 @@ private:
   std::set<size_t> _dirty_nodes;
 //  caller::caller caller_analysis;
   state_t state;
+
+  node_targets_t node_targets;
 
 //  std::set<size_t> erased;
 
@@ -108,6 +111,10 @@ public:
 
   std::experimental::optional<size_t> get_lowest_function_address(size_t node_id);
   void print_callstack(size_t node_id);
+
+  node_targets_t const& get_targets() {
+    return node_targets;
+  }
 
   virtual void accept(analysis_visitor &v) {
     v.visit(this);
