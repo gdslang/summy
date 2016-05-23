@@ -35,6 +35,8 @@ private:
   std::set<dec_interval> decoded_intervals;
 
   function_map_t fmap;
+
+  size_t decode_iterations;
 protected:
   bool speculative_decoding;
   gdsl::gdsl &gdsl;
@@ -46,6 +48,10 @@ public:
   dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap);
   dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding);
   virtual ~dectran() {
+  }
+
+  size_t get_decode_iterations() {
+    return decode_iterations;
   }
 
   void print_decoding_holes();

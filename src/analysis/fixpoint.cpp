@@ -117,7 +117,7 @@ void fixpoint::iterate() {
       //        function_last = function_current;
       //      }
     });
-    analysis->accept(av);
+//    analysis->accept(av);
     if(_continue) continue;
 
 

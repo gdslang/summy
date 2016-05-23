@@ -6,13 +6,19 @@
  */
 
 #include <assert.h>
+#include <cppgdsl/rreil/sexpr/sexpr.h>
+#include <cppgdsl/rreil/sexpr/sexpr_cmp.h>
+
 #include <cppgdsl/rreil/statement/branch.h>
+#include <cppgdsl/rreil/statement/cbranch.h>
 #include <summy/analysis/domains/summary_dstack.h>
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/edge/edge_visitor.h>
+#include <summy/cfg/bfs_iterator.h>
 #include <summy/statistics.h>
 #include <summy/tools/rreil_util.h>
 #include <cppgdsl/rreil/statement/branch.h>
+#include <summy/rreil/sexpr/sexpr_visitor.h>
 
 #include "cppgdsl/rreil/statement/statement_visitor.h"
 #include <algorithm>
@@ -21,12 +27,16 @@
 #include <tuple>
 
 using namespace std;
+using namespace gdsl::rreil;
 
 using analysis::node_targets_t;
 using cfg::edge_visitor;
 using cfg::stmt_edge;
-using gdsl::rreil::branch;
-using gdsl::rreil::statement_visitor;
+using summy::rreil::sexpr_visitor;
+
+/*
+ * branch_statistics
+ */
 
 branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack &sd, cfg::jd_manager &jd_manager)
     : gdsl(gdsl), sd(sd), jd_manager(jd_manager) {
@@ -47,7 +57,7 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
       statement_visitor v;
       v._([&](branch *i) {
         is_branch = true;
-        is_ret = i->get_hint() == BRANCH_HINT_RET;
+        is_ret = i->get_hint() == gdsl::rreil::branch_hint::BRANCH_HINT_RET;
         rreil_evaluator rev;
         tie(is_direct, ignore) = rev.evaluate(i->get_target()->get_lin());
       });
@@ -55,8 +65,7 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
     });
     e->accept(ev);
     assert(is_branch);
-    if(is_ret)
-      continue;
+    if(is_ret) continue;
 
     if(!is_direct) {
       size_t machine_address = jd_manager.machine_address_of(node_from);
@@ -64,7 +73,7 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
       for(auto address : nt_it.second) {
         int_t ip = gdsl.get_ip();
         bool seekable = !gdsl.seek(address);
-//        cout << hex << address << " " << dec << seekable << endl;
+        //        cout << hex << address << " " << dec << seekable << endl;
         assert(!gdsl.seek(ip));
         if(seekable) _new.insert(address);
       }
@@ -92,4 +101,59 @@ branch_statistics_data_t branch_statistics::get_stats() {
     if(at_it.second.size() > 0) with_targets++;
   }
   return branch_statistics_data_t{total, with_targets};
+}
+
+/*
+ * condition_statistics
+ */
+
+condition_statistics_data_t condition_statistics::get_stats() {
+  size_t total_conditions = 0;
+  size_t cmp_conditions = 0;
+  for(auto node : cfg) {
+    size_t node_id = node->get_id();
+    for(auto edge_it : *cfg.out_edge_payloads(node_id)) {
+      bool is_cmp = false;
+      cfg::edge const *e = edge_it.second;
+      edge_visitor ev;
+      ev._([&](stmt_edge const *se) {
+        statement_visitor sv;
+        sv._([&](cbranch *cb) {
+          sexpr *sex = cb->get_cond();
+          ::summy::rreil::sexpr_visitor sv;
+          sv._([&](sexpr_cmp *cmp) {
+            is_cmp = true;
+          });
+          sex->accept(sv);
+          total_conditions++;
+        });
+        se->get_stmt()->accept(sv);
+      });
+      e->accept(ev);
+      if(is_cmp)
+        cmp_conditions++;
+    }
+  }
+  return condition_statistics_data_t{total_conditions, cmp_conditions};
+}
+
+/*
+ * loc_statistics
+ */
+
+size_t loc_statistics::get_loc() {
+  size_t loc = 0;
+  for(auto node : cfg) {
+    size_t node_id = node->get_id();
+    for(auto edge_it : *cfg.out_edge_payloads(node_id)) {
+      bool is_cmp = false;
+      cfg::edge const *e = edge_it.second;
+      edge_visitor ev;
+      ev._([&](stmt_edge const *se) {
+        loc++;
+      });
+      e->accept(ev);
+    }
+  }
+  return loc;
 }

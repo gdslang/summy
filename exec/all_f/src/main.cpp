@@ -100,9 +100,11 @@ int main(int argc, char **argv) {
 
   g.set_code(buffer, section.size, section.address);
 
+  bool blockwise_optimized = true;
+
   try {
     cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
-    sweep sweep(g, false, true);
+    sweep sweep(g, blockwise_optimized, true);
     sweep.transduce();
     analysis::fcollect::fcollect fc(&sweep.get_cfg());
     cfg::jd_manager jd_man_fc(&sweep.get_cfg());
@@ -112,6 +114,15 @@ int main(int argc, char **argv) {
     //    for(size_t address : fc.result().result)
     //      cout << hex << address << dec << endl;
     set<size_t> fstarts = fc.result().result;
+
+    condition_statistics_data_t c_stats = condition_statistics(sweep.get_cfg()).get_stats();
+    cout << "Total conditions: " << c_stats.total_conditions << endl;
+    cout << "Comparison conditions: " << c_stats.cmp_conditions << " ("
+         << (100.0 * c_stats.cmp_conditions / (float)c_stats.total_conditions) << "%)" << endl;
+
+    size_t loc = loc_statistics(sweep.get_cfg()).get_loc();
+    cout << "Loc: " << loc << endl;
+    cout << "Decode iterations: " << sweep.get_decode_iterations() << endl;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
 
@@ -128,7 +139,7 @@ int main(int argc, char **argv) {
       function_map[e.address] = name;
     }
 
-    analysis_dectran dt(g, true, false, function_map);
+    analysis_dectran dt(g, blockwise_optimized, false, function_map);
     dt.register_();
 
     for(auto f : functions) {

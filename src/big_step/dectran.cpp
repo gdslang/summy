@@ -76,6 +76,8 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
       rreil = insn.value().translate();
     }
 
+    decode_iterations++;
+
     gdsl.reset_heap();
 
     //    printf("RReil (no transformations):\n");
@@ -146,7 +148,7 @@ size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experiment
 }
 
 dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap)
-    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl), speculative_decoding(speculative_decoding), fmap(fmap) {}
+    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl), speculative_decoding(speculative_decoding), fmap(fmap), decode_iterations(0) {}
 
 dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
     : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding, function_map_t()) {}
