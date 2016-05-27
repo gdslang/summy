@@ -38,8 +38,7 @@ using summy::rreil::sexpr_visitor;
  * branch_statistics
  */
 
-branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack &sd, cfg::jd_manager &jd_manager)
-    : gdsl(gdsl), sd(sd), jd_manager(jd_manager) {
+branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack &sd, cfg::jd_manager &jd_manager) {
   cfg::cfg *cfg = sd.get_cfg();
 
   node_targets_t const &node_targets = sd.get_targets();
@@ -51,13 +50,13 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
     cfg::edge const *e = edges->begin()->second;
     bool is_branch = false;
     bool is_direct;
-    bool is_ret;
+    gdsl::rreil::branch_hint hint;
     edge_visitor ev;
     ev._([&](stmt_edge const *se) {
       statement_visitor v;
       v._([&](branch *i) {
         is_branch = true;
-        is_ret = i->get_hint() == gdsl::rreil::branch_hint::BRANCH_HINT_RET;
+        hint = i->get_hint();
         rreil_evaluator rev;
         tie(is_direct, ignore) = rev.evaluate(i->get_target()->get_lin());
       });
@@ -65,7 +64,7 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
     });
     e->accept(ev);
     assert(is_branch);
-    if(is_ret) continue;
+    if(hint == gdsl::rreil::branch_hint::BRANCH_HINT_RET) continue;
 
     if(!is_direct) {
       size_t machine_address = jd_manager.machine_address_of(node_from);
@@ -81,26 +80,36 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
       auto current_it = address_targets.find(machine_address);
       if(current_it != address_targets.end()) {
         set<size_t> intersection;
-        set_intersection(current_it->second.begin(), current_it->second.end(), _new.begin(), _new.end(),
+        set_intersection(current_it->second.targets.begin(), current_it->second.targets.end(), _new.begin(), _new.end(),
           inserter(intersection, intersection.begin()));
-        address_targets[machine_address] = intersection;
+        address_targets[machine_address].targets = intersection;
 
       } else
-        address_targets[machine_address] = _new;
+        address_targets[machine_address].targets = _new;
 
-      if(address_targets[machine_address].size() == 0)
-        cout << "No targets for jump at 0x" << hex << machine_address << dec << endl;
+      address_targets[machine_address].is_call = hint == gdsl::rreil::branch_hint::BRANCH_HINT_CALL;
+
+      if(address_targets[machine_address].targets.size() == 0)
+        cout << "No targets for " << (address_targets[machine_address].is_call ? "call" : "jump") <<" at 0x" << hex << machine_address << dec << endl;
     }
   }
 }
 
 branch_statistics_data_t branch_statistics::get_stats() {
-  size_t total = address_targets.size();
-  size_t with_targets = 0;
+  branch_statistics_data_t r;
   for(auto at_it : address_targets) {
-    if(at_it.second.size() > 0) with_targets++;
+    if(at_it.second.is_call)
+      r.calls_total_indirect++;
+    else
+      r.jmps_total_indirect++;
+    if(at_it.second.targets.size() > 0) {
+      if(at_it.second.is_call)
+        r.calls_with_targets++;
+      else
+        r.jmps_with_targets++;
+    }
   }
-  return branch_statistics_data_t{total, with_targets};
+  return r;
 }
 
 /*
@@ -121,17 +130,14 @@ condition_statistics_data_t condition_statistics::get_stats() {
         sv._([&](cbranch *cb) {
           sexpr *sex = cb->get_cond();
           ::summy::rreil::sexpr_visitor sv;
-          sv._([&](sexpr_cmp *cmp) {
-            is_cmp = true;
-          });
+          sv._([&](sexpr_cmp *cmp) { is_cmp = true; });
           sex->accept(sv);
           total_conditions++;
         });
         se->get_stmt()->accept(sv);
       });
       e->accept(ev);
-      if(is_cmp)
-        cmp_conditions++;
+      if(is_cmp) cmp_conditions++;
     }
   }
   return condition_statistics_data_t{total_conditions, cmp_conditions};
@@ -146,12 +152,9 @@ size_t loc_statistics::get_loc() {
   for(auto node : cfg) {
     size_t node_id = node->get_id();
     for(auto edge_it : *cfg.out_edge_payloads(node_id)) {
-      bool is_cmp = false;
       cfg::edge const *e = edge_it.second;
       edge_visitor ev;
-      ev._([&](stmt_edge const *se) {
-        loc++;
-      });
+      ev._([&](stmt_edge const *se) { loc++; });
       e->accept(ev);
     }
   }

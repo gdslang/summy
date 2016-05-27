@@ -15,17 +15,32 @@
 #include <cppgdsl/gdsl.h>
 
 struct branch_statistics_data_t {
-  size_t total_indirect;
-  size_t with_targets;
+  size_t calls_total_indirect;
+  size_t calls_with_targets;
+
+  size_t jmps_total_indirect;
+  size_t jmps_with_targets;
+
+  branch_statistics_data_t()
+      : calls_total_indirect(0), calls_with_targets(0), jmps_total_indirect(0), jmps_with_targets(0) {}
+};
+
+struct targets_t {
+  bool is_call;
+  std::set<size_t> targets;
+
+  targets_t(bool is_call, std::set<size_t> targets) : is_call(is_call), targets(targets) {}
+
+  targets_t() : is_call(false), targets(std::set<size_t>()) {}
 };
 
 class branch_statistics {
 private:
-  gdsl::gdsl &gdsl;
-  analysis::summary_dstack &sd;
-  cfg::jd_manager &jd_manager;
+  //  gdsl::gdsl &gdsl;
+  //  analysis::summary_dstack &sd;
+  //  cfg::jd_manager &jd_manager;
 
-  std::map<size_t, std::set<size_t>> address_targets;
+  std::map<size_t, targets_t> address_targets;
 
 public:
   branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack &sd, cfg::jd_manager &jd_manager);
@@ -41,9 +56,9 @@ struct condition_statistics_data_t {
 class condition_statistics {
 private:
   cfg::cfg &cfg;
+
 public:
-  condition_statistics(cfg::cfg &cfg) : cfg(cfg) {
-  }
+  condition_statistics(cfg::cfg &cfg) : cfg(cfg) {}
 
   condition_statistics_data_t get_stats();
 };
@@ -51,9 +66,9 @@ public:
 class loc_statistics {
 private:
   cfg::cfg &cfg;
+
 public:
-  loc_statistics(cfg::cfg &cfg) : cfg(cfg) {
-  }
+  loc_statistics(cfg::cfg &cfg) : cfg(cfg) {}
 
   size_t get_loc();
 };

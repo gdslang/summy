@@ -248,11 +248,22 @@ int main(int argc, char **argv) {
     printf("Analyzed addresses: %zu\n", fp.analyzed_addresses());
     printf("Decoded start addresses: %lld\n", dt.start_addresses_decoded());
 
+
     branch_statistics bs(g, ds, jd_man);
     auto b_stats = bs.get_stats();
-    cout << "Total indirect branches: " << b_stats.total_indirect << endl;
-    cout << "Indirect branches with targets: " << b_stats.with_targets << " ("
-         << (100.0 * b_stats.with_targets / (float)b_stats.total_indirect) << "%)" << endl;
+    size_t total_indirect = b_stats.calls_total_indirect + b_stats.jmps_total_indirect;
+    size_t with_targets = b_stats.calls_with_targets + b_stats.jmps_with_targets;
+    cout << "Total indirect branches: " << total_indirect << endl;
+    cout << "Indirect branches with targets: " << with_targets << " ("
+         << (100.0 * with_targets / (float)total_indirect) << "%)" << endl;
+
+    cout << "Total indirect jmps: " << b_stats.jmps_total_indirect << endl;
+    cout << "Indirect jmps with targets: " << b_stats.jmps_with_targets << " ("
+         << (100.0 * b_stats.jmps_with_targets / (float)b_stats.jmps_total_indirect) << "%)" << endl;
+
+    cout << "Total indirect calls: " << b_stats.calls_total_indirect << endl;
+    cout << "Indirect calls with targets: " << b_stats.calls_with_targets << " ("
+         << (100.0 * b_stats.calls_with_targets / (float)b_stats.calls_total_indirect) << "%)" << endl;
 
     dt.print_decoding_holes();
   } catch(string &s) {
