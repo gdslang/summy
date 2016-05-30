@@ -111,6 +111,10 @@ int main(int argc, char **argv) {
     fixpoint fp_collect(&fc, jd_man_fc);
     fp_collect.iterate();
 
+    size_t loc_sweep = loc_statistics(sweep.get_cfg()).get_loc();
+    cout << "Loc (sweep): " << loc_sweep << endl;
+    cout << "Decode iterations (sweep): " << sweep.get_decode_iterations() << endl;
+
     //    for(size_t address : fc.result().result)
     //      cout << hex << address << dec << endl;
     set<size_t> fstarts = fc.result().result;
@@ -119,10 +123,6 @@ int main(int argc, char **argv) {
     cout << "Total conditions: " << c_stats.total_conditions << endl;
     cout << "Comparison conditions: " << c_stats.cmp_conditions << " ("
          << (100.0 * c_stats.cmp_conditions / (float)c_stats.total_conditions) << "%)" << endl;
-
-    size_t loc = loc_statistics(sweep.get_cfg()).get_loc();
-    cout << "Loc: " << loc << endl;
-    cout << "Decode iterations: " << sweep.get_decode_iterations() << endl;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
 
@@ -248,6 +248,9 @@ int main(int argc, char **argv) {
     printf("Analyzed addresses: %zu\n", fp.analyzed_addresses());
     printf("Decoded start addresses: %lld\n", dt.start_addresses_decoded());
 
+    size_t loc = loc_statistics(dt.get_cfg()).get_loc();
+    cout << "Loc: " << loc << endl;
+    cout << "Decode iterations: " << dt.get_decode_iterations() << endl;
 
     branch_statistics bs(g, ds, jd_man);
     auto b_stats = bs.get_stats();
