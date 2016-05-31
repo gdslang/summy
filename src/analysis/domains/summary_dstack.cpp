@@ -308,6 +308,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                         cfg->update_edge(to, head_id, new call_edge(true));
                       }
                     } else {
+                      assert((size_t)address != 0x30bdb);
                       size_t an_id = cfg->create_node(
                         [&](size_t id) { return new address_node(id, (size_t)address, cfg::DECODABLE); });
                       function_desc_map.insert(make_pair(address, function_desc(current_min_calls_sz + 1, an_id)));
@@ -430,6 +431,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   size_t address = (size_t)text_address + offset;
                   node_targets[from].insert(address);
                   if(child_addresses.find(address) == child_addresses.end()) {
+                    assert((size_t)address != 0x30bdb);
                     size_t child_id =
                       cfg->create_node([&](size_t id) { return new address_node(id, address, cfg::DECODABLE); });
                     cfg->update_edge(to, child_id, new cfg::edge());
@@ -515,6 +517,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           this->cfg->get_node_payload(to)->accept(nv);
 
           if(needs_decoding) {
+            assert((size_t)addr != 0x30bdb);
             this->cfg->replace_node_payload(new address_node(to, addr, cfg::DECODABLE));
             /**
              * Todo: The node state is replaced...?

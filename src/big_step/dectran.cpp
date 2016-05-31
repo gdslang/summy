@@ -51,14 +51,24 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   do {
     int_t ip = gdsl.get_ip();
 
+    cout << "Dec/Tran @0x" << hex << gdsl.get_ip() << dec << endl;
+
     statements_t *rreil;
     if(blockwise_optimized) {
-      gdsl::block b = gdsl.decode_translate_block(gdsl::optimization_configuration::EVERYWHERE/* |
+      gdsl::block b = [&]() -> gdsl::block {
+        try {
+          return gdsl.decode_translate_block(gdsl::optimization_configuration::EVERYWHERE/* |
 //                                                    gdsl::optimization_configuration::LIVENESS |
 //                                                    gdsl::optimization_configuration::FSUBST/*
                                                     /* |
                                                     gdsl::optimization_configuration::DELAYEDFSUBST*/,
         LONG_MAX);
+        } catch(gdsl_exception &s) {
+          cout << "GDSL Error @0x" << hex << gdsl.get_ip() << dec << ": " << s << endl;
+          gdsl.reset_heap();
+          throw s;
+        }
+      }();
       rreil = b.get_statements();
     } else {
       optional<gdsl::instruction> insn = [&]() -> optional<gdsl::instruction> {
