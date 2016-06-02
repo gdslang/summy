@@ -70,8 +70,9 @@ private:
   summary_dstack_stubs stubs;
   std::experimental::optional<summary_t> get_stub(void *address, size_t node);
 
-  std::set<size_t> get_callers(std::shared_ptr<global_state> state);
-  std::set<size_t> get_function_heads(std::shared_ptr<global_state> state);
+  std::set<size_t> get_callers(std::shared_ptr<global_state> state) const;
+  std::set<size_t> get_function_heads(std::shared_ptr<global_state> state) const;
+  std::set<size_t> get_function_heads__(std::shared_ptr<global_state> state) const;
   static std::set<void *> unpack_f_addrs(summy::vs_shared_t f_addr);
   //  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);
 
@@ -110,7 +111,7 @@ public:
   void unref(size_t node);
 
   std::experimental::optional<size_t> get_lowest_function_address(size_t node_id);
-  void print_callstack(size_t node_id);
+  void print_callstack(size_t node_id) const;
 
   node_targets_t const& get_targets() {
     return node_targets;
