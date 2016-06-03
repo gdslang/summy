@@ -92,26 +92,25 @@ void fixpoint::iterate() {
       if(nits_it != node_iterations.end()) {
         nits_it->second++;
         if(nits_it->second > max_its || nits_it->second > 12) {
-//          cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
-//          cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
+          cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
+          cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
+          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+          sd->print_callstack(node_id);
+          max_its = nits_it->second;
+          print_distribution_total();
+//          cout << "node id: " << node_id << endl;
 //          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
-//          sd->print_callstack(node_id);
-//          max_its = nits_it->second;
-//          print_distribution_total();
-          //          cout << "node id: " << node_id << endl;
-          //          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
-          //          cout << *analysis->get(node_id) << endl;
+//          cout << *analysis->get(node_id) << endl;
         }
-        //        if(nits_it->second > 20) _continue = true;
+//        if(nits_it->second > 20) _continue = true;
       } else
         node_iterations[node_id] = 1;
-      sd->print_callstack(node_id);
-      static size_t machine_address_last = 0;
-      size_t machine_address_current = jd_man.machine_address_of(node_id);
-      if(machine_address_current != machine_address_last) {
-        machine_address_last = machine_address_current;
-        cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
-      }
+//      static size_t machine_address_last = 0;
+//      size_t machine_address_current = jd_man.machine_address_of(node_id);
+//      if(machine_address_current != machine_address_last) {
+//        machine_address_last = machine_address_current;
+//        cout << "\tMachine address: 0x" << hex << machine_address_current << dec << endl;
+//      }
       //      optional<size_t> function_current = sd->get_lowest_function_address(node_id);
       //      if(function_current && (!function_last || function_last.value() != function_current.value())) {
       //        sd->print_callstack(node_id);

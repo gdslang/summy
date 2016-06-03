@@ -62,21 +62,7 @@ analysis::dependency analysis::fcollect::fcollect::gen_dependency(size_t from, s
 void analysis::fcollect::fcollect::init_state() {}
 
 fcollect::fcollect::fcollect(class cfg *cfg) : fp_analysis::fp_analysis(cfg) {
-  auto begin = cfg->begin();
-  auto end = cfg->end();
-//  for(auto it = cfg->begin();;) {
-//      break;
-//
-//  }
-//  for(auto node : *cfg) {
-//    size_t node_id = node->get_id();
-//    auto &edges = *cfg->out_edge_payloads(node_id);
-//    for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
-//      add_constraint(node_id, edge_it->first, edge_it->second);
-//      auto dep = gen_dependency(node_id, edge_it->first);
-//      assert_dependency(dep);
-//    }
-//  }
+  init();
 }
 
 analysis::fcollect::fcollect::~fcollect() {}

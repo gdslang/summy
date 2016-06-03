@@ -105,26 +105,24 @@ int main(int argc, char **argv) {
   try {
     cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
     sweep sweep(g, blockwise_optimized, true);
-//    sweep.transduce();
-    {
-      analysis::fcollect::fcollect fc(&sweep.get_cfg());
-    }
-//    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-//    fixpoint fp_collect(&fc, jd_man_fc);
-//    fp_collect.iterate();
+    sweep.transduce();
+    analysis::fcollect::fcollect fc(&sweep.get_cfg());
+    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+    fixpoint fp_collect(&fc, jd_man_fc);
+    fp_collect.iterate();
 
-//    size_t loc_sweep = loc_statistics(sweep.get_cfg()).get_loc();
-//    cout << "Loc (sweep): " << loc_sweep << endl;
-//    cout << "Decode iterations (sweep): " << sweep.get_decode_iterations() << endl;
+    size_t loc_sweep = loc_statistics(sweep.get_cfg()).get_loc();
+    cout << "Loc (sweep): " << loc_sweep << endl;
+    cout << "Decode iterations (sweep): " << sweep.get_decode_iterations() << endl;
 
     //    for(size_t address : fc.result().result)
     //      cout << hex << address << dec << endl;
-    set<size_t> fstarts;// = fc.result().result;
+    set<size_t> fstarts = fc.result().result;
 
-//    condition_statistics_data_t c_stats = condition_statistics(sweep.get_cfg()).get_stats();
-//    cout << "Total conditions: " << c_stats.total_conditions << endl;
-//    cout << "Comparison conditions: " << c_stats.cmp_conditions << " ("
-//         << (100.0 * c_stats.cmp_conditions / (float)c_stats.total_conditions) << "%)" << endl;
+    condition_statistics_data_t c_stats = condition_statistics(sweep.get_cfg()).get_stats();
+    cout << "Total conditions: " << c_stats.total_conditions << endl;
+    cout << "Comparison conditions: " << c_stats.cmp_conditions << " ("
+         << (100.0 * c_stats.cmp_conditions / (float)c_stats.total_conditions) << "%)" << endl;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
 
@@ -155,7 +153,7 @@ int main(int argc, char **argv) {
       //      if(name != "_slash_vex_slash_0f_slash_vexv")
       //        continue;
       //      if(name != "sem_movsAction1") continue;
-            if(name != "show_slash_op") continue;
+            if(name != "_slash_") continue;
 //            if(name != "consume") continue;
       //      if(name != "traverse") continue;
       //      if(name != "alloc") continue;
