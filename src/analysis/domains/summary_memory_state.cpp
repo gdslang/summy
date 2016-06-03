@@ -85,7 +85,7 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
     int64_t offset_current = out_r_it->first;
     if(offset_current >= offset + (int64_t)size) break;
 
-//    cout << "In the way: offset:" << offset_current << " size: " << out_r_it->second.size << endl;
+    //    cout << "In the way: offset:" << offset_current << " size: " << out_r_it->second.size << endl;
 
     if(offset_current < offset) prefix_needed = true;
     if(!offset_first) offset_first = offset_current;
@@ -129,8 +129,8 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
   assert(offset_first);
   assert(total_size);
 
-//  cout << "offset_first: " << offset_first.value() << endl;
-//  cout << "total_size: " << total_size.value() << endl;
+  //  cout << "offset_first: " << offset_first.value() << endl;
+  //  cout << "total_size: " << total_size.value() << endl;
 
   //    contiguous = contiguous && (offset_next == offset + size);
 
@@ -267,7 +267,7 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
     }
     child_state->assume(n_out, {badptr});
     if(fd_after) {
-//      cout << "Have after! offset: " << fd_after.value().offset << ", size: " << fd_after.value().size << endl;
+      //      cout << "Have after! offset: " << fd_after.value().offset << ", size: " << fd_after.value().size << endl;
       id_shared_t nid_out_after =
         name ? numeric_id::generate(name.value(), fd_after.value().offset, fd_after.value().size, false)
              : numeric_id::generate();
@@ -718,18 +718,18 @@ void analysis::summary_memory_state::check_consistency() {
   check_regions(input.regions, output.regions);
   check_regions(input.deref, output.deref);
 
-//  id_shared_t sp = id_shared_t(new gdsl::rreil::arch_id("SP"));
-//  auto sp_it = output.regions.find(sp);
-//  if(sp_it != output.regions.end()) {
-//    num_var nv(sp_it->second.at(0).num_id);
-//    ptr_set_t aliases_sp = child_state->queryAls(&nv);
-//    cout << nv << endl;
-//    cout << aliases_sp << endl;
-//    cout << *child_state << endl;
-//    assert(aliases_sp.size() == 2);
-//    for(auto p : aliases_sp)
-//      assert(!(*p.id == *special_ptr::badptr));
-//  }
+  //  id_shared_t sp = id_shared_t(new gdsl::rreil::arch_id("SP"));
+  //  auto sp_it = output.regions.find(sp);
+  //  if(sp_it != output.regions.end()) {
+  //    num_var nv(sp_it->second.at(0).num_id);
+  //    ptr_set_t aliases_sp = child_state->queryAls(&nv);
+  //    cout << nv << endl;
+  //    cout << aliases_sp << endl;
+  //    cout << *child_state << endl;
+  //    assert(aliases_sp.size() == 2);
+  //    for(auto p : aliases_sp)
+  //      assert(!(*p.id == *special_ptr::badptr));
+  //  }
 }
 
 bool analysis::summary_memory_state::operator>=(const domain_state &other) const {
@@ -867,12 +867,14 @@ summary_memory_state *analysis::summary_memory_state::bottom(
 void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   if(is_bottom()) return;
 
+  cout << "LOAD!!" << endl;
+
   address *addr = load->get_address();
   auto temp = assign_temporary(addr->get_lin(), addr->get_size());
   vector<num_linear *> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
-    //    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
+    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
     special_deref_desc_t spdd = handle_special_dereference(alias.id);
     if(spdd.ignore) continue;
 

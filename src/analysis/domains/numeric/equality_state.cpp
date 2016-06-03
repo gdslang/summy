@@ -158,7 +158,7 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
 }
 
 void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset) {
-  //      cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << " @" << offset << endl;
+//  cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << " @" << offset << endl;
   assert(offset == 0 || !(*lhs->get_id() == *rhs->get_id()));
   auto insert = [&](id_shared_t id, id_shared_t rep) {
     //    cout << "Insert " << *id << " / rep: " << *rep << endl;
@@ -403,7 +403,7 @@ equality_state *analysis::equality_state::narrow(domain_state *other, size_t cur
 }
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-  //  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
+//    cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
   num_expr *rhs_simplified = simplify(rhs);
   assign_expr(lhs, rhs_simplified, &equality_state::assign_var);
 
@@ -455,7 +455,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   cmp->get_opnd()->accept(nv);
 
   if(positive != NULL && negative != NULL && cmp->get_op() == EQ) {
-//    cout << "Merging for " << *cmp << endl;
+    //    cout << "Merging for " << *cmp << endl;
     merge(positive, negative);
   }
   delete positive;
@@ -498,7 +498,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
         num_expr *var_e = new num_expr_lin(new num_linear_term(
           var->copy(), new num_linear_vs(vs_finite::single(offset ? offset.value() : equality.second))));
 
-//        cout << *eq_var << " <- " << *var_e << endl;
+        //        cout << *eq_var << " <- " << *var_e << endl;
         child_state->assign(eq_var, var_e);
         delete var_e;
         delete eq_var;

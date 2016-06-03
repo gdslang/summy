@@ -81,7 +81,9 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-    //    cout << "Next node: " << node_id << endl;
+    if(node_id > 500) break;
+
+    cout << "Next node: " << node_id << endl;
 
     bool _continue = false;
     static optional<size_t> function_last;
@@ -92,12 +94,12 @@ void fixpoint::iterate() {
       if(nits_it != node_iterations.end()) {
         nits_it->second++;
         if(nits_it->second > max_its || nits_it->second > 12) {
-//          cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
-//          cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
-//          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
-//          sd->print_callstack(node_id);
-//          max_its = nits_it->second;
-//          print_distribution_total();
+          //          cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
+          //          cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
+          //          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+          //          sd->print_callstack(node_id);
+          //          max_its = nits_it->second;
+          //          print_distribution_total();
           //          cout << "node id: " << node_id << endl;
           //          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
           //          cout << *analysis->get(node_id) << endl;
@@ -130,7 +132,7 @@ void fixpoint::iterate() {
     //    machine_addresses.insert(jd_man.machine_address_of(node_id));
     //    if(machine_addresses.size() % 1000 == 0)
     //          cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
-    // cout << *analysis->get(node_id) << endl;
+    //     cout << *analysis->get(node_id) << endl;
 
 
     //    if(max_its > 2000)
@@ -272,9 +274,6 @@ void fixpoint::iterate() {
       //            cout << "Updating..." << endl;
       analysis->update(node_id, accumulator);
       updated.insert(node_id);
-
-      //      cout << "Updated " << node_id << endl;
-      //      cout << *analysis->get(node_id) << endl;
     }
 
     //    cout << "Seen: " << (seen.find(node_id) != seen.end()) << endl;
@@ -300,6 +299,9 @@ void fixpoint::iterate() {
     seen.insert(node_id);
 
     //    cout << "END OF FP_ROUND" << endl;
+    if(node_id == 408 || node_id == 407 || node_id == 417 || node_id == 418) {
+      cout << *analysis->get(node_id) << endl;
+    }
   }
 }
 

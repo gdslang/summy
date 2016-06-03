@@ -334,9 +334,9 @@ vs_shared_t summy::vs_finite::single(int64_t value) {
   return make_shared<vs_finite>(vs_finite::elements_t { value });
 }
 
-vs_shared_t const vs_finite::_true = single(1);
-vs_shared_t const vs_finite::_false = single(0);
-vs_shared_t const vs_finite::_true_false = value_set::join(_true, _false);
+vs_shared_t vs_finite::_true;
+vs_shared_t vs_finite::_false;
+vs_shared_t vs_finite::_true_false;
 
-vs_shared_t const vs_finite::zero = make_shared<vs_finite>(elements_t { 0 });
+vs_shared_t vs_finite::zero;
 size_t const vs_finite::max_growth = 512;
