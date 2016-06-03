@@ -17,8 +17,6 @@ namespace api {
 typedef std::shared_ptr<gdsl::rreil::id> id_shared_t;
 typedef std::set<id_shared_t, id_less> id_set_t;
 
-struct num_var_ptr_less;
-
 class num_var {
 private:
   id_shared_t id;
@@ -39,12 +37,6 @@ public:
 
   friend std::ostream &operator<< (std::ostream &out, num_var &_this);
 };
-
-struct num_var_ptr_less {
-  bool operator()(num_var *a, num_var *b) const;
-};
-
-typedef std::set<num_var*, num_var_ptr_less> var_ptr_set_t;
 
 std::ostream& operator<<(std::ostream &out, num_var &_this);
 

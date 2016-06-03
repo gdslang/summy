@@ -22,7 +22,7 @@
 namespace analysis {
 namespace api {
 
-var_ptr_set_t vars(num_expr *expr);
+std::set<num_var*> vars(num_expr *expr);
 
 }
 }

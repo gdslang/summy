@@ -10,7 +10,7 @@
 using namespace std;
 using namespace analysis::api;
 
-static void  _vars(var_ptr_set_t &current, num_linear *lin) {
+static void  _vars(set<num_var*> &current, num_linear *lin) {
   num_visitor nv;
   nv._([&](num_linear_term *n) {
     current.insert(n->get_var());
@@ -21,8 +21,8 @@ static void  _vars(var_ptr_set_t &current, num_linear *lin) {
   lin->accept(nv);
 }
 
-var_ptr_set_t analysis::api::vars(num_expr *expr) {
-  set<num_var*, num_var_ptr_less> result;
+std::set<num_var*> analysis::api::vars(num_expr *expr) {
+  set<num_var*> result;
   num_visitor nv;
   nv._([&](num_expr_cmp *n) {
     _vars(result, n->get_opnd());

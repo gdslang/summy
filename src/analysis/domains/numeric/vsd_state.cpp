@@ -422,9 +422,6 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     result.insert(ptr(so_it.first, offsets_vs.value()));
   }
 
-//  cout << "Result:" << endl;
-//  cout << result << endl;
-
   //        if(result.size() > 0) cout << "+++" << result << endl;
   //  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
 

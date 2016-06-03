@@ -16,8 +16,6 @@
 #include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/id/special_ptr.h>
 #include <experimental/optional>
-#include <iostream>
-#include <fstream>
 
 using gdsl::rreil::id;
 using std::experimental::optional;
@@ -245,12 +243,12 @@ als_state *als_state::narrow(domain_state *other, size_t current_node) {
 }
 
 void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
-  //  cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
+  //    cout << "assign expression in als_state: " << *lhs << " <- " << *rhs << endl;
   bool linear = false;
   num_visitor nv(true);
   nv._([&](num_expr_lin *le) { linear = true; });
   rhs->accept(nv);
-  var_ptr_set_t _vars_rhs = ::vars(rhs);
+  set<num_var *> _vars_rhs = ::vars(rhs);
 
   if(linear) {
     /*
@@ -259,7 +257,6 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
 
     vector<id_set_t> aliases_vars_rhs;
     for(auto &var : _vars_rhs) {
-      cout << "VAR: " << var << " §§ " << *var << endl;
       auto var_it = elements.find(var->get_id());
       if(var_it == elements.end())
         /*
@@ -275,32 +272,9 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
     }
     if(aliases_vars_rhs.size() == 0) aliases_vars_rhs.push_back({special_ptr::_nullptr});
 
-//    if(aliases_vars_rhs.size() == 2) {
-//      id_set_t foo = aliases_vars_rhs[0];
-//      aliases_vars_rhs[0] = aliases_vars_rhs[1];
-//      aliases_vars_rhs[1] = foo;
-//    }
-
-    cout << "aliases_vars_rhs.size():" << aliases_vars_rhs.size() << endl;
-        for(auto aliases : aliases_vars_rhs) {
-          for(auto alias : aliases)
-            cout << *alias << endl;
-          cout << "<--->" << endl;
-        }
-    if(aliases_vars_rhs.size() == 2) {
-      for(auto alias : aliases_vars_rhs[0])
-        cout << "==> " << *alias << endl;
-      cout << "XXX" << endl;
-      for(auto alias : aliases_vars_rhs[1])
-        cout << "==> " << *alias << endl;
-      cout << "XXX" << endl;
-    }
-
     vector<id_set_t::iterator> alias_iterators;
-    for(size_t i = 0; i < aliases_vars_rhs.size(); i++) {
+    for(size_t i = 0; i < aliases_vars_rhs.size(); i++)
       alias_iterators.push_back(aliases_vars_rhs[i].begin());
-      assert(alias_iterators[i] != aliases_vars_rhs[i].end());
-    }
 
     id_set_t aliases_new;
     while(alias_iterators[0] != aliases_vars_rhs[0].end()) {
@@ -312,25 +286,17 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
       assert(*alias_new_next.offset == vs_finite::single(0));
       aliases_new.insert(alias_new_next.id);
 
-
-      assert(aliases_vars_rhs.size() > 0);
-      for(size_t i = alias_iterators.size() - 1; true; i--) {
+      for(size_t i = 1; i < alias_iterators.size(); i++) {
         alias_iterators[i]++;
-        if(i > 0 && alias_iterators[i] == aliases_vars_rhs[i].end())
-          alias_iterators[i] = aliases_vars_rhs[i].begin();
-        else
-          break;
+        if(alias_iterators[i] == aliases_vars_rhs[i].end()) alias_iterators[i] = aliases_vars_rhs[i].begin();
       }
+      alias_iterators[0]++;
     }
 
     if(strong) {
       elements[lhs->get_id()] = aliases_new;
-      cout << "STRONG " << endl;
-      for(auto a : aliases_new)
-        cout << *a << endl;
       child_state->assign(lhs, rhs);
     } else {
-      cout << "WEAK " << endl;
       elements[lhs->get_id()].insert(aliases_new.begin(), aliases_new.end());
       child_state->weak_assign(lhs, rhs);
     }
@@ -608,8 +574,8 @@ void als_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *
 }
 
 ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
-  //  cout << "queryALS for " << *nv << endl;
-  //  cout << "offset: " << *child_state->queryVal(nv) << endl;
+//  cout << "queryALS for " << *nv << endl;
+//  cout << "offset: " << *child_state->queryVal(nv) << endl;
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
   if(id_it == elements.end()) return child_state->queryAls(nv);

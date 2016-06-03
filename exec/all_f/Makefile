@@ -1,16 +1,15 @@
 # vim: noexpandtab
 
-CC=clang
+CC=gcc
 #CC=clang
 CPP=clang++
 LIBDS=-L../..
-LIBS=-lsummy -lbjutil -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lgtest -lpthread -lelf #-lprofiler -ltcmalloc
+LIBS=-lsummy -lbjutil -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lcvc4 -lgmp -lgtest -lpthread -lelf #-lprofiler -ltcmalloc
 LIBFLAGS=$(LIBDS) $(LIBS)
-LDFLAGS=$(SAN)
+LDFLAGS=
 INCDS=-I../../include -Iinclude
-SAN_OFF=-fsanitize=memory -fno-omit-frame-pointer -fPIE
-CFLAGS=$(CFLAGS_EXTRA) $(SAN) -c -O0 -g -MMD -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
-CPPFLAGS=$(CPPFLAGS_EXTRA) $(SAN) -c -O0 -g -MMD -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
+CFLAGS=$(CFLAGS_EXTRA) -c -O0 -ggdb3 -MMD -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
+CPPFLAGS=$(CPPFLAGS_EXTRA) -c -O0 -ggdb3 -MMD -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
 
 EXECUTABLE=summy-all_f
 

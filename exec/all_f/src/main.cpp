@@ -54,11 +54,6 @@ using namespace analysis::api;
 
 
 int main(int argc, char **argv) {
-  vs_finite::_true = make_shared<vs_finite>(vs_finite::elements_t { 1 });;
-  vs_finite::_false = vs_finite::single(0);
-  vs_finite::_true_false = value_set::join(vs_finite::_true, vs_finite::_false);
-  vs_finite::zero = vs_finite::single(0);
-
   //  int a, b, c;
   //  tie(a, b, c) = tsort(9, 2, 10);
   //

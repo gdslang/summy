@@ -77,11 +77,11 @@ public:
   void accept(value_set_visitor &v);
 
   static vs_shared_t single(int64_t value);
-  static vs_shared_t _true;
-  static vs_shared_t _false;
-  static vs_shared_t _true_false;
+  static vs_shared_t const _true;
+  static vs_shared_t const _false;
+  static vs_shared_t const _true_false;
 
-  static vs_shared_t zero;
+  static vs_shared_t const zero;
   static size_t const max_growth;
 };
 

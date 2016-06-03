@@ -19,7 +19,3 @@ void analysis::api::num_vars::add(id_set_t const &ids) {
 bool analysis::api::num_var::operator==(num_var &b) {
   return *id == *b.id;
 }
-
-bool analysis::api::num_var_ptr_less::operator()(num_var *a, num_var *b) const {
-  return id_less()(a->get_id(), b->get_id());
-}
