@@ -248,7 +248,7 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
   num_visitor nv(true);
   nv._([&](num_expr_lin *le) { linear = true; });
   rhs->accept(nv);
-  set<num_var *> _vars_rhs = ::vars(rhs);
+  var_ptr_set_t _vars_rhs = ::vars(rhs);
 
   if(linear) {
     /*
@@ -286,11 +286,14 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
       assert(*alias_new_next.offset == vs_finite::single(0));
       aliases_new.insert(alias_new_next.id);
 
-      for(size_t i = 1; i < alias_iterators.size(); i++) {
+      assert(aliases_vars_rhs.size() > 0);
+      for(size_t i = alias_iterators.size() - 1; true; i--) {
         alias_iterators[i]++;
-        if(alias_iterators[i] == aliases_vars_rhs[i].end()) alias_iterators[i] = aliases_vars_rhs[i].begin();
+        if(i > 0 && alias_iterators[i] == aliases_vars_rhs[i].end())
+          alias_iterators[i] = aliases_vars_rhs[i].begin();
+        else
+          break;
       }
-      alias_iterators[0]++;
     }
 
     if(strong) {
@@ -574,8 +577,8 @@ void als_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *
 }
 
 ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
-//  cout << "queryALS for " << *nv << endl;
-//  cout << "offset: " << *child_state->queryVal(nv) << endl;
+  //  cout << "queryALS for " << *nv << endl;
+  //  cout << "offset: " << *child_state->queryVal(nv) << endl;
   ptr_set_t result;
   auto id_it = elements.find(nv->get_id());
   if(id_it == elements.end()) return child_state->queryAls(nv);

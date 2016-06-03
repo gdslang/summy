@@ -153,7 +153,8 @@ int main(int argc, char **argv) {
       //      if(name != "_slash_vex_slash_0f_slash_vexv")
       //        continue;
       //      if(name != "sem_movsAction1") continue;
-            if(name != "_slash_") continue;
+//            if(name != "_slash_") continue;
+            if(name != "show_slash_op") continue;
 //            if(name != "consume") continue;
       //      if(name != "traverse") continue;
       //      if(name != "alloc") continue;
