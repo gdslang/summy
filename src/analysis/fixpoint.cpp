@@ -117,6 +117,9 @@ void fixpoint::iterate() {
       //        function_last = function_current;
       //      }
     });
+    /*
+     * If this is commented out, the tests won't work ;-)
+     */
 //    analysis->accept(av);
     if(_continue) continue;
 

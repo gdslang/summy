@@ -59,7 +59,7 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
       optional<gdsl::block> b = [&]() -> optional<gdsl::block> {
         try {
           return gdsl.decode_translate_block(gdsl::optimization_configuration::CONTEXT |
-//                                               gdsl::optimization_configuration::LIVENESS |
+                                               gdsl::optimization_configuration::LIVENESS |
                                                gdsl::optimization_configuration::FSUBST,
             //                                                    gdsl::optimization_configuration::DELAYEDFSUBST,
             LONG_MAX);
