@@ -23,6 +23,7 @@
 #include <summy/big_step/dectran.h>
 #include <algorithm>
 #include <vector>
+#include <assert.h>
 
 using gdsl::gdsl_exception;
 
@@ -51,24 +52,25 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   do {
     int_t ip = gdsl.get_ip();
 
-    cout << "Dec/Tran @0x" << hex << gdsl.get_ip() << dec << endl;
+    //    cout << "Dec/Tran @0x" << hex << gdsl.get_ip() << dec << endl;
 
-    statements_t *rreil;
+    statements_t *rreil = nullptr;
     if(blockwise_optimized) {
-      gdsl::block b = [&]() -> gdsl::block {
+      optional<gdsl::block> b = [&]() -> optional<gdsl::block> {
         try {
           return gdsl.decode_translate_block(gdsl::optimization_configuration::CONTEXT |
-                                                    gdsl::optimization_configuration::LIVENESS |
-                                                    gdsl::optimization_configuration::FSUBST,
-//                                                    gdsl::optimization_configuration::DELAYEDFSUBST,
-        LONG_MAX);
+//                                               gdsl::optimization_configuration::LIVENESS |
+                                               gdsl::optimization_configuration::FSUBST,
+            //                                                    gdsl::optimization_configuration::DELAYEDFSUBST,
+            LONG_MAX);
         } catch(gdsl_exception &s) {
           cout << "GDSL Error @0x" << hex << gdsl.get_ip() << dec << ": " << s << endl;
           gdsl.reset_heap();
-          throw s;
+          return nullopt;
         }
       }();
-      rreil = b.get_statements();
+      if(!b) continue;
+      rreil = b->get_statements();
     } else {
       optional<gdsl::instruction> insn = [&]() -> optional<gdsl::instruction> {
         try {
@@ -97,16 +99,7 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   } while(decode_multiple && gdsl.bytes_left() > 0);
 
   int_t ip_after = gdsl.get_ip();
-  //  auto intervals_it = upper_bound(decoded_intervals.begin(), decoded_intervals.end(), dec_interval(ip_after,
-  //  ip_after));
-  //  if(intervals_it == decoded_intervals.begin())
-  //    decoded_intervals.insert(decoded);
-  //  else {
-  //    intervals_it--;
-  //    if((intervals_it->from <= ip_before && intervals_it->to >= ip_before) || (intervals_it->from >= ip_before)) {
-  //
-  //    }
-  //  }
+
   if(ip_after > ip_before) {
     dec_interval decoded = dec_interval(ip_before, ip_after - 1);
     set<dec_interval>::iterator intervals_it = decoded_intervals.find(decoded);
@@ -114,8 +107,12 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
       dec_interval combined = dec_interval(intervals_it->from, max(intervals_it->to, decoded.to));
       decoded_intervals.erase(intervals_it);
       decoded_intervals.insert(combined);
-  } else
+    } else
       decoded_intervals.insert(decoded);
+  }
+
+  if(prog.size() == 0) {
+    prog.push_back(make_tuple(ip_before, new vector<gdsl::rreil::statement *>()));
   }
 
   return prog;
@@ -124,8 +121,7 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
 size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
   size_t ip = (size_t)gdsl.get_ip();
   auto fmap_it = fmap.find(ip);
-  if(!name && fmap_it != fmap.end())
-    name = fmap_it->second;
+  if(!name && fmap_it != fmap.end()) name = fmap_it->second;
 
   auto prog = decode_translate(decode_multiple);
   size_t head_node = cfg.add_program(prog, name);
@@ -156,8 +152,10 @@ size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experiment
   return head_node;
 }
 
-dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap)
-    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl), speculative_decoding(speculative_decoding), fmap(fmap), decode_iterations(0) {}
+dectran::dectran(
+  cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap)
+    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl), speculative_decoding(speculative_decoding),
+      fmap(fmap), decode_iterations(0) {}
 
 dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
     : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding, function_map_t()) {}

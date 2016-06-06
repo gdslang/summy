@@ -81,7 +81,7 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-    //    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
 
     bool _continue = false;
     static optional<size_t> function_last;
@@ -98,11 +98,11 @@ void fixpoint::iterate() {
           sd->print_callstack(node_id);
           max_its = nits_it->second;
           print_distribution_total();
-//          cout << "node id: " << node_id << endl;
-//          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
-//          cout << *analysis->get(node_id) << endl;
+          //          cout << "node id: " << node_id << endl;
+          //          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec << endl;
+          //          cout << *analysis->get(node_id) << endl;
         }
-//        if(nits_it->second > 20) _continue = true;
+        //        if(nits_it->second > 20) _continue = true;
       } else
         node_iterations[node_id] = 1;
 //      static size_t machine_address_last = 0;
@@ -117,9 +117,8 @@ void fixpoint::iterate() {
       //        function_last = function_current;
       //      }
     });
-    analysis->accept(av);
+//    analysis->accept(av);
     if(_continue) continue;
-
 
     node_visitor nv;
     nv._([&](address_node *an) { machine_addresses.insert(an->get_address()); });
@@ -129,7 +128,7 @@ void fixpoint::iterate() {
     //    machine_addresses.insert(jd_man.machine_address_of(node_id));
     //    if(machine_addresses.size() % 1000 == 0)
     //          cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
-    // cout << *analysis->get(node_id) << endl;
+    //    cout << *analysis->get(node_id) << endl;
 
 
     //    if(max_its > 2000)
@@ -153,7 +152,7 @@ void fixpoint::iterate() {
 
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
         //        cout << "Constraint from " << node_other << " to " << node_id << endl;
-        //                cout << *analysis->get(node_other) << endl;
+//        cout << *analysis->get(node_other) << endl;
 
         /*
          * Evaluate constraint

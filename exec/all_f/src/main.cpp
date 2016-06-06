@@ -125,7 +125,6 @@ int main(int argc, char **argv) {
          << (100.0 * c_stats.cmp_conditions / (float)c_stats.total_conditions) << "%)" << endl;
 
     //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-
     //    int n = 0;
 
     cout << "*** Function from ELF data..." << endl;
@@ -154,8 +153,9 @@ int main(int argc, char **argv) {
       //        continue;
       //      if(name != "sem_movsAction1") continue;
 //            if(name != "_slash_") continue;
-            if(name != "show_slash_op") continue;
+//            if(name != "show_slash_op") continue;
 //            if(name != "consume") continue;
+//            if(name != "rval_uint") continue;
       //      if(name != "traverse") continue;
       //      if(name != "alloc") continue;
       //      if(name != "del_fields") continue;
@@ -229,8 +229,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 101 || n.get_id() == 145 || n.get_id() == 147 || n.get_id() == 149 || n.get_id() == 42 ||
-         n.get_id() == 100)
+      if(n.get_id() ==  92 || n.get_id() == 93)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " << *jd_man.address_of(n.get_id()) << "\"]";
       else

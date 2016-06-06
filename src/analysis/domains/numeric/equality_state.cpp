@@ -158,8 +158,7 @@ void analysis::equality_state::merge(api::num_var *v, api::num_var *w) {
 }
 
 void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset) {
-  //      cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << " @" << offset << endl;
-  assert(offset == 0 || !(*lhs->get_id() == *rhs->get_id()));
+//  cout << "assign_var in equality_state: " << *lhs << " <- " << *rhs << " @" << offset << endl;
   auto insert = [&](id_shared_t id, id_shared_t rep) {
     //    cout << "Insert " << *id << " / rep: " << *rep << endl;
     auto rep_it = elements.find(rep);
@@ -181,32 +180,63 @@ void analysis::equality_state::assign_var(api::num_var *lhs, api::num_var *rhs, 
       back_map[id] = rep;
   };
 
-  if(*lhs->get_id() == *rhs->get_id()) return;
+  if(*lhs->get_id() == *rhs->get_id()) {
+    /*
+     * If we add an offset to a var itself, we only have
+     * to update its relation to other variables.
+     */
+    auto back_it = back_map.find(lhs->get_id());
+    if(back_it == back_map.end())
+      /*
+       * If there is no state for the variable as of yet,
+       * we don't need to do anything.
+       */
+      return;
+    id_shared_t rep = back_it->second;
+    id_off_map_t &eq_map = elements.at(rep);
+    if(*rep == *lhs->get_id()) {
+      /*
+       * If the variable is the representative of an equality
+       * set, we subtract the given offset from all offsets
+       * currently in the equality set (except for the variable
+       * itself as it is updated).
+       */
+      for(auto &eq_relation : eq_map)
+        if(!(*eq_relation.first == *lhs->get_id()))
+          eq_relation.second -= offset;
+    } else
+      /*
+       * If not, we add the offset to the offset of the variable.
+       * Note that offsets have a direction and, thus, it matters
+       * whether we update the representative or a set member.
+       */
+      eq_map.at(lhs->get_id()) += offset;
+  } else {
+    /*
+     * Remove equality set of lhs
+     */
+    remove(lhs);
 
-  /*
-   * Remove equality set of lhs
-   */
-  remove(lhs);
+    /*
+     * Lookup equlity set of rhs
+     */
+    auto rhs_back_it = back_map.find(rhs->get_id());
+    if(rhs_back_it == back_map.end()) {
+      tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs->get_id(), rhs->get_id()));
+      elements[rhs_back_it->second].insert(make_pair(rhs->get_id(), 0));
+      //    cout << "Inserting into " << *rhs_back_it->second << ": " << *rhs->get_id() << endl;
+    }
 
-  /*
-   * Lookup equlity set of rhs
-   */
-  auto rhs_back_it = back_map.find(rhs->get_id());
-  if(rhs_back_it == back_map.end()) {
-    tie(rhs_back_it, ignore) = back_map.insert(make_pair(rhs->get_id(), rhs->get_id()));
-    elements[rhs_back_it->second].insert(make_pair(rhs->get_id(), 0));
-    //    cout << "Inserting into " << *rhs_back_it->second << ": " << *rhs->get_id() << endl;
+    /*
+     * Assign equlity set of lhs to lhs
+     */
+    back_map[lhs->get_id()] = rhs_back_it->second;
+
+    /*
+     * Insert lhs into the equality set of rhs
+     */
+    insert(lhs->get_id(), rhs_back_it->second);
   }
-
-  /*
-   * Assign equlity set of lhs to lhs
-   */
-  back_map[lhs->get_id()] = rhs_back_it->second;
-
-  /*
-   * Insert lhs into the equality set of rhs
-   */
-  insert(lhs->get_id(), rhs_back_it->second);
 }
 
 void analysis::equality_state::weak_assign_var(api::num_var *lhs, api::num_var *rhs, int64_t offset) {
@@ -237,9 +267,9 @@ void analysis::equality_state::assign_lin(
 
       if(value) {
         int64_t v = value.value();
-        if(v != 0 && *lhs->get_id() == *nt->get_var()->get_id())
-          remove(lhs);
-        else
+//        if(v != 0 && *lhs->get_id() == *nt->get_var()->get_id())
+//          remove(lhs);
+//        else
           (this->*assigner)(lhs, nt->get_var(), v);
       } else
         remove(lhs);
@@ -403,8 +433,9 @@ equality_state *analysis::equality_state::narrow(domain_state *other, size_t cur
 }
 
 void analysis::equality_state::assign(api::num_var *lhs, api::num_expr *rhs) {
-  //  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
+//  cout << "assign expression in equality_state: " << *lhs << " <- " << *rhs << endl;
   num_expr *rhs_simplified = simplify(rhs);
+//  cout << "rhs_simplified: " << *rhs_simplified << endl;
   assign_expr(lhs, rhs_simplified, &equality_state::assign_var);
 
   child_state->assign(lhs, rhs_simplified);
@@ -455,7 +486,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
   cmp->get_opnd()->accept(nv);
 
   if(positive != NULL && negative != NULL && cmp->get_op() == EQ) {
-//    cout << "Merging for " << *cmp << endl;
+    //    cout << "Merging for " << *cmp << endl;
     merge(positive, negative);
   }
   delete positive;
@@ -498,7 +529,7 @@ void analysis::equality_state::assume(api::num_expr_cmp *cmp) {
         num_expr *var_e = new num_expr_lin(new num_linear_term(
           var->copy(), new num_linear_vs(vs_finite::single(offset ? offset.value() : equality.second))));
 
-//        cout << *eq_var << " <- " << *var_e << endl;
+        //        cout << *eq_var << " <- " << *var_e << endl;
         child_state->assign(eq_var, var_e);
         delete var_e;
         delete eq_var;

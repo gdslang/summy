@@ -585,6 +585,12 @@ ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
   singleton_value_t const &aliases = id_it->second;
   for(auto alias : aliases) {
     if(*alias == *special_ptr::_nullptr) {
+      /*
+       * Todo: Should we require aliases.size() == 1? This would prevent offsets
+       * to be considered pointers, but it would also result in ignoring addresses
+       * that originate from both directly addressed targets and indirectly addressed
+       * targets.
+       */
       auto child_aliases = child_state->queryAls(nv);
       result.insert(child_aliases.begin(), child_aliases.end());
     } else {
