@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
       function_map[e.address] = name;
     }
 
-    analysis_dectran dt(g, false, true, function_map);
+    analysis_dectran dt(g, true, false, function_map);
 
     dt.transduce();
     dt.register_();
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(true) out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+      if(n.get_id() == 45) out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       //      out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *jd_man.address_of(n.get_id()) << "\"]";
       else
         n.dot(out);

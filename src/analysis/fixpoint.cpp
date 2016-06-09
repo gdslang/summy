@@ -163,7 +163,7 @@ void fixpoint::iterate() {
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         auto evaluated = constraint();
         if(constraints.size() == 1)
-          analysis->unref(node_other);
+          ;//analysis->unref(node_other);
         else
           analysis->ref(node_other, nullopt);
 
