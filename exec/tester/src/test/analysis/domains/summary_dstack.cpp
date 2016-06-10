@@ -510,6 +510,7 @@ TEST_F(summary_dstack_test, OverlappingFieldMiddle) {
 }
 
 TEST_F(summary_dstack_test, Call) {
+  //test_call.as
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
 f:\n\
@@ -530,6 +531,7 @@ end: ret",
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R13", 0, 64));
+  cout << *r << endl;
   ASSERT_EQ(*r, vs_finite::single(42));
 
   ptr_set_t aliases_ac_a_deref;

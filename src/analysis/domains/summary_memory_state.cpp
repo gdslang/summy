@@ -85,7 +85,7 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
     int64_t offset_current = out_r_it->first;
     if(offset_current >= offset + (int64_t)size) break;
 
-//    cout << "In the way: offset:" << offset_current << " size: " << out_r_it->second.size << endl;
+    //    cout << "In the way: offset:" << offset_current << " size: " << out_r_it->second.size << endl;
 
     if(offset_current < offset) prefix_needed = true;
     if(!offset_first) offset_first = offset_current;
@@ -129,8 +129,8 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
   assert(offset_first);
   assert(total_size);
 
-//  cout << "offset_first: " << offset_first.value() << endl;
-//  cout << "total_size: " << total_size.value() << endl;
+  //  cout << "offset_first: " << offset_first.value() << endl;
+  //  cout << "total_size: " << total_size.value() << endl;
 
   //    contiguous = contiguous && (offset_next == offset + size);
 
@@ -162,7 +162,7 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
     out_r.erase(out_it);
   }
 
-  ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
+  //  ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
   ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
 
   auto insert_in = [&](int64_t offset, size_t size) {
@@ -171,7 +171,7 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
     field f_before = field{size, nid_in};
     in_r.insert(make_pair(offset, f_before));
     ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
-    ptr_set_t ptr_set = ptr_set_t({_nullptr, fresh});
+    ptr_set_t ptr_set = ptr_set_t({badptr, fresh});
     child_state->assume(&n_in, ptr_set);
     return ptr_set;
   };
@@ -267,7 +267,7 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
     }
     child_state->assume(n_out, {badptr});
     if(fd_after) {
-//      cout << "Have after! offset: " << fd_after.value().offset << ", size: " << fd_after.value().size << endl;
+      //      cout << "Have after! offset: " << fd_after.value().offset << ", size: " << fd_after.value().size << endl;
       id_shared_t nid_out_after =
         name ? numeric_id::generate(name.value(), fd_after.value().offset, fd_after.value().size, false)
              : numeric_id::generate();
@@ -298,9 +298,10 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
 optional<field> analysis::io_region::retrieve_field(
   numeric_state *child_state, int64_t offset, size_t size, bool replacement, bool handle_conflicts) {
   auto ptr_set_fresh = [](id_shared_t nid_in) {
-    ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
+    //    ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
+    ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
     ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
-    return ptr_set_t({_nullptr, fresh});
+    return ptr_set_t({badptr, fresh});
   };
   return retrieve_field(child_state, offset, size, replacement, handle_conflicts, ptr_set_fresh);
 }
@@ -498,7 +499,7 @@ summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handl
       case BAD_PTR: {
         if(warnings) cout << "Warning (load/store): Ignoring possible bad pointer dereference" << endl;
         ignore = true;
-        force_weak = true;
+        //        force_weak = true;
         break;
       }
     }
@@ -718,18 +719,18 @@ void analysis::summary_memory_state::check_consistency() {
   check_regions(input.regions, output.regions);
   check_regions(input.deref, output.deref);
 
-//  id_shared_t sp = id_shared_t(new gdsl::rreil::arch_id("SP"));
-//  auto sp_it = output.regions.find(sp);
-//  if(sp_it != output.regions.end()) {
-//    num_var nv(sp_it->second.at(0).num_id);
-//    ptr_set_t aliases_sp = child_state->queryAls(&nv);
-//    cout << nv << endl;
-//    cout << aliases_sp << endl;
-//    cout << *child_state << endl;
-//    assert(aliases_sp.size() == 2);
-//    for(auto p : aliases_sp)
-//      assert(!(*p.id == *special_ptr::badptr));
-//  }
+  //  id_shared_t sp = id_shared_t(new gdsl::rreil::arch_id("SP"));
+  //  auto sp_it = output.regions.find(sp);
+  //  if(sp_it != output.regions.end()) {
+  //    num_var nv(sp_it->second.at(0).num_id);
+  //    ptr_set_t aliases_sp = child_state->queryAls(&nv);
+  //    cout << nv << endl;
+  //    cout << aliases_sp << endl;
+  //    cout << *child_state << endl;
+  //    assert(aliases_sp.size() == 2);
+  //    for(auto p : aliases_sp)
+  //      assert(!(*p.id == *special_ptr::badptr));
+  //  }
 }
 
 bool analysis::summary_memory_state::operator>=(const domain_state &other) const {
@@ -946,7 +947,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
 
 void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_getter_t getter, size_t size,
   updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
-  //  cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
+  //    cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
   bool bottom_before = is_bottom();
 
   bool force_weak = false;

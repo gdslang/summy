@@ -327,12 +327,15 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
 void als_state::assign(api::num_var *lhs, ptr_set_t aliases) {
   aliases = normalise(aliases);
   optional<vs_shared_t> offset_joined;
-  for(auto alias : aliases)
+  for(auto alias : aliases) {
+    if(alias.id == special_ptr::badptr)
+      continue;
     if(offset_joined)
       offset_joined = value_set::join(offset_joined.value(), alias.offset);
     else
       offset_joined = alias.offset;
-  num_expr *offset_e = new num_expr_lin(new num_linear_vs(offset_joined.value()));
+  }
+  num_expr *offset_e = new num_expr_lin(new num_linear_vs(offset_joined ? offset_joined.value() : vs_finite::top));
   child_state->assign(lhs, offset_e);
   delete offset_e;
 

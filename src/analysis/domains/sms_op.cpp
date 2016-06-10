@@ -35,6 +35,7 @@ using summy::rreil::allocation_memory_id;
 using summy::rreil::ptr_memory_id;
 using summy::rreil::sm_id;
 using summy::rreil::special_ptr;
+using summy::rreil::special_ptr_kind;
 
 using namespace std;
 using namespace analysis;
@@ -318,25 +319,40 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       ptr_set_t aliases_s_heap;
       for(auto &alias_s : aliases_s) {
         summy::rreil::id_visitor idv;
-        bool heap_allocated = false;
+        bool _continue = false;
         idv._([&](allocation_memory_id *alloc) {
           aliases_s_heap.insert(alias_s);
           aliases_c.insert(alias_s);
-          heap_allocated = true;
+          _continue = true;
+        });
+        idv._([&](sm_id *sid) {
+          aliases_c.insert(alias_s);
+          _continue = true;
+        });
+        idv._([&](special_ptr *sp) {
+          if(sp->get_kind() == summy::rreil::NULL_PTR)
+            aliases_c.insert(alias_s);
+          else if(sp->get_kind() == summy::rreil::BAD_PTR)
+            aliases_c.insert(ptr(special_ptr::badptr, vs_finite::top));
+          else
+            assert(false);
+          _continue = true;
         });
         alias_s.id->accept(idv);
-        if(heap_allocated) continue;
+        if(_continue) continue;
+
         //          idv._default([&](id *_) {
         auto aliases_mapped_it = ptr_map.find(alias_s.id);
         ptr_set_t const &aliases_c_next = aliases_mapped_it->second;
         //        assert(aliases_mapped_it != alias_map.end() && aliases_me_ptr.size() > 0);
         //        cout << "search result for " << *alias_s.id << ": " << (aliases_mapped_it != ptr_map.end()) << endl;
-        if(aliases_mapped_it != ptr_map.end())
+        if(aliases_mapped_it != ptr_map.end()) {
           for(auto alias_c_next : aliases_c_next) {
             //            cout << *alias_c_next.offset << " + " << *alias_s.offset << " = "
             //                 << *(*alias_c_next.offset + alias_s.offset) << endl;
             aliases_c.insert(ptr(alias_c_next.id, *alias_c_next.offset + alias_s.offset));
           }
+        }
         //          });
         //          alias_s.id->accept(idv);
       }
@@ -390,15 +406,16 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       };
 
       summary_memory_state::updater_t strong = [&](api::num_var *nv_fld_c) {
+//        cout << *nv_fld_c << " <- " << aliases_c << endl;
         ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
         return_site->child_state->kill({nv_fld_c});
-        if(aliases_c.size() > 0)
+        if(aliases_c.size() > 0) {
           return_site->child_state->assign(nv_fld_c, aliases_c_assignment);
-        else
+        } else
           return_site->child_state->assign(nv_fld_c, value_summary_expr);
       };
       summary_memory_state::updater_t weak = [&](api::num_var *nv_fld_c) {
-        //        cout << "weak for " << *nv_me << ": " << aliases_me << endl;
+        //        cout << "weak for " << *nv_fld_c << endl;
         ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
         if(aliases_c_assignment.size() > 0) {
           ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
@@ -426,6 +443,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
   for(auto &region_mapping_so : summary->output.regions) {
     id_shared_t region_key = region_mapping_so.first;
+//    cout << "REGION " << *region_key << endl;
     region_t &region_si = summary->input.regions.at(region_key);
 
     ptr_set_t region_aliases_c = ptr_set_t({ptr(region_key, vs_finite::zero)});
@@ -500,7 +518,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
         //        << endl;
         conflict_resolvers.push_back([&io_ra, &a_n, &io_rb, &b_n, collision]() {
           auto collision_v = collision.value();
-//          cout << "Resolving collision from " << collision_v.from << " to " << collision_v.to << endl;
+          //          cout << "Resolving collision from " << collision_v.from << " to " << collision_v.to << endl;
           //                    summary_memory_state *a_sms_before = new summary_memory_state(NULL, a_n, a_in, a_out);
           //                    summary_memory_state *b_sms_before = new summary_memory_state(NULL, b_n, b_in, b_out);
           //                    cout << "a: " << *a_sms_before << endl;
@@ -520,14 +538,14 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
       }
     };
 
-//    cout << "a before:";
-//    for(auto r_it : io_ra.in_r)
-//      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
-//    cout << endl;
-//    cout << "b before:";
-//    for(auto r_it : io_rb.in_r)
-//      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
-//    cout << endl;
+    //    cout << "a before:";
+    //    for(auto r_it : io_ra.in_r)
+    //      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
+    //    cout << endl;
+    //    cout << "b before:";
+    //    for(auto r_it : io_rb.in_r)
+    //      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
+    //    cout << endl;
 
     merge_region_iterator mri(io_ra.in_r, io_rb.in_r);
     while(mri != merge_region_iterator::end(io_ra.in_r, io_rb.in_r)) {
@@ -620,14 +638,14 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
     for(auto conflict_resolver : conflict_resolvers)
       conflict_resolver();
 
-//    cout << "a:";
-//    for(auto r_it : io_ra.in_r)
-//      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
-//    cout << endl;
-//    cout << "b:";
-//    for(auto r_it : io_rb.in_r)
-//      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
-//    cout << endl;
+    //    cout << "a:";
+    //    for(auto r_it : io_ra.in_r)
+    //      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
+    //    cout << endl;
+    //    cout << "b:";
+    //    for(auto r_it : io_rb.in_r)
+    //      cout << "(@" << r_it.first << ":" << r_it.second.size << "#" << *r_it.second.num_id << ")";
+    //    cout << endl;
 
     /*
      * ... and finally retrieve all matching pointer variables. Keep in mind
@@ -906,22 +924,20 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
         return;
       }
       from = it->first;
-//      bits = it->second.size;
+      //      bits = it->second.size;
       int64_t end = from + it->second.size - 1;
       it++;
       while(it != r.end()) {
         end = it->first + it->second.size - 1;
-//        bits += it->second.size;
+        //        bits += it->second.size;
         it++;
       }
       size = end - from + 1;
     }
 
-    field_converage(field_converage const& o) : from(o.from), size(o.size) {
-    }
+    field_converage(field_converage const &o) : from(o.from), size(o.size) {}
 
-    field_converage(int64_t from, size_t size) : from(from), size(size) {
-    }
+    field_converage(int64_t from, size_t size) : from(from), size(size) {}
 
     bool operator==(field_converage &o) {
       return from == o.from && size == o.size;
@@ -933,11 +949,11 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   };
   map<id_shared_t, field_converage, id_less_no_version> field_counts;
   for(auto r_it : a->input.regions) {
-//    cout << "Adding " << *r_it.first << endl;
+    //    cout << "Adding " << *r_it.first << endl;
     field_counts.insert(pair<id_shared_t, field_converage>(r_it.first, field_converage(r_it.second)));
   }
   for(auto r_it : b->input.regions) {
-//    cout << "Adding2 " << *r_it.first << endl;
+    //    cout << "Adding2 " << *r_it.first << endl;
     field_converage fc_new = field_converage(field_converage(r_it.second));
     auto fc_it = field_counts.find(r_it.first);
     if(fc_it == field_counts.end())
@@ -969,10 +985,10 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  cout << "++++++++++++++++++++++++++++++" << endl;
   //  if(c == 1688) {
-//  cout << "compat OF" << endl;
-//  cout << *a << endl;
-//  cout << "WITH" << endl;
-//  cout << *b << endl;
+  //  cout << "compat OF" << endl;
+  //  cout << *a << endl;
+  //  cout << "WITH" << endl;
+  //  cout << *b << endl;
   //  }
   //  }
 
@@ -1143,8 +1159,7 @@ std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::comp
   assert(head.input.regions.size() >= max(a->input.regions.size(), b->input.regions.size()));
   for(auto r_it : head.input.regions) {
     auto fc_it = field_counts.find(r_it.first);
-    if(fc_it == field_counts.end())
-      cout << *r_it.first << endl;
+    if(fc_it == field_counts.end()) cout << *r_it.first << endl;
     assert(fc_it != field_counts.end());
     assert(field_converage(r_it.second) == fc_it->second);
   }
