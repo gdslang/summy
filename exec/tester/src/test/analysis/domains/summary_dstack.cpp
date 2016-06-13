@@ -1370,11 +1370,11 @@ int main(int argc, char **argv) {\n\
 
   ptr_set_t r11_before_reassignment;
   ASSERT_NO_FATAL_FAILURE(query_als(r11_before_reassignment, ar, "before_reassignment", "R11"));
-  assert_ptrs(r11_before_reassignment, true, true, 0, 1);
+  assert_ptrs(r11_before_reassignment, false, true, 0, 1);
 
   ptr_set_t r11_after_reassignment;
   ASSERT_NO_FATAL_FAILURE(query_als(r11_after_reassignment, ar, "after_reassignment", "R11"));
-  assert_ptrs(r11_after_reassignment, true, false, 0, 1);
+  assert_ptrs(r11_after_reassignment, false, true, 0, 1);
 
   ASSERT_EQ(ar.max_it, 4);
 }
@@ -1394,6 +1394,6 @@ nop\n",
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
   optional<vs_shared_t> offset;
-  assert_ptrs(offset, aliases_end_a, true, false, 0, 1, string("A_q"));
+  assert_ptrs(offset, aliases_end_a, true, true, 0, 1, string("A_q"));
   ASSERT_EQ(*offset.value(), shared_ptr<value_set>(new vs_finite({0, 9999})));
 }
