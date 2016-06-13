@@ -1113,6 +1113,72 @@ int main(int argc, char **argv) {\n\
   ASSERT_EQ(*r, vs_finite::single(42));
 }
 
+TEST_F(summary_dstack_test, CppVirtualFunctionCallReturnObjectHeap) {
+  //test_vcall_returnobjheap.cpp
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_cpp(ar, "\n\
+struct A { virtual long f() = 0; };\n\
+\n\
+struct B : public A {\n\
+  long f() { return 444; }\n\
+};\n\
+\n\
+A *g() {\n\
+  return new B();\n\
+}\n\
+\n\
+int main(void) {\n\
+  A *b = g();\n\
+  long x = b->f();\n\
+  \n\
+  __asm volatile ( \"movq %0, %%r11\"\n\
+    : \"=a\" (x)\n\
+    : \"a\" (x)\n\
+    : \"r11\");\n\
+\n\
+  __asm volatile ( \"end:\");\n\
+  return 0;\n\
+}",
+    false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(444));
+}
+
+TEST_F(summary_dstack_test, CppVirtualFunctionCallGlobObject) {
+  //test_vcall_returnobjheap.cpp
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_cpp(ar, "struct A { virtual long f() = 0; };\n\
+\n\
+struct B : public A {\n\
+  long f() { return 279; }\n\
+};\n\
+\n\
+A *p;\n\
+\n\
+void g() {\n\
+  p = new B();\n\
+}\n\
+\n\
+int main(void) {\n\
+  g();\n\
+  long x = p->f();\n\
+  \n\
+  __asm volatile ( \"movq %0, %%r11\"\n\
+    : \"=a\" (x)\n\
+    : \"a\" (x)\n\
+    : \"r11\");\n\
+\n\
+  return 0;\n\
+}",
+    false));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
+  ASSERT_EQ(*r, vs_finite::single(279));
+}
+
 TEST_F(summary_dstack_test, FunctionPointerParamter1) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_c(ar, "\n\

@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 60 || n.get_id() == 62) out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+      if(n.get_id() == 51 || n.get_id() == 43 || n.get_id() == 53) out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       //      out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *jd_man.address_of(n.get_id()) << "\"]";
       else
         n.dot(out);

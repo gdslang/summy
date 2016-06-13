@@ -81,7 +81,7 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-//    cout << "Next node: " << node_id << endl;
+    cout << "Next node: " << node_id << endl;
 
     bool _continue = false;
     static optional<size_t> function_last;
@@ -120,7 +120,7 @@ void fixpoint::iterate() {
     /*
      * If this is commented out, the tests won't work ;-)
      */
-//    analysis->accept(av);
+    analysis->accept(av);
     if(_continue) continue;
 
     node_visitor nv;

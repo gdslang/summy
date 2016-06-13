@@ -956,14 +956,14 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
     special_deref_desc_t spdd = handle_special_dereference(alias.id);
     force_weak = force_weak || spdd.force_weak;
 
-    bool is_static = false;
-    tie(is_static, ignore) = static_address(alias.id);
-    if(is_static) {
-      if(warnings) cout << "Warning: Ignoring possible store to static memory" << endl;
-      continue;
-    }
+//    bool is_static = false;
+//    tie(is_static, ignore) = static_address(alias.id);
+//    if(is_static) {
+//      if(warnings) cout << "Warning: Ignoring possible store to static memory" << endl;
+//      continue;
+//    }
 
-    if(!spdd.ignore || is_static) aliases_cleaned.insert(alias);
+    if(!spdd.ignore/* || is_static*/) aliases_cleaned.insert(alias);
   }
 
   for(auto &alias : aliases_cleaned) {
@@ -1057,6 +1057,7 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
 }
 
 void analysis::summary_memory_state::store(ptr_set_t aliases, size_t size, api::num_expr *rhs) {
+  cout << aliases << endl;
   /*
    * Todo: Use bits in als_state and vsd_state
    */
