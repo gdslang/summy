@@ -115,12 +115,16 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
     auto next_ids = (summary->input.*rgetter)().find(region_key_summary);
     if(next_ids == (summary->input.*rgetter)().end()) return;
 
+//    cout << *region_key_summary << endl;
+
     region_t &region_s = next_ids->second;
 
     for(auto &field_mapping_s : region_s) {
       field &f_s = field_mapping_s.second;
       num_var *nv_field_s = new num_var(f_s.num_id);
       ptr_set_t aliases_fld_s = summary->child_state->queryAls(nv_field_s);
+
+//      cout << aliases_fld_s << endl;
 
       ptr_set_t region_keys_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_keys_c);
 
@@ -176,6 +180,31 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
     build_pmap_region(region_key_summary, region_keys_c, &relation::get_regions);
   }
+
+  /*
+   * Build the static and dynamically allocated memory mapping from the input.
+   */
+
+//  cout << "start static/dyn" << endl;
+
+  for(auto &region_mapping_si : summary->input.deref) {
+    id_shared_t region_key_summary = region_mapping_si.first;
+
+    bool static_or_dynamic = false;
+    summy::rreil::id_visitor idv;
+    idv._([&](allocation_memory_id *ami) { static_or_dynamic = true; });
+    idv._([&](sm_id *sid) { static_or_dynamic = true; });
+    region_key_summary->accept(idv);
+    if(!static_or_dynamic)
+      continue;
+    ptr_set_t region_keys_c = ptr_set_t({ptr(region_key_summary, vs_finite::zero)});
+
+    ptr_map.insert(make_pair(region_key_summary, region_keys_c));
+
+    build_pmap_region(region_key_summary, region_keys_c, &relation::get_deref);
+  }
+
+//  cout << "end static/dyn" << endl;
 
   /*
    * Memory matching
@@ -455,12 +484,16 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
     region_t &region_si = summary->input.deref.at(region_key);
 
     auto region_aliases_c_it = ptr_map.find(region_key);
+
     /*
      * If a memory region is not reachable in the summary (?),
      * its key may not be present in the ptr_map
      */
     if(region_aliases_c_it == ptr_map.end()) continue;
     ptr_set_t &region_aliases_c = region_aliases_c_it->second;
+
+    cout << "process_region() for " << *region_key << endl;
+
     process_region(&relation::get_deref, region_aliases_c, region_si, deref_mapping_so.second);
   }
   delete _top;

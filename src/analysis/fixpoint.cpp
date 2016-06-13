@@ -120,7 +120,7 @@ void fixpoint::iterate() {
     /*
      * If this is commented out, the tests won't work ;-)
      */
-    analysis->accept(av);
+//    analysis->accept(av);
     if(_continue) continue;
 
     node_visitor nv;
