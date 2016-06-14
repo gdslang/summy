@@ -131,7 +131,7 @@ void fixpoint::iterate() {
     //    machine_addresses.insert(jd_man.machine_address_of(node_id));
     //    if(machine_addresses.size() % 1000 == 0)
     //          cout << "Analyzed " << machine_addresses.size() << " machine addresses." << endl;
-    //    cout << *analysis->get(node_id) << endl;
+//        cout << *analysis->get(node_id) << endl;
 
 
     //    if(max_its > 2000)
@@ -155,7 +155,7 @@ void fixpoint::iterate() {
 
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
         //        cout << "Constraint from " << node_other << " to " << node_id << endl;
-//        cout << *analysis->get(node_other) << endl;
+        cout << *analysis->get(node_other) << endl;
 
         /*
          * Evaluate constraint
@@ -169,7 +169,7 @@ void fixpoint::iterate() {
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
-        //        cout << "Evaluated: " << *evaluated << endl;
+//                cout << "Evaluated: " << *evaluated << endl;
         //                if(node_id == 67) cout << "Evaluated: " << *evaluated << endl;
 
         /*
@@ -195,8 +195,8 @@ void fixpoint::iterate() {
         }
 
         //        cout << "============================" << endl;
-        //        cout << "evaluated:" << endl
-        //             << *evaluated << endl;
+//                cout << "evaluated:" << endl
+//                     << *evaluated << endl;
 
         if(accumulator_set) {
           //                    cout << "accumulator:" << endl

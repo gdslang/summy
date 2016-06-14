@@ -508,7 +508,12 @@ summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handl
 }
 
 void analysis::summary_memory_state::initialize_static(io_region io, void *address, size_t offset, size_t size) {
-  id_shared_t mem_id = transVarReg(io, offset, size);
+  optional<id_shared_t> mem_id = transVarReg(io, offset, size, false);
+  if(!mem_id) {
+    if(warnings)
+      cout << "Warning: Skipping static initialization due to conflict." << endl;
+    return;
+  }
   if(size > 64) throw string("analysis::summary_memory_state::initialize_static(region_t,void*,size_t): size > 64");
 
   int64_t sv = 0;
@@ -561,7 +566,6 @@ void analysis::summary_memory_state::topify(io_region &region, int64_t offset, s
 
 optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   io_region io, int64_t offset, size_t size, bool handle_conflict) {
-  optional<id_shared_t> r;
   optional<field> f = io.retrieve_field(child_state, offset, size, false, handle_conflict);
   if(f)
     return f.value().num_id;
@@ -873,7 +877,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   vector<num_linear *> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
-    //    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
+        cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
     special_deref_desc_t spdd = handle_special_dereference(alias.id);
     if(spdd.ignore) continue;
 
@@ -882,6 +886,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
     bool is_static = false;
     void *symbol_address;
     tie(is_static, symbol_address) = static_address(alias.id);
+
+    cout << "address: " << (size_t)symbol_address << endl;
 
     value_set_visitor vsv;
     vsv._([&](vs_finite *v) {
@@ -1275,6 +1281,7 @@ api::num_vars *analysis::summary_memory_state::vars_relations() {
 
       num_var *nv_id = new num_var(field_id);
       ptr_set_t aliases = child_state->queryAls(nv_id);
+
       delete nv_id;
 
       for(ptr const &p : aliases)
@@ -1311,6 +1318,15 @@ api::num_vars *analysis::summary_memory_state::vars_relations() {
     next_region(output.deref);
 
     known_ids.insert(next);
+  }
+
+  for(auto field_it : input.deref) {
+    bool is_static = false;
+    summy::rreil::id_visitor idv;
+    idv._([&](sm_id *sid) { is_static = true; });
+    field_it.first->accept(idv);
+    if(is_static)
+      known_ids.insert(field_it.first);
   }
 
   return new num_vars(known_ids);

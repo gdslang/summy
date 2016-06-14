@@ -117,7 +117,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
 
     region_t &region_s = next_ids->second;
 
-    for(auto &field_mapping_s : region_s) {
+    for(auto &field_mapping_s : region_s) {      
       field &f_s = field_mapping_s.second;
       num_var *nv_field_s = new num_var(f_s.num_id);
       ptr_set_t aliases_fld_s = summary->child_state->queryAls(nv_field_s);
@@ -180,20 +180,20 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
   /*
    * Build the static and dynamically allocated memory mapping from the input.
    */
-//  for(auto &region_mapping_si : summary->input.deref) {
-//    id_shared_t region_key_summary = region_mapping_si.first;
-//
-//    bool static_or_dynamic = false;
-//    summy::rreil::id_visitor idv;
-//    idv._([&](allocation_memory_id *ami) { static_or_dynamic = true; });
-//    idv._([&](sm_id *sid) { static_or_dynamic = true; });
-//    region_key_summary->accept(idv);
-//    if(!static_or_dynamic)
-//      continue;
-//    ptr_set_t region_keys_c = ptr_set_t({ptr(region_key_summary, vs_finite::zero)});
-//    ptr_map.insert(make_pair(region_key_summary, region_keys_c));
-//    build_pmap_region(region_key_summary, region_keys_c, &relation::get_deref);
-//  }
+  for(auto &region_mapping_si : summary->input.deref) {
+    id_shared_t region_key_summary = region_mapping_si.first;
+
+    bool static_or_dynamic = false;
+    summy::rreil::id_visitor idv;
+    idv._([&](allocation_memory_id *ami) { static_or_dynamic = true; });
+    idv._([&](sm_id *sid) { static_or_dynamic = true; });
+    region_key_summary->accept(idv);
+    if(!static_or_dynamic)
+      continue;
+    ptr_set_t region_keys_c = ptr_set_t({ptr(region_key_summary, vs_finite::zero)});
+    ptr_map.insert(make_pair(region_key_summary, region_keys_c));
+    build_pmap_region(region_key_summary, region_keys_c, &relation::get_deref);
+  }
 
   /*
    * Memory matching
@@ -451,7 +451,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       };
       ptr_set_t region_aliases_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_aliases_c);
 
-      //      cout << "~~~" << region_aliases_c_offset_bits << ":" << f_s.size << endl;
+            cout << "~~~" << region_aliases_c_offset_bits << ":" << f_s.size << endl;
       return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak, true, true);
 
       delete value_summary_expr;
@@ -480,16 +480,19 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
      */
     if(region_aliases_c_it == ptr_map.end()) continue;
     ptr_set_t &region_aliases_c = region_aliases_c_it->second;
+
+    cout << "process_region(): " << region_aliases_c << endl;
+
     process_region(&relation::get_deref, region_aliases_c, region_si, deref_mapping_so.second);
   }
   delete _top;
 
-  num_vars *_vars = return_site->vars_relations();
-  return_site->project(_vars);
-  delete _vars;
+  cout << "return_site: " << endl
+       << *return_site << endl;
 
-  //  cout << "return_site: " << endl
-  //       << *return_site << endl;
+//  num_vars *_vars = return_site->vars_relations();
+//  return_site->project(_vars);
+//  delete _vars;
 
   return return_site;
 }
@@ -690,7 +693,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
           if(f_a.size == f_b.size) {
             num_var *f_a_nv = new num_var(f_a.num_id);
             ptr_set_t als_a = a_n->queryAls(f_a_nv);
-            //            cout << "************" << *f_a_nv << ": " << als_a << endl;
+//                        cout << "************" << *f_a_nv << ": " << als_a << endl;
             delete f_a_nv;
 
             ptr p_a = unpack_singleton(als_a);
