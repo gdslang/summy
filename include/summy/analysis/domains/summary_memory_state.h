@@ -81,6 +81,14 @@ struct io_region {
 
   io_region(io_region &&other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {}
 
+  struct rf_result {
+    std::experimental::optional<field> f;
+    bool changed;
+
+    rf_result(std::experimental::optional<field> f, bool changed) : f(f), changed(changed) {
+    }
+  };
+
   /**
    * This function retrieves a field at a given offset and with a given size.
    *
@@ -89,9 +97,9 @@ struct io_region {
    * @param handle_conflicts a boolean value indicating whether conflicts are handled; if conflict handling
    * is disabled, the region is never changed in case of a conflict.
    */
-  std::experimental::optional<field> retrieve_field(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
+  rf_result retrieve_field(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
     bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct);
-  std::experimental::optional<field> retrieve_field(
+  rf_result retrieve_field(
     numeric_state *child_state, int64_t offset, size_t size, bool replacement, bool handle_conflicts);
 
   io_region(region_t &in_r, region_t &out_r) : in_r(in_r), out_r(out_r){};

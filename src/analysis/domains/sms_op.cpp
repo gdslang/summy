@@ -622,13 +622,13 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
               [copy_paste, has_no_badnull, io_rx, io_ry, x_n, y_n, ending_first /*, &copy_pasters*/]() {
                 field inserted;
                 if(copy_paste || has_no_badnull)
-                  inserted = io_ry->retrieve_field(y_n, ending_first.offset, ending_first.f.size, false, true).value();
+                  inserted = io_ry->retrieve_field(y_n, ending_first.offset, ending_first.f.size, false, true).f.value();
                 else
                   inserted =
                     io_ry->retrieve_field(y_n, ending_first.offset, ending_first.f.size, false, true, [](auto...) {
                       ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
                       return ptr_set_t({_badptr});
-                    }).value();
+                    }).f.value();
 
                 if(copy_paste) {
                   num_var *from = new num_var(io_rx->out_r.at(ending_first.offset).num_id);

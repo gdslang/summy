@@ -90,10 +90,10 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
     auto field_it = from_io.out_r.find(offset);
     field f;
     if(field_it == from_io.out_r.end())
-      f = from_io.retrieve_field(from->child_state, offset, size, false, true).value();
+      f = from_io.retrieve_field(from->child_state, offset, size, false, true).f.value();
     else
       f = field_it->second;
-    if(f.size != size) f = from_io.retrieve_field(from->child_state, offset, size, true, true).value();
+    if(f.size != size) f = from_io.retrieve_field(from->child_state, offset, size, true, true).f.value();
     num_var f_var = num_var(f.num_id);
     ptr_set_t aliases = from->queryAls(&f_var);
     if(index + 1 >= path.size())
@@ -165,7 +165,7 @@ void analysis::mempath::propagate(ptr_set_t aliases_from_immediate, summary_memo
     auto field_it = io.out_r.find(offset);
     field f;
     if(field_it == io.out_r.end())
-      f = io.retrieve_field(to->child_state, offset, size, false, true).value();
+      f = io.retrieve_field(to->child_state, offset, size, false, true).f.value();
     else if(f.size != size)
       return nullopt;
     else

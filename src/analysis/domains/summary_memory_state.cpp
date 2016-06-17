@@ -49,7 +49,7 @@ analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimenta
   if(r_key) name = r_key.value()->to_string();
 }
 
-optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, int64_t offset, size_t size,
+analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state *child_state, int64_t offset, size_t size,
   bool replacement, bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
   //  cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << endl;
   //  struct field_desc_t {
@@ -140,9 +140,9 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
   //  }
 
   if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size)
-    return out_r.find(offset)->second;
+    return rf_result(out_r.find(offset)->second, false);
   else if(!handle_conflicts && replaced.size() > 0)
-    return nullopt;
+    return rf_result(nullopt, false);
 
   vector<num_var *> kill_vars;
   for(auto offset : offsets) {
@@ -292,10 +292,10 @@ optional<field> analysis::io_region::retrieve_field(numeric_state *child_state, 
   for(num_var *var : kill_vars)
     delete var;
 
-  return field_out_it->second;
+  return rf_result(field_out_it->second, true);
 }
 
-optional<field> analysis::io_region::retrieve_field(
+analysis::io_region::rf_result analysis::io_region::retrieve_field(
   numeric_state *child_state, int64_t offset, size_t size, bool replacement, bool handle_conflicts) {
   auto ptr_set_fresh = [](id_shared_t nid_in) {
     //    ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
@@ -508,20 +508,23 @@ summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handl
 }
 
 void analysis::summary_memory_state::initialize_static(io_region io, void *address, size_t offset, size_t size) {
-  optional<id_shared_t> mem_id = transVarReg(io, offset, size, false);
-  if(!mem_id) {
+  io_region::rf_result rfr = io.retrieve_field(child_state, offset, size, false, false);
+  if(!rfr.f) {
     if(warnings)
       cout << "Warning: Skipping static initialization due to conflict." << endl;
     return;
   }
   if(size > 64) throw string("analysis::summary_memory_state::initialize_static(region_t,void*,size_t): size > 64");
 
+  if(!rfr.changed) //No change and no conflict => field is already present!
+    return;
+
   int64_t sv = 0;
   bool success = sm->read((char *)address + (offset / 8), size / 8, (uint8_t *)&sv);
   //  cout << "read " << (size_t)address << "/" << + (offset/8) << " " << size/8 << " " << sv << " " << success << endl;
   if(success) {
     vs_shared_t sv_vs = vs_finite::single(sv);
-    num_var *v_mem_id = new num_var(mem_id);
+    num_var *v_mem_id = new num_var(rfr.f->num_id);
     num_expr *e_sv_vs = new num_expr_lin(new num_linear_vs(sv_vs));
     child_state->assign(v_mem_id, e_sv_vs);
     delete e_sv_vs;
@@ -555,7 +558,7 @@ std::tuple<std::set<int64_t>, std::set<int64_t>> analysis::summary_memory_state:
 }
 
 void analysis::summary_memory_state::topify(io_region &region, int64_t offset, size_t size) {
-  field f = region.retrieve_field(child_state, offset, size, false, true).value();
+  field f = region.retrieve_field(child_state, offset, size, false, true).f.value();
   num_var nv(f.num_id);
   child_state->kill({&nv});
   /*
@@ -566,7 +569,7 @@ void analysis::summary_memory_state::topify(io_region &region, int64_t offset, s
 
 optional<id_shared_t> analysis::summary_memory_state::transVarReg(
   io_region io, int64_t offset, size_t size, bool handle_conflict) {
-  optional<field> f = io.retrieve_field(child_state, offset, size, false, handle_conflict);
+  optional<field> f = io.retrieve_field(child_state, offset, size, false, handle_conflict).f;
   if(f)
     return f.value().num_id;
   else
@@ -641,7 +644,7 @@ num_linear *analysis::summary_memory_state::transLEReg(io_region io, int64_t off
   //  cout << "Number of fields: " << fields.size() << endl;
 
   if(fields.size() == 0) {
-    optional<field> f_opt = io.retrieve_field(child_state, offset, size, false, false);
+    optional<field> f_opt = io.retrieve_field(child_state, offset, size, false, false).f;
     if(f_opt)
       return new num_linear_term(new num_var(f_opt.value().num_id));
     else
