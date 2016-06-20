@@ -1170,6 +1170,7 @@ int main(void) {\n\
     : \"a\" (x)\n\
     : \"r11\");\n\
 \n\
+  __asm volatile ( \"end:\");\n\
   return 0;\n\
 }",
     false));

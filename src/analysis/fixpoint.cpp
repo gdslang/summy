@@ -81,7 +81,7 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-    cout << "Next node: " << node_id << endl;
+//    cout << "Next node: " << node_id << endl;
 
     bool _continue = false;
     static optional<size_t> function_last;
@@ -155,7 +155,7 @@ void fixpoint::iterate() {
 
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
         //        cout << "Constraint from " << node_other << " to " << node_id << endl;
-        cout << *analysis->get(node_other) << endl;
+//        cout << *analysis->get(node_other) << endl;
 
         /*
          * Evaluate constraint

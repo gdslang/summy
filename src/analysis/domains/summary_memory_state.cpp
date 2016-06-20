@@ -49,8 +49,8 @@ analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimenta
   if(r_key) name = r_key.value()->to_string();
 }
 
-analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state *child_state, int64_t offset, size_t size,
-  bool replacement, bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
+analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state *child_state, int64_t offset,
+  size_t size, bool replacement, bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
   //  cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << endl;
   //  struct field_desc_t {
   //    int64_t offset;
@@ -510,13 +510,12 @@ summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handl
 void analysis::summary_memory_state::initialize_static(io_region io, void *address, size_t offset, size_t size) {
   io_region::rf_result rfr = io.retrieve_field(child_state, offset, size, false, false);
   if(!rfr.f) {
-    if(warnings)
-      cout << "Warning: Skipping static initialization due to conflict." << endl;
+    if(warnings) cout << "Warning: Skipping static initialization due to conflict." << endl;
     return;
   }
   if(size > 64) throw string("analysis::summary_memory_state::initialize_static(region_t,void*,size_t): size > 64");
 
-  if(!rfr.changed) //No change and no conflict => field is already present!
+  if(!rfr.changed) // No change and no conflict => field is already present!
     return;
 
   int64_t sv = 0;
@@ -880,7 +879,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
   vector<num_linear *> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
-        cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
+    //    cout << "Load Alias: " << *alias.id << "@" << *alias.offset << endl;
     special_deref_desc_t spdd = handle_special_dereference(alias.id);
     if(spdd.ignore) continue;
 
@@ -889,8 +888,6 @@ void analysis::summary_memory_state::update(gdsl::rreil::load *load) {
     bool is_static = false;
     void *symbol_address;
     tie(is_static, symbol_address) = static_address(alias.id);
-
-    cout << "address: " << (size_t)symbol_address << endl;
 
     value_set_visitor vsv;
     vsv._([&](vs_finite *v) {
@@ -965,14 +962,14 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
     special_deref_desc_t spdd = handle_special_dereference(alias.id);
     force_weak = force_weak || spdd.force_weak;
 
-//    bool is_static = false;
-//    tie(is_static, ignore) = static_address(alias.id);
-//    if(is_static) {
-//      if(warnings) cout << "Warning: Ignoring possible store to static memory" << endl;
-//      continue;
-//    }
+    //    bool is_static = false;
+    //    tie(is_static, ignore) = static_address(alias.id);
+    //    if(is_static) {
+    //      if(warnings) cout << "Warning: Ignoring possible store to static memory" << endl;
+    //      continue;
+    //    }
 
-    if(!spdd.ignore/* || is_static*/) aliases_cleaned.insert(alias);
+    if(!spdd.ignore /* || is_static*/) aliases_cleaned.insert(alias);
   }
 
   for(auto &alias : aliases_cleaned) {
@@ -1066,7 +1063,6 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
 }
 
 void analysis::summary_memory_state::store(ptr_set_t aliases, size_t size, api::num_expr *rhs) {
-  cout << aliases << endl;
   /*
    * Todo: Use bits in als_state and vsd_state
    */
@@ -1294,17 +1290,29 @@ api::num_vars *analysis::summary_memory_state::vars_relations() {
     }
   };
 
-  auto for_regions = [&](region_map_t &regions) {
+  auto for_regions = [&](region_map_t &regions, function<bool(id_shared_t)> &&filter) {
     auto region_it = regions.begin();
     while(region_it != regions.end()) {
-      known_ids.insert(region_it->first);
-      for_region(region_it->second);
+      if(filter(region_it->first)) {
+        known_ids.insert(region_it->first);
+        for_region(region_it->second);
+      }
       region_it++;
     }
   };
 
-  for_regions(input.regions);
-  for_regions(output.regions);
+  for_regions(input.regions, [&](id_shared_t id) { return true; });
+  for_regions(output.regions, [&](id_shared_t id) { return true; });
+
+  auto test_static = [&](id_shared_t id) -> bool {
+    bool is_static = false;
+    summy::rreil::id_visitor idv;
+    idv._([&](sm_id *sid) { is_static = true; });
+    id->accept(idv);
+    return is_static;
+  };
+  for_regions(input.deref, test_static);
+  for_regions(output.deref, test_static);
 
   while(!worklist.empty()) {
     id_shared_t next = *worklist.begin();
@@ -1328,8 +1336,7 @@ api::num_vars *analysis::summary_memory_state::vars_relations() {
     summy::rreil::id_visitor idv;
     idv._([&](sm_id *sid) { is_static = true; });
     field_it.first->accept(idv);
-    if(is_static)
-      known_ids.insert(field_it.first);
+    if(is_static) known_ids.insert(field_it.first);
   }
 
   return new num_vars(known_ids);

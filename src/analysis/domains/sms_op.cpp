@@ -451,7 +451,7 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
       };
       ptr_set_t region_aliases_c_offset_bits = offsets_bytes_to_bits_base(field_mapping_s.first, region_aliases_c);
 
-            cout << "~~~" << region_aliases_c_offset_bits << ":" << f_s.size << endl;
+//            cout << "~~~" << region_aliases_c_offset_bits << ":" << f_s.size << endl;
       return_site->update_multiple(region_aliases_c_offset_bits, getter, f_s.size, strong, weak, true, true);
 
       delete value_summary_expr;
@@ -481,18 +481,18 @@ summary_memory_state * ::analysis::apply_summary(summary_memory_state *caller, s
     if(region_aliases_c_it == ptr_map.end()) continue;
     ptr_set_t &region_aliases_c = region_aliases_c_it->second;
 
-    cout << "process_region(): " << region_aliases_c << endl;
+//    cout << "process_region(): " << region_aliases_c << endl;
 
     process_region(&relation::get_deref, region_aliases_c, region_si, deref_mapping_so.second);
   }
   delete _top;
 
-  cout << "return_site: " << endl
-       << *return_site << endl;
+//  cout << "return_site: " << endl
+//       << *return_site << endl;
 
-//  num_vars *_vars = return_site->vars_relations();
-//  return_site->project(_vars);
-//  delete _vars;
+  num_vars *_vars = return_site->vars_relations();
+  return_site->project(_vars);
+  delete _vars;
 
   return return_site;
 }
