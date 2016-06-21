@@ -36,6 +36,7 @@
 #include <summy/value_set/vs_open.h>
 #include <summy/value_set/vs_top.h>
 #include <algorithm>
+#include <experimental/optional>
 
 #include <cstdio>
 #include <memory>
@@ -51,6 +52,8 @@ using namespace std;
 using namespace analysis;
 using namespace summy;
 using namespace analysis::api;
+
+using namespace std::experimental;
 
 
 int main(int argc, char **argv) {
@@ -142,6 +145,8 @@ int main(int argc, char **argv) {
     dt.register_();
 
     for(auto f : functions) {
+      break;
+
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
@@ -152,16 +157,16 @@ int main(int argc, char **argv) {
       //      if(name != "_slash_vex_slash_0f_slash_vexv")
       //        continue;
       //      if(name != "sem_movsAction1") continue;
-//            if(name != "_slash_") continue;
-//            if(name != "show_slash_op") continue;
-//            if(name != "consume") continue;
-//            if(name != "rval_uint") continue;
+      //            if(name != "_slash_") continue;
+      //            if(name != "show_slash_op") continue;
+      //            if(name != "consume") continue;
+      //            if(name != "rval_uint") continue;
       //      if(name != "traverse") continue;
       //      if(name != "alloc") continue;
       //      if(name != "del_fields") continue;
-//            if(name != "sweep") continue;
-//            if(name != "sem_reg_offset") continue;
-//            if(name != "register_from_bits") continue;
+      //            if(name != "sweep") continue;
+      //            if(name != "sem_reg_offset") continue;
+      //            if(name != "register_from_bits") continue;
       //            if(name != "rreil_convert_sem_stmt") continue;
       //      if(name != "main") continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
@@ -184,6 +189,8 @@ int main(int argc, char **argv) {
 
     cout << "*** Additionally collected functions..." << endl;
     for(size_t address : fstarts) {
+      break;
+
       //      cout << hex << address << dec << endl;
       try {
         dt.transduce_function(address);
@@ -192,6 +199,12 @@ int main(int argc, char **argv) {
       } catch(string &s) {
         //        cout << "\t Unable to seek!" << endl;
       }
+    }
+
+    dt.transduce_function(0x401900, nullopt);
+    {
+      auto &cfg = dt.get_cfg();
+      cfg.commit_updates();
     }
 
     auto &cfg = dt.get_cfg();
@@ -229,7 +242,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() ==  92 || n.get_id() == 93)
+      if(n.get_id() == 71 || n.get_id() == 73 || n.get_id() == 47 || n.get_id() == 69)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " << *jd_man.address_of(n.get_id()) << "\"]";
       else
@@ -257,8 +270,8 @@ int main(int argc, char **argv) {
     size_t total_indirect = b_stats.calls_total_indirect + b_stats.jmps_total_indirect;
     size_t with_targets = b_stats.calls_with_targets + b_stats.jmps_with_targets;
     cout << "Total indirect branches: " << total_indirect << endl;
-    cout << "Indirect branches with targets: " << with_targets << " ("
-         << (100.0 * with_targets / (float)total_indirect) << "%)" << endl;
+    cout << "Indirect branches with targets: " << with_targets << " (" << (100.0 * with_targets / (float)total_indirect)
+         << "%)" << endl;
 
     cout << "Total indirect jmps: " << b_stats.jmps_total_indirect << endl;
     cout << "Indirect jmps with targets: " << b_stats.jmps_with_targets << " ("
