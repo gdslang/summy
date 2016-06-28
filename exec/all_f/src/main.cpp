@@ -145,8 +145,6 @@ int main(int argc, char **argv) {
     dt.register_();
 
     for(auto f : functions) {
-      break;
-
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
@@ -201,11 +199,11 @@ int main(int argc, char **argv) {
       }
     }
 
-    dt.transduce_function(0x401900, nullopt);
-    {
-      auto &cfg = dt.get_cfg();
-      cfg.commit_updates();
-    }
+//    dt.transduce_function(0x401900, nullopt);
+//    {
+//      auto &cfg = dt.get_cfg();
+//      cfg.commit_updates();
+//    }
 
     auto &cfg = dt.get_cfg();
 

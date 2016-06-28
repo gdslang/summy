@@ -120,11 +120,11 @@ void fixpoint::iterate() {
     /*
      * If this is commented out, the tests won't work ;-)
      */
-    //    analysis->accept(av);
+        analysis->accept(av);
     if(_continue) continue;
 
-    if(jd_man.machine_address_of(node_id) > 0x40190b)
-      break;
+//    if(jd_man.machine_address_of(node_id) > 0x40190b)
+//      break;
 
     node_visitor nv;
     nv._([&](address_node *an) { machine_addresses.insert(an->get_address()); });
@@ -166,13 +166,13 @@ void fixpoint::iterate() {
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         auto evaluated = constraint();
         if(constraints.size() == 1)
-          ; // analysis->unref(node_other);
+          analysis->unref(node_other);
         else
           analysis->ref(node_other, nullopt);
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
-        if(jd_man.machine_address_of(node_id) == 0x401908) cout << "Evaluated: " << *evaluated << endl;
+//        if(jd_man.machine_address_of(node_id) == 0x401908) cout << "Evaluated: " << *evaluated << endl;
         //                if(node_id == 67) cout << "Evaluated: " << *evaluated << endl;
 
         /*
