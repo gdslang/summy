@@ -20,7 +20,7 @@ class summary_application {
   summary_memory_state *summary;
 
   std::experimental::optional<summary_memory_state*> return_site;
-  map<id_shared_t, ptr_set_t, id_less> ptr_map;
+  std::map<id_shared_t, ptr_set_t, id_less> ptr_map;
 public:
   summary_application(summary_memory_state *caller, summary_memory_state *summary);
 
