@@ -3,6 +3,8 @@
 /.cproject
 /.project
 /.settings
+/.vscode
+/summy.project
 
 /output.dot
 /ismt.dot

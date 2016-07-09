@@ -116,6 +116,7 @@ struct memory_head {
 };
 
 class summary_dstack_stubs;
+class sms_compat;
 
 /**
  * Summary-based memory domain state
@@ -257,5 +258,6 @@ public:
 
   friend class summary_dstack_stubs;
   friend class summary_application;
+  friend class sms_compat;
 };
 }

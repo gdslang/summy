@@ -8,7 +8,6 @@
 #include <bjutil/binary/elf_provider.h>
 #include <summy/analysis/domains/summary_dstack.h>
 #include <summy/analysis/domains/summary_memory_state.h>
-#include <summy/analysis/domains/sms_op.h>
 #include <summy/test/compile.h>
 #include <summy/analysis/fixpoint.h>
 #include <bjutil/gdsl_init.h>

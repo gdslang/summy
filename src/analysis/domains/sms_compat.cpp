@@ -1,49 +1,36 @@
 /*
- * sms_op.cpp
+ * sms_compat.cpp
  *
- *  Created on: Jul 15, 2015
+ *  Created on: Jul 9, 2016
  *      Author: Julian Kranz
  */
 
 #include <assert.h>
-#include <summy/analysis/domains/sms_op.h>
-#include <summy/analysis/domain_state.h>
-#include <summy/analysis/domains/api/numeric/num_expr.h>
-#include <summy/analysis/domains/api/numeric/num_linear.h>
 #include <summy/analysis/domains/api/numeric/num_var.h>
-#include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/cr_merge_region_iterator.h>
 #include <summy/analysis/domains/merge_region_iterator.h>
 #include <summy/analysis/domains/numeric/als_state.h>
+#include <summy/analysis/domains/numeric/numeric_state.h>
+#include <summy/analysis/domains/sms_compat.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/domains/util.h>
-#include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/memory_id.h>
-#include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/id/special_ptr.h>
-#include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
-#include <cppgdsl/rreil/rreil.h>
-#include <map>
-#include <queue>
-#include <algorithm>
 #include <experimental/optional>
-#include <utility>
+#include <queue>
 
-using gdsl::rreil::id;
+using analysis::api::num_var;
 using std::experimental::optional;
-using summy::rreil::allocation_memory_id;
+using std::experimental::nullopt;
 using summy::rreil::ptr_memory_id;
-using summy::rreil::sm_id;
 using summy::rreil::special_ptr;
-using summy::rreil::special_ptr_kind;
+using summy::vs_finite;
 
-using namespace std;
 using namespace analysis;
-using namespace analysis::api;
-using namespace summy;
+using namespace std;
 
-std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(bool widening, relation &a_in,
+std::tuple<bool, num_var_pairs_t, id_set_t>(sms_compat::compatMatchSeparate)(bool widening, relation &a_in,
   relation &a_out, numeric_state *a_n, relation &b_in, relation &b_out, numeric_state *b_n) {
   /*
    * No more copy/paste; later, we can remove this entirely
@@ -475,7 +462,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(::analysis::compatMatchSeparate)(boo
   return make_tuple(conflicts, result, merged_region_keys);
 }
 
-std::tuple<bool, memory_head, numeric_state *, numeric_state *>(::analysis::compat)(
+std::tuple<bool, memory_head, numeric_state *, numeric_state *>(sms_compat::compat)(
   bool widening, const summary_memory_state *a, const summary_memory_state *b) {
   numeric_state *a_n = a->child_state->copy();
   numeric_state *b_n = b->child_state->copy();

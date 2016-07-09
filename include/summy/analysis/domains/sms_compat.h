@@ -1,16 +1,14 @@
 /*
- * sms_op.h
+ * sms_compat.h
  *
- *  Created on: Jul 15, 2015
+ *  Created on: Jul 9, 2016
  *      Author: Julian Kranz
  */
 
 #pragma once
-
-#include <summy/analysis/domains/summary_memory_state.h>
-#include <summy/analysis/domains/numeric/numeric_state.h>
-#include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/api/numeric/num_var.h>
+#include <summy/analysis/domains/numeric/numeric_state.h>
+#include <summy/analysis/domains/summary_memory_state.h>
 #include <tuple>
 
 namespace analysis {
@@ -23,8 +21,14 @@ namespace analysis {
  *
  * @return pair of variables that correspond to each other in the respective memory states
  */
-std::tuple<bool, num_var_pairs_t, api::id_set_t> compatMatchSeparate(bool widening, relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in,
-  relation &b_out, numeric_state *b_n);
-std::tuple<bool, memory_head, numeric_state *, numeric_state *> compat(
-  bool widening, summary_memory_state const *a, summary_memory_state const *b);
+class sms_compat {
+private:
+  static std::tuple<bool, num_var_pairs_t, api::id_set_t> compatMatchSeparate(bool widening, relation &a_in, relation &a_out, numeric_state *a_n, relation &b_in,
+    relation &b_out, numeric_state *b_n);
+
+public:
+  static std::tuple<bool, memory_head, numeric_state *, numeric_state *> compat(
+    bool widening, summary_memory_state const *a, summary_memory_state const *b);
+};
+
 }

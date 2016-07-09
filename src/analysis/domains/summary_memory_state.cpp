@@ -25,7 +25,7 @@
 #include <vector>
 #include <assert.h>
 #include <summy/analysis/domains/cr_merge_region_iterator.h>
-#include <summy/analysis/domains/sms_op.h>
+#include <summy/analysis/domains/sms_compat.h>
 #include <summy/analysis/domains/util.h>
 #include <summy/rreil/id/memory_id.h>
 #include <queue>
@@ -327,7 +327,7 @@ summary_memory_state *analysis::summary_memory_state::domop(
   numeric_state *me_compat;
   numeric_state *other_compat;
   memory_head head_compat;
-  tie(ignore, head_compat, me_compat, other_compat) = compat(widening, this, other_casted);
+  tie(ignore, head_compat, me_compat, other_compat) = sms_compat::compat(widening, this, other_casted);
 
   //  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
 
@@ -745,7 +745,7 @@ bool analysis::summary_memory_state::operator>=(const domain_state &other) const
   numeric_state *me_compat;
   numeric_state *other_compat;
   bool conflicts;
-  tie(conflicts, ignore, me_compat, other_compat) = compat(false, this, &other_casted);
+  tie(conflicts, ignore, me_compat, other_compat) = sms_compat::compat(false, this, &other_casted);
   if(conflicts) {
     delete me_compat;
     delete other_compat;

@@ -16,6 +16,13 @@
 
 namespace analysis {
 
+//struct summary_application_t {
+//  summary_memory_state *return_site;
+//  /*
+//   * Todo: Information about unexpected aliases?
+//   */
+//};
+
 class summary_application {
 private:
   summary_memory_state *caller;

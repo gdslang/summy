@@ -27,7 +27,6 @@
 #include <assert.h>
 #include <bjutil/printer.h>
 #include <summy/analysis/domains/mempath.h>
-#include <summy/analysis/domains/sms_op.h>
 #include <summy/analysis/domains/summary_application.h>
 #include <summy/analysis/ismt/smt_builder.h>
 #include <summy/rreil/id/memory_id.h>

@@ -10,7 +10,6 @@
 #include <summy/analysis/domains/api/numeric/num_var.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/ptr_set.h>
-#include <summy/analysis/domains/sms_op.h>
 #include <summy/analysis/domains/util.h>
 #include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/sm_id.h>
