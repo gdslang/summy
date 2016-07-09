@@ -35,6 +35,8 @@
 
 namespace analysis {
 
+class summary_application;
+
 struct relation {
   region_map_t regions;
   deref_t deref;
@@ -254,5 +256,6 @@ public:
     bool widening, summary_memory_state const *a, summary_memory_state const *b);
 
   friend class summary_dstack_stubs;
+  friend class summary_application;
 };
 }

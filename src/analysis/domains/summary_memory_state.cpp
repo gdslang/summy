@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <summy/analysis/domains/cr_merge_region_iterator.h>
 #include <summy/analysis/domains/sms_op.h>
+#include <summy/analysis/domains/util.h>
 #include <summy/rreil/id/memory_id.h>
 #include <queue>
 #include <experimental/optional>

@@ -15,16 +15,6 @@
 
 namespace analysis {
 
-ptr unpack_singleton(ptr_set_t aliases);
-
-struct summary_application_t {
-  summary_memory_state *return_site;
-  /*
-   * Todo: Information about unexpected aliases?
-   */
-};
-summary_memory_state *apply_summary(summary_memory_state *caller, summary_memory_state *summary);
-
 /**
  * This function tries to establish a mapping between pointers by structurally matching
  * the input of the given summaries. If a pointer is only found in one of the summaries,

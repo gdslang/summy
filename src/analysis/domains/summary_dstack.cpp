@@ -28,6 +28,7 @@
 #include <bjutil/printer.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/sms_op.h>
+#include <summy/analysis/domains/summary_application.h>
 #include <summy/analysis/ismt/smt_builder.h>
 #include <summy/rreil/id/memory_id.h>
 #include <algorithm>
@@ -348,7 +349,9 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
             //            summary_memory_state *summarized = summary ? apply_summary(mstate, summary.value().get()) :
             //            bottom->copy();
-            summary_memory_state *summarized = summary ? apply_summary(mstate, summary.value().get()) : mstate->copy();
+
+            summary_memory_state *summarized = summary ? summary_application(mstate, summary.value().get()).apply_summary() : mstate->copy();
+
             //            summary_memory_state *summarized;
             //            if(summary)
             //              summarized = apply_summary(mstate, summary.value().get());

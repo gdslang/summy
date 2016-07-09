@@ -20,6 +20,7 @@
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/cfg/bfs_iterator.h>
 #include <gtest/gtest.h>
+#include <summy/analysis/domains/util.h>
 #include <summy/big_step/analysis_dectran.h>
 #include <summy/cfg/jd_manager.h>
 #include <summy/cfg/node/address_node.h>
