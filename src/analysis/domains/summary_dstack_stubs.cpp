@@ -5,8 +5,8 @@
  *      Author: Julian Kranz
  */
 
-#include <include/summy/analysis/domains/api/numeric/num_expr.h>
-#include <include/summy/analysis/domains/api/numeric/num_linear.h>
+#include <summy/analysis/domains/api/numeric/num_expr.h>
+#include <summy/analysis/domains/api/numeric/num_linear.h>
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/domains/api/numeric/num_var.h>
 #include <summy/analysis/domains/summary_dstack.h>

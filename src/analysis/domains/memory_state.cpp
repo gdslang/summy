@@ -15,7 +15,7 @@
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/value_set_visitor.h>
 #include <cppgdsl/rreil/rreil.h>
-#include <include/summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/memory_id.h>
 #include <algorithm>
 #include <iosfwd>

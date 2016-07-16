@@ -8,7 +8,7 @@
 #include <summy/analysis/domains/numeric/num_evaluator.h>
 #include <summy/analysis/domains/api/numeric/num_visitor.h>
 #include <summy/value_set/value_set.h>
-#include <include/summy/value_set/vs_finite.h>
+#include <summy/value_set/vs_finite.h>
 #include <summy/rreil/id/id_visitor.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/id/special_ptr.h>
