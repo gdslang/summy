@@ -123,7 +123,7 @@ static void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = fal
 
   r.ds_analyzed = new dstack(&cfg);
   jd_manager jd_man(&cfg);
-  fixpoint fp(r.ds_analyzed, jd_man);
+  fixpoint fp(r.ds_analyzed, jd_man, true);
 
   fp.iterate();
 }

@@ -25,8 +25,8 @@ using namespace cfg;
 using namespace std;
 using namespace analysis;
 
-analysis::fixpoint::fixpoint(class fp_analysis *analysis, jd_manager &jd_man, bool widening)
-    : analysis(analysis), jd_man(jd_man), widening(widening), max_its(0) {}
+analysis::fixpoint::fixpoint(class fp_analysis *analysis, jd_manager &jd_man, bool ref_management, bool widening)
+    : analysis(analysis), jd_man(jd_man), ref_management(ref_management), widening(widening), max_its(0) {}
 
 void fixpoint::iterate() {
   updated.clear();
@@ -120,11 +120,11 @@ void fixpoint::iterate() {
     /*
      * If this is commented out, the tests won't work ;-)
      */
-        analysis->accept(av);
+    analysis->accept(av);
     if(_continue) continue;
 
-//    if(jd_man.machine_address_of(node_id) > 0x40190b)
-//      break;
+    //    if(jd_man.machine_address_of(node_id) > 0x40190b)
+    //      break;
 
     node_visitor nv;
     nv._([&](address_node *an) { machine_addresses.insert(an->get_address()); });
@@ -165,14 +165,16 @@ void fixpoint::iterate() {
          */
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         auto evaluated = constraint();
-        if(constraints.size() == 1)
-          ;//analysis->unref(node_other);
-        else
-          analysis->ref(node_other, nullopt);
+        if(ref_management) {
+          if(constraints.size() == 1)
+            analysis->unref(node_other);
+          else
+            analysis->ref(node_other, nullopt);
+        }
 
         //        cout << "++++++++++++++++++++++++" << endl;
 
-//        if(jd_man.machine_address_of(node_id) == 0x401908) cout << "Evaluated: " << *evaluated << endl;
+        //        if(jd_man.machine_address_of(node_id) == 0x401908) cout << "Evaluated: " << *evaluated << endl;
         //                if(node_id == 67) cout << "Evaluated: " << *evaluated << endl;
 
         /*
@@ -251,7 +253,8 @@ void fixpoint::iterate() {
       //      cout << "++++++ current:" << endl << *current << endl;
       //      cout << "++++++ acc:" << endl << *accumulator << endl;
 
-      if(backward || constraints.size() != 1) analysis->ref(node_id, nullopt);
+      if(ref_management)
+        if(backward || constraints.size() != 1) analysis->ref(node_id, nullopt);
 
       propagate = (!backward && constraints.size() == 1) || !(*analysis->get(node_id) == *accumulator);
 
@@ -292,14 +295,15 @@ void fixpoint::iterate() {
       }
       //      cout << "Deps: " << dependants.size() << endl;
       //      cout << "Children: " << analysis->get_cfg()->out_edge_payloads(node_id)->size() << endl;
-      analysis->ref(node_id, dependants.size());
+      if(ref_management) analysis->ref(node_id, dependants.size());
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {
       //            cout << "====> Adding dirty node: " << dirty << endl;
       worklist.push(dirty);
     }
-    if(dirty_nodes.size() > 0) analysis->ref(node_id, dirty_nodes.size());
+    if(ref_management)
+      if(dirty_nodes.size() > 0) analysis->ref(node_id, dirty_nodes.size());
 
     seen.insert(node_id);
 

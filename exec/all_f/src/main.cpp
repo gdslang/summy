@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
     sweep.transduce();
     analysis::fcollect::fcollect fc(&sweep.get_cfg());
     cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-    fixpoint fp_collect(&fc, jd_man_fc);
+    fixpoint fp_collect(&fc, jd_man_fc, true);
     fp_collect.iterate();
 
     size_t loc_sweep = loc_statistics(sweep.get_cfg()).get_loc();
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, false, dt.get_f_heads());
     cfg::jd_manager jd_man(&cfg);
-    fixpoint fp(&ds, jd_man);
+    fixpoint fp(&ds, jd_man, true);
 
     cout << "\033[1;31mStarting main analysis.\033[0m" << endl;
 
