@@ -11,5 +11,5 @@ include_directories("include/")
 include_directories("../../include/")
 
 add_executable(demo_dstack ${SOURCES})
-target_link_libraries(demo_dstack summy -lbjutil -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lgmp -lgtest -lpthread -lelf)
+target_link_libraries(demo_dstack summy bjutil cppgdsl gdsl-multiplex dl readhex gmp gtest pthread elf)
 set_property(TARGET demo_dstack PROPERTY CXX_STANDARD 14)

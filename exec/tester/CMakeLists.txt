@@ -12,5 +12,5 @@ include_directories("include/")
 include_directories("../../include/")
 
 add_executable(tester ${SOURCES})
-target_link_libraries(tester summy -lbjutil -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lgmp -lgtest -lpthread -lelf)
+target_link_libraries(tester summy bjutil cppgdsl gdsl-multiplex dl readhex gmp gtest pthread elf)
 set_property(TARGET tester PROPERTY CXX_STANDARD 14)
