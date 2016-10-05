@@ -1,0 +1,26 @@
+module mod;
+
+import foo;
+
+export namespace abc {
+
+#define HUGO 99
+
+template<typename T>
+T t(T x) {
+  return 5*bar::t(x);
+}
+
+int f(int x) {
+    return 2 + x;
+}
+
+double g(double y, int z) {
+    return y * z;
+} 
+
+int h() {
+  return 77;
+}
+
+}

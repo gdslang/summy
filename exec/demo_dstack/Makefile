@@ -2,14 +2,14 @@
 
 CC=gcc
 #CC=clang
-CPP=clang++
+CPP=clang++-4.0
 LIBDS=-L../..
 LIBS=-lsummy -lbjutil -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lgmp -lgtest -lpthread -lelf #-lprofiler -ltcmalloc
 LIBFLAGS=$(LIBDS) $(LIBS)
 LDFLAGS=
 INCDS=-I../../include -Iinclude
 CFLAGS=$(CFLAGS_EXTRA) -c -O0 -ggdb3 -MMD -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
-CPPFLAGS=$(CPPFLAGS_EXTRA) -c -O0 -ggdb3 -MMD -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
+CPPFLAGS=$(CPPFLAGS_EXTRA) -c -O0 -ggdb3 -MMD -std=c++1z -fmodules-ts -DMODULES -fprebuilt-module-path=$(BPRE) -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
 
 EXECUTABLE=summy
 
@@ -19,6 +19,9 @@ BPRE=build
 
 CSOURCES=$(shell find $(SPRE)/ -type f -name '*.c')
 CPPSOURCES=$(shell find $(SPRE)/ -type f -name '*.cpp')
+CPPMODULES=$(shell find $(SPRE)/ -type f -name '*.ccm')
+
+$(BPRE)/mod.pcm : | pre-build $(BPRE)/foo.pcm
 
 all: pre-build $(EXECUTABLE)
 
@@ -30,10 +33,12 @@ pre-build:
 
 COBJECTS=$(CSOURCES:$(SPRE)/%.c=$(BPRE)/%.o)
 CPPOBJECTS=$(CPPSOURCES:$(SPRE)/%.cpp=$(BPRE)/%.o)
+PCMS=$(CPPMODULES:$(SPRE)/%.ccm=$(BPRE)/%.pcm)
+PCMS_LINK=$(CPPMODULES:$(SPRE)/%.ccm=-fmodule-file=$(BPRE)/%.pcm)
 OBJECTS=$(COBJECTS) $(CPPOBJECTS)
 
-$(EXECUTABLE): $(OBJECTS) ../../lib$(EXECUTABLE).a
-	$(CPP) $(LDFLAGS) $(OBJECTS) $(LIBFLAGS) -o $@
+$(EXECUTABLE): $(PCMS) $(OBJECTS) ../../lib$(EXECUTABLE).a
+	$(CPP) $(LDFLAGS) -std=c++1z -fmodules-ts $(PCMS_LINK) -fprebuilt-module-path=$(BPRE) $(OBJECTS) $(LIBFLAGS) -o $@
 
 -include ${COBJECTS:.o=.d}
 $(COBJECTS): $(BPRE)/%.o : $(SPRE)/%.c
@@ -42,6 +47,11 @@ $(COBJECTS): $(BPRE)/%.o : $(SPRE)/%.c
 -include ${CPPOBJECTS:.o=.d}
 $(CPPOBJECTS): $(BPRE)/%.o : $(SPRE)/%.cpp
 	$(CPP) $(CPPFLAGS) $< -o $@
+
+
+.NOTPARALLEL:
+$(PCMS): $(BPRE)/%.pcm : $(SPRE)/%.ccm
+	$(CPP) --precompile $(CPPFLAGS) $< -o $@
 
 .PHONY: test
 test:

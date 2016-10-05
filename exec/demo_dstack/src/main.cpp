@@ -38,6 +38,8 @@
 #include <cstdio>
 #include <memory>
 
+import mod;
+
 using analysis::fixpoint;
 using analysis::value_sets::vsd_state;
 using cfg::address_node;
@@ -77,6 +79,8 @@ int main(int argc, char **argv) {
   //
   //  exit(0);
 
+//  int k = f(2);
+  cout << abc::t(5) << endl;
 
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);

@@ -2,14 +2,14 @@
 
 CC=gcc
 #CC=clang
-CPP=clang++
+CPP=clang++-4.0
 LIBDS=-L../..
 LIBS=-lsummy -lbjutil -lcppgdsl -lgdsl-multiplex -ldl -lreadhex -lgmp -lgtest -lpthread -lelf
 LIBFLAGS=$(LIBDS) $(LIBS)
 LDFLAGS=
 INCDS=-I../../include -Iinclude
 CFLAGS=$(CFLAGS_EXTRA) -c -O0 -ggdb3 -MMD -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
-CPPFLAGS=$(CPPFLAGS_EXTRA) -c -O0 -ggdb3 -MMD -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
+CPPFLAGS=$(CPPFLAGS_EXTRA) -c -O0 -ggdb3 -MMD -std=c++1z -fmodules-ts -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
 
 EXECUTABLE=summy-tester
 

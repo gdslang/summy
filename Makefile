@@ -1,10 +1,10 @@
 CC=gcc
 #CC=clang
-CPP=clang++
+CPP=clang++-4.0
 INCDS=-Iinclude
 O=-O2
 CFLAGS=$(CFLAGS_EXTRA) -c -MMD -ggdb3 $(O) -std=c11 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
-CPPFLAGS=$(CPPFLAGS_EXTRA) -c -MMD -ggdb3 $(O) -std=c++14 -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
+CPPFLAGS=$(CPPFLAGS_EXTRA) -c -MMD -ggdb3 $(O) -std=c++1z -fmodules-ts -Wall -Wno-tautological-undefined-compare -Wno-overloaded-virtual -Wno-deprecated $(INCDS)
 
 LIBRARY=libsummy.a
 
