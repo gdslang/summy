@@ -29,6 +29,7 @@ private:
 
 public:
   allocation_memory_id(size_t allocation_site) : allocation_site(allocation_site) {}
+  allocation_memory_id(allocation_memory_id const &o) : allocation_site(o.allocation_site) {}
 
   size_t get_subclass_counter() const override {
     return subclass_counter;
@@ -40,9 +41,7 @@ public:
 
   bool operator==(gdsl::rreil::id const &other) const override;
   bool operator<(id const &other) const override;
-  std::unique_ptr<gdsl::rreil::id> copy() const override {
-    assert(false);
-  }
+  std::unique_ptr<gdsl::rreil::id> copy() const override;
   void accept(gdsl::rreil::id_visitor &v) const override;
 };
 
@@ -56,6 +55,8 @@ private:
 
 public:
   ptr_memory_id(std::shared_ptr<gdsl::rreil::id> inner) : inner(inner) {}
+  ptr_memory_id(ptr_memory_id const &o) : inner(o.inner->copy()) {
+  }
   ~ptr_memory_id();
 
   size_t get_subclass_counter() const override {
@@ -68,9 +69,7 @@ public:
 
   bool operator==(gdsl::rreil::id const &other) const override;
   bool operator<(id const &other) const override;
-  std::unique_ptr<gdsl::rreil::id> copy() const override {
-    assert(false);
-  }
+  std::unique_ptr<gdsl::rreil::id> copy() const override;
   void accept(gdsl::rreil::id_visitor &v) const override;
 };
 }

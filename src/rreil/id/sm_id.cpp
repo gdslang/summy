@@ -41,6 +41,10 @@ bool summy::rreil::sm_id::operator<(const id &other) const {
     return scc_me < scc_other;
 }
 
+std::unique_ptr<gdsl::rreil::id> summy::rreil::sm_id::copy() const {
+  return std::unique_ptr<gdsl::rreil::id>(new sm_id(*this));
+}
+
 void summy::rreil::sm_id::accept(gdsl::rreil::id_visitor &v) const {
   auto &summy_v = dynamic_cast<summy::rreil::id_visitor &>(v);
   summy_v.visit(this);

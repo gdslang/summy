@@ -32,8 +32,10 @@ private:
   void put(std::ostream &out) const override;
 
   static size_t subclass_counter;
+
 public:
   sm_id(std::string symbol, void *address) : symbol(symbol), address(address) {}
+  sm_id(sm_id const &o) : symbol(o.symbol), address(o.address) {}
   ~sm_id();
 
   size_t get_subclass_counter() const override {
@@ -49,10 +51,8 @@ public:
   }
 
   bool operator==(gdsl::rreil::id const &other) const override;
-  bool operator<(id const& other) const override;
-  std::unique_ptr<gdsl::rreil::id> copy() const override {
-    assert(false);
-  }
+  bool operator<(id const &other) const override;
+  std::unique_ptr<gdsl::rreil::id> copy() const override;
   void accept(gdsl::rreil::id_visitor &v) const override;
 
   static std::shared_ptr<gdsl::rreil::id> from_symbol(analysis::symbol symb);

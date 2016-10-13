@@ -36,6 +36,8 @@ private:
       : counter(counter), name(name), input(input) {}
 
 public:
+  numeric_id(numeric_id const& o) : counter(o.counter), name(o.name), input(o.input) {
+  }
   ~numeric_id();
 
   size_t get_subclass_counter() const override {
@@ -56,9 +58,7 @@ public:
 
   bool operator==(gdsl::rreil::id const &other) const override;
   bool operator<(id const &other) const override;
-  std::unique_ptr<gdsl::rreil::id> copy() const override {
-    assert(false);
-  }
+  std::unique_ptr<gdsl::rreil::id> copy() const override;
   void accept(gdsl::rreil::id_visitor &v) const override;
 
   static std::shared_ptr<gdsl::rreil::id> generate(

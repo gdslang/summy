@@ -31,6 +31,7 @@ private:
   static size_t subclass_counter;
 public:
   special_ptr(special_ptr_kind kind) : kind(kind) {}
+  special_ptr(special_ptr const &o) : kind(o.kind) {}
   ~special_ptr();
 
   size_t get_subclass_counter() const override {
@@ -43,9 +44,7 @@ public:
 
   bool operator==(gdsl::rreil::id const &other) const override;
   bool operator<(id const& other) const override;
-  std::unique_ptr<gdsl::rreil::id> copy() const override {
-    assert(false);
-  }
+  std::unique_ptr<gdsl::rreil::id> copy() const override;
   void accept(gdsl::rreil::id_visitor &v) const override;
 
   static std::shared_ptr<gdsl::rreil::id> _nullptr;
