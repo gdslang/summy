@@ -19,23 +19,23 @@ namespace analysis {
 
 class smt_value_builder: public smt_builder {
 private:
-  CVC4::Expr get_id_old_exp(gdsl::rreil::id *id, size_t def_node);
+  CVC4::Expr get_id_old_exp(gdsl::rreil::id const *id, size_t def_node);
   CVC4::Expr enforce_aligned(size_t size, CVC4::Expr address);
 
-  void _default(gdsl::rreil::id *i);
+  void _default(gdsl::rreil::id const *i) override;
 
-  void visit(gdsl::rreil::lin_binop *a);
-  void visit(gdsl::rreil::lin_imm *a);
-  void visit(gdsl::rreil::lin_scale *a);
+  void visit(gdsl::rreil::lin_binop const *a) override;
+  void visit(gdsl::rreil::lin_imm const *a) override;
+  void visit(gdsl::rreil::lin_scale const *a) override;
 
-  void visit(gdsl::rreil::expr_cmp *ec);
-  void visit(gdsl::rreil::arbitrary *ab);
+  void visit(gdsl::rreil::expr_cmp const *ec) override;
+  void visit(gdsl::rreil::arbitrary const *ab) override;
 
-  void visit(gdsl::rreil::expr_binop *eb);
-  void visit(gdsl::rreil::expr_ext *ext);
+  void visit(gdsl::rreil::expr_binop const *eb) override;
+  void visit(gdsl::rreil::expr_ext const *ext) override;
 
-  void visit(gdsl::rreil::load *l);
-  void visit(gdsl::rreil::store *s);
+  void visit(gdsl::rreil::load const *l) override;
+  void visit(gdsl::rreil::store const *s) override;
 public:
   using smt_builder::smt_builder;
 
@@ -43,7 +43,7 @@ public:
   CVC4::Expr store_memory(CVC4::Expr memory_before, size_t size, CVC4::Expr address, CVC4::Expr value);
 
   using smt_builder::build;
-  CVC4::Expr build(gdsl::rreil::address *addr);
+  CVC4::Expr build(gdsl::rreil::address const *addr);
 };
 
 }  // namespace analysis

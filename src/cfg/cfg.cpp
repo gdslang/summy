@@ -64,34 +64,33 @@ cfg::cfg::~cfg() {
   }
 }
 
-size_t cfg::cfg::add_program(translated_program_t &translated_binary, experimental::optional<string> name) {
-  optional<size_t> head_node;
-  for(auto elem : translated_binary) {
-    size_t address;
-    vector<gdsl::rreil::statement *> *statements;
-    tie(address, statements) = elem;
-    size_t from_node = create_node([&](size_t id) { return new address_node(id, address, DECODED, name); });
-    if(!head_node) head_node = from_node;
-    add_nodes(statements, from_node);
-  }
-  return head_node.value();
-}
-
-size_t cfg::cfg::add_program(translated_program_t &translated_binary) {
-  return add_program(translated_binary, experimental::nullopt);
-}
-
-size_t cfg::cfg::add_nodes(std::vector<gdsl::rreil::statement *> const *statements, size_t from_node) {
-  size_t to_node = from_node;
-  for(auto stmt : *statements) {
-    to_node = create_node([&](size_t id) { return new node(id); });
-
-    update_edge(from_node, to_node, new stmt_edge(stmt));
-
-    from_node = to_node;
-  }
-  return to_node;
-}
+//size_t cfg::cfg::add_program(translated_program_t &translated_binary, experimental::optional<string> name) {
+//  optional<size_t> head_node;
+//  for(auto elem : translated_binary) {
+//    size_t address = get<0>(elem);
+//    gdsl::iterable<gdsl::rreil::statement> statements = get<1>(elem);
+//    size_t from_node = create_node([&](size_t id) { return new address_node(id, address, DECODED, name); });
+//    if(!head_node) head_node = from_node;
+//    add_nodes(statements, from_node);
+//  }
+//  return head_node.value();
+//}
+//
+//size_t cfg::cfg::add_program(translated_program_t &translated_binary) {
+//  return add_program(translated_binary, experimental::nullopt);
+//}
+//
+//size_t cfg::cfg::add_nodes(gdsl::iterable<gdsl::rreil::statement> statements, size_t from_node) {
+//  size_t to_node = from_node;
+//  for(auto const& stmt : statements) {
+//    to_node = create_node([&](size_t id) { return new node(id); });
+//
+//    update_edge(from_node, to_node, new stmt_edge(&stmt));
+//
+//    from_node = to_node;
+//  }
+//  return to_node;
+//}
 
 void cfg::cfg::update_destroy_edge(size_t from, size_t to, const edge *edge) {
   //  cout << "New edge from " << from << " to " << to << endl;

@@ -683,7 +683,7 @@ api::num_vars *analysis::equality_state::vars() {
   return child_state->vars();
 }
 
-void analysis::equality_state::collect_ids(std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map) {
+void analysis::equality_state::collect_ids(std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map) {
   for(auto &elements_it : elements) {
     for(auto &eq_it : elements_it.second)
       id_map[eq_it.first.get()].insert((analysis::id_shared_t *)&eq_it);

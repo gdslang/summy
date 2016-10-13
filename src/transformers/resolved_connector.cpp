@@ -43,10 +43,9 @@ void resolved_connector::transform() {
         return new address_node(id, addr, DECODABLE);
       });
 
-      auto ip_assign = new assign(64, new variable(new arch_id("IP"), 0),
-          new expr_sexpr(new sexpr_lin(new lin_imm(addr))));
-      cfg->update_edge(eid.from, new_addr_node, new stmt_edge(ip_assign));
-      delete ip_assign;
+      auto ip_assign = make_assign(64, make_variable(make_id("IP"), 0),
+          make_expr(make_sexpr(make_linear(addr))));
+      cfg->update_edge(eid.from, new_addr_node, new stmt_edge(ip_assign.get()));
     }
   }
 }

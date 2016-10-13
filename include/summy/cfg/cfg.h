@@ -19,6 +19,9 @@
 #include <memory>
 
 #include <cppgdsl/rreil/statement/statement.h>
+#include <cppgdsl/iterator.h>
+#include <summy/cfg/node/address_node.h>
+#include <summy/cfg/edge/edge.h>
 
 namespace cfg {
 
@@ -77,7 +80,7 @@ public:
 
 typedef std::map<size_t, edge const*> edge_payloads_t;
 typedef std::set<size_t> in_edges_t;
-typedef std::vector<std::tuple<uint64_t, std::vector<gdsl::rreil::statement*>*>> translated_program_t;
+typedef std::vector<std::tuple<uint64_t, gdsl::iterable<gdsl::rreil::statement>>> translated_program_t;
 
 class cfg {
   friend class bfs_iterator;
@@ -96,9 +99,50 @@ public:
   cfg();
   ~cfg();
 
-  size_t add_program(translated_program_t &translated_binary);
-  size_t add_program(translated_program_t &translated_binary, std::experimental::optional<std::string> name);
-  size_t add_nodes(std::vector<gdsl::rreil::statement*> const *statements, size_t from_node);
+  template<typename T>
+  size_t add_program(std::vector<std::tuple<uint64_t, T>> const& translated_binary, std::experimental::optional<std::string> name) {
+    std::experimental::optional<size_t> head_node;
+    for(auto const& elem : translated_binary) {
+      size_t address = std::get<0>(elem);
+      T const& statements = std::get<1>(elem);
+      size_t from_node = create_node([&](size_t id) { return new address_node(id, address, DECODED, name); });
+      if(!head_node) head_node = from_node;
+      add_nodes(statements, from_node);
+    }
+    return head_node.value();
+  }
+
+  template<typename T>
+  size_t add_program(std::vector<std::tuple<uint64_t, T>> const& translated_binary) {
+    return add_program(translated_binary, std::experimental::nullopt);
+  }
+
+  template<typename T>
+  T const* foo(std::unique_ptr<T> const& x) {
+    return x.get();
+  }
+
+  template<typename T>
+  T const* foo(T const& x) {
+    return &x;
+  }
+
+  template<typename T>
+  size_t add_nodes(T const& statements, size_t from_node) {
+    size_t to_node = from_node;
+    for(auto const& stmt : statements) {
+      to_node = create_node([&](size_t id) { return new node(id); });
+      update_edge(from_node, to_node, new stmt_edge(foo(stmt)));
+      from_node = to_node;
+    }
+    return to_node;
+  }
+
+//  size_t add_program(translated_program_t &translated_binary);
+//  size_t add_program(translated_program_t &translated_binary, std::experimental::optional<std::string> name);
+//  size_t add_program(std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> &translated_binary);
+//  size_t add_program(std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> &, std::experimental::optional<std::string> name);
+//  size_t add_nodes(gdsl::iterable<gdsl::rreil::statement> statements, size_t from_node);
 
   size_t next_node_id();
   size_t node_count();

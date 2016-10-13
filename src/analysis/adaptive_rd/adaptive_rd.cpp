@@ -54,10 +54,10 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
 //    cout << "default handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
       return cleanup_live(state[from]);
     };
-  auto id_assigned = [&](int_t size, variable *v) {
+  auto id_assigned = [&](int_t size, variable const *v) {
     sr::copy_visitor cv;
-    v->get_id()->accept(cv);
-    shared_ptr<id> id_ptr(cv.get_id());
+    v->get_id().accept(cv);
+    shared_ptr<id> id_ptr(cv.retrieve_id());
     transfer_f = [=]() {
 //    cout << "assignment handler for edge " << node_id << "->" << dest_node << ", input state: " << *state[node_id] << endl;
       auto acc = state[from];
@@ -72,22 +72,22 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
     statement_visitor v;
-    v._([&](assign *a) {
-      id_assigned(a->get_size(), a->get_lhs());
+    v._([&](assign const *a) {
+      id_assigned(a->get_size(), &a->get_lhs());
     });
-    v._([&](load *l) {
-      id_assigned(l->get_size(), l->get_lhs());
+    v._([&](load const *l) {
+      id_assigned(l->get_size(), &l->get_lhs());
     });
-    v._([&](store *s) {
+    v._([&](store const *s) {
       transfer_f = [=]() {
         return shared_ptr<adaptive_rd_state>(state[from]->set_memory_rev(to));
       };
     });
     stmt->accept(v);
   });
-  ev._([&](const phi_edge *edge) {
+  ev._([&](phi_edge const *edge) {
     for(auto const &ass : edge->get_assignments()) {
-      id_assigned(ass.get_size(), ass.get_lhs());
+      id_assigned(ass.get_size(), &ass.get_lhs());
     }
   });
   e->accept(ev);

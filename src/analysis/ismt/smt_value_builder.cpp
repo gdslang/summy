@@ -21,7 +21,7 @@ using namespace analysis;
 using namespace gdsl::rreil;
 namespace sr = summy::rreil;
 
-CVC4::Expr analysis::smt_value_builder::get_id_old_exp(gdsl::rreil::id *id, size_t def_node) {
+CVC4::Expr analysis::smt_value_builder::get_id_old_exp(gdsl::rreil::id const *id, size_t def_node) {
   return context.var(id->to_string());
 }
 
@@ -33,16 +33,16 @@ CVC4::Expr analysis::smt_value_builder::enforce_aligned(size_t size, CVC4::Expr 
   return addr_constr;
 }
 
-void smt_value_builder::_default(gdsl::rreil::id *i) {
+void smt_value_builder::_default(gdsl::rreil::id const *i) {
   auto i_str = i->to_string();
   Expr i_exp = context.var(i_str);
   set_accumulator(i_exp);
 }
 
-void analysis::smt_value_builder::visit(gdsl::rreil::lin_binop *a) {
-  a->get_opnd1()->accept(*this);
+void analysis::smt_value_builder::visit(gdsl::rreil::lin_binop const *a) {
+  a->get_lhs().accept(*this);
   Expr opnd1 = pop_accumulator();
-  a->get_opnd2()->accept(*this);
+  a->get_rhs().accept(*this);
   Expr opnd2 = pop_accumulator();
   Expr r;
   switch(a->get_op()) {
@@ -58,23 +58,23 @@ void analysis::smt_value_builder::visit(gdsl::rreil::lin_binop *a) {
   set_accumulator(r);
 }
 
-void analysis::smt_value_builder::visit(gdsl::rreil::lin_imm *a) {
+void analysis::smt_value_builder::visit(gdsl::rreil::lin_imm const *a) {
   Expr imm = manager.mkConst(BitVector(current_size(), (unsigned long int)a->get_imm()));
   set_accumulator(imm);
 }
 
-void analysis::smt_value_builder::visit(gdsl::rreil::lin_scale *a) {
+void analysis::smt_value_builder::visit(gdsl::rreil::lin_scale const *a) {
   Expr factor_bv = manager.mkConst(BitVector(64, (unsigned long int)a->get_const()));
-  a->get_opnd()->accept(*this);
+  a->get_operand().accept(*this);
   Expr opnd = pop_accumulator();
   Expr r = manager.mkExpr(kind::BITVECTOR_MULT, factor_bv, opnd);
   set_accumulator(r);
 }
 
-void analysis::smt_value_builder::visit(gdsl::rreil::expr_cmp *ec) {
-  ec->get_opnd1()->accept(*this);
+void analysis::smt_value_builder::visit(gdsl::rreil::expr_cmp const *ec) {
+  ec->get_lhs().accept(*this);
   Expr opnd1 = pop_accumulator();
-  ec->get_opnd2()->accept(*this);
+  ec->get_rhs().accept(*this);
   Expr opnd2 = pop_accumulator();
 
   Expr result;
@@ -115,7 +115,7 @@ void analysis::smt_value_builder::visit(gdsl::rreil::expr_cmp *ec) {
   set_accumulator(result);
 }
 
-void analysis::smt_value_builder::visit(gdsl::rreil::arbitrary *ab) {
+void analysis::smt_value_builder::visit(gdsl::rreil::arbitrary const *ab) {
   /*
    * Todo: Arbitrary constructor?
    */
@@ -124,10 +124,10 @@ void analysis::smt_value_builder::visit(gdsl::rreil::arbitrary *ab) {
 }
 
 
-void analysis::smt_value_builder::visit(gdsl::rreil::expr_binop *eb) {
-  eb->get_opnd1()->accept(*this);
+void analysis::smt_value_builder::visit(gdsl::rreil::expr_binop const *eb) {
+  eb->get_lhs().accept(*this);
   Expr opnd1 = pop_accumulator();
-  eb->get_opnd2()->accept(*this);
+  eb->get_rhs().accept(*this);
   Expr opnd2 = pop_accumulator();
 
   ::CVC4::kind::Kind_t k;
@@ -184,13 +184,13 @@ void analysis::smt_value_builder::visit(gdsl::rreil::expr_binop *eb) {
   set_accumulator(result);
 }
 
-void analysis::smt_value_builder::visit(gdsl::rreil::expr_ext *ext) {
+void analysis::smt_value_builder::visit(gdsl::rreil::expr_ext const *ext) {
   size_t tosize = current_size();
   size_t fromsize = ext->get_fromsize();
   size_t op_size = fromsize < tosize ? fromsize : tosize;
 
   push_size(op_size);
-  ext->get_opnd()->accept(*this);
+  ext->get_operand().accept(*this);
   Expr opnd = pop_accumulator();
   pop_size();
 
@@ -217,29 +217,29 @@ void analysis::smt_value_builder::visit(gdsl::rreil::expr_ext *ext) {
   set_accumulator(r);
 }
 
-void analysis::smt_value_builder::visit(gdsl::rreil::load *l) {
+void analysis::smt_value_builder::visit(gdsl::rreil::load const *l) {
   push_size(l->get_size());
-  l->get_address()->accept(*this);
+  l->get_address().accept(*this);
   Expr address = pop_accumulator();
-  l->get_lhs()->get_id()->accept(*this);
+  l->get_lhs().get_id().accept(*this);
   Expr lhs = pop_accumulator();
   pop_size();
 
   Expr memory = context.memory(rd_result.result[from]->get_memory_rev());
   Expr drefed = load_memory(memory, l->get_size(), address);
 
-  Expr rhs_conc = concat_rhs(l->get_lhs()->get_id(), l->get_size(), l->get_lhs()->get_offset(), drefed);
+  Expr rhs_conc = concat_rhs(&l->get_lhs().get_id(), l->get_size(), l->get_lhs().get_offset(), drefed);
   Expr load = manager.mkExpr(kind::EQUAL, rhs_conc, lhs);
 
   Expr all = l->get_size() > 8 ? manager.mkExpr(kind::AND, enforce_aligned(l->get_size(), address), load) : load;
   set_accumulator(all);
 }
 
-void analysis::smt_value_builder::visit(gdsl::rreil::store *s) {
+void analysis::smt_value_builder::visit(gdsl::rreil::store const *s) {
   push_size(s->get_size());
-  s->get_address()->accept(*this);
+  s->get_address().accept(*this);
   Expr address = pop_accumulator();
-  s->get_rhs()->accept(*this);
+  s->get_rhs().accept(*this);
   Expr rhs = pop_accumulator();
   size_t size = pop_size();
 
@@ -294,7 +294,7 @@ CVC4::Expr analysis::smt_value_builder::store_memory(CVC4::Expr memory_before, s
   return  mem_stored;
 }
 
-CVC4::Expr analysis::smt_value_builder::build(gdsl::rreil::address *addr) {
+CVC4::Expr analysis::smt_value_builder::build(gdsl::rreil::address const *addr) {
   addr->accept(*this);
   return pop_accumulator();
 }

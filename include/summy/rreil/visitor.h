@@ -15,7 +15,7 @@ namespace rreil {
 
 class visitor : public gdsl::rreil::visitor, public id_visitor {
 protected:
-  virtual void visit(ssa_id *si) {
+  virtual void visit(ssa_id const *si) {
     summy::rreil::id_visitor::visit(si);
   }
 //  using gdsl::rreil::visitor::visit;

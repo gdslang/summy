@@ -11,6 +11,7 @@
 #include <cppgdsl/rreil/id/id_visitor.h>
 #include <summy/analysis/static_memory.h>
 #include <iostream>
+#include <assert.h>
 #include <memory>
 #include <string>
 
@@ -28,28 +29,31 @@ private:
   std::string symbol;
   void *address;
 
-  void put(std::ostream &out);
+  void put(std::ostream &out) const override;
 
   static size_t subclass_counter;
 public:
   sm_id(std::string symbol, void *address) : symbol(symbol), address(address) {}
   ~sm_id();
 
-  size_t get_subclass_counter() const {
+  size_t get_subclass_counter() const override {
     return subclass_counter;
   }
 
-  std::string get_symbol() {
+  std::string get_symbol() const {
     return symbol;
   }
 
-  void *get_address() {
+  void *get_address() const {
     return address;
   }
 
-  bool operator==(gdsl::rreil::id &other) const;
-  bool operator<(id const& other) const;
-  void accept(gdsl::rreil::id_visitor &v);
+  bool operator==(gdsl::rreil::id const &other) const override;
+  bool operator<(id const& other) const override;
+  std::unique_ptr<gdsl::rreil::id> copy() const override {
+    assert(false);
+  }
+  void accept(gdsl::rreil::id_visitor &v) const override;
 
   static std::shared_ptr<gdsl::rreil::id> from_symbol(analysis::symbol symb);
 };

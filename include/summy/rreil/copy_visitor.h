@@ -35,10 +35,10 @@ private:
   sm_id_ctor_t sm_id_ctor = NULL;
 
 public:
-  virtual void visit(ssa_id *a);
-  virtual void visit(numeric_id *a);
-  virtual void visit(ptr_memory_id *a);
-  virtual void visit(allocation_memory_id *a);
+  virtual void visit(ssa_id const *a);
+  virtual void visit(numeric_id const *a);
+  virtual void visit(ptr_memory_id const *a);
+  virtual void visit(allocation_memory_id const *a);
   virtual void visit(sm_id *a);
 
   using summy::rreil::id_visitor::_;

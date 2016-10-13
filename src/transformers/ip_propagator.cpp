@@ -39,8 +39,8 @@ using namespace std;
 using namespace cfg;
 using namespace gdsl::rreil;
 
-std::tuple<bool, int_t> ip_propagator::evaluate(int_t ip_value, gdsl::rreil::expr *e) {
-  rreil_evaluator re([&](variable *v) -> tuple<bool, int_t> {
+std::tuple<bool, int_t> ip_propagator::evaluate(int_t ip_value, gdsl::rreil::expr const *e) {
+  rreil_evaluator re([&](variable const *v) -> tuple<bool, int_t> {
     return make_tuple(rreil_prop::is_ip(v), ip_value);
   });
   return re.evaluate(e);
@@ -66,10 +66,10 @@ std::vector<int_t> *ip_propagator::analyze_ip() {
       ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
-        v._([&](assign *i) {
-          if(rreil_prop::is_ip(i->get_lhs())) {
+        v._([&](assign const *i) {
+          if(rreil_prop::is_ip(&i->get_lhs())) {
             bool evalable;
-            tie(evalable, ip_current) = evaluate(ip_current, i->get_rhs());
+            tie(evalable, ip_current) = evaluate(ip_current, &i->get_rhs());
             if(!evalable)
               throw string("Can't evaluate IP value :-(");
           }
@@ -105,7 +105,7 @@ void ip_propagator::transform() {
       edge_visitor ev;
       ev._([&](const stmt_edge *edge) {
         statement_visitor sv;
-        sv._([&](branch *b) {
+        sv._([&](branch const *b) {
           if(b->get_hint() == gdsl::rreil::BRANCH_HINT_CALL) {
             size_t an_id = cfg->create_node([&](size_t id) {
               return new address_node(id, (*ips)[edge_it->first], speculative_decoding ? DECODABLE : UNDEFINED);
@@ -116,17 +116,15 @@ void ip_propagator::transform() {
         edge->get_stmt()->accept(sv);
 
         copy_visitor cv;
-        cv._([&](variable *v) -> linear* {
-          if(rreil_prop::is_ip(v)) {
-            delete v;
-            return new lin_imm((*ips)[node->get_id()]);
+        cv._([&](std::unique_ptr<variable> v) {
+          if(rreil_prop::is_ip(v.get())) {
+            return make_linear((*ips)[node->get_id()]);
           } else
-            return new lin_var(v);
+            return make_linear(std::move(v));
         });
         edge->get_stmt()->accept(cv);
-        statement *stmt_mod = cv.get_statement();
-        cfg->update_destroy_edge(node->get_id(), edge_it->first, new stmt_edge(stmt_mod));
-        delete stmt_mod;
+        auto stmt_mod = cv.retrieve_statement();
+        cfg->update_destroy_edge(node->get_id(), edge_it->first, new stmt_edge(stmt_mod.get()));
       });
       ev._([&](const cond_edge *edge) {
         /*

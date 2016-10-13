@@ -50,7 +50,7 @@ public:
   virtual bool cleanup(api::num_var *var) = 0;
   virtual void project(api::num_vars *vars) = 0;
   virtual api::num_vars *vars() = 0;
-  virtual void collect_ids(std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map) = 0;
+  virtual void collect_ids(std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map) = 0;
 
   virtual numeric_state *join(domain_state *other, size_t current_node) = 0;
   virtual numeric_state *meet(domain_state *other, size_t current_node) = 0;

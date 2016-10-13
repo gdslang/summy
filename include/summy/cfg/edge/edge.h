@@ -46,8 +46,8 @@ class stmt_edge: public edge {
 private:
   gdsl::rreil::statement *stmt;
 public:
-  stmt_edge(gdsl::rreil::statement *stmt);
-  stmt_edge(jump_dir jd, gdsl::rreil::statement *stmt);
+  stmt_edge(gdsl::rreil::statement const *stmt);
+  stmt_edge(jump_dir jd, gdsl::rreil::statement const *stmt);
 
   ~stmt_edge() {
     delete stmt;
@@ -66,8 +66,8 @@ private:
   gdsl::rreil::sexpr *cond;
   bool positive;
 public:
-  cond_edge(gdsl::rreil::sexpr *cond, bool positive);
-  cond_edge(jump_dir jd, gdsl::rreil::sexpr *cond, bool positive);
+  cond_edge(gdsl::rreil::sexpr const *cond, bool positive);
+  cond_edge(jump_dir jd, gdsl::rreil::sexpr const *cond, bool positive);
   ~cond_edge() {
     delete cond;
   }

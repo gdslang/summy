@@ -144,7 +144,7 @@ static void query_val(
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  lin_var *lv = new lin_var(new variable(new arch_id(arch_id_name), offset));
+  lin_var *lv = new lin_var(make_variable(make_id(arch_id_name), offset));
   r = analy_r.result[ar.addr_node_map[e.address]]->queryVal(lv, size);
   delete lv;
 }
@@ -164,9 +164,9 @@ static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string 
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  lin_var *lv_first = new lin_var(new variable(new arch_id(arch_id_first), 0));
-  lin_var *lv_second = new lin_var(new variable(new arch_id(arch_id_second), 0));
-  expr *ec = new expr_sexpr(new sexpr_cmp(64, new expr_cmp(CMP_EQ, lv_first, lv_second)));
+  auto lv_first = make_linear(make_variable(make_id(arch_id_first), 0));
+  auto lv_second = make_linear(make_variable(make_id(arch_id_second), 0));
+  expr *ec = make_expr(make_sexpr(64, make_expr_cmp(CMP_EQ, std::move(lv_first), std::move(lv_second)))).release();
   r = analy_r.result[ar.addr_node_map[e.address]]->queryVal(ec, 64);
   delete ec;
 }
@@ -217,7 +217,7 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
+  address *a = new address(64, make_linear(make_variable(make_id(arch_id_name), 0)));
   aliases = analy_r.result[ar.addr_node_map[e.address]]->queryAls(a);
   delete a;
 }

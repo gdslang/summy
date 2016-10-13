@@ -28,16 +28,16 @@ void cfg::edge::accept(edge_visitor &v) const {
  * stmt_edge
  */
 
-cfg::stmt_edge::stmt_edge(gdsl::rreil::statement *stmt) {
+cfg::stmt_edge::stmt_edge(gdsl::rreil::statement const *stmt) {
   summy::rreil::copy_visitor cv;
   stmt->accept(cv);
-  this->stmt = cv.get_statement();
+  this->stmt = cv.retrieve_statement().release();
 }
 
-cfg::stmt_edge::stmt_edge(jump_dir jd, gdsl::rreil::statement *stmt) : edge(jd) {
+cfg::stmt_edge::stmt_edge(jump_dir jd, const gdsl::rreil::statement *stmt) : edge(jd) {
   summy::rreil::copy_visitor cv;
   stmt->accept(cv);
-  this->stmt = cv.get_statement();
+  this->stmt = cv.retrieve_statement().release();
 }
 
 void cfg::stmt_edge::dot(std::ostream &stream) const {
@@ -52,20 +52,20 @@ void cfg::stmt_edge::accept(edge_visitor &v) const {
  * cond_edge
  */
 
-cfg::cond_edge::cond_edge(gdsl::rreil::sexpr *cond, bool positive) {
+cfg::cond_edge::cond_edge(gdsl::rreil::sexpr const *cond, bool positive) {
   this->positive = positive;
 
   summy::rreil::copy_visitor cv;
   cond->accept(cv);
-  this->cond = cv.get_sexpr();
+  this->cond = cv.retrieve_sexpr().release();
 }
 
-cfg::cond_edge::cond_edge(jump_dir jd, gdsl::rreil::sexpr *cond, bool positive) : edge(jd) {
+cfg::cond_edge::cond_edge(jump_dir jd, gdsl::rreil::sexpr const *cond, bool positive) : edge(jd) {
   this->positive = positive;
 
   summy::rreil::copy_visitor cv;
   cond->accept(cv);
-  this->cond = cv.get_sexpr();
+  this->cond = cv.retrieve_sexpr().release();
 }
 
 void cfg::cond_edge::dot(std::ostream &stream) const {

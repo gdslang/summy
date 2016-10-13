@@ -67,7 +67,7 @@ std::set<size_t> trivial_connector::transform_ur() {
       ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
-        v._([&](branch *i) {
+        v._([&](branch const *i) {
           switch(i->get_hint()) {
             case gdsl::rreil::BRANCH_HINT_CALL: {
               return;
@@ -82,24 +82,24 @@ std::set<size_t> trivial_connector::transform_ur() {
           rreil_evaluator rev;
           bool evalable;
           int_t value;
-          tie(evalable, value) = rev.evaluate(i->get_target()->get_lin());
+          tie(evalable, value) = rev.evaluate(&i->get_target().get_lin());
           if(evalable) {
             replace = true;
             branches.push(make_tuple(edge_it->first, value));
           } else
             unresolved.insert(edge_it->first);
         });
-        v._([&](cbranch *i) {
+        v._([&](cbranch const *i) {
           replace = true;
-          auto branch = [&](bool then, address *branch) {
+          auto branch = [&](bool then, address const *branch) {
             copy_visitor cv;
-            i->get_cond()->accept(cv);
-            sexpr *cond = cv.get_sexpr();
+            i->get_cond().accept(cv);
+            sexpr *cond = cv.retrieve_sexpr().release();
             branch->accept(cv);
-            cond_branches.push(make_tuple(edge_it->first, cond, then, cv.get_address()));
+            cond_branches.push(make_tuple(edge_it->first, cond, then, cv.retrieve_address().release()));
           };
-          branch(true, i->get_target_true());
-          branch(false, i->get_target_false());
+          branch(true, &i->get_target_true());
+          branch(false, &i->get_target_false());
         });
         stmt->accept(v);
       });
@@ -110,8 +110,8 @@ std::set<size_t> trivial_connector::transform_ur() {
   }
 
   auto ip_assign = [&](int_t value) {
-    return new assign(64, new variable(new arch_id("IP"), 0),
-        new expr_sexpr(new sexpr_lin(new lin_imm(value))));
+    return make_assign(64, make_variable(make_id("IP"), 0),
+        make_expr(make_sexpr(make_linear(value)))).release();
   };
 
   auto dst_node = [&](int_t addr) {
@@ -156,7 +156,7 @@ std::set<size_t> trivial_connector::transform_ur() {
     rreil_evaluator rev;
     bool evalable;
     int_t addr_value;
-    tie(evalable, addr_value) = rev.evaluate(addr->get_lin());
+    tie(evalable, addr_value) = rev.evaluate(&addr->get_lin());
 
     auto preserve_branch = [&]() {
       size_t cond_end_node_id = cfg->create_node([&](size_t id) {
@@ -167,7 +167,7 @@ std::set<size_t> trivial_connector::transform_ur() {
 
       copy_visitor cv;
       addr->accept(cv);
-      statement *branch = new class branch(cv.get_address(), gdsl::rreil::BRANCH_HINT_JUMP);
+      statement *branch = new class branch(cv.retrieve_address(), gdsl::rreil::BRANCH_HINT_JUMP);
 
       size_t dest_node_id = cfg->create_node([&](size_t id) {
         return new (class node)(id);

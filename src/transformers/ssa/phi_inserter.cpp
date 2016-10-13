@@ -48,7 +48,7 @@ void phi_inserter::task_from_edge(vector<phi_task> &tasks, size_t from, size_t t
     auto add_phi = [&]() {
       sr::copy_visitor cv;
       mapping.first->accept(cv);
-      variable v(cv.get_id(), 0);
+      variable v(cv.retrieve_id(), 0);
       phi_assignments.push_back(phi_assign(&v, &v, 64));
     };
     if(mapping_inc == dst_incoming_elements.end()) {

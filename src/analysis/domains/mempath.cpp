@@ -127,9 +127,9 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
           step(wi.index, from_io, offset.value());
         }
       };
-      idv._([&](ptr_memory_id *mid) { valid_ptr(); });
-      idv._([&](allocation_memory_id *mid) { valid_ptr(); });
-      idv._default([&](id *_id) {
+      idv._([&](ptr_memory_id const *mid) { valid_ptr(); });
+      idv._([&](allocation_memory_id const *mid) { valid_ptr(); });
+      idv._default([&](id const *_id) {
         /*
          * Warning?
          */
@@ -146,8 +146,8 @@ std::tuple<ptr_set_t, ptr_set_t> analysis::mempath::split(ptr_set_t aliases) {
   ptr_set_t aliases_symbolic;
   for(auto &alias : aliases) {
     summy::rreil::id_visitor idv;
-    idv._([&](sm_id *sid) { aliases_immediate.insert(alias); });
-    idv._default([&](id *_id) { aliases_symbolic.insert(alias); });
+    idv._([&](sm_id const *sid) { aliases_immediate.insert(alias); });
+    idv._default([&](id const *_id) { aliases_symbolic.insert(alias); });
     alias.id->accept(idv);
     // Take over aliases we can propagate
   }

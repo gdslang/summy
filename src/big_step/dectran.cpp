@@ -5,6 +5,7 @@
  *      Author: Julian Kranz
  */
 
+#include <summy/cfg/cfg.h>
 #include <cppgdsl/gdsl_exception.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <summy/cfg/node/address_node.h>
@@ -39,12 +40,12 @@ bool dec_interval::operator<(const dec_interval &other) const {
   return from < other.from;
 }
 
-// bool dec_interval::operator <(const int_t &v) const {
+//bool dec_interval::operator <(const int_t &v) const {
 //  return from < v;
 //}
 
-cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
-  cfg::translated_program_t prog;
+std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_translate(bool decode_multiple) {
+  std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> prog;
   if(gdsl.bytes_left() <= 0) throw string("Unable to decode");
 
   int_t ip_before = gdsl.get_ip();
@@ -54,7 +55,7 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
 
     //    cout << "Dec/Tran @0x" << hex << gdsl.get_ip() << dec << endl;
 
-    statements_t *rreil = nullptr;
+    gdsl::rreil::statements_t rreil;
     if(blockwise_optimized) {
       optional<gdsl::block> b = [&]() -> optional<gdsl::block> {
         try {
@@ -70,7 +71,7 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
         }
       }();
       if(!b) continue;
-      rreil = b->get_statements();
+      rreil = b->retrieve_statements();
     } else {
       optional<gdsl::instruction> insn = [&]() -> optional<gdsl::instruction> {
         try {
@@ -94,8 +95,8 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
     //    printf("RReil (no transformations):\n");
     //    for(statement *s : *rreil)
     //      printf("%s\n", s->to_string().c_str());
-
-    prog.push_back(make_tuple(ip, rreil));
+//
+    prog.push_back(make_tuple(ip, std::move(rreil)));
   } while(decode_multiple && gdsl.bytes_left() > 0);
 
   int_t ip_after = gdsl.get_ip();
@@ -112,7 +113,7 @@ cfg::translated_program_t dectran::decode_translate(bool decode_multiple) {
   }
 
   if(prog.size() == 0) {
-    prog.push_back(make_tuple(ip_before, new vector<gdsl::rreil::statement *>()));
+    prog.push_back(make_tuple(ip_before, gdsl::rreil::statements_t()));
   }
 
   return prog;
@@ -124,15 +125,22 @@ size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experiment
   if(!name && fmap_it != fmap.end()) name = fmap_it->second;
 
   auto prog = decode_translate(decode_multiple);
+//  cfg::translated_program_t prog_unowned;
+//  for(auto &elem : prog) {
+//    vector<gdsl::rreil::statement*> stmts_unowned;
+//    for(auto& stmt : get<1>(elem))
+//      stmts_unowned.push_back(stmt.get());
+//    prog_unowned.push_back(make_tuple(get<0>(elem), gdsl::iterable<gdsl::rreil::statement>(stmts_unowned)));
+//  }
   size_t head_node = cfg.add_program(prog, name);
 
-  for(auto t : prog) {
-    vector<gdsl::rreil::statement *> *rreil;
-    tie(ignore, rreil) = t;
-    for(auto stmt : *rreil)
-      delete stmt;
-    delete rreil;
-  }
+//  for(auto t : prog) {
+//    vector<gdsl::rreil::statement *> *rreil;
+//    tie(ignore, rreil) = t;
+//    for(auto stmt : *rreil)
+//      delete stmt;
+//    delete rreil;
+//  }
 
   //  vector<transformer *> transformers;
   //  transformers.push_back(new decomposer(&cfg, head_node));

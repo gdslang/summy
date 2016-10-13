@@ -188,10 +188,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     statement *stmt = edge->get_stmt();
     //    _stmt = stmt;
     statement_visitor v;
-    v._([&](assign *a) { for_update(a); });
-    v._([&](load *l) { for_update(l); });
-    v._([&](store *s) { for_update(s); });
-    v._([&](branch *b) {
+    v._([&](assign const *a) { for_update(a); });
+    v._([&](load const *l) { for_update(l); });
+    v._([&](store const *s) { for_update(s); });
+    v._([&](branch const *b) {
       if(node_targets.find(from) == node_targets.end())
         node_targets[from] = set<size_t>();
 
@@ -243,7 +243,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               callers_rest.insert(callers_rest.begin(), caller_caller_callers.begin(), caller_caller_callers.end());
             }
 
-            ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
+            ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
             id_set_t field_req_ids_new;
             //                        cout << *b->get_target() << endl;
             //                        cout << callee_aliases << endl;
@@ -251,13 +251,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               summy::rreil::id_visitor idv;
               bool is_valid_code_address = false;
               void *text_address;
-              idv._([&](sm_id *sid) {
+              idv._([&](sm_id const *sid) {
                 if(sid->get_symbol() == ".text" || sid->get_symbol() == ".plt") {
                   is_valid_code_address = true;
                   text_address = sid->get_address();
                 }
               });
-              idv._([&](ptr_memory_id *mid) {
+              idv._([&](ptr_memory_id const *mid) {
                 //                cout << "There seems to be an unkown function pointer :/" << endl;
                 field_req_ids_new.insert(ptr.id);
               });
@@ -396,7 +396,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           transfer_f = [=]() {
             shared_ptr<global_state> state_c = get_sub(from);
             summary_memory_state *mstate = state_c->get_mstate();
-            ptr_set_t callee_aliases = mstate->queryAls(b->get_target());
+            ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
 
             //                        cout << *b->get_target() << endl;
             //                        cout << callee_aliases << endl;
@@ -405,7 +405,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               summy::rreil::id_visitor idv;
               bool is_valid_code_address = false;
               void *text_address;
-              idv._([&](sm_id *sid) {
+              idv._([&](sm_id const *sid) {
                 if(sid->get_symbol() == ".text" || sid->get_symbol() == ".plt") {
                   is_valid_code_address = true;
                   text_address = sid->get_address();

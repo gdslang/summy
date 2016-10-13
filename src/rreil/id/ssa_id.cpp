@@ -12,7 +12,7 @@
 using namespace std;
 using namespace summy::rreil;
 
-void ssa_id::put(std::ostream &out) {
+void ssa_id::put(std::ostream &out) const {
   out << *id << "_" << version;
 }
 
@@ -22,15 +22,19 @@ ssa_id::~ssa_id() {
   delete id;
 }
 
-void ssa_id::accept(gdsl::rreil::id_visitor &v) {
+std::unique_ptr<gdsl::rreil::id> ssa_id::copy() const {
+  return std::unique_ptr<gdsl::rreil::id>(new ssa_id(*this));
+}
+
+void ssa_id::accept(gdsl::rreil::id_visitor &v) const {
   auto &summy_v = dynamic_cast<summy::rreil::id_visitor&>(v);
   summy_v.visit(this);
 }
 
-bool summy::rreil::ssa_id::operator ==(gdsl::rreil::id &other) const {
+bool summy::rreil::ssa_id::operator ==(gdsl::rreil::id const &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
-  iv._([&](ssa_id *aid) {
+  iv._([&](ssa_id const *aid) {
     equals = this->version == aid->version && *this->id == *aid->id;
   });
   other.accept(iv);
@@ -51,3 +55,4 @@ bool summy::rreil::ssa_id::operator<(const class id &other) const {
   } else
     return scc_me < scc_other;
 }
+

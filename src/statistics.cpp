@@ -69,11 +69,11 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
     edge_visitor ev;
     ev._([&](stmt_edge const *se) {
       statement_visitor v;
-      v._([&](branch *i) {
+      v._([&](branch const *i) {
         is_branch = true;
         hint = i->get_hint();
         rreil_evaluator rev;
-        tie(is_direct, ignore) = rev.evaluate(i->get_target()->get_lin());
+        tie(is_direct, ignore) = rev.evaluate(&i->get_target().get_lin());
       });
       se->get_stmt()->accept(v);
     });
@@ -142,11 +142,11 @@ condition_statistics_data_t condition_statistics::get_stats() {
       edge_visitor ev;
       ev._([&](stmt_edge const *se) {
         statement_visitor sv;
-        sv._([&](cbranch *cb) {
-          sexpr *sex = cb->get_cond();
+        sv._([&](cbranch const *cb) {
+          sexpr const &sex = cb->get_cond();
           ::summy::rreil::sexpr_visitor sv;
-          sv._([&](sexpr_cmp *cmp) { is_cmp = true; });
-          sex->accept(sv);
+          sv._([&](sexpr_cmp const *cmp) { is_cmp = true; });
+          sex.accept(sv);
           total_conditions++;
         });
         se->get_stmt()->accept(sv);

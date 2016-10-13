@@ -35,19 +35,19 @@ private:
   size_t size;
   transLE_t transLE;
 
-  num_var *conv_id(gdsl::rreil::id *id);
+  num_var *conv_id(gdsl::rreil::id const *id);
 
-  num_linear *conv_linear(gdsl::rreil::linear *lin, int64_t scale);
-  expr_cmp_result_t conv_expr_cmp(gdsl::rreil::sexpr_cmp *se);
+  num_linear *conv_linear(gdsl::rreil::linear const *lin, int64_t scale);
+  expr_cmp_result_t conv_expr_cmp(gdsl::rreil::sexpr_cmp const *se);
 public:
   converter(size_t size, transLE_t transLE) : size(size), transLE(transLE) {
   }
 
-  expr_cmp_result_t conv_expr_cmp(gdsl::rreil::sexpr *se);
-  analysis::api::num_expr *conv_expr(gdsl::rreil::sexpr *se);
-  analysis::api::num_expr *conv_expr(gdsl::rreil::expr *expr);
-  analysis::api::num_expr *conv_expr(gdsl::rreil::linear *lin);
-  num_linear *conv_linear(gdsl::rreil::linear *lin);
+  expr_cmp_result_t conv_expr_cmp(gdsl::rreil::sexpr const *se);
+  analysis::api::num_expr *conv_expr(gdsl::rreil::sexpr const *se);
+  analysis::api::num_expr *conv_expr(gdsl::rreil::expr const *expr);
+  analysis::api::num_expr *conv_expr(gdsl::rreil::linear const *lin);
+  num_linear *conv_linear(gdsl::rreil::linear const *lin);
 
   static num_linear *mul(int64_t scale, num_linear *a);
   static num_linear *add(num_linear *a, summy::vs_shared_t vs);

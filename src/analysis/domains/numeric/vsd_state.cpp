@@ -362,7 +362,7 @@ api::num_vars *analysis::value_sets::vsd_state::vars() {
 }
 
 void analysis::value_sets::vsd_state::collect_ids(
-  std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map) {
+  std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map) {
   for(auto &element : elements)
     id_map[element.first.get()].insert((analysis::id_shared_t *)&element.first);
 }

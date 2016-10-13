@@ -13,7 +13,7 @@
 using namespace summy::rreil;
 using namespace std;
 
-void summy::rreil::numeric_id::put(std::ostream &out) {
+void summy::rreil::numeric_id::put(std::ostream &out) const {
   out << '#';
   if(false && name)
     out << name.value() << (input.value() ? "i" : "");
@@ -25,10 +25,10 @@ size_t summy::rreil::numeric_id::subclass_counter = gdsl::rreil::id::subclass_co
 
 summy::rreil::numeric_id::~numeric_id() {}
 
-bool summy::rreil::numeric_id::operator==(gdsl::rreil::id &other) const {
+bool summy::rreil::numeric_id::operator==(gdsl::rreil::id const &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
-  iv._([&](numeric_id *aid) { equals = this->counter == aid->counter; });
+  iv._([&](numeric_id const *aid) { equals = this->counter == aid->counter; });
   other.accept(iv);
   return equals;
 }
@@ -43,7 +43,7 @@ bool summy::rreil::numeric_id::operator<(const id &other) const {
     return scc_me < scc_other;
 }
 
-void summy::rreil::numeric_id::accept(gdsl::rreil::id_visitor &v) {
+void summy::rreil::numeric_id::accept(gdsl::rreil::id_visitor &v) const {
   auto &summy_v = dynamic_cast<summy::rreil::id_visitor &>(v);
   summy_v.visit(this);
 }

@@ -24,7 +24,7 @@ void analysis::api::expr_cmp_result_t::free() {
     delete add;
 }
 
-num_var *converter::conv_id(id *id) {
+num_var *converter::conv_id(id const *id) {
   return new num_var(shared_copy(id));
 }
 
@@ -32,32 +32,32 @@ num_var *converter::conv_id(id *id) {
 //  return new num_linear_term(conv_id(id));
 //}
 
-num_linear *converter::conv_linear(linear *lin, int64_t scale) {
+num_linear *converter::conv_linear(linear const *lin, int64_t scale) {
 //  cout << "lin: " << *lin << ", scale: " << scale << endl;
   num_linear *result;
   linear_visitor lv;
-  lv._([&](lin_binop *l) {
-    num_linear *opnd1 = conv_linear(l->get_opnd1(), scale);
+  lv._([&](lin_binop const *l) {
+    num_linear *opnd1 = conv_linear(&l->get_lhs(), scale);
     int64_t scale_opnd2;
     if(l->get_op() == BIN_LIN_ADD)
       scale_opnd2 = scale;
     else
       scale_opnd2 = -scale;
-    num_linear *opnd2 = conv_linear(l->get_opnd2(), scale_opnd2);
+    num_linear *opnd2 = conv_linear(&l->get_rhs(), scale_opnd2);
     result = add(opnd1, opnd2);
     delete opnd1;
     delete opnd2;
   });
-  lv._([&](lin_imm *l) {
+  lv._([&](lin_imm const *l) {
 //    auto imm_vs = vs_finite::single(l->get_imm());
     auto imm_vs = vs_finite::single(scale*l->get_imm());
     result = new num_linear_vs(imm_vs);
   });
-  lv._([&](lin_scale *l) {
-    result = conv_linear(l->get_opnd(), scale*l->get_const());
+  lv._([&](lin_scale const *l) {
+    result = conv_linear(&l->get_operand(), scale*l->get_const());
   });
-  lv._([&](lin_var *l) {
-    num_linear *transLE_lin = transLE(shared_copy(l->get_var()->get_id()), l->get_var()->get_offset(), size);
+  lv._([&](lin_var const *l) {
+    num_linear *transLE_lin = transLE(shared_copy(&l->get_var().get_id()), l->get_var().get_offset(), size);
     result = mul(scale, transLE_lin);
     delete transLE_lin;
   });
@@ -66,14 +66,14 @@ num_linear *converter::conv_linear(linear *lin, int64_t scale) {
 }
 
 
-expr_cmp_result_t analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr_cmp *se) {
+expr_cmp_result_t analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr_cmp const *se) {
   expr_cmp_result_t result;
   size_t sz_back = this->size;
   this->size = se->get_size();
-  num_linear *opnd1 = conv_linear(se->get_inner()->get_opnd1());
-  num_linear *opnd2 = conv_linear(se->get_inner()->get_opnd2());
+  num_linear *opnd1 = conv_linear(&se->get_inner().get_lhs());
+  num_linear *opnd2 = conv_linear(&se->get_inner().get_rhs());
   num_linear *opnd2_neg = opnd2->negate();
-  switch(se->get_inner()->get_op()) {
+  switch(se->get_inner().get_op()) {
     case CMP_EQ: {
       result.primary = new num_expr_cmp(add(opnd1, opnd2_neg), EQ);
       break;
@@ -106,20 +106,20 @@ expr_cmp_result_t analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr_cmp
   return result;
 }
 
-expr_cmp_result_t analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr *se) {
+expr_cmp_result_t analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr const *se) {
   expr_cmp_result_t result;
   sexpr_visitor sv;
-  sv._([&](arbitrary *x) {
+  sv._([&](arbitrary const *x) {
     result.primary = new num_expr_cmp(new num_linear_vs(value_set::top), EQ);
   });
-  sv._([&](sexpr_cmp *x) {
+  sv._([&](sexpr_cmp const *x) {
     result = conv_expr_cmp(x);
   });
-  sv._([&](sexpr_lin *x) {
+  sv._([&](sexpr_lin const *x) {
     size_t sz_back = this->size;
     this->size = 1;
 
-    num_linear *x_lin = conv_linear(x->get_lin());
+    num_linear *x_lin = conv_linear(&x->get_lin());
     num_linear *minus_one = new num_linear_vs(vs_finite::single(-1));
     result.primary = new num_expr_cmp(add(x_lin, minus_one), EQ);
     delete x_lin;
@@ -131,30 +131,30 @@ expr_cmp_result_t analysis::api::converter::conv_expr_cmp(gdsl::rreil::sexpr *se
   return result;
 }
 
-analysis::api::num_expr *converter::conv_expr(sexpr *se) {
+analysis::api::num_expr *converter::conv_expr(sexpr const *se) {
   num_expr *result = NULL;
   sexpr_visitor sv;
-  sv._([&](arbitrary *x) {
+  sv._([&](arbitrary const *x) {
     result = new num_expr_lin(new num_linear_vs(value_set::top));
   });
-  sv._([&](sexpr_cmp *x) {
+  sv._([&](sexpr_cmp const *x) {
     expr_cmp_result_t r_x = conv_expr_cmp(x);
     result = r_x.primary->copy();
     r_x.free();
   });
-  sv._([&](sexpr_lin *x) {
-    result = new num_expr_lin(conv_linear(x->get_lin()));
+  sv._([&](sexpr_lin const *x) {
+    result = new num_expr_lin(conv_linear(&x->get_lin()));
   });
   se->accept(sv);
   return result;
 }
 
-analysis::api::num_expr *converter::conv_expr(gdsl::rreil::expr *expr) {
+analysis::api::num_expr *converter::conv_expr(gdsl::rreil::expr const *expr) {
   num_expr *result = NULL;
   expr_visitor ev;
-  ev._([&](expr_binop *e) {
-    num_linear *nl_opnd1 = conv_linear(e->get_opnd1());
-    num_linear *nl_opnd2 = conv_linear(e->get_opnd2());
+  ev._([&](expr_binop const *e) {
+    num_linear *nl_opnd1 = conv_linear(&e->get_lhs());
+    num_linear *nl_opnd2 = conv_linear(&e->get_rhs());
     auto rfo = [&](auto o) {
         result = new num_expr_bin(nl_opnd1, o, nl_opnd2);
     };
@@ -199,33 +199,33 @@ analysis::api::num_expr *converter::conv_expr(gdsl::rreil::expr *expr) {
       }
     }
   });
-  ev._([&](expr_ext *e) {
+  ev._([&](expr_ext const *e) {
     size = e->get_fromsize();
     switch(e->get_op()) {
       case EXT_ZX: {
-        num_linear *nl_opnd = conv_linear(e->get_opnd());
+        num_linear *nl_opnd = conv_linear(&e->get_operand());
         result = new num_expr_lin(nl_opnd, sign_interp_t(UNSIGNED, e->get_fromsize()));
         break;
       }
       case EXT_SX: {
-        num_linear *nl_opnd = conv_linear(e->get_opnd());
+        num_linear *nl_opnd = conv_linear(&e->get_operand());
         result = new num_expr_lin(nl_opnd, sign_interp_t(SIGNED, e->get_fromsize()));
         break;
       }
     }
   });
-  ev._([&](expr_sexpr *e) {
-    result = conv_expr(e->get_inner());
+  ev._([&](expr_sexpr const *e) {
+    result = conv_expr(&e->get_inner());
   });
   expr->accept(ev);
   return result;
 }
 
-analysis::api::num_expr *analysis::api::converter::conv_expr(gdsl::rreil::linear *lin) {
+analysis::api::num_expr *analysis::api::converter::conv_expr(gdsl::rreil::linear const *lin) {
   return new num_expr_lin(conv_linear(lin));
 }
 
-num_linear *converter::conv_linear(linear *lin) {
+num_linear *converter::conv_linear(linear const *lin) {
   return conv_linear(lin, 1);
 }
 

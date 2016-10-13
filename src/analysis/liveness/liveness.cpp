@@ -61,18 +61,18 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
     sr::copy_visitor cv;
     vector<singleton_t> newly_live;
     sr::visitor id_acc;
-    id_acc._((function<void(variable*)>)([&](variable *var) {
-      var->get_id()->accept(cv);
-      newly_live.push_back(singleton_t(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(var->get_offset(), size)));
+    id_acc._((function<void(variable const*)>)([&](variable const *var) {
+      var->get_id().accept(cv);
+      newly_live.push_back(singleton_t(shared_ptr<gdsl::rreil::id>(cv.retrieve_id().release()), range(var->get_offset(), size)));
     }));
     accept_live(id_acc);
     pn_newly_live[from].insert(pn_newly_live[from].end(), newly_live.begin(), newly_live.end());
     return newly_live;
   };
-  auto assignment = [&](int_t size, variable *assignee, vector<singleton_t> newly_live) {
+  auto assignment = [&](int_t size, variable const *assignee, vector<singleton_t> newly_live) {
     sr::copy_visitor cv;
-    assignee->get_id()->accept(cv);
-    singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.get_id()), range(assignee->get_offset(), size));
+    assignee->get_id().accept(cv);
+    singleton_t lhs(shared_ptr<gdsl::rreil::id>(cv.retrieve_id().release()), range(assignee->get_offset(), size));
 
     transfer_f = [=]() {
       auto current_state = transfer_f();
@@ -103,62 +103,62 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
     statement_visitor v;
-    v._([&](assign *i) {
+    v._([&](assign const *i) {
       auto accept_live = [&](visitor &v) {
-        i->get_rhs()->accept(v);
+        i->get_rhs().accept(v);
       };
       auto newly_live = acc_newly_live(rreil_prop::size_of_rhs(i), accept_live);
-      assignment(i->get_size(), i->get_lhs(), newly_live);
+      assignment(i->get_size(), &i->get_lhs(), newly_live);
     });
-    v._([&](load *l) {
+    v._([&](load const *l) {
       auto accept_live = [&](visitor &v) {
-        l->get_address()->get_lin()->accept(v);
+        l->get_address().get_lin().accept(v);
       };
-      auto newly_live = acc_newly_live(l->get_address()->get_size(), accept_live);
-      assignment(l->get_size(), l->get_lhs(), newly_live);
+      auto newly_live = acc_newly_live(l->get_address().get_size(), accept_live);
+      assignment(l->get_size(), &l->get_lhs(), newly_live);
     });
-    v._([&](store *s) {
+    v._([&](store const *s) {
       function<void(visitor&)> accept_live = [&](visitor &v) {
-        s->get_address()->get_lin()->accept(v);
+        s->get_address().get_lin().accept(v);
       };
-      auto newly_live = acc_newly_live(s->get_address()->get_size(), accept_live);
+      auto newly_live = acc_newly_live(s->get_address().get_size(), accept_live);
       access(newly_live);
       accept_live = [&](visitor &v) {
-        s->get_rhs()->accept(v);
+        s->get_rhs().accept(v);
       };
       newly_live = acc_newly_live(s->get_size(), accept_live);
       access(newly_live);
     });
-    v._([&](cbranch *c) {
+    v._([&](cbranch const *c) {
       auto newly_live = acc_newly_live(1, [&](visitor &v) {
-        c->get_cond()->accept(v);
+        c->get_cond().accept(v);
       });
       access(newly_live);
-      newly_live = acc_newly_live(c->get_target_true()->get_size(), [&](visitor &v) {
-        c->get_target_true()->accept(v);
+      newly_live = acc_newly_live(c->get_target_true().get_size(), [&](visitor &v) {
+        c->get_target_true().accept(v);
       });
       access(newly_live);
-      newly_live = acc_newly_live(c->get_target_false()->get_size(), [&](visitor &v) {
-        c->get_target_false()->accept(v);
-      });
-      access(newly_live);
-    });
-    v._([&](branch *b) {
-      auto newly_live = acc_newly_live(b->get_target()->get_size(), [&](visitor &v) {
-        b->get_target()->accept(v);
+      newly_live = acc_newly_live(c->get_target_false().get_size(), [&](visitor &v) {
+        c->get_target_false().accept(v);
       });
       access(newly_live);
     });
-    v._([&](floating *_) {
+    v._([&](branch const *b) {
+      auto newly_live = acc_newly_live(b->get_target().get_size(), [&](visitor &v) {
+        b->get_target().accept(v);
+      });
+      access(newly_live);
+    });
+    v._([&](floating const *_) {
       throw string("Not implemented");
     });
-    v._([&](prim *_) {
+    v._([&](prim const *_) {
 //      throw string("Not implemented");
     });
-    v._([&](_throw *_) {
+    v._([&](_throw const *_) {
 //      throw string("Not implemented");
     });
-    v._default([&](statement *_) {
+    v._default([&](statement const *_) {
       throw string("Should not happen :/");
     });
     stmt->accept(v);
@@ -173,10 +173,10 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
   ev._([&](const phi_edge *edge) {
     for(auto const &ass : edge->get_assignments()) {
       auto accept_live = [&](visitor &v) {
-        ass.get_rhs()->accept(v);
+        ass.get_rhs().accept(v);
       };
       auto newly_live = acc_newly_live(ass.get_size(), accept_live);
-      assignment(ass.get_size(), ass.get_lhs(), newly_live);
+      assignment(ass.get_size(), &ass.get_lhs(), newly_live);
     }
     memory_phi_ass(edge->get_memory());
   });

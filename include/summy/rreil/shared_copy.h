@@ -10,4 +10,4 @@
 #include <memory>
 #include <cppgdsl/rreil/id/id.h>
 
-std::shared_ptr<gdsl::rreil::id> shared_copy(gdsl::rreil::id *id);
+std::shared_ptr<gdsl::rreil::id> shared_copy(gdsl::rreil::id const *id);

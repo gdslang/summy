@@ -15,9 +15,9 @@ using namespace std;
 cfg::phi_assign::phi_assign(gdsl::rreil::variable *lhs, gdsl::rreil::variable *rhs, int_t size) : size(size) {
   summy::rreil::copy_visitor cv;
   lhs->accept(cv);
-  this->lhs = cv.get_variable();
+  this->lhs = cv.retrieve_variable().release();
   rhs->accept(cv);
-  this->rhs = cv.get_variable();
+  this->rhs = cv.retrieve_variable().release();
 }
 
 cfg::phi_assign::phi_assign(const phi_assign &a) : phi_assign(a.lhs, a.rhs, a.size) {}
@@ -37,7 +37,7 @@ cfg::phi_edge::~phi_edge() {}
 void cfg::phi_edge::dot(std::ostream &stream) const {
   stream << "\"";
   for(auto ass : assignments)
-    stream << *ass.get_lhs() << " =:" << ass.get_size() << " " << *ass.get_rhs() << endl;
+    stream << ass.get_lhs() << " =:" << ass.get_size() << " " << ass.get_rhs() << endl;
   stream << "memory_" << memory.to << " =: memory_" << memory.from << endl;
   stream << "\"";
   stream << ", style=bold, color=green";

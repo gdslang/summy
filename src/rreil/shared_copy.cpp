@@ -10,8 +10,8 @@
 using summy::rreil::copy_visitor;
 using namespace std;
 
-std::shared_ptr<gdsl::rreil::id> shared_copy(gdsl::rreil::id *id) {
+std::shared_ptr<gdsl::rreil::id> shared_copy(gdsl::rreil::id const *id) {
   copy_visitor cv;
   id->accept(cv);
-  return shared_ptr<gdsl::rreil::id>(cv.get_id());
+  return shared_ptr<gdsl::rreil::id>(cv.retrieve_id());
 }

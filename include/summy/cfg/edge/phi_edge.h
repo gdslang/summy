@@ -24,11 +24,11 @@ private:
   int_t size;
 
 public:
-  gdsl::rreil::variable *get_lhs() const {
-    return lhs;
+  gdsl::rreil::variable const& get_lhs() const {
+    return *lhs;
   }
-  gdsl::rreil::variable *get_rhs() const {
-    return rhs;
+  gdsl::rreil::variable const& get_rhs() const {
+    return *rhs;
   }
   int_t get_size() const {
     return size;

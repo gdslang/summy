@@ -66,8 +66,8 @@ ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers) {
         result = ptr(special_ptr::badptr, vs_finite::single(0));
     };
     summy::rreil::id_visitor idv;
-    idv._([&](sm_id *sid) { set_ptr(); });
-    idv._([&](special_ptr *sptr) {
+    idv._([&](sm_id const *sid) { set_ptr(); });
+    idv._([&](special_ptr const *sptr) {
       switch(sptr->get_kind()) {
         case NULL_PTR: {
           break;
@@ -78,7 +78,7 @@ ptr analysis::als_state::simplify_ptr_sum(vector<id_shared_t> const &pointers) {
         }
       }
     });
-    idv._default([&](id *__) { set_ptr(); });
+    idv._default([&](id const *__) { set_ptr(); });
     _ptr->accept(idv);
   }
   if(!result)
@@ -689,7 +689,7 @@ api::num_vars *analysis::als_state::vars() {
   return child_vars;
 }
 
-void analysis::als_state::collect_ids(std::map<gdsl::rreil::id *, std::set<analysis::id_shared_t *>> &id_map) {
+void analysis::als_state::collect_ids(std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map) {
   auto for_elements = [&](auto const &elements) {
     for(auto const &elements_it : elements) {
       for(auto const &alias_it : elements_it.second)
@@ -711,10 +711,10 @@ ptr_set_t analysis::als_state::normalise(ptr_set_t aliases) {
   ptr_set_t result;
   for(auto &alias : aliases) {
     summy::rreil::id_visitor idv;
-    idv._([&](sm_id *sid) {
+    idv._([&](sm_id const *sid) {
       result.insert(ptr(special_ptr::_nullptr, *vs_finite::single((int64_t)sid->get_address()) + alias.offset));
     });
-    idv._default([&](id *_id) { result.insert(alias); });
+    idv._default([&](id const *_id) { result.insert(alias); });
     alias.id->accept(idv);
   }
   return result;

@@ -62,12 +62,12 @@ void analysis::smt_builder::set_accumulator(CVC4::Expr accumulator) {
 
 
 
-CVC4::Expr analysis::smt_builder::concat_rhs(id *lhs_id, size_t size, size_t offset, Expr rhs) {
+CVC4::Expr analysis::smt_builder::concat_rhs(id const *lhs_id, size_t size, size_t offset, Expr rhs) {
   auto &man = context.get_manager();
   Expr rhs_conc;
   if(size == 0 || size == 64) rhs_conc = rhs;
   else {
-    shared_ptr<id> lhs_id_wrapped(lhs_id, [&](void *x) {});
+    shared_ptr<id> lhs_id_wrapped(lhs_id->copy());
 
     auto def_it = rd_result.result[from]->get_elements().find(lhs_id_wrapped);
     size_t def_node = 0;
@@ -77,7 +77,7 @@ CVC4::Expr analysis::smt_builder::concat_rhs(id *lhs_id, size_t size, size_t off
       return inner;
     });
     lhs_id_wrapped->accept(civ);
-    id *id_old = def_node > 0 ? new sr::ssa_id(civ.get_id(), def_node) : civ.get_id();
+    id *id_old = def_node > 0 ? new sr::ssa_id(civ.retrieve_id().release(), def_node) : civ.retrieve_id().release();
     Expr id_old_exp = get_id_old_exp(id_old, def_node);
     delete id_old;
 
@@ -110,7 +110,7 @@ CVC4::Expr analysis::smt_builder::concat_rhs(id *lhs_id, size_t size, size_t off
   return rhs_conc;
 }
 
-void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable *lhs_gr, std::function<void()> rhs_accept) {
+void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable const *lhs_gr, std::function<void()> rhs_accept) {
   /*
    * Todo: what if size == 0?
    */
@@ -119,7 +119,7 @@ void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable *lh
   sizes.push_back(size);
   rhs_accept();
   Expr rhs = pop_accumulator();
-  lhs_gr->get_id()->accept(*this);
+  lhs_gr->get_id().accept(*this);
   Expr lhs = pop_accumulator();
   size = pop_size();
 
@@ -127,7 +127,7 @@ void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable *lh
   int_t ass_size = size;
   int_t offset = lhs_gr->get_offset();
 
-  Expr rhs_conc = concat_rhs(lhs_gr->get_id(), ass_size, offset, rhs);
+  Expr rhs_conc = concat_rhs(&lhs_gr->get_id(), ass_size, offset, rhs);
 
   Expr ass = man.mkExpr(kind::EQUAL, rhs_conc, lhs);
   set_accumulator(ass);
@@ -138,8 +138,8 @@ void analysis::smt_builder::handle_assign(size_t size, gdsl::rreil::variable *lh
 //    cout << ":-)" << endl;
 }
 
-void analysis::smt_builder::visit(gdsl::rreil::variable *v) {
-  v->get_id()->accept(*this);
+void analysis::smt_builder::visit(gdsl::rreil::variable const *v) {
+  v->get_id().accept(*this);
   size_t size = current_size();
   size_t offset = v->get_offset();
   if(offset > 0 || size < 64) {
@@ -149,15 +149,15 @@ void analysis::smt_builder::visit(gdsl::rreil::variable *v) {
   }
 }
 
-void analysis::smt_builder::visit(gdsl::rreil::address *addr) {
+void analysis::smt_builder::visit(gdsl::rreil::address const *addr) {
   push_size(addr->get_size());
-  addr->get_lin()->accept(*this);
+  addr->get_lin().accept(*this);
   pop_size();
 }
 
-void smt_builder::visit(gdsl::rreil::assign *a) {
-  handle_assign(a->get_size(), a->get_lhs(), [&]() {
-    a->get_rhs()->accept(*this);
+void smt_builder::visit(gdsl::rreil::assign const *a) {
+  handle_assign(a->get_size(), &a->get_lhs(), [&]() {
+    a->get_rhs().accept(*this);
   });
 }
 
@@ -170,14 +170,14 @@ CVC4::Expr analysis::smt_builder::extract_lower_bit_addr(CVC4::Expr address) {
   return lower_bit_addr;
 }
 
-CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement *s) {
+CVC4::Expr analysis::smt_builder::build(gdsl::rreil::statement const *s) {
   s->accept(*this);
   return pop_accumulator();
 }
 
 CVC4::Expr analysis::smt_builder::build(cfg::phi_assign const *pa) {
-  handle_assign(pa->get_size(), pa->get_lhs(), [&]() {
-    pa->get_rhs()->accept(*this);
+  handle_assign(pa->get_size(), &pa->get_lhs(), [&]() {
+    pa->get_rhs().accept(*this);
   });
   return pop_accumulator();
 }

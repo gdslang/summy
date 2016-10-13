@@ -51,10 +51,10 @@ void analysis::reaching_defs::reaching_defs::add_constraint(size_t from, size_t 
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
     statement_visitor v;
-    auto id_assigned = [&](int_t size, variable *v) {
+    auto id_assigned = [&](int_t size, variable const *v) {
       copy_visitor cv;
-      v->get_id()->accept(cv);
-      shared_ptr<id> id_ptr(cv.get_id());
+      v->get_id().accept(cv);
+      shared_ptr<id> id_ptr(cv.retrieve_id());
       transfer_f = [=]() {
         auto acc = state[from];
         if(lv_result.contains(to, id_ptr, v->get_offset(), size)) {
@@ -64,11 +64,11 @@ void analysis::reaching_defs::reaching_defs::add_constraint(size_t from, size_t 
         return cleanup_live(acc);
       };
     };
-    v._([&](assign *a) {
-      id_assigned(a->get_size(), a->get_lhs());
+    v._([&](assign const *a) {
+      id_assigned(a->get_size(), &a->get_lhs());
     });
-    v._([&](load *l) {
-      id_assigned(l->get_size(), l->get_lhs());
+    v._([&](load const *l) {
+      id_assigned(l->get_size(), &l->get_lhs());
     });
     stmt->accept(v);
   });

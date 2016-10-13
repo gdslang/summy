@@ -28,10 +28,10 @@ using namespace summy::rreil;
 summy::vs_shared_t analysis::num_evaluator::queryVal(api::num_var *var) {
   optional<vs_shared_t> id_value;
   summy::rreil::id_visitor idv;
-  idv._([&](sm_id *sid) {
+  idv._([&](sm_id const *sid) {
     id_value = vs_finite::single((int64_t)sid->get_address());
   });
-  idv._([&](special_ptr *sp) {
+  idv._([&](special_ptr const *sp) {
     switch(sp->get_kind()) {
       case NULL_PTR: {
         id_value = vs_finite::single(0);

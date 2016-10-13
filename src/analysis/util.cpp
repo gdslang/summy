@@ -29,8 +29,8 @@ namespace sr = summy::rreil;
 string analysis::print_id_no_version(std::shared_ptr<gdsl::rreil::id> x) {
   string str;
   sr::id_visitor iv;
-  iv._([&](sr::ssa_id *si) { str = si->get_id()->to_string(); });
-  iv._default([&](id *_id) { str = _id->to_string(); });
+  iv._([&](sr::ssa_id const *si) { str = si->get_id()->to_string(); });
+  iv._default([&](id const *_id) { str = _id->to_string(); });
   x->accept(iv);
   return str;
 }

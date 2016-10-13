@@ -34,12 +34,12 @@ void analysis::fcollect::fcollect::add_constraint(size_t from, size_t to, const 
     ev._([&](const stmt_edge *edge) {
       statement *stmt = edge->get_stmt();
       statement_visitor v;
-      v._([&](branch *b) {
+      v._([&](branch const *b) {
         if(b->get_hint() == gdsl::rreil::branch_hint::BRANCH_HINT_CALL) {
           rreil_evaluator rev;
           bool success;
           size_t address;
-          tie(success, address) = rev.evaluate(b->get_target()->get_lin());
+          tie(success, address) = rev.evaluate(&b->get_target().get_lin());
           if(success) {
             state.insert(address);
           }

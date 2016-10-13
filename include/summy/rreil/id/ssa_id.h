@@ -19,30 +19,32 @@ private:
   gdsl::rreil::id *id;
   size_t version;
 
-  void put(std::ostream &out);
+  void put(std::ostream &out) const override;
 
   static size_t subclass_counter;
 public:
   ssa_id(gdsl::rreil::id *id, size_t version) :
       id(id), version(version) {
   }
+  ssa_id(ssa_id const& o) : id(o.id->copy().release()), version(o.version) {}
   ~ssa_id();
 
-  size_t get_subclass_counter() const {
+  size_t get_subclass_counter() const override {
     return subclass_counter;
   }
 
-  gdsl::rreil::id *get_id() {
+  gdsl::rreil::id *get_id() const {
     return id;
   }
 
-  size_t get_version() {
+  size_t get_version() const {
     return version;
   }
 
-  bool operator== (gdsl::rreil::id &other) const;
-  bool operator<(class id const& other) const;
-  void accept(gdsl::rreil::id_visitor &v);
+  bool operator== (gdsl::rreil::id const &other) const override;
+  bool operator<(class id const& other) const override;
+  std::unique_ptr<gdsl::rreil::id> copy() const override;
+  void accept(gdsl::rreil::id_visitor &v) const override;
 };
 
 }

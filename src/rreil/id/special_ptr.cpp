@@ -10,7 +10,7 @@
 
 using namespace std;
 
-void summy::rreil::special_ptr::put(std::ostream &out) {
+void summy::rreil::special_ptr::put(std::ostream &out) const {
   out << "<";
   switch(kind) {
     case NULL_PTR: {
@@ -29,10 +29,10 @@ size_t summy::rreil::special_ptr::subclass_counter = gdsl::rreil::id::subclass_c
 
 summy::rreil::special_ptr::~special_ptr() {}
 
-bool summy::rreil::special_ptr::operator==(gdsl::rreil::id &other) const {
+bool summy::rreil::special_ptr::operator==(gdsl::rreil::id const &other) const {
   bool equals = false;
   summy::rreil::id_visitor iv;
-  iv._([&](special_ptr *sp) { equals = sp->kind == kind; });
+  iv._([&](special_ptr const *sp) { equals = sp->kind == kind; });
   other.accept(iv);
 
   return equals;
@@ -48,7 +48,7 @@ bool summy::rreil::special_ptr::operator<(const id &other) const {
     return scc_me < scc_other;
 }
 
-void summy::rreil::special_ptr::accept(gdsl::rreil::id_visitor &v) {
+void summy::rreil::special_ptr::accept(gdsl::rreil::id_visitor &v) const {
   auto &summy_v = dynamic_cast<summy::rreil::id_visitor &>(v);
   summy_v.visit(this);
 }

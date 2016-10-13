@@ -21,7 +21,7 @@ extern "C" {
 
 class rreil_evaluator {
 public:
-  typedef std::function<std::tuple<bool, int_t>(gdsl::rreil::variable*)> variable_callback_t;
+  typedef std::function<std::tuple<bool, int_t>(gdsl::rreil::variable const*)> variable_callback_t;
 private:
   variable_callback_t variable_callback;
 public:
@@ -30,11 +30,11 @@ public:
   rreil_evaluator(variable_callback_t variable_callback) : variable_callback(variable_callback) {
   }
 
-  std::tuple<bool, int_t> evaluate(gdsl::rreil::expr *expr);
-  std::tuple<bool, int_t> evaluate(gdsl::rreil::linear *lin);
+  std::tuple<bool, int_t> evaluate(gdsl::rreil::expr const *expr);
+  std::tuple<bool, int_t> evaluate(gdsl::rreil::linear const *lin);
 };
 
 struct rreil_prop {
-  static bool is_ip(gdsl::rreil::variable *v);
-  static int_t size_of_rhs(gdsl::rreil::assign *a);
+  static bool is_ip(gdsl::rreil::variable const *v);
+  static int_t size_of_rhs(gdsl::rreil::assign const *a);
 };

@@ -146,7 +146,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(sms_compat::compatMatchSeparate)(boo
             for(auto &alias : aliases) {
               bool is_no_badnull = true;
               summy::rreil::id_visitor idv;
-              idv._([&](special_ptr *p) { is_no_badnull = false; });
+              idv._([&](special_ptr const *p) { is_no_badnull = false; });
               alias.id->accept(idv);
               if(is_no_badnull) has_no_badnull = true;
             }
@@ -329,7 +329,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(sms_compat::compatMatchSeparate)(boo
          */
         bool is_ptr_var = false;
         summy::rreil::id_visitor idv;
-        idv._([&](ptr_memory_id *pmid) { is_ptr_var = true; });
+        idv._([&](ptr_memory_id const *pmid) { is_ptr_var = true; });
         regions_first_it->first->accept(idv);
         if(is_ptr_var) continue;
 
@@ -423,7 +423,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(sms_compat::compatMatchSeparate)(boo
          */
         bool ptr_mem_region = false;
         summy::rreil::id_visitor idv;
-        idv._([&](ptr_memory_id *idv) { ptr_mem_region = true; });
+        idv._([&](ptr_memory_id const *idv) { ptr_mem_region = true; });
         vb->get_id()->accept(idv);
         if(ptr_mem_region) {
           delete va;

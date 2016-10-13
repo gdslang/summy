@@ -47,13 +47,13 @@ void analysis::dstack::add_constraint(size_t from, size_t to, const ::cfg::edge 
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
     statement_visitor v;
-    v._([&](assign *a) {
+    v._([&](assign const *a) {
       for_update(a);
     });
-    v._([&](load *l) {
+    v._([&](load const *l) {
       for_update(l);
     });
-    v._([&](store *s) {
+    v._([&](store const *s) {
       for_update(s);
     });
     stmt->accept(v);

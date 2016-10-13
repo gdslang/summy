@@ -12,6 +12,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <assert.h>
 #include <experimental/optional>
 
 namespace summy {
@@ -27,7 +28,7 @@ private:
   std::experimental::optional<std::string> name;
   std::experimental::optional<bool> input;
 
-  void put(std::ostream &out);
+  void put(std::ostream &out) const override;
 
   static size_t subclass_counter;
 
@@ -37,25 +38,28 @@ private:
 public:
   ~numeric_id();
 
-  size_t get_subclass_counter() const {
+  size_t get_subclass_counter() const override {
     return subclass_counter;
   }
 
-  int_t get_counter() {
+  int_t get_counter() const {
     return counter;
   }
 
-  std::experimental::optional<std::string> get_name() {
+  std::experimental::optional<std::string> get_name() const {
     return name;
   }
 
-  std::experimental::optional<bool> get_input() {
+  std::experimental::optional<bool> get_input() const {
     return input;
   }
 
-  bool operator==(gdsl::rreil::id &other) const;
-  bool operator<(id const &other) const;
-  void accept(gdsl::rreil::id_visitor &v);
+  bool operator==(gdsl::rreil::id const &other) const override;
+  bool operator<(id const &other) const override;
+  std::unique_ptr<gdsl::rreil::id> copy() const override {
+    assert(false);
+  }
+  void accept(gdsl::rreil::id_visitor &v) const override;
 
   static std::shared_ptr<gdsl::rreil::id> generate(
     std::experimental::optional<std::string> name = std::experimental::nullopt,

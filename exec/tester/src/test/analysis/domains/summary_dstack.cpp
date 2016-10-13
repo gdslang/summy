@@ -70,7 +70,7 @@ static void query_val(
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  lin_var *lv = new lin_var(new variable(new arch_id(arch_id_name), offset));
+  lin_var *lv = new lin_var(make_variable(make_id(arch_id_name), offset));
   //  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
 
   r = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryVal(lv, size);
@@ -219,7 +219,7 @@ static void query_deref_als(
   ptr_set_t &aliases, _analysis_result &ar, summary_memory_state *mstate, string arch_id_name) {
   SCOPED_TRACE("query_deref_als()");
 
-  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
+  address *a = new address(64, make_linear(make_variable(make_id(arch_id_name), 0)));
   ptr_set_t addresses = mstate->queryAls(a);
   ptr const &p = unpack_singleton(addresses);
 
@@ -288,7 +288,7 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
 
   //  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
 
-  address *a = new address(64, new lin_var(new variable(new arch_id(arch_id_name), 0)));
+  address *a = new address(64, make_linear(make_variable(make_id(arch_id_name), 0)));
   aliases = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryAls(a);
 
   delete a;
@@ -330,19 +330,19 @@ static void assert_ptrs(optional<vs_shared_t> &offset, ptr_set_t &ptrs, bool exp
   for(auto &ptr : ptrs) {
     offset = ptr.offset;
     summy::rreil::id_visitor idv;
-    idv._([&](allocation_memory_id *alloc_id) { allocs++; });
-    idv._([&](ptr_memory_id *pid) {
+    idv._([&](allocation_memory_id const *alloc_id) { allocs++; });
+    idv._([&](ptr_memory_id const *pid) {
       anon++;
       if(ptr_name) {
         summy::rreil::id_visitor ptr_id_visitor;
-        ptr_id_visitor._([&](numeric_id *nid) {
+        ptr_id_visitor._([&](numeric_id const *nid) {
           auto name = nid->get_name();
           if(name && name.value() == ptr_name.value()) has_name = true;
         });
         pid->get_id()->accept(ptr_id_visitor);
       }
     });
-    idv._([&](special_ptr *pid) {
+    idv._([&](special_ptr const *pid) {
       if(*pid == *special_ptr::_nullptr)
         has_null = true;
       else if(*pid == *special_ptr::badptr)
@@ -1360,7 +1360,7 @@ int main(void) {\n\
 
   summy::rreil::id_visitor idv;
   bool is_alloc = false;
-  idv._([&](allocation_memory_id *alloc_id) { is_alloc = true; });
+  idv._([&](allocation_memory_id const *alloc_id) { is_alloc = true; });
   alloc_ptr.id->accept(idv);
   ASSERT_TRUE(is_alloc);
 }

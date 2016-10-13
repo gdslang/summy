@@ -95,38 +95,38 @@ ismt_edge_ass_t analysis::ismt::analyse(size_t from) {
         exp_edge.add(comb);
       };
 
-      auto handle_assignment = [&](auto a) {
+      auto handle_assignment = [&](auto const *a) {
         bool live = false;
         sr::visitor srv;
-        srv._default([&](id *_id) {
-          shared_ptr<id> lhs_id_wrapped(_id, [&](void *x) {});
+        srv._default([&](id const *_id) {
+          shared_ptr<id> lhs_id_wrapped(_id->copy());
           if(lv_result.contains(to_id, lhs_id_wrapped, 0, 64))
             live = true;
         });
-        a->get_lhs()->accept(srv);
+        a->get_lhs().accept(srv);
         if(live)
           build(a);
       };
 
       edge_visitor ev;
-      ev._([&](const stmt_edge *sedge) {
+      ev._([&](stmt_edge const *sedge) {
         statement *stmt = sedge->get_stmt();
         statement_visitor sv;
-        sv._([&](assign *ass) {
+        sv._([&](assign const *ass) {
           handle_assignment(ass);
         });
-        sv._([&](load *l) {
+        sv._([&](load const *l) {
           handle_assignment(l);
         });
-        sv._([&](store *s) {
+        sv._([&](store const *s) {
           build(s);
         });
-        sv._([&](branch *b) {
-          targets.insert(target(smtb.build(b->get_target()), smt_defb.build_target(b->get_target()), edge_id(*from, to_id)));
+        sv._([&](branch const *b) {
+          targets.insert(target(smtb.build(&b->get_target()), smt_defb.build_target(&b->get_target()), edge_id(*from, to_id)));
         });
         stmt->accept(sv);
       });
-      ev._([&](const phi_edge *pe) {
+      ev._([&](phi_edge const *pe) {
         for(auto &ass : pe->get_assignments())
           handle_assignment(&ass);
         build(pe->get_memory());

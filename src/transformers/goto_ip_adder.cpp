@@ -45,10 +45,10 @@ void goto_ip_adder::transform() {
       ev._([&](const stmt_edge *edge) {
         statement *stmt = edge->get_stmt();
         statement_visitor v;
-        v._([&](branch *i) {
+        v._([&](branch const *i) {
               dead_node[edge_it->first] = true;
             });
-        v._([&](cbranch *i) {
+        v._([&](cbranch const *i) {
               dead_node[edge_it->first] = true;
             });
         stmt->accept(v);
@@ -66,8 +66,8 @@ void goto_ip_adder::transform() {
       return new (class node)(id);
     });
 
-    statement *goto_ip = new branch(new address(64, new lin_var(new variable(new arch_id("IP"), 0))),
-        gdsl::rreil::BRANCH_HINT_JUMP);
+    statement *goto_ip = make_branch(make_address(64, make_linear(make_variable(make_id("IP"), 0))),
+        gdsl::rreil::BRANCH_HINT_JUMP).release();
 
     cfg->update_edge(node->get_id(), new_node_id, new stmt_edge(goto_ip));
     delete goto_ip;

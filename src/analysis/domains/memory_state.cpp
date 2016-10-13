@@ -172,7 +172,7 @@ tuple<bool, void *> analysis::memory_state::static_address(id_shared_t id) {
   bool is_static = false;
   void *symbol_address;
   summy::rreil::id_visitor idv;
-  idv._([&](sm_id *sid) {
+  idv._([&](sm_id const *sid) {
     is_static = true;
     symbol_address = sid->get_address();
   });
@@ -449,15 +449,15 @@ memory_state *analysis::memory_state::widen(domain_state *other, size_t current_
   return domop(other, current_node, &numeric_state::widen);
 }
 
-void analysis::memory_state::update(gdsl::rreil::assign *assign) {
+void analysis::memory_state::update(gdsl::rreil::assign const *assign) {
   if(is_bottom()) return;
 
-  variable *var = assign->get_lhs();
-  id_shared_t num_id = transVar(shared_copy(var->get_id()), var->get_offset(), assign->get_size());
+  variable const &var = assign->get_lhs();
+  id_shared_t num_id = transVar(shared_copy(&var.get_id()), var.get_offset(), assign->get_size());
   num_var *n_var = new num_var(num_id);
   converter cv(assign->get_size(),
     [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
-  num_expr *n_expr = cv.conv_expr(assign->get_rhs());
+  num_expr *n_expr = cv.conv_expr(&assign->get_rhs());
   child_state->assign(n_var, n_expr);
   delete n_expr;
   delete n_var;
@@ -477,11 +477,11 @@ memory_state *analysis::memory_state::bottom(shared_ptr<static_memory> sm, numer
   return new memory_state(sm, bottom_num, false);
 }
 
-void analysis::memory_state::update(gdsl::rreil::load *load) {
+void analysis::memory_state::update(gdsl::rreil::load const *load) {
   if(is_bottom()) return;
 
-  address *addr = load->get_address();
-  auto temp = assign_temporary(addr->get_lin(), addr->get_size());
+  address const& addr = load->get_address();
+  auto temp = assign_temporary(&addr.get_lin(), addr.get_size());
   vector<num_linear *> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
@@ -518,7 +518,7 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
   }
 
   num_var *lhs =
-    new num_var(transVar(shared_copy(load->get_lhs()->get_id()), load->get_lhs()->get_offset(), load->get_size()));
+    new num_var(transVar(shared_copy(&load->get_lhs().get_id()), load->get_lhs().get_offset(), load->get_size()));
   if(lins.size() == 0) {
     num_expr *rhs_expr = new num_expr_lin(new num_linear_vs(value_set::top));
     child_state->assign(lhs, rhs_expr);
@@ -549,11 +549,11 @@ void analysis::memory_state::update(gdsl::rreil::load *load) {
   cleanup();
 }
 
-void analysis::memory_state::update(gdsl::rreil::store *store) {
+void analysis::memory_state::update(gdsl::rreil::store const *store) {
   if(is_bottom()) return;
 
-  address *addr = store->get_address();
-  auto temp = assign_temporary(addr->get_lin(), addr->get_size());
+  address const& addr = store->get_address();
+  auto temp = assign_temporary(&addr.get_lin(), addr.get_size());
 
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   for(auto &alias : aliases) {
@@ -627,7 +627,7 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
       [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
     for(auto id : ids) {
       num_var *lhs = new num_var(id);
-      num_expr *rhs = rhs_cv.conv_expr(store->get_rhs());
+      num_expr *rhs = rhs_cv.conv_expr(&store->get_rhs());
       if(singleton)
         child_state->assign(lhs, rhs);
       else
@@ -640,7 +640,7 @@ void analysis::memory_state::update(gdsl::rreil::store *store) {
   cleanup();
 }
 
-void analysis::memory_state::assume(gdsl::rreil::sexpr *cond) {
+void analysis::memory_state::assume(gdsl::rreil::sexpr const *cond) {
   converter cv(
     0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
   expr_cmp_result_t ecr = cv.conv_expr_cmp(cond);
@@ -653,7 +653,7 @@ void analysis::memory_state::assume(gdsl::rreil::sexpr *cond) {
   if(*value == vs_finite::_false) bottomify();
 }
 
-void analysis::memory_state::assume_not(gdsl::rreil::sexpr *cond) {
+void analysis::memory_state::assume_not(gdsl::rreil::sexpr const *cond) {
   converter cv(
     0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
   expr_cmp_result_t ecr = cv.conv_expr_cmp(cond);
@@ -694,19 +694,19 @@ void analysis::memory_state::cleanup() {
   _inner(deref);
 }
 
-std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(gdsl::rreil::expr *e, int_t size) {
+std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(gdsl::rreil::expr const *e, int_t size) {
   return assign_temporary(size, [&](converter &cv) { return cv.conv_expr(e); });
 }
 
-std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(gdsl::rreil::linear *l, int_t size) {
+std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(gdsl::rreil::linear const *l, int_t size) {
   return assign_temporary(size, [&](converter &cv) { return cv.conv_expr(l); });
 }
 
-std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(gdsl::rreil::sexpr *se, int_t size) {
+std::unique_ptr<managed_temporary> analysis::memory_state::assign_temporary(gdsl::rreil::sexpr const *se, int_t size) {
   return assign_temporary(size, [&](converter &cv) { return cv.conv_expr(se); });
 }
 
-summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear *l, size_t size) {
+summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear const *l, size_t size) {
   converter cv(
     size, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
   num_linear *nl = cv.conv_linear(l);
@@ -715,7 +715,7 @@ summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::linear *l, size
   return result;
 }
 
-summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::expr *e, size_t size) {
+summy::vs_shared_t analysis::memory_state::queryVal(gdsl::rreil::expr const *e, size_t size) {
   unique_ptr<managed_temporary> temp = assign_temporary(e, size);
   summy::vs_shared_t result = child_state->queryVal(temp->get_var());
   return result;
@@ -737,9 +737,9 @@ std::set<summy::vs_shared_t> analysis::memory_state::queryPts(std::unique_ptr<ma
   return result;
 }
 
-ptr_set_t analysis::memory_state::queryAls(gdsl::rreil::address *a) {
+ptr_set_t analysis::memory_state::queryAls(gdsl::rreil::address const *a) {
   if(is_bottom()) return ptr_set_t{};
-  auto temp = assign_temporary(a->get_lin(), a->get_size());
+  auto temp = assign_temporary(&a->get_lin(), a->get_size());
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
   return aliases;
 }

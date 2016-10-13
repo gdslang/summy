@@ -91,7 +91,7 @@ public:
   bool cleanup(api::num_var *var);
   void project(api::num_vars *vars);
   api::num_vars *vars();
-  void collect_ids(std::map<gdsl::rreil::id*, std::set<analysis::id_shared_t*>> &id_map);
+  void collect_ids(std::map<gdsl::rreil::id const*, std::set<analysis::id_shared_t*>> &id_map);
 
   ptr_set_t queryAls(api::num_var *nv);
   summy::vs_shared_t queryVal(api::num_linear *lin);

@@ -52,85 +52,80 @@ void renamer::task_from_edge(std::vector<update_task>& tasks, size_t from, size_
   };
 
   sr::copy_visitor cv;
-  auto rebuild = [&](auto &rd_elements, auto ast_node) {
-    cv._([&](id *_id, int_t offset) -> variable* {
-      shared_ptr<id> id_wrapped(_id, [](auto x) {});
+  auto rebuild = [&](auto &rd_elements, auto const& ast_node) {
+    cv._([&](std::unique_ptr<id> _id, int_t offset) -> std::unique_ptr<variable> {
+      shared_ptr<id> id_wrapped(_id.get(), [](auto x) {});
       auto const &rd_mapping = rd_elements.find(id_wrapped);
       if(rd_mapping != rd_elements.end()) {
         sr::id_visitor iv;
-        iv._([&](sr::ssa_id *si) {
+        iv._([&](sr::ssa_id const *si) {
           if(si->get_version() != rd_mapping->second) {
             sr::copy_visitor cv;
             si->get_id()->accept(cv);
-            delete _id;
-            _id = new sr::ssa_id(cv.get_id(), rd_mapping->second);
+            _id = std::unique_ptr<id>(new sr::ssa_id(cv.retrieve_id().release(), rd_mapping->second));
             update = true;
           }
         });
-        iv._default([&](id *_) {
-            _id = new sr::ssa_id(_id, rd_mapping->second);
+        iv._default([&](id const *_) {
+            _id = std::unique_ptr<id>(new sr::ssa_id(_id.release(), rd_mapping->second));
             update = true;
         });
         _id->accept(iv);
       }
-      return new variable(_id, offset);
+      return make_variable(std::move(_id), offset);
     });
-    ast_node->accept(cv);
+    ast_node.accept(cv);
   };
 
   auto &rd_dst_elements = rd_result.result[to]->get_elements();
   auto &rd_src_elements = rd_result.result[from]->get_elements();
-  auto assignment = [&](variable *lhs, auto rhs, auto get_rhs_from_cv, auto node_ctor) {
+  auto assignment = [&](variable const &lhs, auto const& rhs, auto get_rhs_from_cv, auto node_ctor) {
     rebuild(rd_dst_elements, lhs);
-    variable *lhs_new = cv.get_variable();
+    auto lhs_new = cv.retrieve_variable();
 
     rebuild(rd_src_elements, rhs);
     auto rhs_new = get_rhs_from_cv();
 
-    return node_ctor(lhs_new, rhs_new);
+    return node_ctor(std::move(lhs_new), std::move(rhs_new));
   };
 
   ev._([&](const stmt_edge *edge) {
     statement_visitor v;
-    v._([&](assign *a) {
+    v._([&](assign const *a) {
       auto s = assignment(a->get_lhs(), a->get_rhs(), [&]() {
-        return cv.get_expr();
+        return cv.retrieve_expr();
       }, [&](auto lhs, auto rhs) {
-        return assign(a->get_size(), lhs, rhs);
+        return assign(a->get_size(), std::move(lhs), std::move(rhs));
       });
       add_update(from, to, new stmt_edge(&s));
     });
-    v._([&](load *l) {
+    v._([&](load const *l) {
       auto s = assignment(l->get_lhs(), l->get_address(), [&]() {
-        return cv.get_address();
+        return cv.retrieve_address();
       }, [&](auto lhs, auto rhs) {
-        return load(l->get_size(), lhs, rhs);
+        return load(l->get_size(), std::move(lhs), std::move(rhs));
       });
       add_update(from, to, new stmt_edge(&s));
     });
-    v._default([&](statement *s) {
-      rebuild(rd_src_elements, s);
-      auto stmt_new = cv.get_statement();
-      add_update(from, to, new stmt_edge(stmt_new));
-      delete stmt_new;
+    v._default([&](statement const *s) {
+      rebuild(rd_src_elements, *s);
+      auto stmt_new = cv.retrieve_statement();
+      add_update(from, to, new stmt_edge(stmt_new.get()));
     });
     edge->get_stmt()->accept(v);
   });
   ev._([&](const cond_edge *ce) {
-    rebuild(rd_src_elements, ce->get_cond());
-    auto sexpr_new = cv.get_sexpr();
-    add_update(from, to, new cond_edge(sexpr_new, ce->is_positive()));
-    delete sexpr_new;
+    rebuild(rd_src_elements, *ce->get_cond());
+    auto sexpr_new = cv.retrieve_sexpr();
+    add_update(from, to, new cond_edge(sexpr_new.get(), ce->is_positive()));
   });
   ev._([&](const phi_edge *edge) {
     assignments_t assignments_new;
     for(auto &ass : edge->get_assignments()) {
       auto ass_new = assignment(ass.get_lhs(), ass.get_rhs(), [&]() {
-        return cv.get_variable();
+        return cv.retrieve_variable();
       }, [&](auto lhs, auto rhs) {
-        auto phi_ass = phi_assign(lhs, rhs, ass.get_size());
-        delete lhs;
-        delete rhs;
+        auto phi_ass = phi_assign(lhs.get(), rhs.get(), ass.get_size());
         return phi_ass;
       });
       assignments_new.push_back(ass_new);

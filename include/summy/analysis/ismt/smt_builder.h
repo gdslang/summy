@@ -39,13 +39,13 @@ protected:
   CVC4::Expr pop_accumulator();
   void set_accumulator(CVC4::Expr accumulator);
 
-  virtual CVC4::Expr get_id_old_exp(gdsl::rreil::id *id, size_t def_node) = 0;
-  CVC4::Expr concat_rhs(gdsl::rreil::id *lhs_id, size_t size, size_t offset, CVC4::Expr rhs);
-  void handle_assign(size_t size, gdsl::rreil::variable *lhs_, std::function<void()> rhs_accept);
+  virtual CVC4::Expr get_id_old_exp(gdsl::rreil::id const *id, size_t def_node) = 0;
+  CVC4::Expr concat_rhs(gdsl::rreil::id const *lhs_id, size_t size, size_t offset, CVC4::Expr rhs);
+  void handle_assign(size_t size, gdsl::rreil::variable const *lhs_, std::function<void()> rhs_accept);
 
-  void visit(gdsl::rreil::variable *v);
-  void visit(gdsl::rreil::address *addr);
-  void visit(gdsl::rreil::assign *a);
+  void visit(gdsl::rreil::variable const *v) override;
+  void visit(gdsl::rreil::address const *addr) override;
+  void visit(gdsl::rreil::assign const *a) override;
 
   CVC4::Expr extract_lower_bit_addr(CVC4::Expr address);
 public:
@@ -53,7 +53,7 @@ public:
       context(context), manager(context.get_manager()), rd_result(rd_result) {
   }
 
-  CVC4::Expr build(gdsl::rreil::statement *s);
+  CVC4::Expr build(gdsl::rreil::statement const *s);
   CVC4::Expr build(cfg::phi_assign const *pa);
   CVC4::Expr build(cfg::phi_memory const& pm);
   void edge(size_t from, size_t to);

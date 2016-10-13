@@ -41,7 +41,7 @@ protected:
   bool speculative_decoding;
   gdsl::gdsl &gdsl;
 
-  cfg::translated_program_t decode_translate(bool decode_multiple);
+  std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> decode_translate(bool decode_multiple);
   virtual size_t initial_cfg(
     cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
 public:

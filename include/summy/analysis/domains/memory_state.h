@@ -84,21 +84,21 @@ public:
   memory_state *widen(domain_state *other, size_t current_node);
   memory_state *narrow(domain_state *other, size_t current_node);
 
-  void update(gdsl::rreil::assign *assign);
-  void update(gdsl::rreil::load *load);
-  void update(gdsl::rreil::store *store);
-  void assume(gdsl::rreil::sexpr *cond);
-  void assume_not(gdsl::rreil::sexpr *cond);
+  void update(gdsl::rreil::assign const *assign);
+  void update(gdsl::rreil::load const *load);
+  void update(gdsl::rreil::store const *store);
+  void assume(gdsl::rreil::sexpr const *cond);
+  void assume_not(gdsl::rreil::sexpr const *cond);
 
   void cleanup();
 
-  std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::linear *l, int_t size);
-  std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::expr *e, int_t size);
-  std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::sexpr *se, int_t size);
-  summy::vs_shared_t queryVal(gdsl::rreil::linear *l, size_t size);
-  summy::vs_shared_t queryVal(gdsl::rreil::expr *e, size_t size);
+  std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::linear const *l, int_t size);
+  std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::expr const *e, int_t size);
+  std::unique_ptr<managed_temporary> assign_temporary(gdsl::rreil::sexpr const *se, int_t size);
+  summy::vs_shared_t queryVal(gdsl::rreil::linear const *l, size_t size);
+  summy::vs_shared_t queryVal(gdsl::rreil::expr const *e, size_t size);
   std::set<summy::vs_shared_t> queryPts(std::unique_ptr<managed_temporary> &address);
-  ptr_set_t queryAls(gdsl::rreil::address *a);
+  ptr_set_t queryAls(gdsl::rreil::address const *a);
   region_t const& query_region(id_shared_t id);
 
   memory_state *copy() const;

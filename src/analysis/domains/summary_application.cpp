@@ -169,8 +169,8 @@ summary_memory_state *analysis::summary_application::apply_summary() {
 
     bool static_or_dynamic = false;
     summy::rreil::id_visitor idv;
-    idv._([&](allocation_memory_id *ami) { static_or_dynamic = true; });
-    idv._([&](sm_id *sid) { static_or_dynamic = true; });
+    idv._([&](allocation_memory_id const *ami) { static_or_dynamic = true; });
+    idv._([&](sm_id const *sid) { static_or_dynamic = true; });
     region_key_summary->accept(idv);
     if(!static_or_dynamic) continue;
     ptr_set_t region_keys_c = ptr_set_t({ptr(region_key_summary, vs_finite::zero)});
@@ -300,7 +300,7 @@ summary_memory_state *analysis::summary_application::apply_summary() {
   id_set_t caller_alloc_deref;
   for(auto &deref_mapping_c : caller->input.deref) {
     summy::rreil::id_visitor idv;
-    idv._([&](allocation_memory_id *ami) { caller_alloc_deref.insert(deref_mapping_c.first); });
+    idv._([&](allocation_memory_id const *ami) { caller_alloc_deref.insert(deref_mapping_c.first); });
     deref_mapping_c.first->accept(idv);
   }
 
@@ -321,16 +321,16 @@ summary_memory_state *analysis::summary_application::apply_summary() {
       for(auto &alias_s : aliases_s) {
         summy::rreil::id_visitor idv;
         bool _continue = false;
-        idv._([&](allocation_memory_id *alloc) {
+        idv._([&](allocation_memory_id const *alloc) {
           aliases_s_heap.insert(alias_s);
           aliases_c.insert(alias_s);
           _continue = true;
         });
-        idv._([&](sm_id *sid) {
+        idv._([&](sm_id const *sid) {
           aliases_c.insert(alias_s);
           _continue = true;
         });
-        idv._([&](special_ptr *sp) {
+        idv._([&](special_ptr const *sp) {
           if(sp->get_kind() == summy::rreil::NULL_PTR)
             aliases_c.insert(alias_s);
           else if(sp->get_kind() == summy::rreil::BAD_PTR)
