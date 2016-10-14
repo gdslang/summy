@@ -339,7 +339,7 @@ static void assert_ptrs(optional<vs_shared_t> &offset, ptr_set_t &ptrs, bool exp
           auto name = nid->get_name();
           if(name && name.value() == ptr_name.value()) has_name = true;
         });
-        pid->get_id()->accept(ptr_id_visitor);
+        pid->get_id().accept(ptr_id_visitor);
       }
     });
     idv._([&](special_ptr const *pid) {

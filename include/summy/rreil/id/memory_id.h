@@ -47,14 +47,14 @@ public:
 
 class ptr_memory_id : public memory_id {
 private:
-  std::shared_ptr<gdsl::rreil::id> inner;
+  std::unique_ptr<gdsl::rreil::id> inner;
 
   void put(std::ostream &out) const override;
 
   static size_t subclass_counter;
 
 public:
-  ptr_memory_id(std::shared_ptr<gdsl::rreil::id> inner) : inner(inner) {}
+  ptr_memory_id(std::unique_ptr<gdsl::rreil::id> inner) : inner(std::move(inner)) {}
   ptr_memory_id(ptr_memory_id const &o) : inner(o.inner->copy()) {
   }
   ~ptr_memory_id();
@@ -63,8 +63,8 @@ public:
     return subclass_counter;
   }
 
-  std::shared_ptr<gdsl::rreil::id> const &get_id() const {
-    return inner;
+  gdsl::rreil::id const &get_id() const {
+    return *inner;
   }
 
   bool operator==(gdsl::rreil::id const &other) const override;

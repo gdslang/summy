@@ -9,8 +9,11 @@ file(GLOB_RECURSE SOURCES
 
 include_directories("include/")
 
+find_package (gdsl REQUIRED)
+find_package (bjutil REQUIRED)
 add_library(summy ${SOURCES})
 set_property(TARGET summy PROPERTY CXX_STANDARD 14)
+target_link_libraries(summy cppgdsl)
 
 add_subdirectory(exec/demo_dstack)
 add_subdirectory(exec/all_f)

@@ -73,7 +73,7 @@ CVC4::Expr analysis::smt_builder::concat_rhs(id const *lhs_id, size_t size, size
     size_t def_node = 0;
     if(def_it != rd_result.result[from]->get_elements().end()) def_node = def_it->second;
     sr::copy_visitor civ;
-    civ._([&](gdsl::rreil::id *inner, int_t rev) {
+    civ._([&](std::unique_ptr<gdsl::rreil::id> inner, int_t rev) {
       return inner;
     });
     lhs_id_wrapped->accept(civ);

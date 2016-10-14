@@ -171,7 +171,7 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
     num_var n_in(nid_in);
     field f_before = field{size, nid_in};
     in_r.insert(make_pair(offset, f_before));
-    ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
+    ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in->copy())), vs_finite::zero);
     ptr_set_t ptr_set = ptr_set_t({badptr, fresh});
     child_state->assume(&n_in, ptr_set);
     return ptr_set;
@@ -301,7 +301,7 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(
   auto ptr_set_fresh = [](id_shared_t nid_in) {
     //    ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
     ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
-    ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in)), vs_finite::zero);
+    ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in->copy())), vs_finite::zero);
     return ptr_set_t({badptr, fresh});
   };
   return retrieve_field(child_state, offset, size, replacement, handle_conflicts, ptr_set_fresh);
@@ -1219,7 +1219,7 @@ void analysis::summary_memory_state::rename() {
         rev_map[nid->get_counter()].memory_ids.insert(mid);
         found = true;
       });
-      mid->get_id()->accept(inner_idv);
+      mid->get_id().accept(inner_idv);
       assert(found);
     });
     id_map_it.first->accept(idv);
@@ -1239,7 +1239,7 @@ void analysis::summary_memory_state::rename() {
       for(analysis::id_shared_t *instance : id_map.at(rev_it.second._id.value()))
         *instance = fresh();
     for(ptr_memory_id const *mid : rev_it.second.memory_ids) {
-      id_shared_t memory_fresh = make_shared<ptr_memory_id>(fresh());
+      id_shared_t memory_fresh = make_shared<ptr_memory_id>(fresh()->copy());
       for(analysis::id_shared_t *instance : id_map.at(mid))
         *instance = memory_fresh;
     }

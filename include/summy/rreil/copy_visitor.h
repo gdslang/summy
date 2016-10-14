@@ -20,12 +20,12 @@ class ssa_id;
 
 class copy_visitor : public gdsl::rreil::copy_visitor, public virtual summy::rreil::id_visitor {
 public:
-  typedef std::function<gdsl::rreil::id *(gdsl::rreil::id *, int_t)> ssa_id_ctor_t;
-  typedef std::function<gdsl::rreil::id *(
+  typedef std::function<std::unique_ptr<gdsl::rreil::id>(std::unique_ptr<gdsl::rreil::id>, int_t)> ssa_id_ctor_t;
+  typedef std::function<std::unique_ptr<gdsl::rreil::id>(
     int_t, std::experimental::optional<std::string>, std::experimental::optional<bool>)> numeric_id_ctor_t;
-  typedef std::function<gdsl::rreil::id *(std::shared_ptr<gdsl::rreil::id>)> ptr_memory_id_ctor_t;
-  typedef std::function<gdsl::rreil::id *(size_t)> allocation_memory_id_ctor_t;
-  typedef std::function<gdsl::rreil::id *(std::string, void *)> sm_id_ctor_t;
+  typedef std::function<std::unique_ptr<gdsl::rreil::id>(std::unique_ptr<gdsl::rreil::id>)> ptr_memory_id_ctor_t;
+  typedef std::function<std::unique_ptr<gdsl::rreil::id>(size_t)> allocation_memory_id_ctor_t;
+  typedef std::function<std::unique_ptr<gdsl::rreil::id>(std::string, void *)> sm_id_ctor_t;
 
 private:
   ssa_id_ctor_t ssa_id_ctor = NULL;
