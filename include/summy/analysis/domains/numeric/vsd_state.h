@@ -63,7 +63,7 @@ public:
     return _is_bottom;
   }
 
-  summy::vs_shared_t lookup(id_shared_t id);
+  summy::vs_shared_t lookup(gdsl::rreil::id const& id);
 
   bool operator>=(domain_state const &other) const;
 

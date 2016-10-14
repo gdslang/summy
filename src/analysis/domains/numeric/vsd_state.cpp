@@ -49,14 +49,14 @@ void value_sets::vsd_state::put(std::ostream &out) const {
 
 analysis::value_sets::vsd_state::vsd_state(std::shared_ptr<static_memory> sm, bool is_bottom, elements_t elements)
     : numeric_state(sm), _is_bottom(is_bottom), elements(elements),
-      num_ev([&](num_var *nv) { return lookup(nv->get_id()); }) {}
+      num_ev([&](num_var *nv) { return lookup(*nv->get_id()); }) {}
 
 void analysis::value_sets::vsd_state::bottomify() {
   elements.clear();
   _is_bottom = true;
 }
 
-summy::vs_shared_t value_sets::vsd_state::lookup(id_shared_t id) {
+summy::vs_shared_t value_sets::vsd_state::lookup(gdsl::rreil::id const& id) {
   auto id_it = elements.find(id);
   if(id_it != elements.end())
     return id_it->second;

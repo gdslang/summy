@@ -26,20 +26,33 @@ using namespace gdsl::rreil;
 
 namespace sr = summy::rreil;
 
-string analysis::print_id_no_version(std::shared_ptr<gdsl::rreil::id> x) {
+string analysis::print_id_no_version(gdsl::rreil::id const &x) {
   string str;
   sr::id_visitor iv;
   iv._([&](sr::ssa_id const *si) { str = si->get_id().to_string(); });
   iv._default([&](id const *_id) { str = _id->to_string(); });
-  x->accept(iv);
+  x.accept(iv);
   return str;
 }
 
 bool analysis::id_less_no_version::operator()(
-  std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b) const {
-  return print_id_no_version(a).compare(print_id_no_version(b)) < 0;
+  std::shared_ptr<gdsl::rreil::id> const &a, std::shared_ptr<gdsl::rreil::id> const &b) const {
+  return print_id_no_version(*a).compare(print_id_no_version(*b)) < 0;
 }
 
-bool analysis::id_less::operator()(std::shared_ptr<gdsl::rreil::id> a, std::shared_ptr<gdsl::rreil::id> b) const {
+bool analysis::id_less::operator()(
+  std::shared_ptr<gdsl::rreil::id> const &a, std::shared_ptr<gdsl::rreil::id> const &b) const {
   return *a < *b;
+}
+
+bool analysis::id_less::operator()(const gdsl::rreil::id &a, const std::shared_ptr<gdsl::rreil::id> &b) const {
+  return a < *b;
+}
+
+bool analysis::id_less::operator()(const std::shared_ptr<gdsl::rreil::id> &a, const gdsl::rreil::id &b) const {
+  return *a < b;
+}
+
+bool analysis::id_less::operator()(const gdsl::rreil::id &a, const gdsl::rreil::id &b) const {
+  return a < b;
 }
