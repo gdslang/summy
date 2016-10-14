@@ -133,7 +133,7 @@ vsd_state *analysis::value_sets::vsd_state::widen(domain_state *other, size_t cu
   if(other_casted->is_bottom()) return new vsd_state(*this);
   elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
-    elements_new[mapping_other.first] = value_set::widen(lookup(mapping_other.first), mapping_other.second);
+    elements_new[mapping_other.first] = value_set::widen(lookup(*mapping_other.first), mapping_other.second);
   return new vsd_state(sm, elements_new);
 }
 
@@ -142,7 +142,7 @@ vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t c
   if(other_casted->is_bottom()) return new vsd_state(*this);
   elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
-    elements_new[mapping_other.first] = value_set::narrow(lookup(mapping_other.first), mapping_other.second);
+    elements_new[mapping_other.first] = value_set::narrow(lookup(*mapping_other.first), mapping_other.second);
   return new vsd_state(sm, elements_new);
 }
 

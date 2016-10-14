@@ -27,6 +27,8 @@ struct id_less_no_version {
 };
 
 struct id_less {
+  using is_transparent = std::true_type;
+
   bool operator()(std::shared_ptr<gdsl::rreil::id> const &a, std::shared_ptr<gdsl::rreil::id> const &b) const;
 
   bool operator()(gdsl::rreil::id const &a, std::shared_ptr<gdsl::rreil::id> const &b) const;
