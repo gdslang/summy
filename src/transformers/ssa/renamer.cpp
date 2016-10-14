@@ -61,13 +61,13 @@ void renamer::task_from_edge(std::vector<update_task>& tasks, size_t from, size_
         iv._([&](sr::ssa_id const *si) {
           if(si->get_version() != rd_mapping->second) {
             sr::copy_visitor cv;
-            si->get_id()->accept(cv);
-            _id = std::unique_ptr<id>(new sr::ssa_id(cv.retrieve_id().release(), rd_mapping->second));
+            si->get_id().accept(cv);
+            _id = std::unique_ptr<id>(new sr::ssa_id(cv.retrieve_id(), rd_mapping->second));
             update = true;
           }
         });
         iv._default([&](id const *_) {
-            _id = std::unique_ptr<id>(new sr::ssa_id(_id.release(), rd_mapping->second));
+            _id = make_unique<sr::ssa_id>(std::move(_id), rd_mapping->second);
             update = true;
         });
         _id->accept(iv);

@@ -77,7 +77,7 @@ CVC4::Expr analysis::smt_builder::concat_rhs(id const *lhs_id, size_t size, size
       return inner;
     });
     lhs_id_wrapped->accept(civ);
-    id *id_old = def_node > 0 ? new sr::ssa_id(civ.retrieve_id().release(), def_node) : civ.retrieve_id().release();
+    id *id_old = def_node > 0 ? new sr::ssa_id(civ.retrieve_id(), def_node) : civ.retrieve_id().release();
     Expr id_old_exp = get_id_old_exp(id_old, def_node);
     delete id_old;
 

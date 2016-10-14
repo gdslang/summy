@@ -16,25 +16,24 @@ namespace rreil {
 
 class ssa_id: public gdsl::rreil::id {
 private:
-  gdsl::rreil::id *id;
+  std::unique_ptr<gdsl::rreil::id> id;
   size_t version;
 
   void put(std::ostream &out) const override;
 
   static size_t subclass_counter;
 public:
-  ssa_id(gdsl::rreil::id *id, size_t version) :
-      id(id), version(version) {
+  ssa_id(std::unique_ptr<gdsl::rreil::id> id, size_t version) :
+      id(std::move(id)), version(version) {
   }
-  ssa_id(ssa_id const& o) : id(o.id->copy().release()), version(o.version) {}
-  ~ssa_id();
+  ssa_id(ssa_id const& o) : id(o.id->copy()), version(o.version) {}
 
   size_t get_subclass_counter() const override {
     return subclass_counter;
   }
 
-  gdsl::rreil::id *get_id() const {
-    return id;
+  gdsl::rreil::id const& get_id() const {
+    return *id;
   }
 
   size_t get_version() const {

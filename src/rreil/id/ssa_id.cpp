@@ -18,10 +18,6 @@ void ssa_id::put(std::ostream &out) const {
 
 size_t summy::rreil::ssa_id::subclass_counter = gdsl::rreil::id::subclass_counter++;
 
-ssa_id::~ssa_id() {
-  delete id;
-}
-
 std::unique_ptr<gdsl::rreil::id> ssa_id::copy() const {
   return std::unique_ptr<gdsl::rreil::id>(new ssa_id(*this));
 }

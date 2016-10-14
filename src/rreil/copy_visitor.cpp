@@ -15,12 +15,12 @@
 using namespace std;
 
 void summy::rreil::copy_visitor::visit(ssa_id const *a) {
-  a->get_id()->accept(*this);
+  a->get_id().accept(*this);
   auto id = std::move(_id);
   if(ssa_id_ctor != NULL)
     _id = ssa_id_ctor(std::move(id), a->get_version());
   else
-    _id = make_unique<ssa_id>(std::move(id).release(), a->get_version());
+    _id = make_unique<ssa_id>(std::move(id), a->get_version());
 }
 
 void summy::rreil::copy_visitor::visit(numeric_id const *a) {
