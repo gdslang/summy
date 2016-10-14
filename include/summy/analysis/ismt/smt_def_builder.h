@@ -24,7 +24,7 @@ namespace analysis {
 
 class smt_def_builder: public smt_builder {
 private:
-  CVC4::Expr get_id_old_exp(gdsl::rreil::id const *id, size_t def_node);
+  CVC4::Expr get_id_old_exp(gdsl::rreil::id const *id, size_t def_node) override;
 
   CVC4::Expr defined_boolbv(CVC4::Expr a);
   CVC4::Expr defined(CVC4::Expr a);

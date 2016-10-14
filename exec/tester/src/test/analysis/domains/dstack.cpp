@@ -452,7 +452,7 @@ TEST_F(dstack_test, IfThenElseMemoryOffsetStrongUpdate) {
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 64));
   ASSERT_EQ(*r, value_set::top);
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R12", 0, 64));
-  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({42})));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite(42)));
 }
 
 TEST_F(dstack_test, IfThenElseMemoryOffsetWeakUpdatePredef) {
@@ -545,11 +545,11 @@ TEST_F(dstack_test, MultiFieldReads) {
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "B", 0, 64));
-  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({99})));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite(99)));
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "D", 0, 16));
   ASSERT_EQ(*r, value_set::top);
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "C", 0, 16));
-  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({5669})));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite(5669)));
 }
 
 TEST_F(dstack_test, Equalities) {
