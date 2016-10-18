@@ -7,17 +7,17 @@
 
 #pragma once
 
+#include <cppgdsl/rreil/id/id.h>
+#include <functional>
+#include <memory>
+#include <ostream>
+#include <set>
 #include <summy/analysis/adaptive_rd/adaptive_rd_state.h>
 #include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/liveness/liveness.h>
-#include <summy/cfg/edge/edge.h>
 #include <summy/cfg/cfg.h>
+#include <summy/cfg/edge/edge.h>
 #include <vector>
-#include <functional>
-#include <set>
-#include <ostream>
-#include <cppgdsl/rreil/id/id.h>
-#include <memory>
 
 namespace analysis {
 namespace adaptive_rd {
@@ -28,11 +28,10 @@ typedef std::vector<std::map<size_t, shared_ptr<adaptive_rd_state>>> in_states_t
 struct adaptive_rd_result : public ::analysis::analysis_result<state_t> {
   in_states_t &in_states;
 
-  adaptive_rd_result(state_t &s, in_states_t &in_states) : analysis_result(s), in_states(in_states) {
-  }
+  adaptive_rd_result(state_t &s, in_states_t &in_states) : analysis_result(s), in_states(in_states) {}
 };
 
-class adaptive_rd: public fp_analysis {
+class adaptive_rd : public fp_analysis {
 private:
   state_t state;
   in_states_t in_states;
@@ -42,6 +41,7 @@ private:
   virtual void remove_constraint(size_t from, size_t to);
   virtual dependency gen_dependency(size_t from, size_t to);
   virtual void init_state();
+
 public:
   adaptive_rd(cfg::cfg *cfg, liveness::liveness_result lv_result);
   ~adaptive_rd();
@@ -56,5 +56,5 @@ public:
   void put(std::ostream &out);
 };
 
-}  // namespace reaching_defs
-}  // namespace analysis
+} // namespace reaching_defs
+} // namespace analysis

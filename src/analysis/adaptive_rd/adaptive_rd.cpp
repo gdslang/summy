@@ -68,6 +68,7 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
       return cleanup_live(acc);
     };
   };
+  
   edge_visitor ev;
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();

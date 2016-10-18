@@ -58,7 +58,7 @@ adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::join(:
   };
   if(contains_undef) explicitify(other_casted->elements, this->elements);
   if(other_casted->contains_undef) explicitify(this->elements, other_casted->elements);
-
+  
   elements_t lubbed = elements;
 
   auto explicit_lub = [&](elements_t const &from) {
