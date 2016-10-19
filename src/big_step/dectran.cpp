@@ -5,26 +5,26 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/cfg/cfg.h>
-#include <cppgdsl/gdsl_exception.h>
-#include <summy/cfg/node/node_visitor.h>
-#include <summy/cfg/node/address_node.h>
-#include <summy/transformers/transformer.h>
-#include <summy/transformers/decomposer.h>
-#include <summy/transformers/goto_ip_adder.h>
-#include <summy/transformers/ip_propagator.h>
-#include <summy/transformers/trivial_connector.h>
+#include <algorithm>
+#include <assert.h>
+#include <cppgdsl/block.h>
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/gdsl_exception.h>
-#include <cppgdsl/block.h>
-#include <cppgdsl/optimization.h>
+#include <cppgdsl/gdsl_exception.h>
 #include <cppgdsl/instruction.h>
+#include <cppgdsl/optimization.h>
 #include <cppgdsl/rreil/statement/statement.h>
 #include <limits.h>
 #include <summy/big_step/dectran.h>
-#include <algorithm>
+#include <summy/cfg/cfg.h>
+#include <summy/cfg/node/address_node.h>
+#include <summy/cfg/node/node_visitor.h>
+#include <summy/transformers/decomposer.h>
+#include <summy/transformers/goto_ip_adder.h>
+#include <summy/transformers/ip_propagator.h>
+#include <summy/transformers/transformer.h>
+#include <summy/transformers/trivial_connector.h>
 #include <vector>
-#include <assert.h>
 
 using gdsl::gdsl_exception;
 
@@ -40,11 +40,12 @@ bool dec_interval::operator<(const dec_interval &other) const {
   return from < other.from;
 }
 
-//bool dec_interval::operator <(const int_t &v) const {
+// bool dec_interval::operator <(const int_t &v) const {
 //  return from < v;
 //}
 
-std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_translate(bool decode_multiple) {
+std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_translate(
+  bool decode_multiple) {
   std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> prog;
   if(gdsl.bytes_left() <= 0) throw string("Unable to decode");
 
@@ -95,7 +96,7 @@ std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_tra
     //    printf("RReil (no transformations):\n");
     //    for(statement *s : *rreil)
     //      printf("%s\n", s->to_string().c_str());
-//
+    //
     prog.push_back(make_tuple(ip, std::move(rreil)));
   } while(decode_multiple && gdsl.bytes_left() > 0);
 
@@ -119,28 +120,30 @@ std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_tra
   return prog;
 }
 
-size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
+size_t dectran::initial_cfg(
+  cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
   size_t ip = (size_t)gdsl.get_ip();
   auto fmap_it = fmap.find(ip);
   if(!name && fmap_it != fmap.end()) name = fmap_it->second;
 
   auto prog = decode_translate(decode_multiple);
-//  cfg::translated_program_t prog_unowned;
-//  for(auto &elem : prog) {
-//    vector<gdsl::rreil::statement*> stmts_unowned;
-//    for(auto& stmt : get<1>(elem))
-//      stmts_unowned.push_back(stmt.get());
-//    prog_unowned.push_back(make_tuple(get<0>(elem), gdsl::iterable<gdsl::rreil::statement>(stmts_unowned)));
-//  }
+  //  cfg::translated_program_t prog_unowned;
+  //  for(auto &elem : prog) {
+  //    vector<gdsl::rreil::statement*> stmts_unowned;
+  //    for(auto& stmt : get<1>(elem))
+  //      stmts_unowned.push_back(stmt.get());
+  //    prog_unowned.push_back(make_tuple(get<0>(elem),
+  //    gdsl::iterable<gdsl::rreil::statement>(stmts_unowned)));
+  //  }
   size_t head_node = cfg.add_program(prog, name);
 
-//  for(auto t : prog) {
-//    vector<gdsl::rreil::statement *> *rreil;
-//    tie(ignore, rreil) = t;
-//    for(auto stmt : *rreil)
-//      delete stmt;
-//    delete rreil;
-//  }
+  //  for(auto t : prog) {
+  //    vector<gdsl::rreil::statement *> *rreil;
+  //    tie(ignore, rreil) = t;
+  //    for(auto stmt : *rreil)
+  //      delete stmt;
+  //    delete rreil;
+  //  }
 
   //  vector<transformer *> transformers;
   //  transformers.push_back(new decomposer(&cfg, head_node));
@@ -160,12 +163,13 @@ size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experiment
   return head_node;
 }
 
-dectran::dectran(
-  cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap)
-    : cfg(cfg), blockwise_optimized(blockwise_optimized), gdsl(gdsl), speculative_decoding(speculative_decoding),
-      fmap(fmap), decode_iterations(0) {}
+dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized,
+  bool speculative_decoding, function_map_t fmap)
+    : cfg(cfg), blockwise_optimized(blockwise_optimized),
+      speculative_decoding(speculative_decoding), gdsl(gdsl), fmap(fmap), decode_iterations(0) {}
 
-dectran::dectran(cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
+dectran::dectran(
+  cfg::cfg &cfg, gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
     : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding, function_map_t()) {}
 
 void dectran::print_decoding_holes() {
@@ -174,7 +178,8 @@ void dectran::print_decoding_holes() {
   int_t to = it->to;
   while(++it != decoded_intervals.end()) {
     if(it->from > to + 1) {
-      cout << "Warning: Decoding hole from 0x" << hex << (to + 1) << " to 0x" << (it->from - 1) << "." << dec << endl;
+      cout << "Warning: Decoding hole from 0x" << hex << (to + 1) << " to 0x" << (it->from - 1)
+           << "." << dec << endl;
       cout << "\tHole size: " << (it->from - to - 1) << endl;
     }
     if(it->to > to) {

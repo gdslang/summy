@@ -78,12 +78,12 @@ adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::join(:
 }
 
 adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::narrow(::analysis::domain_state *other,
-    size_t current_node) {
+    size_t) {
   return new adaptive_rd::adaptive_rd_state(*dynamic_cast<adaptive_rd::adaptive_rd_state*>(other));
 }
 
 adaptive_rd::adaptive_rd_state *analysis::adaptive_rd::adaptive_rd_state::widen(::analysis::domain_state *other,
-    size_t current_node) {
+    size_t) {
   return new adaptive_rd::adaptive_rd_state(*dynamic_cast<adaptive_rd::adaptive_rd_state*>(other));
 }
 
