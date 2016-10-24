@@ -6,16 +6,16 @@
  */
 
 #pragma once
-#include <summy/analysis/domains/numeric/numeric_state.h>
-#include <summy/analysis/domains/api/api.h>
-#include <summy/analysis/domains/ptr_set.h>
-#include <summy/analysis/domains/numeric/num_evaluator.h>
-#include <summy/value_set/value_set.h>
-#include <summy/analysis/util.h>
-#include <summy/analysis/inverse_set_map.h>
 #include <cppgdsl/rreil/id/id.h>
 #include <map>
 #include <set>
+#include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/numeric/num_evaluator.h>
+#include <summy/analysis/domains/numeric/numeric_state.h>
+#include <summy/analysis/domains/ptr_set.h>
+#include <summy/analysis/inverse_set_map.h>
+#include <summy/analysis/util.h>
+#include <summy/value_set/value_set.h>
 
 namespace analysis {
 namespace api {
@@ -38,7 +38,7 @@ private:
 
   /*
    * - If a variable is not contained in elements, this is equivalent to an alias
-   * set containing the bad pointer only, i.e. top
+   *   set containing the bad pointer and an unconstrained non-bad pointer only, i.e. top
    * - If an alias set of a variable is empty, the state of this variable is bottom
    */
   elements_t elements;
@@ -47,15 +47,18 @@ private:
   ptr simplify_ptr_sum(std::vector<id_shared_t> const &pointers);
   api::num_expr *replace_pointers(api::num_expr *e);
   api::num_linear *replace_pointers(api::num_linear *l);
-  api::num_linear *replace_pointers(std::map<id_shared_t, id_shared_t, id_less> &id_gen_map, api::num_linear *l);
+  api::num_linear *replace_pointers(
+    std::map<id_shared_t, id_shared_t, id_less> &id_gen_map, api::num_linear *l);
   /*
    * Todo: Remove (siehe als_state.cpp oben)
    */
   typedef numeric_state *(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
   als_state *domop(bool widening, domain_state *other, size_t current_node, domopper_t domopper);
 
+  bool is_top(elements_t::const_iterator it) const;
+
 protected:
-  void put(std::ostream &out) const;
+  void put(std::ostream &out) const override;
 
 public:
   als_state(numeric_state *child_state, elements_t elements);
