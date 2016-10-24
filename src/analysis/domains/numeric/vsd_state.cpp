@@ -336,6 +336,14 @@ void analysis::value_sets::vsd_state::copy_paste(api::num_var *to, api::num_var 
   if(from_it != from_state_vsd->elements.end()) elements[to->get_id()] = from_it->second;
 }
 
+void vsd_state::join(gdsl::rreil::id &id, summy::vs_shared_t vs) {
+  auto elements_it = elements.find(id);
+  if(elements_it == elements.end())
+    return;
+  auto joined = value_set::join(elements_it->second, vs);;
+  elements_it->second = joined;
+}
+
 bool analysis::value_sets::vsd_state::cleanup(api::num_var *var) {
   if(*queryVal(var) == value_set::top) {
     elements.erase(var->get_id());

@@ -12,6 +12,7 @@
 #include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/numeric/num_evaluator.h>
 #include <summy/analysis/domains/numeric/numeric_state.h>
+#include <summy/analysis/domains/numeric/vsd_state.h>
 #include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/inverse_set_map.h>
 #include <summy/analysis/util.h>
@@ -34,7 +35,7 @@ typedef inverse_set_map<id_shared_t, id_less> elements_t;
  */
 class als_state : public numeric_state {
 private:
-  numeric_state *child_state;
+  value_sets::vsd_state *child_state;
 
   /*
    * - If a variable is not contained in elements, this is equivalent to an alias
@@ -61,9 +62,10 @@ protected:
   void put(std::ostream &out) const override;
 
 public:
-  als_state(numeric_state *child_state, elements_t elements);
-  als_state(numeric_state *child_state) : als_state(child_state, elements_t{}) {}
-  als_state(als_state const &o) : als_state(o.child_state->copy(), o.elements) {}
+  als_state(value_sets::vsd_state *child_state, elements_t elements);
+  als_state(value_sets::vsd_state *child_state) : als_state(child_state, elements_t{}) {}
+  als_state(als_state const &o)
+      : als_state(static_cast<value_sets::vsd_state *>(o.child_state->copy()), o.elements) {}
   ~als_state();
 
   const elements_t &get_elements() const {

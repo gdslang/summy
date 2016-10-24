@@ -148,8 +148,9 @@ als_state *analysis::als_state::domop(
   numeric_state *other_compat;
   elements_t elements_compat;
   tie(ignore, elements_compat, me_compat, other_compat) = compat(widening, this, other_casted);
-  als_state *result =
-    new als_state((me_compat->*domopper)(other_compat, current_node), elements_compat);
+  als_state *result = new als_state(
+    static_cast<value_sets::vsd_state *>((me_compat->*domopper)(other_compat, current_node)),
+    elements_compat);
   delete me_compat;
   delete other_compat;
   return result;
@@ -194,7 +195,7 @@ void als_state::put(std::ostream &out) const {
   out << endl << "}";
 }
 
-analysis::als_state::als_state(numeric_state *child_state, elements_t elements)
+analysis::als_state::als_state(value_sets::vsd_state *child_state, elements_t elements)
     : child_state(child_state), elements(elements) {}
 
 analysis::als_state::~als_state() {
@@ -248,7 +249,7 @@ als_state *als_state::meet(domain_state *other, size_t current_node) {
 
   numeric_state *child_met = child_state->meet(other_casted->child_state, current_node);
 
-  return new als_state(child_met, elements_new);
+  return new als_state(static_cast<value_sets::vsd_state *>(child_met), elements_new);
 }
 
 als_state *als_state::widen(domain_state *other, size_t current_node) {
@@ -744,8 +745,8 @@ ptr_set_t analysis::als_state::normalise(ptr_set_t aliases) {
 std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_state::compat(
   bool widening, const als_state *a, const als_state *b) {
   bool als_a_ge_b = true;
-  numeric_state *a_ = a->child_state->copy();
-  numeric_state *b_ = b->child_state->copy();
+  auto a_ = static_cast<value_sets::vsd_state*>(a->child_state->copy());
+  auto b_ = static_cast<value_sets::vsd_state*>(b->child_state->copy());
   elements_t result_elements;
 
   auto const &a_elements = a->get_elements();
@@ -778,6 +779,11 @@ std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_sta
     } else {
       set_union(aliases_a.begin(), aliases_a.end(), aliases_b.begin(), aliases_b.end(),
         inserter(joined, joined.begin()));
+    }
+    for(auto const &id : joined) {
+      num_var nv(id);
+      a_->join(*id, b_->queryVal(&nv));
+      b_->join(*id, a_->queryVal(&nv));
     }
     result_elements.insert(make_pair(a_elements_it->first, joined));
     if(joined.size() > aliases_a.size()) als_a_ge_b = false;
