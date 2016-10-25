@@ -28,7 +28,7 @@
 using namespace summy;
 using namespace std;
 
-std::ostream &summy::operator <<(std::ostream &out, value_set &_this) {
+std::ostream &summy::operator <<(std::ostream &out, value_set const &_this) {
   _this.put(out);
   return out;
 }
@@ -40,13 +40,13 @@ vs_shared_t value_set::narrow(const vs_top *vsf) const {
 vs_shared_t value_set::narrow(vs_shared_t a, vs_shared_t b) {
   value_set_visitor vs;
   vs_shared_t result;
-  vs._([&] (vs_finite *v) {
+  vs._([&] (vs_finite const *v) {
     result = a->narrow(v);
   });
-  vs._([&] (vs_open *v) {
+  vs._([&] (vs_open const *v) {
     result = a->narrow(v);
   });
-  vs._([&] (vs_top *v) {
+  vs._([&] (vs_top const *v) {
     result = a->narrow(v);
   });
   b->accept(vs);
@@ -60,13 +60,13 @@ vs_shared_t value_set::widen(const vs_top *vsf) const {
 vs_shared_t value_set::widen(vs_shared_t a, vs_shared_t b) {
   value_set_visitor vs;
   vs_shared_t result;
-  vs._([&] (vs_finite *v) {
+  vs._([&] (vs_finite const *v) {
     result = a->widen(v);
   });
-  vs._([&] (vs_open *v) {
+  vs._([&] (vs_open const *v) {
     result = a->widen(v);
   });
-  vs._([&] (vs_top *v) {
+  vs._([&] (vs_top const *v) {
     result = a->widen(v);
   });
   b->accept(vs);
@@ -84,23 +84,23 @@ vs_shared_t summy::value_set::add(const vs_top *vs) const {
   return top;
 }
 
-vs_shared_t summy::value_set::operator +(vs_shared_t b) {
+vs_shared_t summy::value_set::operator +(vs_shared_t b) const {
   value_set_visitor vs;
   vs_shared_t result;
-  vs._([&] (vs_finite *v) {
+  vs._([&] (vs_finite const *v) {
     result = add(v);
   });
-  vs._([&] (vs_open *v) {
+  vs._([&] (vs_open const *v) {
     result = add(v);
   });
-  vs._([&] (vs_top *v) {
+  vs._([&] (vs_top const *v) {
     result = add(v);
   });
   b->accept(vs);
   return result;
 }
 
-vs_shared_t summy::value_set::operator -(vs_shared_t b) {
+vs_shared_t summy::value_set::operator -(vs_shared_t b) const {
   return *this + (-*b);
 }
 
@@ -117,36 +117,36 @@ vs_shared_t summy::value_set::operator !() const {
     return vs_finite::_true_false;
 }
 
-vs_shared_t summy::value_set::mul(const vs_top *vs) const {
+vs_shared_t summy::value_set::mul(const vs_top *) const {
   return top;
 }
 
-vs_shared_t summy::value_set::operator *(vs_shared_t b) {
+vs_shared_t summy::value_set::operator *(vs_shared_t b) const {
   value_set_visitor vs;
   vs_shared_t result;
-  vs._([&] (vs_finite *v) {
+  vs._([&] (vs_finite const *v) {
     result = mul(v);
   });
-  vs._([&] (vs_open *v) {
+  vs._([&] (vs_open const *v) {
     result = mul(v);
   });
-  vs._([&] (vs_top *v) {
+  vs._([&] (vs_top const *v) {
     result = mul(v);
   });
   b->accept(vs);
   return result;
 }
 
-vs_shared_t summy::value_set::operator /(vs_shared_t b) {
+vs_shared_t summy::value_set::operator /(vs_shared_t b) const {
   value_set_visitor vs;
   vs_shared_t result;
-  vs._([&] (vs_finite *v) {
+  vs._([&] (vs_finite const *v) {
     result = div(v);
   });
-  vs._([&] (vs_open *v) {
+  vs._([&] (vs_open const *v) {
     result = div(v);
   });
-  vs._([&] (vs_top *v) {
+  vs._([&] (vs_top const *v) {
     result = div(v);
   });
   b->accept(vs);
@@ -172,13 +172,13 @@ bool summy::value_set::smaller_equals(const vs_top *vsf) const {
 bool summy::value_set::operator <=(value_set const *b) const {
   value_set_visitor vs;
   bool result;
-  vs._([&] (vs_finite *v) {
+  vs._([&] (vs_finite const *v) {
     result = smaller_equals(v);
   });
-  vs._([&] (vs_open *v) {
+  vs._([&] (vs_open const *v) {
     result = smaller_equals(v);
   });
-  vs._([&] (vs_top *v) {
+  vs._([&] (vs_top const *v) {
     result = smaller_equals(v);
   });
   ((value_set*)b)->accept(vs);
@@ -200,13 +200,13 @@ vs_shared_t value_set::join(const vs_top *vsf) const {
 vs_shared_t value_set::join(vs_shared_t const a, vs_shared_t const b) {
   value_set_visitor vs;
   vs_shared_t result;
-  vs._([&] (vs_finite *v) {
+  vs._([&] (vs_finite const *v) {
     result = a->join(v);
   });
-  vs._([&] (vs_open *v) {
+  vs._([&] (vs_open const *v) {
     result = a->join(v);
   });
-  vs._([&] (vs_top *v) {
+  vs._([&] (vs_top const *v) {
     result = a->join(v);
   });
   ((vs_shared_t)b)->accept(vs);
@@ -216,13 +216,13 @@ vs_shared_t value_set::join(vs_shared_t const a, vs_shared_t const b) {
 vs_shared_t summy::value_set::meet(const vs_shared_t a, const vs_shared_t b) {
   value_set_visitor vs;
   vs_shared_t result;
-  vs._([&] (vs_finite *v) {
+  vs._([&] (vs_finite const *v) {
     result = a->meet(v);
   });
-  vs._([&] (vs_open *v) {
+  vs._([&] (vs_open const *v) {
     result = a->meet(v);
   });
-  vs._([&] (vs_top *v) {
+  vs._([&] (vs_top const *v) {
     result = a->meet(v);
   });
   ((vs_shared_t)b)->accept(vs);

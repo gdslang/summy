@@ -72,37 +72,37 @@ public:
     return elements;
   }
 
-  void bottomify();
-  bool is_bottom() const;
+  void bottomify() override;
+  bool is_bottom() const override;
 
-  bool operator>=(domain_state const &other) const;
+  bool operator>=(domain_state const &other) const override;
 
-  als_state *join(domain_state *other, size_t current_node);
-  als_state *meet(domain_state *other, size_t current_node);
-  als_state *widen(domain_state *other, size_t current_node);
-  als_state *narrow(domain_state *other, size_t current_node);
+  als_state *join(domain_state *other, size_t current_node) override;
+  als_state *meet(domain_state *other, size_t current_node) override;
+  als_state *widen(domain_state *other, size_t current_node) override;
+  als_state *narrow(domain_state *other, size_t current_node) override;
 
   void assign(api::num_var *lhs, api::num_expr *rhs, bool weak);
-  void assign(api::num_var *lhs, ptr_set_t aliases);
-  void assign(api::num_var *lhs, api::num_expr *rhs);
-  void weak_assign(api::num_var *lhs, api::num_expr *rhs);
-  void assume(api::num_expr_cmp *cmp);
-  void assume(api::num_var *lhs, ptr_set_t aliases);
-  void kill(std::vector<api::num_var *> vars);
-  void equate_kill(num_var_pairs_t vars);
-  void fold(num_var_pairs_t vars);
-  void copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state);
+  void assign(api::num_var *lhs, ptr_set_t aliases) override;
+  void assign(api::num_var *lhs, api::num_expr *rhs) override;
+  void weak_assign(api::num_var *lhs, api::num_expr *rhs) override;
+  void assume(api::num_expr_cmp *cmp) override;
+  void assume(api::num_var *lhs, ptr_set_t aliases) override;
+  void kill(std::vector<api::num_var *> vars) override;
+  void equate_kill(num_var_pairs_t vars) override;
+  void fold(num_var_pairs_t vars) override;
+  void copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) override;
 
-  bool cleanup(api::num_var *var);
-  void project(api::num_vars *vars);
-  api::num_vars *vars();
-  void collect_ids(std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map);
+  bool cleanup(api::num_var *var) override;
+  void project(api::num_vars *vars) override;
+  api::num_vars *vars() override;
+  void collect_ids(std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map) override;
 
-  ptr_set_t queryAls(api::num_var *nv);
-  summy::vs_shared_t queryVal(api::num_linear *lin);
-  summy::vs_shared_t queryVal(api::num_var *nv);
+  ptr_set_t queryAls(api::num_var *nv) override;
+  summy::vs_shared_t queryVal(api::num_linear *lin) override;
+  summy::vs_shared_t queryVal(api::num_var *nv) override;
 
-  als_state *copy() const;
+  als_state *copy() const override;
 
   /**
    * Re-offset static memory aliases to the null pointer. Static memory ids

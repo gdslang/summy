@@ -391,7 +391,7 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
   map<id_shared_t, vector<vs_shared_t>, id_less> symbol_offsets;
 
   value_set_visitor vsv(true);
-  vsv._([&](vs_finite *vf) {
+  vsv._([&](vs_finite const *vf) {
     //      if(elements.size() > 100) cout << "Warning in queryAls(): Ignoring some pointers" << endl;
     auto &elements = vf->get_elements();
     for(auto &e : elements) {
@@ -413,7 +413,7 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
       //  vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
     }
   });
-  vsv._default([&](value_set *v) { symbol_offsets[special_ptr::_nullptr].push_back(nv_val); });
+  vsv._default([&](value_set const *v) { symbol_offsets[special_ptr::_nullptr].push_back(nv_val); });
   nv_val->accept(vsv);
 
   ptr_set_t result;

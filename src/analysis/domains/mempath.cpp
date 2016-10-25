@@ -111,10 +111,10 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
     for(auto &alias : wi.aliases) {
       optional<int64_t> offset;
       value_set_visitor vsv;
-      vsv._([&](vs_finite *vsf) {
+      vsv._([&](vs_finite const *vsf) {
         if(vsf->is_singleton()) offset = *vsf->get_elements().begin();
       });
-      vsv._default([&](value_set *vs) {
+      vsv._default([&](value_set const *vs) {
         /*
          * Warning?
          */

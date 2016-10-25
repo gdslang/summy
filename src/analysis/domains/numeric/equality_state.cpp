@@ -260,7 +260,7 @@ void analysis::equality_state::assign_lin(
 
       optional<int64_t> value;
       value_set_visitor vsv(true);
-      vsv._([&](vs_finite *vsf) {
+      vsv._([&](vs_finite const *vsf) {
         if(vsf->is_singleton()) value = *vsf->get_elements().begin();
       });
       rest_vs->accept(vsv);

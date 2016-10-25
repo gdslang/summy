@@ -16,7 +16,7 @@ template <typename T> int sgn(T val) {
 }
 
 class value_set;
-typedef std::shared_ptr<value_set> vs_shared_t;
+typedef std::shared_ptr<value_set const> vs_shared_t;
 class vs_top;
 class vs_open;
 class vs_finite;
@@ -24,12 +24,12 @@ class value_set_visitor;
 
 class value_set {
 private:
-  virtual void put(std::ostream &out) = 0;
+  virtual void put(std::ostream &out) const = 0;
 public:
   virtual ~value_set() {
   }
-  friend std::ostream &operator<< (std::ostream &out, value_set &_this);
-  virtual void accept(value_set_visitor &v) = 0;
+  friend std::ostream &operator<< (std::ostream &out, value_set const &_this);
+  virtual void accept(value_set_visitor &v) const = 0;
 
   /*
    * Narrowing
@@ -55,8 +55,8 @@ public:
   virtual vs_shared_t add(vs_finite const *vs) const = 0;
   virtual vs_shared_t add(vs_open const *vs) const = 0;
   vs_shared_t add(vs_top const *vs) const;
-  vs_shared_t operator+(vs_shared_t b);
-  vs_shared_t operator-(vs_shared_t b);
+  vs_shared_t operator+(vs_shared_t b) const;
+  vs_shared_t operator-(vs_shared_t b) const;
 
   virtual vs_shared_t neg() const = 0;
   vs_shared_t operator-() const;
@@ -65,12 +65,12 @@ public:
   virtual vs_shared_t mul(vs_finite const *vs) const = 0;
   virtual vs_shared_t mul(vs_open const *vs) const = 0;
   vs_shared_t mul(vs_top const *vs) const;
-  vs_shared_t operator*(vs_shared_t b);
+  vs_shared_t operator*(vs_shared_t b) const;
 
   virtual vs_shared_t div(vs_finite const *vs) const = 0;
   virtual vs_shared_t div(vs_open const *vs) const = 0;
   virtual vs_shared_t div(vs_top const *vs) const = 0;
-  vs_shared_t operator/(vs_shared_t b);
+  vs_shared_t operator/(vs_shared_t b) const;
 
   /*
    * Comparisons
@@ -113,7 +113,7 @@ public:
   static vs_shared_t const bottom;
 };
 
-std::ostream &operator<<(std::ostream &out, value_set &_this);
+std::ostream &operator<<(std::ostream &out, value_set const &_this);
 
 }
 

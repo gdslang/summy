@@ -170,7 +170,7 @@ static void query_deref(id_shared_t &id, _analysis_result &ar, summary_memory_st
 
   int64_t offset;
   value_set_visitor vsv;
-  vsv._([&](vs_finite *vsf) {
+  vsv._([&](vs_finite const *vsf) {
     if(!vsf->is_singleton()) throw string("query_deref_als(): need singleton alias set :-/");
     offset = *vsf->get_elements().begin();
   });

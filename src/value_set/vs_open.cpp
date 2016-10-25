@@ -27,7 +27,7 @@
 using namespace summy;
 using namespace std;
 
-void summy::vs_open::put(std::ostream &out) {
+void summy::vs_open::put(std::ostream &out) const {
   switch(open_dir) {
     case DOWNWARD: {
       out << "]-∞;" << limit << "]";
@@ -396,7 +396,7 @@ vs_shared_t summy::vs_open::with_sign_size(bool _unsigned, size_t size) const {
     return make_shared<vs_open>(*this);
 }
 
-void summy::vs_open::accept(value_set_visitor &v) {
+void summy::vs_open::accept(value_set_visitor &v) const {
   v.visit(this);
 }
 

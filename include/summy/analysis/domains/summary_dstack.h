@@ -84,7 +84,10 @@ private:
 
 public:
   summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings, std::set<size_t> const &f_starts);
-  [[deprecated]] summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings);
+  /**
+   * Constructor with initial call to node zero
+   */
+  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings);
   summary_dstack(cfg::cfg *cfg, bool warnings);
   ~summary_dstack();
 

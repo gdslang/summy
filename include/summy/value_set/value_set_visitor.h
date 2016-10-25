@@ -17,10 +17,10 @@ class vs_top;
 
 class value_set_visitor {
 public:
-  typedef std::function<void(vs_finite*)> vs_finite_callback_t;
-  typedef std::function<void(vs_open*)> vs_open_callback_t;
-  typedef std::function<void(vs_top*)> vs_top_callback_t;
-  typedef std::function<void(value_set*)> default_callback_t;
+  typedef std::function<void(vs_finite const*)> vs_finite_callback_t;
+  typedef std::function<void(vs_open const*)> vs_open_callback_t;
+  typedef std::function<void(vs_top const*)> vs_top_callback_t;
+  typedef std::function<void(value_set const*)> default_callback_t;
 private:
   bool ignore_default;
 
@@ -35,10 +35,10 @@ public:
       ignore_default(ignore_default) {
   }
 
-  virtual void visit(vs_finite *v);
-  virtual void visit(vs_open *v);
-  virtual void visit(vs_top *v);
-  virtual void _default(value_set *v);
+  virtual void visit(vs_finite const *v);
+  virtual void visit(vs_open const *v);
+  virtual void visit(vs_top const *v);
+  virtual void _default(value_set const *v);
 
   void _(vs_finite_callback_t c) {
     this->vs_finite_callback = c;
