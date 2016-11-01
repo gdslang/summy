@@ -28,7 +28,6 @@
 #include <bjutil/printer.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/summary_application.h>
-#include <summy/analysis/ismt/smt_builder.h>
 #include <summy/rreil/id/memory_id.h>
 #include <algorithm>
 #include <experimental/optional>
@@ -100,7 +99,7 @@ std::set<size_t> analysis::summary_dstack::get_callers(std::shared_ptr<global_st
   vs_shared_t f_addrs = state->get_f_addr();
   callers_t callers;
   value_set_visitor vsv;
-  vsv._([&](vs_finite *vf) {
+  vsv._([&](vs_finite const *vf) {
     for(size_t f_addr : vf->get_elements()) {
       size_t head_id = this->function_desc_map.at((void *)f_addr).head_id;
       for(size_t parent : cfg->in_edges(head_id)) {
@@ -121,7 +120,7 @@ std::set<size_t> analysis::summary_dstack::get_function_heads(std::shared_ptr<gl
   vs_shared_t f_addrs = state->get_f_addr();
   callers_t heads;
   value_set_visitor vsv;
-  vsv._([&](vs_finite *vf) {
+  vsv._([&](vs_finite const *vf) {
     for(size_t f_addr : vf->get_elements()) {
       size_t head_id = this->function_desc_map.at((void *)f_addr).head_id;
       heads.insert(head_id);
@@ -134,7 +133,7 @@ std::set<size_t> analysis::summary_dstack::get_function_heads(std::shared_ptr<gl
 set<void *> analysis::summary_dstack::unpack_f_addrs(summy::vs_shared_t f_addr) {
   set<void *> addresses;
   value_set_visitor vsv(true);
-  vsv._([&](vs_finite *vsf) {
+  vsv._([&](vs_finite const *vsf) {
     vs_finite::elements_t const &elems = vsf->get_elements();
     for(auto address : elems) {
       void *address_ptr = (void *)address;
@@ -264,7 +263,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               ptr.id->accept(idv);
               if(!is_valid_code_address) continue;
               value_set_visitor vsv;
-              vsv._([&](vs_finite *vsf) {
+              vsv._([&](vs_finite const *vsf) {
                 //                cout << "-----" << endl;
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char *)text_address + offset;
@@ -426,7 +425,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
 
               value_set_visitor vsv;
-              vsv._([&](vs_finite *vsf) {
+              vsv._([&](vs_finite const *vsf) {
                 //                cout << "-----" << endl;
                 for(int64_t offset : vsf->get_elements()) {
                   size_t address = (size_t)text_address + offset;

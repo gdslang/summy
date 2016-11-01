@@ -19,6 +19,8 @@ private:
   map_t backward;
 
 public:
+  using const_iterator = typename map_t::const_iterator;
+  
   class modification_wrapper_t {
   private:
     map_t &backward;

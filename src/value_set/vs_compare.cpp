@@ -28,11 +28,11 @@
 
 using namespace summy;
 
-static bool less(vs_finite *a, vs_finite *b) {
+static bool less(vs_finite const *a, vs_finite const *b) {
   return a->get_elements() < b->get_elements();
 }
 
-static bool less(vs_open *a, vs_open *b) {
+static bool less(vs_open const *a, vs_open const *b) {
   if(a->get_limit() < b->get_limit())
     return true;
   return a->get_open_dir() < b->get_open_dir();
@@ -41,41 +41,41 @@ static bool less(vs_open *a, vs_open *b) {
 bool vs_total_less::operator ()(vs_shared_t a, vs_shared_t b) const {
   value_set_visitor vva;
   bool result;
-  vva._([&](vs_finite *_a) {
+  vva._([&](vs_finite const *_a) {
     value_set_visitor vvb;
-    vvb._([&](vs_finite *_b) {
+    vvb._([&](vs_finite const *_b) {
       result = less(_a, _b);
     });
-    vvb._([&](vs_open *_b) {
+    vvb._([&](vs_open const *_b) {
       result = false;
     });
-    vvb._([&](vs_top *_b) {
+    vvb._([&](vs_top const *_b) {
       result = false;
     });
     b->accept(vvb);
   });
-  vva._([&](vs_open *_a) {
+  vva._([&](vs_open const *_a) {
     value_set_visitor vvb;
-    vvb._([&](vs_finite *_b) {
+    vvb._([&](vs_finite const *_b) {
       result = true;
     });
-    vvb._([&](vs_open *_b) {
+    vvb._([&](vs_open const *_b) {
       result = less(_a, _b);
     });
-    vvb._([&](vs_top *_b) {
+    vvb._([&](vs_top const *_b) {
       result = false;
     });
     b->accept(vvb);
   });
-  vva._([&](vs_top *_a) {
+  vva._([&](vs_top const *_a) {
     value_set_visitor vvb;
-    vvb._([&](vs_finite *_b) {
+    vvb._([&](vs_finite const *_b) {
       result = true;
     });
-    vvb._([&](vs_open *_b) {
+    vvb._([&](vs_open const *_b) {
       result = true;
     });
-    vvb._([&](vs_top *_b) {
+    vvb._([&](vs_top const *_b) {
       result = false;
     });
     b->accept(vvb);

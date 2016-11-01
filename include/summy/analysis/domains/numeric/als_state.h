@@ -6,16 +6,17 @@
  */
 
 #pragma once
-#include <summy/analysis/domains/numeric/numeric_state.h>
-#include <summy/analysis/domains/api/api.h>
-#include <summy/analysis/domains/ptr_set.h>
-#include <summy/analysis/domains/numeric/num_evaluator.h>
-#include <summy/value_set/value_set.h>
-#include <summy/analysis/util.h>
-#include <summy/analysis/inverse_set_map.h>
 #include <cppgdsl/rreil/id/id.h>
 #include <map>
 #include <set>
+#include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/numeric/num_evaluator.h>
+#include <summy/analysis/domains/numeric/numeric_state.h>
+#include <summy/analysis/domains/numeric/vsd_state.h>
+#include <summy/analysis/domains/ptr_set.h>
+#include <summy/analysis/inverse_set_map.h>
+#include <summy/analysis/util.h>
+#include <summy/value_set/value_set.h>
 
 namespace analysis {
 namespace api {
@@ -34,11 +35,11 @@ typedef inverse_set_map<id_shared_t, id_less> elements_t;
  */
 class als_state : public numeric_state {
 private:
-  numeric_state *child_state;
+  value_sets::vsd_state *child_state;
 
   /*
    * - If a variable is not contained in elements, this is equivalent to an alias
-   * set containing the bad pointer only, i.e. top
+   *   set containing the bad pointer and an unconstrained non-bad pointer only, i.e. top
    * - If an alias set of a variable is empty, the state of this variable is bottom
    */
   elements_t elements;
@@ -47,57 +48,61 @@ private:
   ptr simplify_ptr_sum(std::vector<id_shared_t> const &pointers);
   api::num_expr *replace_pointers(api::num_expr *e);
   api::num_linear *replace_pointers(api::num_linear *l);
-  api::num_linear *replace_pointers(std::map<id_shared_t, id_shared_t, id_less> &id_gen_map, api::num_linear *l);
+  api::num_linear *replace_pointers(
+    std::map<id_shared_t, id_shared_t, id_less> &id_gen_map, api::num_linear *l);
   /*
    * Todo: Remove (siehe als_state.cpp oben)
    */
   typedef numeric_state *(numeric_state::*domopper_t)(domain_state *other, size_t current_node);
   als_state *domop(bool widening, domain_state *other, size_t current_node, domopper_t domopper);
 
+  bool is_top(elements_t::const_iterator it) const;
+
 protected:
-  void put(std::ostream &out) const;
+  void put(std::ostream &out) const override;
 
 public:
-  als_state(numeric_state *child_state, elements_t elements);
-  als_state(numeric_state *child_state) : als_state(child_state, elements_t{}) {}
-  als_state(als_state const &o) : als_state(o.child_state->copy(), o.elements) {}
+  als_state(value_sets::vsd_state *child_state, elements_t elements);
+  als_state(value_sets::vsd_state *child_state) : als_state(child_state, elements_t{}) {}
+  als_state(als_state const &o)
+      : als_state(static_cast<value_sets::vsd_state *>(o.child_state->copy()), o.elements) {}
   ~als_state();
 
   const elements_t &get_elements() const {
     return elements;
   }
 
-  void bottomify();
-  bool is_bottom() const;
+  void bottomify() override;
+  bool is_bottom() const override;
 
-  bool operator>=(domain_state const &other) const;
+  bool operator>=(domain_state const &other) const override;
 
-  als_state *join(domain_state *other, size_t current_node);
-  als_state *meet(domain_state *other, size_t current_node);
-  als_state *widen(domain_state *other, size_t current_node);
-  als_state *narrow(domain_state *other, size_t current_node);
+  als_state *join(domain_state *other, size_t current_node) override;
+  als_state *meet(domain_state *other, size_t current_node) override;
+  als_state *widen(domain_state *other, size_t current_node) override;
+  als_state *narrow(domain_state *other, size_t current_node) override;
 
   void assign(api::num_var *lhs, api::num_expr *rhs, bool weak);
-  void assign(api::num_var *lhs, ptr_set_t aliases);
-  void assign(api::num_var *lhs, api::num_expr *rhs);
-  void weak_assign(api::num_var *lhs, api::num_expr *rhs);
-  void assume(api::num_expr_cmp *cmp);
-  void assume(api::num_var *lhs, ptr_set_t aliases);
-  void kill(std::vector<api::num_var *> vars);
-  void equate_kill(num_var_pairs_t vars);
-  void fold(num_var_pairs_t vars);
-  void copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state);
+  void assign(api::num_var *lhs, ptr_set_t aliases) override;
+  void assign(api::num_var *lhs, api::num_expr *rhs) override;
+  void weak_assign(api::num_var *lhs, api::num_expr *rhs) override;
+  void assume(api::num_expr_cmp *cmp) override;
+  void assume(api::num_var *lhs, ptr_set_t aliases) override;
+  void kill(std::vector<api::num_var *> vars) override;
+  void equate_kill(num_var_pairs_t vars) override;
+  void fold(num_var_pairs_t vars) override;
+  void copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) override;
 
-  bool cleanup(api::num_var *var);
-  void project(api::num_vars *vars);
-  api::num_vars *vars();
-  void collect_ids(std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map);
+  bool cleanup(api::num_var *var) override;
+  void project(api::num_vars *vars) override;
+  api::num_vars *vars() override;
+  void collect_ids(std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map) override;
 
-  ptr_set_t queryAls(api::num_var *nv);
-  summy::vs_shared_t queryVal(api::num_linear *lin);
-  summy::vs_shared_t queryVal(api::num_var *nv);
+  ptr_set_t queryAls(api::num_var *nv) override;
+  summy::vs_shared_t queryVal(api::num_linear *lin) override;
+  summy::vs_shared_t queryVal(api::num_var *nv) override;
 
-  als_state *copy() const;
+  als_state *copy() const override;
 
   /**
    * Re-offset static memory aliases to the null pointer. Static memory ids

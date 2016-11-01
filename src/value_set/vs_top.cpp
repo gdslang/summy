@@ -28,7 +28,7 @@
 using namespace summy;
 using namespace std;
 
-void summy::vs_top::put(std::ostream &out) {
+void summy::vs_top::put(std::ostream &out) const {
   out << "⊤";
 }
 
@@ -124,6 +124,6 @@ vs_shared_t summy::vs_top::with_sign_size(bool _unsigned, size_t size) const {
   return value_set::top;
 }
 
-void summy::vs_top::accept(value_set_visitor &v) {
+void summy::vs_top::accept(value_set_visitor &v) const {
   v.visit(this);
 }

@@ -237,7 +237,7 @@ summary_memory_state *analysis::summary_application::apply_summary() {
         vs_shared_t offset = ptr.offset;
         optional<int64_t> offset_int;
         value_set_visitor vsv(true);
-        vsv._([&](vs_finite *vsf) {
+        vsv._([&](vs_finite const *vsf) {
           if(vsf->is_singleton()) offset_int = vsf->min();
         });
         offset->accept(vsv);

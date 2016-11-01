@@ -81,6 +81,8 @@ public:
   void equate_kill(num_var_pairs_t vars);
   void fold(num_var_pairs_t vars);
   void copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state);
+  
+  void join(gdsl::rreil::id &id, summy::vs_shared_t vs);
 
   bool cleanup(api::num_var *var);
   void project(api::num_vars *vars);

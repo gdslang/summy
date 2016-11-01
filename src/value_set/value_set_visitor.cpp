@@ -29,22 +29,22 @@
 using namespace summy;
 using namespace std;
 
-void value_set_visitor::visit(vs_finite *v) {
+void value_set_visitor::visit(vs_finite const *v) {
   if(vs_finite_callback != NULL) vs_finite_callback(v);
   else _default(v);
 }
 
-void value_set_visitor::visit(vs_open *v) {
+void value_set_visitor::visit(vs_open const *v) {
   if(vs_open_callback != NULL) vs_open_callback(v);
   else _default(v);
 }
 
-void value_set_visitor::visit(vs_top *v) {
+void value_set_visitor::visit(vs_top const *v) {
   if(vs_top_callback != NULL) vs_top_callback(v);
   else _default(v);
 }
 
-void value_set_visitor::_default(value_set *v) {
+void value_set_visitor::_default(value_set const *v) {
   if(default_callback != NULL) default_callback(v);
   else assert(ignore_default);
 }

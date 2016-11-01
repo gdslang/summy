@@ -52,7 +52,7 @@ protected:
   std::tuple<bool, void*> static_address(id_shared_t id);
   void initialize_static(region_t &region, void *address, size_t offset, size_t size);
 
-  std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
+  std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite const *vs, int_t store_size);
   bool overlap_region(region_t &region, int64_t offset, size_t size);
 
   region_t::iterator retrieve_kill(region_t &region, int64_t offset, size_t size);

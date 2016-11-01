@@ -5,17 +5,17 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/domains/numeric/als_state.h>
-#include <summy/analysis/domains/api/api.h>
-#include <summy/rreil/id/numeric_id.h>
-#include <summy/value_set/value_set.h>
 #include <algorithm>
 #include <assert.h>
 #include <cppgdsl/rreil/rreil.h>
+#include <experimental/optional>
+#include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/numeric_id.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/id/special_ptr.h>
-#include <experimental/optional>
+#include <summy/value_set/value_set.h>
 
 using gdsl::rreil::id;
 using std::experimental::optional;
@@ -91,12 +91,15 @@ api::num_expr *analysis::als_state::replace_pointers(api::num_expr *e) {
   num_expr *result;
   num_visitor nv;
   std::map<id_shared_t, id_shared_t, id_less> id_gen_map;
-  nv._(
-    [&](num_expr_cmp *ec) { result = new num_expr_cmp(replace_pointers(id_gen_map, ec->get_opnd()), ec->get_op()); });
-  nv._([&](num_expr_lin *el) { result = new num_expr_lin(replace_pointers(id_gen_map, el->get_inner())); });
+  nv._([&](num_expr_cmp *ec) {
+    result = new num_expr_cmp(replace_pointers(id_gen_map, ec->get_opnd()), ec->get_op());
+  });
+  nv._([&](num_expr_lin *el) {
+    result = new num_expr_lin(replace_pointers(id_gen_map, el->get_inner()));
+  });
   nv._([&](num_expr_bin *el) {
-    result = new num_expr_bin(
-      replace_pointers(id_gen_map, el->get_opnd1()), el->get_op(), replace_pointers(id_gen_map, el->get_opnd2()));
+    result = new num_expr_bin(replace_pointers(id_gen_map, el->get_opnd1()), el->get_op(),
+      replace_pointers(id_gen_map, el->get_opnd2()));
   });
   e->accept(nv);
   return result;
@@ -118,7 +121,8 @@ api::num_linear *analysis::als_state::replace_pointers(
       } else {
         auto gen_it = id_gen_map.find(lt->get_var()->get_id());
         if(gen_it == id_gen_map.end())
-          tie(gen_it, ignore) = id_gen_map.insert(make_pair(lt->get_var()->get_id(), numeric_id::generate()));
+          tie(gen_it, ignore) =
+            id_gen_map.insert(make_pair(lt->get_var()->get_id(), numeric_id::generate()));
         terms[gen_it->second] += lt->get_scale();
       }
     } else
@@ -136,17 +140,32 @@ api::num_linear *analysis::als_state::replace_pointers(api::num_linear *l) {
   return replace_pointers(id_gen_map, l);
 }
 
-als_state *analysis::als_state::domop(bool widening, domain_state *other, size_t current_node, domopper_t domopper) {
+als_state *analysis::als_state::domop(
+  bool widening, domain_state *other, size_t current_node, domopper_t domopper) {
   //  cout << *this << endl << "WIDEN" << endl << *other << endl;
   als_state const *other_casted = dynamic_cast<als_state *>(other);
   numeric_state *me_compat;
   numeric_state *other_compat;
   elements_t elements_compat;
   tie(ignore, elements_compat, me_compat, other_compat) = compat(widening, this, other_casted);
-  als_state *result = new als_state((me_compat->*domopper)(other_compat, current_node), elements_compat);
+  als_state *result = new als_state(
+    static_cast<value_sets::vsd_state *>((me_compat->*domopper)(other_compat, current_node)),
+    elements_compat);
   delete me_compat;
   delete other_compat;
   return result;
+}
+
+bool als_state::is_top(elements_t::const_iterator it) const {
+  if(it == elements.end()) return true;
+  return false;
+  //   auto const& aliases = it->second;
+  //   bool has_bad = false;
+  //   for(const auto& alias : aliases) {
+  //     if(*alias == *special_ptr::badptr)
+  //       has_bad = true;
+  //     else if()
+  //   }
 }
 
 void als_state::put(std::ostream &out) const {
@@ -173,11 +192,10 @@ void als_state::put(std::ostream &out) const {
   out << "}" << endl;
   out << "Child state: {" << endl;
   out << *child_state;
-  out << endl
-      << "}";
+  out << endl << "}";
 }
 
-analysis::als_state::als_state(numeric_state *child_state, elements_t elements)
+analysis::als_state::als_state(value_sets::vsd_state *child_state, elements_t elements)
     : child_state(child_state), elements(elements) {}
 
 analysis::als_state::~als_state() {
@@ -231,7 +249,7 @@ als_state *als_state::meet(domain_state *other, size_t current_node) {
 
   numeric_state *child_met = child_state->meet(other_casted->child_state, current_node);
 
-  return new als_state(child_met, elements_new);
+  return new als_state(static_cast<value_sets::vsd_state *>(child_met), elements_new);
 }
 
 als_state *als_state::widen(domain_state *other, size_t current_node) {
@@ -268,7 +286,8 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
         aliases_vars_rhs.push_back(var_it->second);
       }
       //      auto var_it = elements.find(var->get_id());
-      //      if(var_it != elements.end()) aliases_rhs.insert(var_it->second.begin(), var_it->second.end());
+      //      if(var_it != elements.end()) aliases_rhs.insert(var_it->second.begin(),
+      //      var_it->second.end());
     }
     if(aliases_vars_rhs.size() == 0) aliases_vars_rhs.push_back({special_ptr::_nullptr});
 
@@ -305,7 +324,8 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
     }
   } else {
     /*
-     * If the expression is not a linear expression, the result is a number and not a pointer. Therefore,
+     * If the expression is not a linear expression, the result is a number and not a pointer.
+     * Therefore,
      * we replace pointers in the expression and re-offset the result to the null pointer.
      */
 
@@ -328,14 +348,14 @@ void als_state::assign(api::num_var *lhs, ptr_set_t aliases) {
   aliases = normalise(aliases);
   optional<vs_shared_t> offset_joined;
   for(auto alias : aliases) {
-    if(alias.id == special_ptr::badptr)
-      continue;
+    if(alias.id == special_ptr::badptr) continue;
     if(offset_joined)
       offset_joined = value_set::join(offset_joined.value(), alias.offset);
     else
       offset_joined = alias.offset;
   }
-  num_expr *offset_e = new num_expr_lin(new num_linear_vs(offset_joined ? offset_joined.value() : vs_finite::top));
+  num_expr *offset_e =
+    new num_expr_lin(new num_linear_vs(offset_joined ? offset_joined.value() : vs_finite::top));
   child_state->assign(lhs, offset_e);
   delete offset_e;
 
@@ -689,7 +709,8 @@ api::num_vars *analysis::als_state::vars() {
   return child_vars;
 }
 
-void analysis::als_state::collect_ids(std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map) {
+void analysis::als_state::collect_ids(
+  std::map<gdsl::rreil::id const *, std::set<analysis::id_shared_t *>> &id_map) {
   auto for_elements = [&](auto const &elements) {
     for(auto const &elements_it : elements) {
       for(auto const &alias_it : elements_it.second)
@@ -712,7 +733,8 @@ ptr_set_t analysis::als_state::normalise(ptr_set_t aliases) {
   for(auto &alias : aliases) {
     summy::rreil::id_visitor idv;
     idv._([&](sm_id const *sid) {
-      result.insert(ptr(special_ptr::_nullptr, *vs_finite::single((int64_t)sid->get_address()) + alias.offset));
+      result.insert(
+        ptr(special_ptr::_nullptr, *vs_finite::single((int64_t)sid->get_address()) + alias.offset));
     });
     idv._default([&](id const *_id) { result.insert(alias); });
     alias.id->accept(idv);
@@ -723,72 +745,49 @@ ptr_set_t analysis::als_state::normalise(ptr_set_t aliases) {
 std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_state::compat(
   bool widening, const als_state *a, const als_state *b) {
   bool als_a_ge_b = true;
-  numeric_state *a_ = a->child_state->copy();
-  numeric_state *b_ = b->child_state->copy();
-  elements_t r;
-  //  auto single = [&](id_shared_t id, numeric_state *n) {
-  //    num_var *nv = new num_var(id);
-  //    num_expr *top_expr = new num_expr_lin(new num_linear_vs(value_set::top));
-  //    /*
-  //     * Todo: more precision
-  //     */
-  //    n->assign(nv, top_expr);
-  //    delete nv;
-  //    delete top_expr;
-  //  };
-  auto compat_elements = [&](elements_t const &a_elements, elements_t const &b_elements,
-    function<void(id_set_t const &, id_set_t const &, id_set_t const &)> joined_cb, bool a_b) {
-    for(auto &x : a_elements) {
-      assert(x.second.size() != 0);
-      auto x_b_it = b_elements.find(x.first);
+  auto a_ = static_cast<value_sets::vsd_state*>(a->child_state->copy());
+  auto b_ = static_cast<value_sets::vsd_state*>(b->child_state->copy());
+  elements_t result_elements;
 
-      id_set_t aliases_b;
-      if(x_b_it == b_elements.end()) {
-        if(a_b) als_a_ge_b = false;
-        continue;
-        //        aliases_b.insert(special_ptr::badptr);
-      } else {
-        if(!a_b) continue;
-        assert(x_b_it->second.size() > 0);
-        aliases_b = x_b_it->second;
-      }
+  auto const &a_elements = a->get_elements();
+  auto const &b_elements = b->get_elements();
 
-      //      cout << "Join of" << endl;
-      //      for(auto &u : x.second)
-      //        cout << *u << " ";
-      //      cout << endl << "and" << endl;
-      //      for(auto &u : x_b_it->second)
-      //        cout << *u << " ";
-      //      cout << endl << "is" << endl;
-      id_set_t joined;
-      if(widening) {
-        /*
-         * Todo: We could disallow alias set growth during widening only with respect to
-         * dynamically created pointers; heap pointers and numeric pointers cannot grow
-         * the state unboundedly.
-         */
-        joined = a_b ? x.second : aliases_b;
-        if(!includes((a_b ? x.second : aliases_b).begin(), (a_b ? x.second : aliases_b).end(),
-             (!a_b ? x.second : aliases_b).begin(), (!a_b ? x.second : aliases_b).end()))
-          joined.insert(special_ptr::badptr);
-      } else {
-        set_union(
-          x.second.begin(), x.second.end(), aliases_b.begin(), aliases_b.end(), inserter(joined, joined.begin()));
-      }
-      //      for(auto &u : joined)
-      //        cout << *u << " ";
-      //      cout << endl;
-      r.insert(make_pair(x.first, joined));
-      joined_cb(joined, x.second, aliases_b);
+  for(auto a_elements_it = a_elements.begin(); a_elements_it != a_elements.end(); ++a_elements_it) {
+    if(a->is_top(a_elements_it)) continue;
+    id_set_t const &aliases_a = a_elements_it->second;
+    assert(aliases_a.size() != 0); // no bottom
+
+    auto b_it = b_elements.find(a_elements_it->first);
+    if(b->is_top(b_it)) {
+      als_a_ge_b = false;
+      continue;
     }
-  };
-  compat_elements(
-    a->get_elements(), b->get_elements(), [&](id_set_t const &joined, id_set_t const &a, id_set_t const &b) {
-      if(joined.size() > a.size()) als_a_ge_b = false;
-    }, true);
-  compat_elements(
-    b->get_elements(), a->get_elements(), [&](id_set_t const &joined, id_set_t const &a, id_set_t const &b) {
-      if(joined.size() > b.size()) als_a_ge_b = false;
-    }, false);
-  return make_tuple(als_a_ge_b, r, a_, b_);
+    assert(b_it != b_elements.end());
+    id_set_t const &aliases_b = b_it->second;
+    assert(aliases_b.size() != 0); // no bottom
+
+    id_set_t joined;
+    if(widening) {
+      /*
+       * Todo: We could disallow alias set growth during widening only with respect to
+       * dynamically created pointers; heap pointers and numeric pointers cannot grow
+       * the state unboundedly.
+       */
+      joined = aliases_a;
+      if(!includes(aliases_a.begin(), aliases_a.end(), aliases_b.begin(), aliases_b.end()))
+        joined.insert(special_ptr::badptr);
+    } else {
+      set_union(aliases_a.begin(), aliases_a.end(), aliases_b.begin(), aliases_b.end(),
+        inserter(joined, joined.begin()));
+    }
+    for(auto const &id : joined) {
+      num_var nv(id);
+      a_->join(*id, b_->queryVal(&nv));
+      b_->join(*id, a_->queryVal(&nv));
+    }
+    result_elements.insert(make_pair(a_elements_it->first, joined));
+    if(joined.size() > aliases_a.size()) als_a_ge_b = false;
+  }
+
+  return make_tuple(als_a_ge_b, result_elements, a_, b_);
 }

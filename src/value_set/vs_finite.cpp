@@ -30,7 +30,7 @@
 using namespace summy;
 using namespace std;
 
-void summy::vs_finite::put(std::ostream &out) {
+void summy::vs_finite::put(std::ostream &out) const {
   out << print(elements);
 }
 
@@ -341,7 +341,7 @@ vs_shared_t summy::vs_finite::with_sign_size(bool _unsigned, size_t size) const 
     return make_shared<vs_finite>(*this);
 }
 
-void summy::vs_finite::accept(value_set_visitor &v) {
+void summy::vs_finite::accept(value_set_visitor &v) const {
   v.visit(this);
 }
 

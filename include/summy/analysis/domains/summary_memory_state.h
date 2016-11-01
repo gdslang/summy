@@ -165,7 +165,7 @@ protected:
   special_deref_desc_t handle_special_dereference(id_shared_t id);
   void initialize_static(io_region io, void *address, size_t offset, size_t size);
 
-  std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite *vs, int_t store_size);
+  std::tuple<std::set<int64_t>, std::set<int64_t>> overlappings(summy::vs_finite const *vs, int_t store_size);
 
   //  region_t merge_memory(id_shared_t addr_a, region_t &r);
   //  region_t merge_memory(id_shared_t addr_a, id_shared_t addr_b);

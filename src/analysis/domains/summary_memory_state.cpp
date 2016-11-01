@@ -533,7 +533,7 @@ void analysis::summary_memory_state::initialize_static(io_region io, void *addre
 }
 
 std::tuple<std::set<int64_t>, std::set<int64_t>> analysis::summary_memory_state::overlappings(
-  summy::vs_finite *vs, int_t store_size) {
+  summy::vs_finite const *vs, int_t store_size) {
   set<int64_t> overlapping;
   set<int64_t> non_overlapping;
 
@@ -891,7 +891,7 @@ void analysis::summary_memory_state::update(gdsl::rreil::load const *load) {
     tie(is_static, symbol_address) = static_address(alias.id);
 
     value_set_visitor vsv;
-    vsv._([&](vs_finite *v) {
+    vsv._([&](vs_finite const *v) {
       if(v->is_bottom()) {
         /*
          * Todo: handle bottom
@@ -909,8 +909,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load const *load) {
         lins.push_back(transLEReg(io, noo, load->get_size()));
       }
     });
-    vsv._([&](vs_open *o) { lins.push_back(new num_linear_vs(value_set::top)); });
-    vsv._([&](vs_top *t) { lins.push_back(new num_linear_vs(value_set::top)); });
+    vsv._([&](vs_open const *o) { lins.push_back(new num_linear_vs(value_set::top)); });
+    vsv._([&](vs_top const *t) { lins.push_back(new num_linear_vs(value_set::top)); });
     vs_shared_t offset_bits = *vs_finite::single(8) * alias.offset;
     offset_bits->accept(vsv);
   }
@@ -980,7 +980,7 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
     bool singleton = aliases_cleaned.size() == 1;
     bool _continue = false;
     value_set_visitor vsv;
-    vsv._([&](vs_finite *v) {
+    vsv._([&](vs_finite const *v) {
       singleton = singleton && v->is_singleton();
       if(v->is_bottom()) {
         /*
@@ -1001,7 +1001,7 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
         if(next_id) ids.push_back(next_id.value());
       }
     });
-    vsv._([&](vs_open *o) {
+    vsv._([&](vs_open const *o) {
       singleton = false;
       if(!handle_conflicts) return;
       if(warnings) cout << "Warning (store): Ignoring store to an open interval offset" << endl;
@@ -1028,7 +1028,7 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
       //      }
 
     });
-    vsv._([&](vs_top *t) {
+    vsv._([&](vs_top const *t) {
       _continue = true;
       singleton = false;
     });

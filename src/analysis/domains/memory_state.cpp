@@ -198,7 +198,7 @@ void analysis::memory_state::initialize_static(region_t &region, void *address, 
 }
 
 std::tuple<std::set<int64_t>, std::set<int64_t>> analysis::memory_state::overlappings(
-  summy::vs_finite *vs, int_t store_size) {
+  summy::vs_finite const *vs, int_t store_size) {
   set<int64_t> overlapping;
   set<int64_t> non_overlapping;
 
@@ -493,7 +493,7 @@ void analysis::memory_state::update(gdsl::rreil::load const *load) {
     tie(is_static, symbol_address) = static_address(alias.id);
 
     value_set_visitor vsv;
-    vsv._([&](vs_finite *v) {
+    vsv._([&](vs_finite const *v) {
       if(v->is_bottom()) {
         /*
          * Todo: handle bottom
@@ -511,8 +511,8 @@ void analysis::memory_state::update(gdsl::rreil::load const *load) {
         lins.push_back(transLEReg(region, noo, load->get_size()));
       }
     });
-    vsv._([&](vs_open *o) {});
-    vsv._([&](vs_top *t) {});
+    vsv._([&](vs_open const *o) {});
+    vsv._([&](vs_top const *t) {});
     vs_shared_t offset_bits = *vs_finite::single(8) * alias.offset;
     offset_bits->accept(vsv);
   }
@@ -571,7 +571,7 @@ void analysis::memory_state::update(gdsl::rreil::store const *store) {
     bool singleton = aliases.size() == 1;
     bool _continue = false;
     value_set_visitor vsv;
-    vsv._([&](vs_finite *v) {
+    vsv._([&](vs_finite const *v) {
       singleton = singleton && v->is_singleton();
       if(v->is_bottom()) {
         /*
@@ -590,7 +590,7 @@ void analysis::memory_state::update(gdsl::rreil::store const *store) {
       for(auto noo : non_overlapping)
         ids.push_back(transVarReg(region, noo, store->get_size()));
     });
-    vsv._([&](vs_open *o) {
+    vsv._([&](vs_open const *o) {
       singleton = false;
       switch(o->get_open_dir()) {
         case UPWARD: {
@@ -611,7 +611,7 @@ void analysis::memory_state::update(gdsl::rreil::store const *store) {
       }
 
     });
-    vsv._([&](vs_top *t) {
+    vsv._([&](vs_top const *t) {
       _continue = true;
       singleton = false;
     });
