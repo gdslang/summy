@@ -9,8 +9,17 @@ file(GLOB_RECURSE SOURCES
 
 include_directories("include/")
 
-find_package (gdsl REQUIRED)
-find_package (bjutil REQUIRED)
+if(EXISTS "${CMAKE_SOURCE_DIR}/dependencies")
+  add_subdirectory(dependencies/gdsl-toolkit)
+  add_subdirectory(dependencies/bjutil)
+else()
+  find_package(gdsl REQUIRED)
+  find_package(bjutil REQUIRED)
+endif()
+
+#if(NOT TARGET bjutil)
+#  ...
+
 add_library(summy ${SOURCES})
 set_property(TARGET summy PROPERTY CXX_STANDARD 14)
 target_link_libraries(summy bjutil cppgdsl)
