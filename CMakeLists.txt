@@ -12,13 +12,16 @@ list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/analysis/ismt/cvc_context.cpp"
 
 include_directories("include/")
 
-if(EXISTS "${CMAKE_SOURCE_DIR}/dependencies")
-  add_subdirectory(dependencies/gdsl-toolkit)
-  add_subdirectory(dependencies/bjutil)
-else()
-  find_package(gdsl REQUIRED)
-  find_package(bjutil REQUIRED)
-endif()
+function(dep pack dirname)
+  if(EXISTS "${CMAKE_SOURCE_DIR}/dependencies/${dirname}/CMakeLists.txt")
+    add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/${dirname})
+  else()
+    find_package(${pack} REQUIRED)
+  endif()
+endfunction(dep)
+
+dep(gdsl gdsl-toolkit)
+dep(bjutil bjutil)
 
 #if(NOT TARGET bjutil)
 #  ...
