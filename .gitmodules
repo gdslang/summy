@@ -1,6 +1,6 @@
 [submodule "dependencies/bjutil"]
 	path = dependencies/bjutil
-	url = backjmp/bjutil.git
+	url = ./bjutil.git
 [submodule "dependencies/gdsl-toolkit"]
 	path = dependencies/gdsl-toolkit
 	url = gdsl/gdsl-toolkit.git
