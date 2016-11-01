@@ -10,13 +10,10 @@ build:
   # install the necessary build tools when needed
   before_script: 
     - sudo apt update && sudo apt -y install cmake
-  script: 
-    - pwd
-    - whoami
+  script:
     - mkdir build
     - cd build
-    - ls -hal /home
-    - /usr/bin/cmake ..
+    - cmake ..
     - make
   artifacts:
     paths:
