@@ -1,9 +1,9 @@
 [submodule "dependencies/bjutil"]
 	path = dependencies/bjutil
-	url = git@versioncontrolseidl.in.tum.de:backjmp/bjutil.git
+	url = https://versioncontrolseidl.in.tum.de/backjmp/bjutil.git
 [submodule "dependencies/gdsl-toolkit"]
 	path = dependencies/gdsl-toolkit
-	url = git@versioncontrolseidl.in.tum.de:gdsl/gdsl-toolkit.git
+	url = https://versioncontrolseidl.in.tum.de/gdsl/gdsl-toolkit.git
 [submodule "dependencies/googletest"]
 	path = dependencies/googletest
 	url = https://github.com/google/googletest.git
