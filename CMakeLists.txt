@@ -4,6 +4,11 @@ project (summy)
 file(GLOB_RECURSE SOURCES
     "src/**.cpp"
 )
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/analysis/ismt/cvc_context.cpp")
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/analysis/ismt/ismt.cpp")
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/analysis/ismt/smt_builder.cpp")
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/analysis/ismt/smt_def_builder.cpp")
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/analysis/ismt/smt_value_builder.cpp")
 
 include_directories("include/")
 
