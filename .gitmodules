@@ -1,0 +1,3 @@
+[submodule "dependencies/bjutil"]
+	path = dependencies/bjutil
+	url = git@versioncontrolseidl.in.tum.de:backjmp/bjutil.git
