@@ -15,7 +15,7 @@ build:
     - whoami
     - mkdir build
     - cd build
-    - ls -hal /usr/bin
+    - ls -hal /usr/bin | wc -l
     - /usr/bin/cmake ..
     - make
   artifacts:
