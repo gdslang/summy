@@ -14,7 +14,7 @@ build:
     - pwd
     - mkdir build
     - cd build
-    - cmake ..
+    - /usr/bin/cmake ..
     - make
   artifacts:
     paths:
