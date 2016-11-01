@@ -8,11 +8,15 @@ build:
   stage: build
   # instead of calling g++ directly you can also use some build toolkit like make
   # install the necessary build tools when needed
-  before_script: 
-    - sudo apt update && sudo apt -y install cmake
+  #before_script: 
+  #  - sudo apt update && sudo apt -y install cmake
   script:
+    - git submodule init
+    - git submodule update
     - mkdir build
     - cd build
+    - export CXX=clang++
+    - export CC=clang
     - cmake ..
     - make
   artifacts:
