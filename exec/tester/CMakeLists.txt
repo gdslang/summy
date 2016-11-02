@@ -9,9 +9,13 @@ list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/test/analysis/ismt/ismt
 include_directories("include/")
 include_directories("../../include/")
 
-if(EXISTS ${CMAKE_SOURCE_DIR}/dependencies/googletest)
-  add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/googletest googletest/)
-endif()
+function(dep dirname)
+  if(EXISTS ${CMAKE_SOURCE_DIR}/dependencies/${dirname}/CMakeLists.txt)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/${dirname} ${dirname})
+  endif()
+endfunction(dep)
+
+dep("${CMAKE_SOURCE_DIR}/dependencies/${dirname}/CMakeLists.txt")
 
 add_executable(tester ${SOURCES})
 target_link_libraries(tester summy bjutil cppgdsl gmp gtest pthread elf)
