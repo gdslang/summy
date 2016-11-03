@@ -7,7 +7,6 @@ build:
   script:
     - git submodule init
     - git submodule update
-    - echo "hallo"
     - mkdir build
     - cd build
     - export CXX=clang++
@@ -15,8 +14,11 @@ build:
     - cmake ..
     - make -j4
   artifacts:
-#    paths:
-#      - build/exec/tester/tester
+    paths:
+      - build/libsummy.a
+      - build/exec/demo_dstack/demo_dstack
+      - build/exec/all_f/all_f
+      - build/exec/tester/tester
   # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
 #  cache:
 #     paths:
