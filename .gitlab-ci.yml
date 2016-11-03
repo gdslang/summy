@@ -33,5 +33,5 @@ test:
 #    - find build
     - cd build
     - ln -s libgdsl_x86_rreil.so libgdsl-current.so
-    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.:dependencies/gdsl-toolkit/libs/gdsl-multiplex
     - exec/tester/tester
