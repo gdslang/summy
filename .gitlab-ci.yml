@@ -20,15 +20,18 @@ build:
       - build/exec/all_f/all_f
       - build/exec/tester/tester
   # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
-#  cache:
-#     paths:
-#      - "*.o"
+  cache:
+     paths:
+      - "*.o"
 
 # run tests using the binary built before
-#test:
-#  stage: test
-#  script:
+test:
+  stage: test
+  script:
 #    - pwd
 #    - ls -hal
 #    - find build
-#    - build/exec/tester/tester
+    - cd build
+    - ln -s libgdsl_x86_rreil.so libgdsl-current.so
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
+    - exec/tester/tester
