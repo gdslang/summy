@@ -15,6 +15,7 @@ build:
     - make -j4
   artifacts:
     paths:
+
       - pwd
       - ls -hal
       - exec/tester/tester
@@ -27,4 +28,7 @@ build:
 #test:
   stage: test
   script:
+    - pwd
+    - ls -hal
+    - exec/tester/tester
     - exec/tester/tester
