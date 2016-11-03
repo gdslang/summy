@@ -24,9 +24,9 @@ build:
 
 # run tests using the binary built before
 #test:
-  stage: test
-  script:
-    - pwd
-    - ls -hal
-    - find build
-    - build/exec/tester/tester
+#  stage: test
+#  script:
+#    - pwd
+#    - ls -hal
+#    - find build
+#    - build/exec/tester/tester
