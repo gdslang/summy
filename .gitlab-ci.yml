@@ -15,6 +15,8 @@ build:
     - make -j4
   artifacts:
     paths:
+      - build/dependencies/gdsl-toolkit/libs/gdsl-multiplex/libmultiplex.so
+      - build/dependencies/gdsl-toolkit/libgdsl_x86_rreil.so
       - build/libsummy.a
       - build/exec/demo_dstack/demo_dstack
       - build/exec/all_f/all_f
@@ -33,5 +35,5 @@ test:
 #    - find build
     - cd build
     - ln -s libgdsl_x86_rreil.so libgdsl-current.so
-    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.:dependencies/gdsl-toolkit/libs/gdsl-multiplex
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:dependencies/gdsl-toolkit:dependencies/gdsl-toolkit/libs/gdsl-multiplex
     - exec/tester/tester
