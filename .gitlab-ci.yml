@@ -25,4 +25,4 @@ build:
 #test:
   stage: test
   script:
-    - build/exec/tester/tester
+    - exec/tester/tester
