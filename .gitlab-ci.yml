@@ -30,6 +30,5 @@ build:
   script:
     - pwd
     - ls -hal
-    - find exec
-    - exec/tester/tester
+    - find build
     - exec/tester/tester
