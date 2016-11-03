@@ -15,7 +15,7 @@ build:
     - make
   artifacts:
     paths:
-      - build/exec/tester/tester
+      - exec/tester/tester
   # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
   cache:
      paths:
