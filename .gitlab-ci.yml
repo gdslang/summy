@@ -15,12 +15,12 @@ build:
     - cmake ..
     - make -j4
   artifacts:
-    paths:
-      - build/exec/tester/tester
+#    paths:
+#      - build/exec/tester/tester
   # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
-  cache:
-     paths:
-      - "*.o"
+#  cache:
+#     paths:
+#      - "*.o"
 
 # run tests using the binary built before
 #test:
