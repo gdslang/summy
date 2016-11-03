@@ -12,9 +12,11 @@ build:
     - export CXX=clang++
     - export CC=clang
     - cmake ..
-    - make
+    - make -j4
   artifacts:
     paths:
+      - pwd
+      - ls -hal
       - exec/tester/tester
   # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
   cache:
