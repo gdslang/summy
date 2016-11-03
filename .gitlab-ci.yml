@@ -15,7 +15,7 @@ build:
     - make -j4
   artifacts:
     paths:
-      - exec/tester/tester
+      - build/exec/tester/tester
   # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
   cache:
      paths:
@@ -28,4 +28,4 @@ build:
     - pwd
     - ls -hal
     - find build
-    - exec/tester/tester
+    - build/exec/tester/tester
