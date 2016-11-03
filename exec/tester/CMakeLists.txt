@@ -15,7 +15,7 @@ function(dep dirname)
   endif()
 endfunction(dep)
 
-dep("${CMAKE_SOURCE_DIR}/dependencies/${dirname}/CMakeLists.txt")
+dep(googletest)
 
 add_executable(tester ${SOURCES})
 target_link_libraries(tester summy bjutil cppgdsl gmp gtest pthread elf)
