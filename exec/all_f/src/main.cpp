@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     //    for(size_t address : fc.result().result)
     //      cout << hex << address << dec << endl;
     set<size_t> fstarts = fc.result().result;
-
+    
     condition_statistics_data_t c_stats = condition_statistics(sweep.get_cfg()).get_stats();
     cout << "Total conditions: " << c_stats.total_conditions << endl;
     cout << "Comparison conditions: " << c_stats.cmp_conditions << " ("
@@ -184,11 +184,17 @@ int main(int argc, char **argv) {
       auto &cfg = dt.get_cfg();
       cfg.commit_updates();
     }
+    
+    for(auto f : functions) {
+      binary_provider::entry_t e;
+      string name;
+      tie(name, e) = f;
+      cout << "0x400000 + " << e.address << ", ";
+    }
+    cout << std::endl;
 
     cout << "*** Additionally collected functions..." << endl;
     for(size_t address : fstarts) {
-      break;
-
       //      cout << hex << address << dec << endl;
       try {
         dt.transduce_function(address);

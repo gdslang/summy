@@ -62,8 +62,8 @@ std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_tra
         try {
           return gdsl.decode_translate_block(gdsl::optimization_configuration::CONTEXT |
                                                gdsl::optimization_configuration::LIVENESS |
-                                               gdsl::optimization_configuration::FSUBST,
-            //                                                    gdsl::optimization_configuration::DELAYEDFSUBST,
+                                               gdsl::optimization_configuration::FSUBST |
+                                               gdsl::optimization_configuration::DELAYEDFSUBST,
             LONG_MAX);
         } catch(gdsl_exception &s) {
           cout << "GDSL Error @0x" << hex << gdsl.get_ip() << dec << ": " << s << endl;
