@@ -62,6 +62,13 @@ private:
   state_t state;
 
   node_targets_t node_targets;
+  
+  /**
+   * Statistics for function pointer propagation
+   * 
+   * Maps function addresses to memory path to pointer sets
+   */
+  std::map<size_t, std::map<mempath, std::set<size_t>>> pointer_props;
 
 //  std::set<size_t> erased;
 
@@ -117,6 +124,10 @@ public:
 
   node_targets_t const& get_targets() {
     return node_targets;
+  }
+  
+  std::map<size_t, std::map<mempath, std::set<size_t>>> const& get_pointer_props() {
+    return pointer_props;
   }
 
   virtual void accept(analysis_visitor &v) {

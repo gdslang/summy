@@ -286,6 +286,18 @@ int main(int argc, char **argv) {
          << (100.0 * b_stats.calls_with_targets / (float)b_stats.calls_total_indirect) << "%)" << endl;
 
     dt.print_decoding_holes();
+    
+    auto const& pointer_props = ds.get_pointer_props();
+    cout << pointer_props.size() << std::endl;
+    for(auto const& pp : pointer_props) {
+      cout << "PP for address 0x" << std::hex << pp.first << std::dec << ":" << std::endl;
+      for(auto const& fr : pp.second) {
+        cout << "  -> Field requirement " << std::endl;
+      for(auto const& ptr : fr.second)
+        cout << "    -> Propagated address 0x" << std::hex << ptr << std::dec << std::endl;
+      }
+    }
+    
   } catch(string &s) {
     cout << "Exception: " << s << endl;
     exit(1);

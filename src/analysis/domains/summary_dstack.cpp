@@ -105,7 +105,7 @@ std::set<size_t> analysis::summary_dstack::get_callers(std::shared_ptr<global_st
       for(size_t parent : cfg->in_edges(head_id)) {
         cfg::edge const* e = cfg->out_edge_payloads(parent)->at(head_id);
         edge_visitor ev;
-        ev._([&](cfg::call_edge const* ce) {
+        ev._([&](cfg::call_edge const*) {
           callers.insert(parent);
         });
         e->accept(ev);
@@ -256,7 +256,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   text_address = sid->get_address();
                 }
               });
-              idv._([&](ptr_memory_id const *mid) {
+              idv._([&](ptr_memory_id const *) {
                 //                cout << "There seems to be an unkown function pointer :/" << endl;
                 field_req_ids_new.insert(ptr.id);
               });
@@ -487,8 +487,14 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           //          cout << "This call requires the following fields:" << endl;
           for(auto &f : desc.field_reqs) {
             //            cout << f << endl;
+            
+            auto insert = [&](size_t ptr) {
+              cout << hex << ptr << dec << endl;
+              (this->pointer_props[(size_t)address])[f].insert(ptr);
+            };
+            
             optional<set<mempath>> mempaths_new =
-              f.propagate(get_sub(from_parent)->get_mstate(), state_new->get_mstate());
+              f.propagate(insert, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
             if(mempaths_new) {
               //              cout << "Propagating..." << endl;
               //              for(auto p : mempaths_new.value())

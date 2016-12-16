@@ -6,14 +6,14 @@
  */
 
 #pragma once
-#include <summy/analysis/domains/ptr_set.h>
 #include <cppgdsl/rreil/id/id.h>
-#include <summy/analysis/domains/summary_memory_state.h>
-#include <vector>
-#include <set>
-#include <memory>
 #include <iostream>
+#include <memory>
+#include <set>
+#include <summy/analysis/domains/ptr_set.h>
+#include <summy/analysis/domains/summary_memory_state.h>
 #include <tuple>
+#include <vector>
 
 namespace analysis {
 
@@ -48,7 +48,8 @@ public:
   ptr_set_t resolve(summary_memory_state *from) const;
   static std::tuple<ptr_set_t, ptr_set_t> split(ptr_set_t aliases);
   void propagate(ptr_set_t aliases_from_immediate, summary_memory_state *to) const;
-  std::experimental::optional<std::set<mempath>> propagate(summary_memory_state *from, summary_memory_state *to) const;
+  std::experimental::optional<std::set<mempath>> propagate(std::function<void(size_t)> imm_ptr_cb,
+    summary_memory_state *from, summary_memory_state *to) const;
 
   static std::set<mempath> from_aliases(api::id_set_t aliases, summary_memory_state *state);
 
