@@ -489,7 +489,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //            cout << f << endl;
             
             auto insert = [&](size_t ptr) {
-              cout << hex << ptr << dec << endl;
               (this->pointer_props[(size_t)address])[f].insert(ptr);
             };
             

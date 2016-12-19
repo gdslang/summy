@@ -199,7 +199,7 @@ void analysis::mempath::propagate(
       return;
     }
   }
-
+  
   num_var f_var(opt_id.value());
   to->child_state->assign(&f_var, aliases_from_immediate);
 }
@@ -224,9 +224,12 @@ std::experimental::optional<set<mempath>> analysis::mempath::propagate(
       assert(v->get_elements().size() == 1);
       offset = *v->get_elements().begin();
     });
-    
+    alias.offset->accept(vsv);
+    assert(offset);
     summy::rreil::id_visitor idv;
-    idv._([&](sm_id const *sid) { imm_ptr_cb((size_t)sid->get_address() + *offset); });
+    idv._([&](sm_id const *sid) {
+      imm_ptr_cb((size_t)sid->get_address() + *offset);
+    });
     alias.id->accept(idv);
   }
 
