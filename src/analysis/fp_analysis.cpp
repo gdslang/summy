@@ -90,7 +90,7 @@ void fp_analysis::update(vector<struct update> const &updates) {
 //  };
 
 //  fixpoint_pending.clear();
-
+  
   for(auto &update : updates) {
     switch(update.kind) {
       case UPDATE:

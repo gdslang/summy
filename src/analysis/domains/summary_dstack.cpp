@@ -5,33 +5,33 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/domains/summary_dstack.h>
-#include <summy/cfg/edge/edge_visitor.h>
+#include <algorithm>
+#include <assert.h>
+#include <bjutil/printer.h>
 #include <cppgdsl/rreil/rreil.h>
+#include <experimental/optional>
+#include <functional>
+#include <iterator>
+#include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/analysis/domains/numeric/equality_state.h>
 #include <summy/analysis/domains/numeric/vsd_state.h>
-#include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/summary_application.h>
+#include <summy/analysis/domains/summary_dstack.h>
 #include <summy/analysis/static_memory.h>
-#include <summy/value_set/vs_finite.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
+#include <summy/cfg/edge/edge_visitor.h>
 #include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <summy/cfg/observer.h>
 #include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/value_set/value_set_visitor.h>
-#include <functional>
-#include <assert.h>
-#include <bjutil/printer.h>
-#include <summy/analysis/domains/mempath.h>
-#include <summy/analysis/domains/summary_application.h>
-#include <summy/rreil/id/memory_id.h>
-#include <algorithm>
-#include <experimental/optional>
-#include <iterator>
+#include <summy/value_set/vs_finite.h>
 
 using cfg::address_node;
 using cfg::cond_edge;
@@ -53,7 +53,8 @@ using namespace summy::rreil;
 using namespace summy;
 using namespace std::experimental;
 
-std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(void *address, size_t node) {
+std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(
+  void *address, size_t node) {
   //  symbol symb;
   //  bool success;
   //  tie(success, symb) = sm->lookup(address);
@@ -103,11 +104,9 @@ std::set<size_t> analysis::summary_dstack::get_callers(std::shared_ptr<global_st
     for(size_t f_addr : vf->get_elements()) {
       size_t head_id = this->function_desc_map.at((void *)f_addr).head_id;
       for(size_t parent : cfg->in_edges(head_id)) {
-        cfg::edge const* e = cfg->out_edge_payloads(parent)->at(head_id);
+        cfg::edge const *e = cfg->out_edge_payloads(parent)->at(head_id);
         edge_visitor ev;
-        ev._([&](cfg::call_edge const*) {
-          callers.insert(parent);
-        });
+        ev._([&](cfg::call_edge const *) { callers.insert(parent); });
         e->accept(ev);
       }
     }
@@ -146,7 +145,8 @@ set<void *> analysis::summary_dstack::unpack_f_addrs(summy::vs_shared_t f_addr) 
 
 void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr) {
   auto &fd = function_desc_map.at(f_addr);
-  if(!includes(fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
+  if(!includes(
+       fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
     fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
     _dirty_nodes.insert(fd.head_id);
     //    cout << "Added dirty node because of reqs..." << endl;
@@ -175,8 +175,9 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       return global_new;
     };
   };
-  auto for_update =
-    [&](auto *update) { for_mutable([=](summary_memory_state *state_new) { state_new->update(update); }); };
+  auto for_update = [&](auto *update) {
+    for_mutable([=](summary_memory_state *state_new) { state_new->update(update); });
+  };
   edge_visitor ev;
 
   //  statement *_stmt =  NULL;
@@ -191,8 +192,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     v._([&](load const *l) { for_update(l); });
     v._([&](store const *s) { for_update(s); });
     v._([&](branch const *b) {
-      if(node_targets.find(from) == node_targets.end())
-        node_targets[from] = set<size_t>();
+      if(node_targets.find(from) == node_targets.end()) node_targets[from] = set<size_t>();
 
       ref(from, nullopt);
       ref(to, nullopt);
@@ -231,15 +231,17 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               set<void *> caller_f_addrs = unpack_f_addrs(get_sub(caller)->get_f_addr());
 
               set<void *> intersection;
-              set_intersection(caller_f_addrs.begin(), caller_f_addrs.end(), callers_addrs_trans.begin(),
-                callers_addrs_trans.end(), inserter(intersection, intersection.begin()));
+              set_intersection(caller_f_addrs.begin(), caller_f_addrs.end(),
+                callers_addrs_trans.begin(), callers_addrs_trans.end(),
+                inserter(intersection, intersection.begin()));
               if(intersection.size() > 0) {
                 continue;
               }
 
               callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
               callers_t caller_caller_callers = get_callers(get_sub(caller));
-              callers_rest.insert(callers_rest.begin(), caller_caller_callers.begin(), caller_caller_callers.end());
+              callers_rest.insert(
+                callers_rest.begin(), caller_caller_callers.begin(), caller_caller_callers.end());
             }
 
             ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
@@ -268,7 +270,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 for(int64_t offset : vsf->get_elements()) {
                   void *address = (char *)text_address + offset;
                   node_targets[from].insert((size_t)address);
-                  //                  cout << "Looking up summary for " << hex << address << dec << endl;
+                  //                  cout << "Looking up summary for " << hex << address << dec <<
+                  //                  endl;
                   if(callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
                     //                    cout << "Warning: Ignoring recursive call." << endl;
                     continue;
@@ -288,7 +291,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                       auto &f_desc = fd_it->second;
                       for(size_t s_node : f_desc.summary_nodes) {
                         add_summary(get_sub(s_node)->get_mstate());
-                        if(state_c->get_f_addr() == get_sub(s_node)->get_f_addr()) directly_recursive = true;
+                        if(state_c->get_f_addr() == get_sub(s_node)->get_f_addr())
+                          directly_recursive = true;
                       }
 
                       //                    cout << address << endl;
@@ -303,14 +307,16 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                       size_t head_id = fd_it->second.head_id;
                       cfg::in_edges_t const &head_in = cfg->in_edges(head_id);
                       if(head_in.find(to) == head_in.end()) {
-                        //                      cout << "New edge from " << to << " to " << head_id << endl;
+                        // cout << "New edge from " << to << " to " << head_id << endl;
                         cfg->update_edge(to, head_id, new call_edge(true));
                       }
                     } else {
-                      size_t an_id = cfg->create_node(
-                        [&](size_t id) { return new address_node(id, (size_t)address, cfg::DECODABLE); });
-                      function_desc_map.insert(make_pair(address, function_desc(current_min_calls_sz + 1, an_id)));
-                      //                    cout << "New edge from " << to << " to " << an_id << endl;
+                      size_t an_id = cfg->create_node([&](size_t id) {
+                        return new address_node(id, (size_t)address, cfg::DECODABLE);
+                      });
+                      function_desc_map.insert(
+                        make_pair(address, function_desc(current_min_calls_sz + 1, an_id)));
+                      // cout << "New edge from " << to << " to " << an_id << endl;
                       cfg->update_edge(to, an_id, new call_edge(true));
                     }
                   }
@@ -330,7 +336,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //            cout << "Need to apply the following summary: " << endl;
             //            cout << *summary << endl;
 
-            shared_ptr<summary_memory_state> bottom = shared_ptr<summary_memory_state>(sms_bottom());
+            shared_ptr<summary_memory_state> bottom =
+              shared_ptr<summary_memory_state>(sms_bottom());
             if(directly_recursive && summary)
               /*
                * Directly recursive call => We have to rename variables!
@@ -345,10 +352,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //            else
             //              cout << "We don't have a summary :-/" << endl;
 
-            //            summary_memory_state *summarized = summary ? apply_summary(mstate, summary.value().get()) :
+            //            summary_memory_state *summarized = summary ? apply_summary(mstate,
+            //            summary.value().get()) :
             //            bottom->copy();
 
-            summary_memory_state *summarized = summary ? summary_application(mstate, summary.value().get()).apply_summary() : mstate->copy();
+            summary_memory_state *summarized =
+              summary ? summary_application(mstate, summary.value().get()).apply_summary()
+                      : mstate->copy();
 
             //            summary_memory_state *summarized;
             //            if(summary)
@@ -383,7 +393,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               fd_it->second.summary_nodes.insert(to);
               callers_t caller_callers = get_callers(state_c);
               for(size_t caller : caller_callers) {
-//                cout << "Return-propagating from " << to << " / " << hex << f_addr << dec << " to " << caller << endl;
+                //                cout << "Return-propagating from " << to << " / " << hex << f_addr
+                //                << dec << " to " << caller << endl;
                 assert_dependency(gen_dependency(to, caller));
               }
             }
@@ -431,12 +442,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   size_t address = (size_t)text_address + offset;
                   node_targets[from].insert(address);
                   if(child_addresses.find(address) == child_addresses.end()) {
-                    size_t child_id =
-                      cfg->create_node([&](size_t id) { return new address_node(id, address, cfg::DECODABLE); });
+                    size_t child_id = cfg->create_node(
+                      [&](size_t id) { return new address_node(id, address, cfg::DECODABLE); });
                     cfg->update_edge(to, child_id, new cfg::edge());
                   }
                 }
-                //                cout << "Adding " << vsf->get_elements().size() << " many dests..." << endl;
+                //                cout << "Adding " << vsf->get_elements().size() << " many
+                //                dests..." << endl;
                 //                cout << "-----" << endl;
               });
               ptr.offset->accept(vsv);
@@ -476,7 +488,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         });
         dest->accept(nv);
         assert(is_addr_node);
-        state_new = dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
+        state_new =
+          dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
 
         auto &desc = this->function_desc_map.at(address);
         if(desc.field_reqs.size() > 0) {
@@ -487,11 +500,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           //          cout << "This call requires the following fields:" << endl;
           for(auto &f : desc.field_reqs) {
             //            cout << f << endl;
-            
-            auto insert = [&](size_t ptr) {
-              (this->pointer_props[(size_t)address])[f].insert(ptr);
-            };
-            
+
+            auto insert = [&](
+              size_t ptr) { (this->pointer_props[(size_t)address])[f].insert(ptr); };
+
             optional<set<mempath>> mempaths_new =
               f.propagate(insert, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
             if(mempaths_new) {
@@ -513,7 +525,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           size_t addr;
           node_visitor nv;
           nv._([&](address_node *av) {
-            if(av->get_decs() != cfg::DECODED) {
+            if(av->get_decs() != cfg::DECODED && av->get_decs() != cfg::DECODABLE) {
               needs_decoding = true;
               addr = av->get_address();
             }
@@ -548,7 +560,7 @@ void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
 }
 
 dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {
-//  cout << "Generating dep. " << from << " to " << to << endl;
+  //  cout << "Generating dep. " << from << " to " << to << endl;
   return dependency{from, to};
 }
 
@@ -586,7 +598,8 @@ analysis::summary_dstack::summary_dstack(
   }
 }
 
-analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings)
+analysis::summary_dstack::summary_dstack(
+  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings)
     : fp_analysis(cfg), sm(sm), warnings(warnings), stubs(sm, warnings) {
   init();
 
@@ -617,13 +630,16 @@ summary_memory_state *analysis::summary_dstack::sms_top() {
   return sms_top(sm, warnings);
 }
 
-summary_memory_state *analysis::summary_dstack::sms_bottom(std::shared_ptr<static_memory> sm, bool warnings) {
-  return summary_memory_state::bottom(sm, warnings, new equality_state(new als_state(vsd_state::bottom(sm))));
+summary_memory_state *analysis::summary_dstack::sms_bottom(
+  std::shared_ptr<static_memory> sm, bool warnings) {
+  return summary_memory_state::bottom(
+    sm, warnings, new equality_state(new als_state(vsd_state::bottom(sm))));
 }
 
-summary_memory_state *analysis::summary_dstack::sms_top(std::shared_ptr<static_memory> sm, bool warnings) {
-  summary_memory_state *sms_start =
-    summary_memory_state::start_value(sm, warnings, new equality_state(new als_state(vsd_state::top(sm))));
+summary_memory_state *analysis::summary_dstack::sms_top(
+  std::shared_ptr<static_memory> sm, bool warnings) {
+  summary_memory_state *sms_start = summary_memory_state::start_value(
+    sm, warnings, new equality_state(new als_state(vsd_state::top(sm))));
   return sms_start;
 }
 
@@ -638,20 +654,20 @@ std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t 
 shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
   //  if(node >= state.size())
   //    return bottom();
-//  assert(erased.find(node) == erased.end());
+  //  assert(erased.find(node) == erased.end());
   return state[node];
 }
 
 shared_ptr<global_state> analysis::summary_dstack::get_sub(size_t node) {
   //  if(node >= state.size())
   //    return bottom();
-//  assert(erased.find(node) == erased.end());
+  //  assert(erased.find(node) == erased.end());
   return state[node];
 }
 
 void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> state) {
   this->state[node] = dynamic_pointer_cast<global_state>(state);
-//  erased.erase(node);
+  //  erased.erase(node);
   //  this->state[node]->get_mstate()->check_consistency();
 }
 
@@ -670,7 +686,8 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
 
     set<void *> f_addrs_b = unpack_f_addrs(state_b->get_f_addr());
 
-    //    cout << a << " < " << b << " ~~~ " << *state_a->get_f_addr() << " //// " << *state_b->get_f_addr() << endl;
+    //    cout << a << " < " << b << " ~~~ " << *state_a->get_f_addr() << " //// " <<
+    //    *state_b->get_f_addr() << endl;
 
     if(f_addrs_a.size() != 0 && f_addrs_b.size() == 0)
       return true;
@@ -687,7 +704,8 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
         size_t min_calls_sz_curr = function_desc_map.at(f_addr_b).min_calls_sz;
         if(min_calls_sz_curr > min_calls_sz_b) min_calls_sz_b = min_calls_sz_curr;
       }
-      //      cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b << endl;
+      //      cout << a << " < " << b << ";;; " << min_calls_sz_a << " //// " << min_calls_sz_b <<
+      //      endl;
       if(min_calls_sz_a > min_calls_sz_b)
         return true;
       else if(min_calls_sz_a < min_calls_sz_b)
@@ -734,9 +752,9 @@ void analysis::summary_dstack::unref(size_t node) {
       if(count_current.value() > 1)
         ref_it->second = count_current.value() - 1;
       else {
-//        cout << "Bottomifying node " << node << endl;
+        //        cout << "Bottomifying node " << node << endl;
         state[node] = dynamic_pointer_cast<global_state>(bottom());
-//        erased.insert(node);
+        //        erased.insert(node);
         ref_map.erase(node);
       }
     }
@@ -789,7 +807,8 @@ void analysis::summary_dstack::print_callstack(size_t node_id) {
       set<size_t> callers_next = get_callers(state[caller]);
       for(auto caller_next : callers_next) {
         set<size_t> callers_next_heads_current = get_function_heads(state[caller_next]);
-        callers_next_heads.insert(callers_next_heads_current.begin(), callers_next_heads_current.end());
+        callers_next_heads.insert(
+          callers_next_heads_current.begin(), callers_next_heads_current.end());
       }
     }
 
@@ -804,6 +823,5 @@ void analysis::summary_dstack::print_callstack(size_t node_id) {
 
 void analysis::summary_dstack::put(std::ostream &out) {
   for(size_t i = 0; i < state.size(); i++)
-    out << "Node " << i << ": " << endl
-        << *state[i] << endl;
+    out << "Node " << i << ": " << endl << *state[i] << endl;
 }

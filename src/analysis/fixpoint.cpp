@@ -83,8 +83,9 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-       cout << "Next node: " << node_id << endl;
-
+//    cout << "\033[1;31mNext iteration\033[0m" << endl;
+//    cout << "Next node: " << node_id << endl;
+    
     bool _continue = false;
     static optional<size_t> function_last;
     analysis_visitor av(true);
@@ -142,7 +143,7 @@ void fixpoint::iterate() {
     //        cout << *analysis->get(node_id) << endl;
 
 
-    if(max_its > 20) break;
+//     if(max_its > 20) break;
     // Neue Maschinenadressen ausgeben für Fortschritt...?
 
     //    if(nits_it->second > 20) {
