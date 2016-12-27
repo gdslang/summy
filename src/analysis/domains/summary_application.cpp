@@ -170,7 +170,7 @@ summary_memory_state *analysis::summary_application::apply_summary() {
     bool static_or_dynamic = false;
     summy::rreil::id_visitor idv;
     idv._([&](allocation_memory_id const *ami) { static_or_dynamic = true; });
-    idv._([&](sm_id const *sid) { static_or_dynamic = true; });
+    idv._([&](sm_id const *) { static_or_dynamic = true; });
     region_key_summary->accept(idv);
     if(!static_or_dynamic) continue;
     ptr_set_t region_keys_c = ptr_set_t({ptr(region_key_summary, vs_finite::zero)});
@@ -300,7 +300,7 @@ summary_memory_state *analysis::summary_application::apply_summary() {
   id_set_t caller_alloc_deref;
   for(auto &deref_mapping_c : caller->input.deref) {
     summy::rreil::id_visitor idv;
-    idv._([&](allocation_memory_id const *ami) { caller_alloc_deref.insert(deref_mapping_c.first); });
+    idv._([&](allocation_memory_id const *) { caller_alloc_deref.insert(deref_mapping_c.first); });
     deref_mapping_c.first->accept(idv);
   }
 

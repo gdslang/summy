@@ -1464,3 +1464,8 @@ nop\n",
   assert_ptrs(offset, aliases_end_a, true, true, 0, 1, string("A_q"));
   ASSERT_EQ(*offset.value(), shared_ptr<value_set>(new vs_finite({0, 9999})));
 }
+
+TEST_F(summary_dstack_test, TestFormerNoTermination) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "callq 0x0"));
+}
