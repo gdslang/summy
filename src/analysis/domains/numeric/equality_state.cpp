@@ -284,7 +284,8 @@ void analysis::equality_state::assign_expr(
   api::num_var *lhs, api::num_expr *rhs, void (equality_state::*assigner)(api::num_var *, api::num_var *, int64_t)) {
   num_visitor nv;
   nv._([&](num_expr_lin *e) {
-    if(e->get_sign_interp()) {
+    auto sign_interp = e->get_sign_interp();
+    if(sign_interp && sign_interp->signedness == SIGNED) {
       sign_interp_t si = e->get_sign_interp().value();
       /*
        * Todo

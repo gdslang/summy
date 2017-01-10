@@ -28,7 +28,7 @@ using namespace analysis;
 analysis::fixpoint::fixpoint(
   class fp_analysis *analysis, jd_manager &jd_man, bool ref_management, bool widening)
     : analysis(analysis), jd_man(jd_man), ref_management(ref_management), widening(widening),
-      max_its(0) {}
+      max_its(0), construct_time(std::time(nullptr)) {}
 
 void fixpoint::iterate() {
   updated.clear();
@@ -83,9 +83,16 @@ void fixpoint::iterate() {
   while(!end()) {
     size_t node_id = next();
 
-//    cout << "\033[1;31mNext iteration\033[0m" << endl;
-//    cout << "Next node: " << node_id << endl;
-    
+    std::time_t current_time = std::time(nullptr);
+
+    if(current_time - construct_time > 20*60) {
+      cout << "\033[1;31m!!! TIME IS UP !!!\033[0m" << endl;
+      break;
+    }
+
+    //    cout << "\033[1;31mNext iteration\033[0m" << endl;
+    //    cout << "Next node: " << node_id << endl;
+
     bool _continue = false;
     static optional<size_t> function_last;
     analysis_visitor av(true);
@@ -143,7 +150,7 @@ void fixpoint::iterate() {
     //        cout << *analysis->get(node_id) << endl;
 
 
-//     if(max_its > 20) break;
+    //     if(max_its > 20) break;
     // Neue Maschinenadressen ausgeben für Fortschritt...?
 
     //    if(nits_it->second > 20) {
@@ -383,4 +390,28 @@ double analysis::fixpoint::avg_iteration_count() {
 
 size_t analysis::fixpoint::analyzed_addresses() {
   return machine_addresses.size();
+}
+
+void analysis::fixpoint::print_hot_addresses() {
+  map<size_t, set<size_t>> hot;
+
+  for(auto it : node_iterations) {
+    if(it.second < 20) continue;
+    auto cfg = analysis->get_cfg();
+    auto payload = cfg->get_node_payload(it.first);
+    optional<size_t> addr = nullopt;
+    node_visitor nv;
+    nv._([&](address_node *an) {
+      addr = an->get_address();
+    });
+    payload->accept(nv);
+    if(addr)
+      hot[it.second].insert(*addr);
+  }
+  
+  for(auto it : hot) {
+    cout << it.first << " its:" << endl;
+    for(auto addr : it.second)
+      cout << "  Address: 0x" << hex << addr << dec << endl;
+  }
 }

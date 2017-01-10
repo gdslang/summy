@@ -56,6 +56,13 @@ using namespace analysis::api;
 using namespace std::experimental;
 
 
+/**
+ * @brief ...
+ * 
+ * @param argc p_argc:...
+ * @param argv ${p_argv:...}
+ * @return int
+ */
 int main(int argc, char **argv) {
   //  int a, b, c;
   //  tie(a, b, c) = tsort(9, 2, 10);
@@ -154,7 +161,7 @@ int main(int argc, char **argv) {
       //      }
       //      if(name != "_slash_vex_slash_0f_slash_vexv")
       //        continue;
-      //      if(name != "sem_movsAction1") continue;
+      //if(name != "sweep") continue;
       //            if(name != "_slash_") continue;
       //            if(name != "show_slash_op") continue;
       //            if(name != "consume") continue;
@@ -167,6 +174,7 @@ int main(int argc, char **argv) {
       //            if(name != "register_from_bits") continue;
       //            if(name != "rreil_convert_sem_stmt") continue;
       //      if(name != "main") continue;
+//       if(name != "_slash_") continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
         fstarts.erase(e.address);
@@ -246,7 +254,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 570 || n.get_id() == 573 || n.get_id() == 591)
+      if(n.get_id() == 393)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " << *jd_man.address_of(n.get_id()) << "\"]";
       else
@@ -288,7 +296,6 @@ int main(int argc, char **argv) {
     dt.print_decoding_holes();
     
     auto const& pointer_props = ds.get_pointer_props();
-    cout << pointer_props.size() << std::endl;
     for(auto const& pp : pointer_props) {
       cout << "PP for address 0x" << std::hex << pp.first << std::dec << ":" << std::endl;
       for(auto const& fr : pp.second) {
@@ -297,6 +304,9 @@ int main(int argc, char **argv) {
         cout << "    -> Propagated address 0x" << std::hex << ptr << std::dec << std::endl;
       }
     }
+    
+    cout << "Hot addresses:" << endl;
+    fp.print_hot_addresses();
     
   } catch(string &s) {
     cout << "Exception: " << s << endl;

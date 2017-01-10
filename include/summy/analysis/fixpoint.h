@@ -6,12 +6,13 @@
  */
 
 #pragma once
+#include <map>
+#include <set>
+#include <summy/analysis/fp_priority_queue.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/observer.h>
-#include <summy/analysis/fp_priority_queue.h>
-#include <set>
-#include <map>
 #include <vector>
+#include <ctime>
 
 namespace cfg {
 class jd_manager;
@@ -37,10 +38,12 @@ private:
   std::map<size_t, size_t> node_iterations;
   size_t max_its;
 
+  std::time_t construct_time;
 public:
   virtual ~fixpoint() {}
 
-  fixpoint(class fp_analysis *analysis, cfg::jd_manager &jd_man, bool ref_management, bool widening = true);
+  fixpoint(class fp_analysis *analysis, cfg::jd_manager &jd_man, bool ref_management,
+    bool widening = true);
 
   void iterate();
   void notify(std::vector<cfg::update> const &updates);
@@ -48,6 +51,10 @@ public:
   std::set<size_t> const &get_updated() {
     return updated;
   }
+  
+  /*
+   * Statistics stuff
+   */
 
   /**
    * Get the maximum number of iterations needed for any
@@ -57,7 +64,9 @@ public:
   void print_distribution();
   void print_distribution_total();
   double avg_iteration_count();
-
+  
   size_t analyzed_addresses();
+  
+  void print_hot_addresses();
 };
 }

@@ -67,6 +67,12 @@ std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(
   auto f_it = functions.value().get().find((size_t)address);
   if(f_it != functions.value().get().end()) {
     string &name = f_it->second.name;
+    
+    // GDSL alloc
+    string _alloc = "alloc";
+    if(name.compare(0, _alloc.length(), _alloc) == 0) {
+      return stubs.allocator(node, 0);
+    }
 
     string _malloc = "malloc";
     if(name.compare(0, _malloc.length(), _malloc) == 0) {
@@ -86,6 +92,18 @@ std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(
     string longjmp = "longjmp";
     if(name.compare(0, longjmp.length(), longjmp) == 0) {
       return stubs.bottomifier();
+    }
+    
+    string printf = "printf";
+    if(name.compare(0, printf.length(), printf) == 0) {
+      if(warnings) cout << "Ignoring call to " << name << "." << endl;
+      return stubs.no_effect();
+    }
+    
+    string putchar = "putchar";
+    if(name.compare(0, putchar.length(), putchar) == 0) {
+      if(warnings) cout << "Ignoring call to " << name << "." << endl;
+      return stubs.no_effect();
     }
 
     if(f_it->second.lt == DYNAMIC) {
