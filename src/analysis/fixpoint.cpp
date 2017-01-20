@@ -30,7 +30,7 @@ analysis::fixpoint::fixpoint(
     : analysis(analysis), jd_man(jd_man), ref_management(ref_management), widening(widening),
       max_its(0), construct_time(std::time(nullptr)) {}
 
-void fixpoint::iterate() {
+void fixpoint::iterate(bool blah) {
   updated.clear();
   node_iterations.clear();
   set<size_t> pending = analysis->pending();
@@ -85,7 +85,7 @@ void fixpoint::iterate() {
 
     std::time_t current_time = std::time(nullptr);
 
-    if(current_time - construct_time > 20*60) {
+    if(current_time - construct_time > 20 * 60) {
       cout << "\033[1;31m!!! TIME IS UP !!!\033[0m" << endl;
       break;
     }
@@ -169,7 +169,6 @@ void fixpoint::iterate() {
       bool backward = false;
 
       auto process_constraint = [&](size_t node_other, constraint_t constraint) {
-        //        cout << "Constraint from " << node_other << " to " << node_id << endl;
         //        cout << *analysis->get(node_other) << endl;
 
         /*
@@ -187,7 +186,10 @@ void fixpoint::iterate() {
         //        cout << "++++++++++++++++++++++++" << endl;
 
         //        if(jd_man.machine_address_of(node_id) == 0x401908) cout << "Evaluated: " <<
-        //        *evaluated << endl;
+        if(node_id == 303) {
+          cout << "Constraint from " << node_other << " to " << node_id << endl;
+          cout << *evaluated << endl;
+        }
         //                if(node_id == 67) cout << "Evaluated: " << *evaluated << endl;
 
         /*
@@ -325,6 +327,13 @@ void fixpoint::iterate() {
 
     seen.insert(node_id);
 
+    static int foo = 0;
+    if(blah && end() && foo == 0) {
+      foo = 1;
+      worklist.push(303);
+      cout << "ARRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl << endl << endl;
+    }
+
     //    cout << "END OF FP_ROUND" << endl;
   }
 }
@@ -401,14 +410,11 @@ void analysis::fixpoint::print_hot_addresses() {
     auto payload = cfg->get_node_payload(it.first);
     optional<size_t> addr = nullopt;
     node_visitor nv;
-    nv._([&](address_node *an) {
-      addr = an->get_address();
-    });
+    nv._([&](address_node *an) { addr = an->get_address(); });
     payload->accept(nv);
-    if(addr)
-      hot[it.second].insert(*addr);
+    if(addr) hot[it.second].insert(*addr);
   }
-  
+
   for(auto it : hot) {
     cout << it.first << " its:" << endl;
     for(auto addr : it.second)

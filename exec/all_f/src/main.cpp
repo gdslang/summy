@@ -232,11 +232,11 @@ int main(int argc, char **argv) {
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, false, dt.get_f_heads());
     cfg::jd_manager jd_man(&cfg);
-    fixpoint fp(&ds, jd_man, true);
+    fixpoint fp(&ds, jd_man, false);
 
     cout << "\033[1;31mStarting main analysis.\033[0m" << endl;
 
-    fp.iterate();
+    fp.iterate(true);
 
     cout << "\033[1;31mEnd of main analysis.\033[0m" << endl;
     fp.print_distribution_total();
@@ -254,7 +254,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 393)
+      if(n.get_id() == 304 || n.get_id() == 602)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " << *jd_man.address_of(n.get_id()) << "\"]";
       else

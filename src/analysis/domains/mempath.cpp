@@ -108,9 +108,12 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
   step(0, from_io, 0);
 
   while(work.size() > 0) {
+    std::cout << "WORK: " << work.size() << std::endl;
     work_item wi = work.back();
     work.pop_back();
     for(auto &alias : wi.aliases) {
+      std::cout << "alias: " << alias << std::endl;
+      
       optional<int64_t> offset;
       value_set_visitor vsv;
       vsv._([&](vs_finite const *vsf) {
@@ -124,7 +127,9 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
       alias.offset->accept(vsv);
       summy::rreil::id_visitor idv;
       auto valid_ptr = [&]() {
+        std::cout << "VALID PTR!" << endl;
         if(offset) {
+          std::cout << "... WITH OFFSET!" << endl;
           from_io = from->region_by_id(&relation::get_deref, alias.id);
           step(wi.index, from_io, offset.value());
         }
@@ -139,6 +144,8 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
       alias.id->accept(idv);
     }
   }
+  
+  cout << aliases_from << endl;
 
   return aliases_from;
 }
@@ -207,8 +214,8 @@ void analysis::mempath::propagate(
 std::experimental::optional<set<mempath>> analysis::mempath::propagate(
   std::function<void(size_t)> imm_ptr_cb, summary_memory_state *from,
   summary_memory_state *to) const {
-  //  cout << "propagate " << *this << " from" << endl;
-  //  cout << *from << endl;
+   cout << "propagate " << *this << " from" << endl;
+   cout << *from << endl;
 
   ptr_set_t aliases_from = resolve(from);
 
@@ -218,6 +225,7 @@ std::experimental::optional<set<mempath>> analysis::mempath::propagate(
   
   // Callback for immediate pointers; used for statistics only
   for(auto &alias : aliases_from_immediate) {
+    std::cout << "IMMEDIATE ALIAS!!!!" << std::endl;
     optional<size_t> offset;
     value_set_visitor vsv;
     vsv._([&](vs_finite const* v) {
