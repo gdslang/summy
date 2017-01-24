@@ -108,18 +108,15 @@ std::map<size_t, ptr_set_t> analysis::mempath::resolve(summary_memory_state *fro
   step(0, from_io, 0);
 
   while(work.size() > 0) {
-    std::cout << "WORK: " << work.size() << std::endl;
     work_item wi = work.back();
     work.pop_back();
     for(auto &alias : wi.aliases) {
-      std::cout << "alias: " << alias << std::endl;
-
       optional<int64_t> offset;
       value_set_visitor vsv;
       vsv._([&](vs_finite const *vsf) {
         if(vsf->is_singleton()) offset = *vsf->get_elements().begin();
       });
-      vsv._default([&](value_set const *vs) {
+      vsv._default([&](value_set const *) {
         /*
          * Warning?
          */
@@ -127,9 +124,7 @@ std::map<size_t, ptr_set_t> analysis::mempath::resolve(summary_memory_state *fro
       alias.offset->accept(vsv);
       summy::rreil::id_visitor idv;
       auto valid_ptr = [&]() {
-        std::cout << "VALID PTR!" << endl;
         if(offset) {
-          std::cout << "... WITH OFFSET!" << endl;
           from_io = from->region_by_id(&relation::get_deref, alias.id);
           step(wi.index, from_io, offset.value());
         }
@@ -144,12 +139,9 @@ std::map<size_t, ptr_set_t> analysis::mempath::resolve(summary_memory_state *fro
          * Warning?
          */
       });
-      cout << "subclass: " << alias.id->get_subclass_counter() << endl;
       alias.id->accept(idv);
     }
   }
-
-  // cout << "ALIIIIASSSES: " << aliases_from << endl;
 
   return aliases_from;
 }
@@ -225,14 +217,10 @@ void analysis::mempath::propagate(
 std::experimental::optional<set<mempath>> analysis::mempath::propagate(
   std::function<void(size_t)> imm_ptr_cb, summary_memory_state *from,
   summary_memory_state *to) const {
-  cout << "propagate " << *this << " from" << endl;
-  cout << *from << endl;
+//   cout << "propagate " << *this << " from" << endl;
+//   cout << *from << endl;
 
   std::map<size_t, ptr_set_t> aliases_from = resolve(from);
-
-  ptr_set_t aliases_from_;
-  for(auto &mapping : aliases_from)
-    aliases_from_.insert(mapping.second.begin(), mapping.second.end());
 
   std::map<size_t, ptr_set_t> aliases_from_immediate;
   ptr_set_t aliases_from_symbolic;

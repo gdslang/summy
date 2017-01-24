@@ -30,7 +30,7 @@ analysis::fixpoint::fixpoint(
     : analysis(analysis), jd_man(jd_man), ref_management(ref_management), widening(widening),
       max_its(0), construct_time(std::time(nullptr)) {}
 
-void fixpoint::iterate(bool blah) {
+void fixpoint::iterate() {
   updated.clear();
   node_iterations.clear();
   set<size_t> pending = analysis->pending();
@@ -186,10 +186,10 @@ void fixpoint::iterate(bool blah) {
         //        cout << "++++++++++++++++++++++++" << endl;
 
         //        if(jd_man.machine_address_of(node_id) == 0x401908) cout << "Evaluated: " <<
-        if(node_id == 303) {
-          cout << "Constraint from " << node_other << " to " << node_id << endl;
-          cout << *evaluated << endl;
-        }
+//         if(node_id == 303) {
+//           cout << "Constraint from " << node_other << " to " << node_id << endl;
+//           cout << *evaluated << endl;
+//         }
         //                if(node_id == 67) cout << "Evaluated: " << *evaluated << endl;
 
         /*
@@ -326,14 +326,6 @@ void fixpoint::iterate(bool blah) {
       if(dirty_nodes.size() > 0) analysis->ref(node_id, dirty_nodes.size());
 
     seen.insert(node_id);
-
-    static int foo = 0;
-    if(blah && end() && foo == 0) {
-      foo = 1;
-      worklist.push(303);
-      cout << "ARRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl << endl << endl;
-    }
-
     //    cout << "END OF FP_ROUND" << endl;
   }
 }

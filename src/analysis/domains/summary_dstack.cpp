@@ -167,8 +167,8 @@ void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, 
        fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
     fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
     _dirty_nodes.insert(fd.head_id);
-    cout << "Added dirty node " << fd.head_id << " for address 0x" << std::hex << f_addr << std::dec
-         << " because of reqs..." << endl;
+//     cout << "Added dirty node " << fd.head_id << " for address 0x" << std::hex << f_addr << std::dec
+//          << " because of reqs..." << endl;
   }
 }
 
@@ -218,8 +218,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       switch(b->get_hint()) {
         case gdsl::rreil::BRANCH_HINT_CALL: {
           transfer_f = [=]() {
-            std::cout << "CALL EDGE from " << from << " to " << to << std::endl;
-
             shared_ptr<global_state> state_c = get_sub(from);
             summary_memory_state *mstate = state_c->get_mstate();
 
@@ -268,7 +266,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
             id_set_t field_req_ids_new;
             //                        cout << *b->get_target() << endl;
-            cout << callee_aliases << endl;
             for(auto ptr : callee_aliases) {
               summy::rreil::id_visitor idv;
               bool is_valid_code_address = false;
@@ -350,8 +347,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             cfg->commit_updates();
 
             set<mempath> field_reqs_new = mempath::from_aliases(field_req_ids_new, mstate);
-            for(auto &req : field_reqs_new)
-              std::cout << req << std::endl;
+//             for(auto &req : field_reqs_new)
+//               std::cout << req << std::endl;
             //            propagate_reqs(f_addr, mps);
             for(auto f_addr : f_addrs)
               propagate_reqs(field_reqs_new, f_addr);
@@ -499,8 +496,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     ref(to, nullopt);
     //    _call = true;
     transfer_f = [=]() {
-      cout << "CALL EDGE!" << endl;
-
       shared_ptr<global_state> state_new;
       if(edge->is_target_edge()) {
         node *dest = cfg->get_node_payload(to);
@@ -532,9 +527,9 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             optional<set<mempath>> mempaths_new =
               f.propagate(insert, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
             if(mempaths_new) {
-              cout << "Propagating..." << endl;
-              for(auto p : mempaths_new.value())
-                cout << p << endl;
+//               cout << "Propagating..." << endl;
+//               for(auto p : mempaths_new.value())
+//                 cout << p << endl;
 
               set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent)->get_f_addr());
               assert(f_addrs.size() > 0);

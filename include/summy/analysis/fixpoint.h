@@ -45,7 +45,7 @@ public:
   fixpoint(class fp_analysis *analysis, cfg::jd_manager &jd_man, bool ref_management,
     bool widening = true);
 
-  void iterate(bool blah = false);
+  void iterate();
   void notify(std::vector<cfg::update> const &updates);
 
   std::set<size_t> const &get_updated() {

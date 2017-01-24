@@ -232,11 +232,11 @@ int main(int argc, char **argv) {
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, false, dt.get_f_heads());
     cfg::jd_manager jd_man(&cfg);
-    fixpoint fp(&ds, jd_man, false);
+    fixpoint fp(&ds, jd_man, true);
 
     cout << "\033[1;31mStarting main analysis.\033[0m" << endl;
 
-    fp.iterate(true);
+    fp.iterate();
 
     cout << "\033[1;31mEnd of main analysis.\033[0m" << endl;
     fp.print_distribution_total();
