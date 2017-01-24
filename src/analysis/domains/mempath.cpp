@@ -155,7 +155,7 @@ std::map<size_t, ptr_set_t> analysis::mempath::resolve(summary_memory_state *fro
 }
 
 std::tuple<std::map<size_t, ptr_set_t>, ptr_set_t> analysis::mempath::split(
-  std::map<size_t, ptr_set_t> aliases) {
+  std::map<size_t, ptr_set_t> aliases) const {
   std::map<size_t, ptr_set_t> aliases_immediate;
   ptr_set_t aliases_symbolic;
   for(auto &mapping : aliases) {
