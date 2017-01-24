@@ -74,8 +74,8 @@ bool mempath::operator==(const mempath &other) const {
   return compare_to(other) == 0;
 }
 
-ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
-  ptr_set_t aliases_from;
+std::map<size_t, ptr_set_t> analysis::mempath::resolve(summary_memory_state *from) const {
+  std::map<size_t, ptr_set_t> aliases_from;
 
   assert(path.size() > 0);
 
@@ -99,7 +99,7 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
     num_var f_var = num_var(f.num_id);
     ptr_set_t aliases = from->queryAls(&f_var);
     if(index + 1 >= path.size())
-      aliases_from.insert(aliases.begin(), aliases.end());
+      aliases_from[path.size()].insert(aliases.begin(), aliases.end());
     else
       work.push_back({index + 1, aliases});
   };
@@ -113,7 +113,7 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
     work.pop_back();
     for(auto &alias : wi.aliases) {
       std::cout << "alias: " << alias << std::endl;
-      
+
       optional<int64_t> offset;
       value_set_visitor vsv;
       vsv._([&](vs_finite const *vsf) {
@@ -134,37 +134,48 @@ ptr_set_t analysis::mempath::resolve(summary_memory_state *from) const {
           step(wi.index, from_io, offset.value());
         }
       };
-      idv._([&](ptr_memory_id const *mid) { valid_ptr(); });
-      idv._([&](allocation_memory_id const *mid) { valid_ptr(); });
-      idv._default([&](id const *_id) {
+      idv._([&](ptr_memory_id const *_) { valid_ptr(); });
+      idv._([&](allocation_memory_id const *) { valid_ptr(); });
+      idv._([&](sm_id const *) {
+        aliases_from[wi.index].insert(alias);
+      });
+      idv._default([&](id const *) {
         /*
          * Warning?
          */
       });
+      cout << "subclass: " << alias.id->get_subclass_counter() << endl;
       alias.id->accept(idv);
     }
   }
-  
-  cout << aliases_from << endl;
+
+  // cout << "ALIIIIASSSES: " << aliases_from << endl;
 
   return aliases_from;
 }
 
-std::tuple<ptr_set_t, ptr_set_t> analysis::mempath::split(ptr_set_t aliases) {
-  ptr_set_t aliases_immediate;
+std::tuple<std::map<size_t, ptr_set_t>, ptr_set_t> analysis::mempath::split(
+  std::map<size_t, ptr_set_t> aliases) {
+  std::map<size_t, ptr_set_t> aliases_immediate;
   ptr_set_t aliases_symbolic;
-  for(auto &alias : aliases) {
-    summy::rreil::id_visitor idv;
-    idv._([&](sm_id const *sid) { aliases_immediate.insert(alias); });
-    idv._default([&](id const *_id) { aliases_symbolic.insert(alias); });
-    alias.id->accept(idv);
-    // Take over aliases we can propagate
+  for(auto &mapping : aliases) {
+    auto path_length = mapping.first;
+    for(auto &alias : mapping.second) {
+      summy::rreil::id_visitor idv;
+      idv._([&](sm_id const *) { aliases_immediate[path_length].insert(alias); });
+      idv._default([&](id const *) {
+        assert(path_length == path.size());
+        aliases_symbolic.insert(alias);
+      });
+      alias.id->accept(idv);
+      // Take over aliases we can propagate
+    }
   }
   return make_tuple(aliases_immediate, aliases_symbolic);
 }
 
 void analysis::mempath::propagate(
-  ptr_set_t aliases_from_immediate, summary_memory_state *to) const {
+  size_t path_length, ptr_set_t aliases_from_immediate, summary_memory_state *to) const {
   if(aliases_from_immediate.size() == 0) return;
 
   assert(path.size() > 0);
@@ -194,7 +205,7 @@ void analysis::mempath::propagate(
     return;
   }
 
-  for(size_t i = 1; i < path.size(); ++i) {
+  for(size_t i = 1; i < path_length; ++i) {
     num_var f_var(opt_id.value());
     ptr_set_t aliases = to->queryAls(&f_var);
     ptr _ptr = unpack_singleton(aliases);
@@ -206,7 +217,7 @@ void analysis::mempath::propagate(
       return;
     }
   }
-  
+
   num_var f_var(opt_id.value());
   to->child_state->assign(&f_var, aliases_from_immediate);
 }
@@ -214,34 +225,37 @@ void analysis::mempath::propagate(
 std::experimental::optional<set<mempath>> analysis::mempath::propagate(
   std::function<void(size_t)> imm_ptr_cb, summary_memory_state *from,
   summary_memory_state *to) const {
-   cout << "propagate " << *this << " from" << endl;
-   cout << *from << endl;
+  cout << "propagate " << *this << " from" << endl;
+  cout << *from << endl;
 
-  ptr_set_t aliases_from = resolve(from);
+  std::map<size_t, ptr_set_t> aliases_from = resolve(from);
 
-  ptr_set_t aliases_from_immediate;
+  ptr_set_t aliases_from_;
+  for(auto &mapping : aliases_from)
+    aliases_from_.insert(mapping.second.begin(), mapping.second.end());
+
+  std::map<size_t, ptr_set_t> aliases_from_immediate;
   ptr_set_t aliases_from_symbolic;
   tie(aliases_from_immediate, aliases_from_symbolic) = split(aliases_from);
-  
-  // Callback for immediate pointers; used for statistics only
-  for(auto &alias : aliases_from_immediate) {
-    std::cout << "IMMEDIATE ALIAS!!!!" << std::endl;
-    optional<size_t> offset;
-    value_set_visitor vsv;
-    vsv._([&](vs_finite const* v) {
-      assert(v->get_elements().size() == 1);
-      offset = *v->get_elements().begin();
-    });
-    alias.offset->accept(vsv);
-    assert(offset);
-    summy::rreil::id_visitor idv;
-    idv._([&](sm_id const *sid) {
-      imm_ptr_cb((size_t)sid->get_address() + *offset);
-    });
-    alias.id->accept(idv);
-  }
 
-  propagate(aliases_from_immediate, to);
+  // Callback for immediate pointers; used for statistics only
+//   for(auto &alias : aliases_from_immediate) {
+//     std::cout << "IMMEDIATE ALIAS!!!!" << std::endl;
+//     optional<size_t> offset;
+//     value_set_visitor vsv;
+//     vsv._([&](vs_finite const *v) {
+//       assert(v->get_elements().size() == 1);
+//       offset = *v->get_elements().begin();
+//     });
+//     alias.offset->accept(vsv);
+//     assert(offset);
+//     summy::rreil::id_visitor idv;
+//     idv._([&](sm_id const *sid) { imm_ptr_cb((size_t)sid->get_address() + *offset); });
+//     alias.id->accept(idv);
+//   }
+
+  for(auto mapping : aliases_from_immediate)
+    propagate(mapping.first, mapping.second, to);
 
   if(aliases_from_symbolic.size() > 0) {
     id_set_t aliases_from_symbolic_ids;
