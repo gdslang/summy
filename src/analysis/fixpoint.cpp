@@ -35,9 +35,9 @@ void fixpoint::iterate() {
   node_iterations.clear();
   set<size_t> pending = analysis->pending();
 
-  node_compare_t addr_comparer = [&](size_t const &a, size_t const &b) -> optional<bool> {
-    size_t addr_a = jd_man.machine_address_of(a);
-    size_t addr_b = jd_man.machine_address_of(b);
+  node_compare_t addr_comparer = [&](analysis_node const &a, analysis_node const &b) -> optional<bool> {
+    size_t addr_a = jd_man.machine_address_of(a.id);
+    size_t addr_b = jd_man.machine_address_of(b.id);
     if(addr_a < addr_b)
       return true;
     else if(addr_a > addr_b)
@@ -81,7 +81,7 @@ void fixpoint::iterate() {
   };
 
   while(!end()) {
-    size_t node_id = next();
+    analysis_node node = next();
 
     std::time_t current_time = std::time(nullptr);
 
@@ -98,15 +98,15 @@ void fixpoint::iterate() {
     analysis_visitor av(true);
     av._([&](summary_dstack *sd) {
       //  cout << "PENDING: " << pending.size() << endl;
-      auto nits_it = node_iterations.find(node_id);
+      auto nits_it = node_iterations.find(node.id);
       if(nits_it != node_iterations.end()) {
         nits_it->second++;
         if(nits_it->second > max_its || nits_it->second > 12) {
           cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
           cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
-          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id) << dec
+          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node.id) << dec
                << endl;
-          sd->print_callstack(node_id);
+          sd->print_callstack(node.id);
           max_its = nits_it->second;
           print_distribution_total();
           //          cout << "node id: " << node_id << endl;
@@ -116,7 +116,7 @@ void fixpoint::iterate() {
         }
         //        if(nits_it->second > 20) _continue = true;
       } else
-        node_iterations[node_id] = 1;
+        node_iterations[node.id] = 1;
       //      static size_t machine_address_last = 0;
       //      size_t machine_address_current = jd_man.machine_address_of(node_id);
       //      if(machine_address_current != machine_address_last) {
@@ -141,7 +141,7 @@ void fixpoint::iterate() {
 
     node_visitor nv;
     nv._([&](address_node *an) { machine_addresses.insert(an->get_address()); });
-    analysis->get_cfg()->get_node_payload(node_id)->accept(nv);
+    analysis->get_cfg()->get_node_payload(node.id)->accept(nv);
 
     //    if(node_id == 11) cout << "NODE 11!!" << endl;
     //    machine_addresses.insert(jd_man.machine_address_of(node_id));
@@ -162,7 +162,7 @@ void fixpoint::iterate() {
     bool needs_postprocessing = false;
     shared_ptr<domain_state> accumulator;
     bool accumulator_set = false;
-    auto &constraints = analysis->constraints_at(node_id);
+    auto &constraints = analysis->constraints_at(node.id);
     if(constraints.size() > 0) {
       //      shared_ptr<domain_state> current = analysis->get(node_id);
       //      current->check_consistency();
@@ -201,7 +201,7 @@ void fixpoint::iterate() {
         /*
          * Todo: Backward analysis?
          */
-        jump_dir jd = jd_man.jump_direction(node_other, node_id);
+        jump_dir jd = jd_man.jump_direction(node_other, node.id);
 
         backward = backward || jd != FORWARD;
         if(widening && jd == BACKWARD) {
@@ -210,7 +210,7 @@ void fixpoint::iterate() {
           //                    cout << "Back jump from " << node_other << " to " << node_id <<
           //                    endl;
           domain_state *boxed;
-          tie(boxed, needs_postprocessing) = analysis->get(node_id)->box(evaluated.get(), node_id);
+          tie(boxed, needs_postprocessing) = analysis->get(node.id)->box(evaluated.get(), node.id);
           evaluated = shared_ptr<domain_state>(boxed);
           //          cout << "Boxed: " << *evaluated << endl;
         }
@@ -225,7 +225,7 @@ void fixpoint::iterate() {
           //          accumulator->check_consistency();
           //          evaluated->check_consistency();
 
-          accumulator = shared_ptr<domain_state>(evaluated->join(accumulator.get(), node_id));
+          accumulator = shared_ptr<domain_state>(evaluated->join(accumulator.get(), node.id));
           //          cout << *accumulator << endl;
 
           //          accumulator->check_consistency();
@@ -271,10 +271,10 @@ void fixpoint::iterate() {
       //      cout << "++++++ acc:" << endl << *accumulator << endl;
 
       if(ref_management)
-        if(backward || constraints.size() != 1) analysis->ref(node_id, nullopt);
+        if(backward || constraints.size() != 1) analysis->ref(node.id, nullopt);
 
       propagate =
-        (!backward && constraints.size() == 1) || !(*analysis->get(node_id) == *accumulator);
+        (!backward && constraints.size() == 1) || !(*analysis->get(node.id) == *accumulator);
 
       //            cout << "prop: " << propagate << endl;
     } else
@@ -289,14 +289,14 @@ void fixpoint::iterate() {
     if(propagate) {
       if(needs_postprocessing) {
         //                cout << "====> Postproc: " << node_id << endl;
-        postprocess_worklist.push(node_id);
+        postprocess_worklist.push(node.id);
       }
       //            cout << node_id << " current " << *analysis->get(node_id) << endl;
       //            cout << node_id << " XX->XX " << *accumulator << endl;
       //      accumulator->check_consistency();
       //            cout << "Updating..." << endl;
-      analysis->update(node_id, accumulator);
-      updated.insert(node_id);
+      analysis->update(node.id, accumulator);
+      updated.insert(node);
 
       //      cout << "Updated " << node_id << endl;
       //      cout << *analysis->get(node_id) << endl;
@@ -305,8 +305,8 @@ void fixpoint::iterate() {
     //    cout << "Seen: " << (seen.find(node_id) != seen.end()) << endl;
     //    cout << "Number of deps: " << analysis->dependants(node_id).size() << endl;
 
-    if(propagate || seen.find(node_id) == seen.end()) {
-      auto dependants = analysis->dependants(node_id);
+    if(propagate || seen.find(node) == seen.end()) {
+      auto dependants = analysis->dependants(node.id);
       for(auto dependant : dependants) {
         //                cout << "====>  Pushing " << dependant << " as dep. of " << node_id <<
         //                endl;
@@ -315,7 +315,7 @@ void fixpoint::iterate() {
       //      cout << "Deps: " << dependants.size() << endl;
       //      cout << "Children: " << analysis->get_cfg()->out_edge_payloads(node_id)->size() <<
       //      endl;
-      if(ref_management) analysis->ref(node_id, dependants.size());
+      if(ref_management) analysis->ref(node.id, dependants.size());
     }
     auto dirty_nodes = analysis->dirty_nodes();
     for(auto dirty : dirty_nodes) {
@@ -323,9 +323,9 @@ void fixpoint::iterate() {
       worklist.push(dirty);
     }
     if(ref_management)
-      if(dirty_nodes.size() > 0) analysis->ref(node_id, dirty_nodes.size());
+      if(dirty_nodes.size() > 0) analysis->ref(node.id, dirty_nodes.size());
 
-    seen.insert(node_id);
+    seen.insert(node);
     //    cout << "END OF FP_ROUND" << endl;
   }
 }

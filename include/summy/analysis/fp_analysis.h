@@ -7,22 +7,43 @@
 
 #pragma once
 #include "analysis_result.h"
-#include <summy/cfg/cfg.h>
+#include <functional>
+#include <iostream>
+#include <map>
+#include <memory>
 #include <queue>
 #include <set>
-#include <map>
-#include <vector>
-#include <tuple>
-#include <memory>
-#include <iostream>
-#include <functional>
-#include <summy/analysis/fp_priority_queue.h>
-#include <summy/cfg/observer.h>
 #include <summy/analysis/analysis_visitor.h>
+#include <summy/cfg/cfg.h>
+#include <summy/cfg/observer.h>
+#include <tuple>
+#include <vector>
 
 using std::shared_ptr;
 
 namespace analysis {
+
+struct analysis_node {
+  size_t id;
+  size_t context;
+
+  bool operator<(analysis_node const &other) {
+    if(this->id < other.id)
+      return true;
+    else if(this->id > other.id)
+      return false;
+    else
+      return this->context < other.context;
+  }
+
+  analysis_node(size_t id) : id(id), context(0) {}
+
+  analysis_node(size_t id, size_t context) : id(id), context(context) {}
+};
+
+typedef std::function<std::experimental::optional<bool>(
+  analysis_node const &, analysis_node const &)>
+  node_compare_t;
 
 class domain_state;
 
@@ -36,14 +57,16 @@ typedef std::function<std::shared_ptr<domain_state>()> constraint_t;
 class fp_analysis {
 private:
   cfg::recorder rec;
+
 public:
   typedef std::map<size_t, std::set<size_t>> dependants_t;
+
 protected:
   cfg::cfg *cfg;
 
   std::map<size_t, std::map<size_t, constraint_t>> constraints;
   dependants_t _dependants;
-  std::set<size_t> fixpoint_pending;
+  std::set<analysis_node> fixpoint_pending;
 
   virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e) = 0;
   virtual void remove_constraint(size_t from, size_t to) = 0;
@@ -53,17 +76,17 @@ protected:
   virtual dependency gen_dependency(size_t from, size_t to) = 0;
   virtual void init_state() = 0;
 
-  std::set<size_t> roots(std::set<size_t> const &all, const dependants_t &dep_dants);
+  std::set<analysis_node> roots(std::set<analysis_node> const &all, const dependants_t &dep_dants);
   virtual void init_fixpoint_pending();
   void init();
+
 public:
   cfg::cfg *get_cfg() {
     return cfg;
   }
 
   fp_analysis(cfg::cfg *cfg);
-  virtual ~fp_analysis() {
-  }
+  virtual ~fp_analysis() {}
 
   void update(std::vector<::cfg::update> const &updates);
   void record_updates();
@@ -96,22 +119,18 @@ public:
 
   virtual node_compare_t get_fixpoint_node_comparer();
 
-  virtual void check_consistency() {
-  }
+  virtual void check_consistency() {}
 
-  virtual void ref(size_t node, std::experimental::optional<size_t> count) {
-  }
-  virtual void unref(size_t node) {
-  }
+  virtual void ref(size_t node, std::experimental::optional<size_t> count) {}
+  virtual void unref(size_t node) {}
 
   virtual void accept(analysis_visitor &v) {
     v.visit(this);
   }
 
   virtual void put(std::ostream &out) = 0;
-  friend std::ostream &operator<< (std::ostream &out, fp_analysis &_this);
+  friend std::ostream &operator<<(std::ostream &out, fp_analysis &_this);
 };
 
 std::ostream &operator<<(std::ostream &out, fp_analysis &_this);
-
 }

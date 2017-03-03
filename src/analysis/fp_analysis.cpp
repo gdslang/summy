@@ -5,36 +5,36 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/fp_analysis.h>
-#include <summy/cfg/cfg.h>
-#include <summy/cfg/bfs_iterator.h>
 #include <algorithm>
-#include <vector>
-#include <set>
-#include <map>
 #include <assert.h>
+#include <map>
+#include <set>
+#include <summy/analysis/fp_analysis.h>
+#include <summy/cfg/bfs_iterator.h>
+#include <summy/cfg/cfg.h>
+#include <vector>
 
 using namespace cfg;
 using namespace std;
 using namespace analysis;
 
-set<size_t> fp_analysis::roots(set<size_t> const &all, const dependants_t &dep_dants) {
-  set<size_t >result;
-  set<size_t> left = all;
+set<analysis_node> fp_analysis::roots(
+  set<analysis_node> const &all, const dependants_t &dep_dants) {
+  set<analysis_node> result;
+  set<analysis_node> left = all;
 
   while(!left.empty()) {
-    size_t next;
     auto it = left.begin();
-    next = *it;
+    analysis_node next = *it;
     left.erase(it);
 
     result.insert(next);
-    queue<size_t> bfs_q;
+    queue<analysis_node> bfs_q;
     bfs_q.push(next);
     while(!bfs_q.empty()) {
-      size_t node = bfs_q.front();
+      analysis_node node = bfs_q.front();
       bfs_q.pop();
-      auto dd_it = dep_dants.find(node);
+      auto dd_it = dep_dants.find(node.id);
       if(dd_it != dep_dants.end())
         for(auto dep_dant : dd_it->second) {
           auto left_it = left.find(dep_dant);
@@ -57,9 +57,7 @@ void fp_analysis::init_fixpoint_pending() {
   fixpoint_pending = roots(fixpoint_pending, _dependants);
 }
 
-fp_analysis::fp_analysis(class cfg *cfg) :
-    rec(cfg, false), cfg(cfg) {
-}
+fp_analysis::fp_analysis(class cfg *cfg) : rec(cfg, false), cfg(cfg) {}
 
 void ::fp_analysis::fp_analysis::init() {
   for(auto node : *cfg) {
@@ -77,20 +75,20 @@ void ::fp_analysis::fp_analysis::init() {
 }
 
 void fp_analysis::update(vector<struct update> const &updates) {
-//  auto print_set = [](auto &s) {
-//    cout << "{";
-//    bool first = true;
-//    for(auto &es : s) {
-//      if(!first)
-//        cout << ", ";
-//      cout << es;
-//      first = false;
-//    }
-//    cout << "}" << endl;
-//  };
+  //  auto print_set = [](auto &s) {
+  //    cout << "{";
+  //    bool first = true;
+  //    for(auto &es : s) {
+  //      if(!first)
+  //        cout << ", ";
+  //      cout << es;
+  //      first = false;
+  //    }
+  //    cout << "}" << endl;
+  //  };
 
-//  fixpoint_pending.clear();
-  
+  //  fixpoint_pending.clear();
+
   for(auto &update : updates) {
     switch(update.kind) {
       case UPDATE:
@@ -137,12 +135,12 @@ void fp_analysis::update(vector<struct update> const &updates) {
 
   for(auto &update : updates) {
     auto insert = [&]() {
-//      cout << "INSERT " << update.from << " -> " << update.to << endl;
+      //      cout << "INSERT " << update.from << " -> " << update.to << endl;
       if(cfg->contains_edge(update.from, update.to))
         add_constraint(update.from, update.to, cfg->out_edge_payloads(update.from)->at(update.to));
     };
     auto erase = [&]() {
-//      cout << "ERASE " << update.from << " -> " << update.to << endl;
+      //      cout << "ERASE " << update.from << " -> " << update.to << endl;
       remove_constraint(update.from, update.to);
     };
     switch(update.kind) {
@@ -169,7 +167,7 @@ void analysis::fp_analysis::record_updates() {
 
 bool analysis::fp_analysis::record_stop_commit() {
   rec.stop();
-  auto const& updates = rec.checkout_updates();
+  auto const &updates = rec.checkout_updates();
   update(updates);
   return updates.size() > 0;
 }
@@ -184,12 +182,10 @@ void analysis::fp_analysis::assert_dependency(dependency dep) {
 }
 
 node_compare_t analysis::fp_analysis::get_fixpoint_node_comparer() {
-  return [](size_t a, size_t b) {
-    return a < b;
-  };
+  return [](analysis_node const &a, analysis_node const &b) { return a < b; };
 }
 
-std::ostream &operator <<(std::ostream &out, fp_analysis &_this) {
+std::ostream &operator<<(std::ostream &out, fp_analysis &_this) {
   _this.put(out);
   return out;
 }
