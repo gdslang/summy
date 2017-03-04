@@ -27,7 +27,7 @@ struct analysis_node {
   size_t id;
   size_t context;
 
-  bool operator<(analysis_node const &other) {
+  bool operator<(analysis_node const &other) const {
     if(this->id < other.id)
       return true;
     else if(this->id > other.id)
@@ -95,7 +95,7 @@ public:
   virtual std::map<size_t, constraint_t> &constraints_at(size_t node) {
     return constraints[node];
   }
-  virtual std::set<size_t> pending() {
+  virtual std::set<analysis_node> pending() {
     return fixpoint_pending;
   }
   void clear_pending();

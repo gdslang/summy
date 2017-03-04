@@ -33,7 +33,7 @@ analysis::fixpoint::fixpoint(
 void fixpoint::iterate() {
   updated.clear();
   node_iterations.clear();
-  set<size_t> pending = analysis->pending();
+  set<analysis_node> pending = analysis->pending();
 
   node_compare_t addr_comparer = [&](analysis_node const &a, analysis_node const &b) -> optional<bool> {
     size_t addr_a = jd_man.machine_address_of(a.id);

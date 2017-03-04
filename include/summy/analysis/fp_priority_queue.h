@@ -16,7 +16,8 @@
 
 namespace analysis {
 
-typedef std::unordered_set<analysis_node> fpp_elements_t;
+//typedef std::unordered_set<analysis_node> fpp_elements_t;
+typedef std::set<analysis_node> fpp_elements_t;
 
 extern node_compare_t node_compare_default;
 
