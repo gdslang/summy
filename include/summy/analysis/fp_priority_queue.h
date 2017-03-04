@@ -31,8 +31,8 @@ public:
   fp_priority_queue(std::vector<node_compare_t> node_comparers);
   fp_priority_queue(std::set<analysis_node> init, std::vector<node_compare_t> node_comparers);
 
-  void push(size_t value);
-  size_t pop();
+  void push(analysis_node value);
+  analysis_node pop();
   bool empty();
   void clear();
   size_t size();

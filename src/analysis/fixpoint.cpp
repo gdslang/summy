@@ -74,7 +74,7 @@ void fixpoint::iterate() {
     } else {
       auto it = pending.begin();
       assert(it != pending.end());
-      size_t next_element = *it;
+      auto next_element = *it;
       pending.erase(it);
       return next_element;
     }
@@ -244,7 +244,7 @@ void fixpoint::iterate() {
         process_constraint(constraint_it->first, constraint_it->second);
       if(analysis->record_stop_commit()) {
         //        cout << "Comitted updates..." << endl;
-        for(size_t node : analysis->pending()) {
+        for(analysis_node node : analysis->pending()) {
           //                    cout << "====> Pushing node: " << node << endl;
           //    cout << this << endl;
 
@@ -296,7 +296,7 @@ void fixpoint::iterate() {
       //      accumulator->check_consistency();
       //            cout << "Updating..." << endl;
       analysis->update(node.id, accumulator);
-      updated.insert(node);
+      updated.insert(node.id);
 
       //      cout << "Updated " << node_id << endl;
       //      cout << *analysis->get(node_id) << endl;
