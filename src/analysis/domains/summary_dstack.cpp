@@ -177,7 +177,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
   //    cout << "Adding constraint from " << from << " to " << to << endl;
   //    assert(from != 99 || to != 70);
   node_visitor nv;
-  nv._([&](address_node *av) {
+  nv._([&](address_node *_) {
     ref(from, nullopt);
     ref(to, nullopt);
   });
@@ -591,10 +591,10 @@ void analysis::summary_dstack::init_state(summy::vs_shared_t f_addr) {
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
     if(fixpoint_pending.find(i) != fixpoint_pending.end()) {
-      state[i] = dynamic_pointer_cast<global_state>(start_value(f_addr));
+      (state[i])[0] = dynamic_pointer_cast<global_state>(start_value(f_addr));
       ref(i, nullopt);
     } else
-      state[i] = dynamic_pointer_cast<global_state>(bottom());
+      (state[i])[0] = dynamic_pointer_cast<global_state>(bottom());
   }
 }
 
@@ -614,7 +614,7 @@ analysis::summary_dstack::summary_dstack(
     nv._([&](address_node *an) { addr = an->get_address(); });
     n->accept(nv);
     function_desc_map.insert(make_pair((void *)addr.value(), function_desc(0, n->get_id())));
-    state[n->get_id()]->set_f_addr(vs_finite::single(addr.value()));
+    state[n->get_id()].at(0)->set_f_addr(vs_finite::single(addr.value()));
   }
 }
 
@@ -632,7 +632,7 @@ analysis::summary_dstack::summary_dstack(
   nv._([&](address_node *an) { addr = an->get_address(); });
   n->accept(nv);
   function_desc_map.insert(make_pair((void *)addr.value(), function_desc(0, n->get_id())));
-  state[n->get_id()]->set_f_addr(vs_finite::single(addr.value()));
+  state[n->get_id()].at(0)->set_f_addr(vs_finite::single(addr.value()));
 }
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, bool warnings)
@@ -675,18 +675,18 @@ shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
   //  if(node >= state.size())
   //    return bottom();
   //  assert(erased.find(node) == erased.end());
-  return state[node];
+  return state[node].at(0);
 }
 
 shared_ptr<global_state> analysis::summary_dstack::get_sub(size_t node) {
   //  if(node >= state.size())
   //    return bottom();
   //  assert(erased.find(node) == erased.end());
-  return state[node];
+  return state[node].at(0);
 }
 
 void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<global_state>(state);
+  (this->state[node])[0] = dynamic_pointer_cast<global_state>(state);
   //  erased.erase(node);
   //  this->state[node]->get_mstate()->check_consistency();
 }
@@ -698,8 +698,8 @@ summary_dstack_result analysis::summary_dstack::result() {
 node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
   return [=](analysis_node const &a, analysis_node const &b) -> optional<bool> {
     if(a.id >= state.size() || b.id >= state.size()) return a < b;
-    shared_ptr<global_state> state_a = this->state[a.id];
-    shared_ptr<global_state> state_b = this->state[b.id];
+    shared_ptr<global_state> state_a = this->state[a.id].at(0);
+    shared_ptr<global_state> state_b = this->state[b.id].at(0);
     //    cout << state_a->get_f_addr() << " " << state_b->get_f_addr() << endl;
 
     set<void *> f_addrs_a = unpack_f_addrs(state_a->get_f_addr());
@@ -773,7 +773,7 @@ void analysis::summary_dstack::unref(size_t node) {
         ref_it->second = count_current.value() - 1;
       else {
         //        cout << "Bottomifying node " << node << endl;
-        state[node] = dynamic_pointer_cast<global_state>(bottom());
+        (state[node])[0] = dynamic_pointer_cast<global_state>(bottom());
         //        erased.insert(node);
         ref_map.erase(node);
       }
@@ -783,7 +783,7 @@ void analysis::summary_dstack::unref(size_t node) {
 
 optional<size_t> analysis::summary_dstack::get_lowest_function_address(size_t node_id) {
   if(this->state.size() <= node_id) return nullopt;
-  set<void *> f_addrs = unpack_f_addrs(state[node_id]->get_f_addr());
+  set<void *> f_addrs = unpack_f_addrs(state[node_id].at(0)->get_f_addr());
   if(f_addrs.size() == 0) return nullopt;
   return (size_t)*f_addrs.begin();
 }
@@ -791,7 +791,7 @@ optional<size_t> analysis::summary_dstack::get_lowest_function_address(size_t no
 void analysis::summary_dstack::print_callstack(size_t node_id) {
   //  cout << *state[node_id] << endl;
   if(this->state.size() <= node_id) return;
-  set<size_t> callers_current_heads = get_function_heads(state[node_id]);
+  set<size_t> callers_current_heads = get_function_heads(state[node_id].at(0));
   set<size_t> callers_addrs_trans;
   auto print_node = [&](size_t node_id) {
     bool handled = false;
@@ -824,9 +824,9 @@ void analysis::summary_dstack::print_callstack(size_t node_id) {
 
     set<size_t> callers_next_heads;
     for(size_t caller : callers_current_heads) {
-      set<size_t> callers_next = get_callers(state[caller]);
+      set<size_t> callers_next = get_callers(state[caller].at(0));
       for(auto caller_next : callers_next) {
-        set<size_t> callers_next_heads_current = get_function_heads(state[caller_next]);
+        set<size_t> callers_next_heads_current = get_function_heads(state[caller_next].at(0));
         callers_next_heads.insert(
           callers_next_heads_current.begin(), callers_next_heads_current.end());
       }
@@ -843,5 +843,5 @@ void analysis::summary_dstack::print_callstack(size_t node_id) {
 
 void analysis::summary_dstack::put(std::ostream &out) {
   for(size_t i = 0; i < state.size(); i++)
-    out << "Node " << i << ": " << endl << *state[i] << endl;
+    out << "Node " << i << ": " << endl << *state[i].at(0) << endl;
 }

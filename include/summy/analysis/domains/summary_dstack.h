@@ -25,7 +25,7 @@
 
 namespace analysis {
 
-typedef std::vector<std::shared_ptr<global_state>> state_t;
+typedef std::vector<std::map<size_t, std::shared_ptr<global_state>>> state_t;
 
 struct summary_dstack_result : public ::analysis::analysis_result<state_t> {
   summary_dstack_result(state_t &s) : analysis_result(s) {}

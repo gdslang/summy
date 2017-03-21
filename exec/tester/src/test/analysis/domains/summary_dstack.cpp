@@ -73,7 +73,7 @@ static void query_val(
   lin_var *lv = new lin_var(make_variable(make_id(arch_id_name), offset));
   //  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
 
-  r = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryVal(lv, size);
+  r = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate()->queryVal(lv, size);
   delete lv;
 }
 
@@ -135,7 +135,7 @@ static void equal_structure(region_t const &cmp, _analysis_result &ar, string la
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  region_t const &rr = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->query_region_output(id);
+  region_t const &rr = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate()->query_region_output(id);
 
   equal_structure(cmp, rr);
 }
@@ -162,7 +162,7 @@ static void mstate_from_label(summary_memory_state **mstate, _analysis_result &a
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  *mstate = analy_r.result[ar.addr_node_map[e.address]]->get_mstate();
+  *mstate = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate();
 }
 
 static void query_deref(id_shared_t &id, _analysis_result &ar, summary_memory_state *mstate, ptr _ptr, size_t size) {
@@ -289,7 +289,7 @@ static void query_als(ptr_set_t &aliases, _analysis_result &ar, string label, st
   //  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
 
   address *a = new address(64, make_linear(make_variable(make_id(arch_id_name), 0)));
-  aliases = analy_r.result[ar.addr_node_map[e.address]]->get_mstate()->queryAls(a);
+  aliases = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate()->queryAls(a);
 
   delete a;
 }
@@ -309,7 +309,7 @@ static void isTop(bool &result, _analysis_result &ar, string label) {
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  summary_memory_state *state = analy_r.result[ar.addr_node_map[e.address]]->get_mstate();
+  summary_memory_state *state = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate();
 
   summary_memory_state *top = state->copy();
   top->topify();
