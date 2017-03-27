@@ -310,7 +310,7 @@ void fixpoint::iterate() {
       for(auto dependant : dependants) {
         //                cout << "====>  Pushing " << dependant << " as dep. of " << node_id <<
         //                endl;
-        worklist.push(dependant);
+        worklist.push(analysis_node(dependant, node.context));
       }
       //      cout << "Deps: " << dependants.size() << endl;
       //      cout << "Children: " << analysis->get_cfg()->out_edge_payloads(node_id)->size() <<
