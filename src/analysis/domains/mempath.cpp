@@ -235,30 +235,9 @@ std::experimental::optional<std::set<mempath>> mempath::separate_propagate(
     //   cout << *from << endl;
 
     std::map<size_t, ptr_set_t> aliases_from_immediate;
-    
-    
-    
-    
-    std::map<size_t, ptr_set_t> aliases_from = resolve(from);
-    
-    ptr_set_t aliases_from_symbolic;
-    tie(aliases_from_immediate, aliases_from_symbolic) = split(aliases_from);
-    
+    auto result = separate_propagate(from, aliases_from_immediate);
     for(auto mapping : aliases_from_immediate)
       propagate(mapping.first, mapping.second, to);
-    
-    if(aliases_from_symbolic.size() > 0) {
-      id_set_t aliases_from_symbolic_ids;
-      for(auto ptr : aliases_from_symbolic)
-        aliases_from_symbolic_ids.insert(ptr.id);
-      return from_aliases(aliases_from_symbolic_ids, from);
-    } else
-      return experimental::nullopt;
-    
-    
-    
-//     auto result = separate_propagate(from, aliases_from_immediate);
-    
     
     // Callback for immediate pointers; used for statistics only
     //   for(auto &alias : aliases_from_immediate) {
@@ -275,9 +254,8 @@ std::experimental::optional<std::set<mempath>> mempath::separate_propagate(
     //     idv._([&](sm_id const *sid) { imm_ptr_cb((size_t)sid->get_address() + *offset); });
     //     alias.id->accept(idv);
     //   }
-
     
-//     return result;
+    return result;
   }
 
   std::set<mempath> analysis::mempath::from_aliases(
