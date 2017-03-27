@@ -8,9 +8,9 @@
 #pragma once
 #include <cppgdsl/rreil/id/id.h>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <set>
-#include <map>
 #include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <tuple>
@@ -35,6 +35,9 @@ private:
 
   int compare_to(const mempath &other) const;
 
+  std::experimental::optional<std::set<mempath>> separate_propagate(
+    summary_memory_state *from, std::map<size_t, ptr_set_t> &aliases_from_immediate) const;
+
 public:
   mempath(std::shared_ptr<gdsl::rreil::id> base, std::vector<step> path);
 
@@ -47,8 +50,10 @@ public:
    * @return 'true' if the field is a requirement in 'from'
    */
   std::map<size_t, ptr_set_t> resolve(summary_memory_state *from) const;
-  std::tuple<std::map<size_t, ptr_set_t>, ptr_set_t> split(std::map<size_t, ptr_set_t> aliases) const;
-  void propagate(size_t path_length, ptr_set_t aliases_from_immediate, summary_memory_state *to) const;
+  std::tuple<std::map<size_t, ptr_set_t>, ptr_set_t> split(
+    std::map<size_t, ptr_set_t> aliases) const;
+  void propagate(
+    size_t path_length, ptr_set_t aliases_from_immediate, summary_memory_state *to) const;
   std::experimental::optional<std::set<mempath>> propagate(std::function<void(size_t)> imm_ptr_cb,
     summary_memory_state *from, summary_memory_state *to) const;
 
