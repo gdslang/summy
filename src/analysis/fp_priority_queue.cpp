@@ -42,26 +42,32 @@ analysis_node analysis::fp_priority_queue::pop() {
   //  for(auto e : inner)
   //    cout << "===> " << e << endl;
   assert(inner.size() > 0);
-  optional<analysis_node> minimum = std::experimental::nullopt;
-  auto min_it = inner.begin();
   auto it = inner.begin();
-  while(it != inner.end()) {
-    optional<bool> result;
-    for(auto &comparer : comparers) {
-      if(result) break;
-      result = comparer(*it, *minimum);
-    }
-    assert(result);
-    if(result.value()) {
-      minimum = *it;
-      min_it = it;
-    }
+  if(it == inner.end()) {
+    assert(false);
+  } else {
+    auto min_it = it;
+    analysis_node minimum = *it;
     it++;
+    while(it != inner.end()) {
+      optional<bool> result;
+      for(auto &comparer : comparers) {
+        if(result) break;
+        result = comparer(*it, minimum);
+      }
+      assert(result);
+      if(result.value()) {
+        minimum = *it;
+        min_it = it;
+      }
+      it++;
+    }
+    //  auto min_it = std::min_element(inner.begin(), inner.end(), comparer);
+    //  size_t minimum = *min_it;
+    inner.erase(min_it);
+    return minimum;
   }
-  //  auto min_it = std::min_element(inner.begin(), inner.end(), comparer);
-  //  size_t minimum = *min_it;
-  inner.erase(min_it);
-  return *minimum;
+
 }
 
 bool analysis::fp_priority_queue::empty() {
