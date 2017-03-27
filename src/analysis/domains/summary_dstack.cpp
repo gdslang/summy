@@ -737,8 +737,8 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
   };
 }
 
-std::set<size_t> analysis::summary_dstack::dirty_nodes() {
-  set<size_t> dirty_nodes = this->_dirty_nodes;
+std::set<analysis_node> analysis::summary_dstack::dirty_nodes() {
+  set<analysis_node> dirty_nodes = this->_dirty_nodes;
   this->_dirty_nodes.clear();
   return dirty_nodes;
 }

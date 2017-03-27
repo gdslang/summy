@@ -57,7 +57,7 @@ private:
   std::shared_ptr<static_memory> sm;
   bool warnings;
   std::map<void *, function_desc> function_desc_map;
-  std::set<size_t> _dirty_nodes;
+  std::set<analysis_node> _dirty_nodes;
 //  caller::caller caller_analysis;
   state_t state;
 
@@ -112,7 +112,7 @@ public:
 
   node_compare_t get_fixpoint_node_comparer();
 
-  std::set<size_t> dirty_nodes();
+  std::set<analysis_node> dirty_nodes();
 
   virtual void check_consistency();
 

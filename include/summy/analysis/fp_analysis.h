@@ -113,8 +113,8 @@ public:
    * evaluation. This allows the analysis to tell the fixpoint engine to re-
    * evaluate additional nodes.
    */
-  virtual std::set<size_t> dirty_nodes() {
-    return std::set<size_t>();
+  virtual std::set<analysis_node> dirty_nodes() {
+    return std::set<analysis_node>();
   }
 
   virtual node_compare_t get_fixpoint_node_comparer();
