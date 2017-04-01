@@ -35,7 +35,7 @@ private:
 
   int compare_to(const mempath &other) const;
 
-  std::experimental::optional<std::set<mempath>> separate_propagate(
+  std::experimental::optional<std::set<mempath>> _extract(
     summary_memory_state *from, std::map<size_t, ptr_set_t> &aliases_from_immediate) const;
 
 public:
@@ -52,8 +52,11 @@ public:
   std::map<size_t, ptr_set_t> resolve(summary_memory_state *from) const;
   std::tuple<std::map<size_t, ptr_set_t>, ptr_set_t> split(
     std::map<size_t, ptr_set_t> aliases) const;
+  //     std::experimental::optional<std::set<mempath>> extract(
+  //       summary_memory_state *from, std::map<size_t, ptr_set_t> &aliases_from_immediate) const;
   void propagate(
     size_t path_length, ptr_set_t aliases_from_immediate, summary_memory_state *to) const;
+
   std::experimental::optional<std::set<mempath>> propagate(std::function<void(size_t)> imm_ptr_cb,
     summary_memory_state *from, summary_memory_state *to) const;
 
