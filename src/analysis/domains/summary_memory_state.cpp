@@ -52,7 +52,7 @@ analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimenta
 
 analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state *child_state, int64_t offset,
   size_t size, bool replacement, bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
-  //  cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << endl;
+//    cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << ", handle_conflicts=" << handle_conflicts << endl;
   //  struct field_desc_t {
   //    int64_t offset;
   //    field f;
@@ -86,7 +86,7 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
     int64_t offset_current = out_r_it->first;
     if(offset_current >= offset + (int64_t)size) break;
 
-    //    cout << "In the way: offset:" << offset_current << " size: " << out_r_it->second.size << endl;
+//        cout << "In the way: offset:" << offset_current << " size: " << out_r_it->second.size << endl;
 
     if(offset_current < offset) prefix_needed = true;
     if(!offset_first) offset_first = offset_current;
@@ -139,12 +139,12 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
   //  cout << "offsets[0]: " << offsets[0] << endl;
   //  cout << "offset: " << offset << endl;
   //  }
-
+  
   if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size)
     return rf_result(out_r.find(offset)->second, false);
-  else if(!handle_conflicts && replaced.size() > 0)
+  else if(!handle_conflicts && (replaced.size() > 0 || !contiguous))
     return rf_result(nullopt, false);
-
+  
   vector<num_var *> kill_vars;
   for(auto offset : offsets) {
     //    cout << "REMOVING AT OFFSET " << offset << endl;
@@ -221,7 +221,7 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
   id_shared_t nid_out = name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
   num_var *n_out = new num_var(nid_out);
 
-  //  cout << "contiguous=" << contiguous << endl;
+//   cout << "contiguous=" << contiguous << ", size = " << size << endl;
 
   /*
    * Todo: size > 64?
@@ -239,11 +239,11 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
         id_shared_t temp_next = numeric_id::generate();
         num_var *temp_var = new num_var(temp_next);
         child_state->assign(temp_var, shift);
-        //        cout << "assign " << *temp_var << " = " << *shift << endl;
+//                cout << "assign " << *temp_var << " = " << *shift << endl;
         num_expr *addition =
           new num_expr_lin(new num_linear_term(1, temp_var->copy(), new num_linear_term(new num_var(f.num_id))));
         child_state->assign(*temp, addition);
-        //        cout << "assign " << **temp << " = " << *addition << endl;
+//                cout << "assign " << **temp << " = " << *addition << endl;
         child_state->kill({temp_var});
         delete addition;
         delete temp_var;
@@ -1423,3 +1423,4 @@ const region_t &analysis::summary_memory_state::query_region_output(id_shared_t 
 const region_t &analysis::summary_memory_state::query_deref_output(id_shared_t id) {
   return output.deref[id];
 }
+

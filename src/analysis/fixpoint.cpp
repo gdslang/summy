@@ -85,13 +85,13 @@ void fixpoint::iterate() {
 
     std::time_t current_time = std::time(nullptr);
 
-    if(current_time - construct_time > 20 * 60) {
-      cout << "\033[1;31m!!! TIME IS UP !!!\033[0m" << endl;
-      break;
-    }
+//     if(current_time - construct_time > 20 * 60) {
+//       cout << "\033[1;31m!!! TIME IS UP !!!\033[0m" << endl;
+//       break;
+//     }
 
     //    cout << "\033[1;31mNext iteration\033[0m" << endl;
-    //    cout << "Next node: " << node_id << endl;
+//        cout << "Next node: " << node.id << endl;
 
     bool _continue = false;
     static optional<size_t> function_last;
