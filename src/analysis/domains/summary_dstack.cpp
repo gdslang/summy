@@ -345,6 +345,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               //              cout << ptr << endl;
             }
             cfg->commit_updates();
+            
+            unique_hbs[from] = field_req_ids_new.size();
 
             set<mempath> field_reqs_new = mempath::from_aliases(field_req_ids_new, mstate);
 //             for(auto &req : field_reqs_new)

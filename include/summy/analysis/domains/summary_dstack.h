@@ -69,6 +69,11 @@ private:
    * Maps function addresses to memory path to pointer sets
    */
   std::map<size_t, std::map<mempath, std::set<size_t>>> pointer_props;
+  
+  /*
+   * Statistics: Number of herbrand terms for a single call site
+   */
+  std::map<size_t, size_t> unique_hbs;
 
 //  std::set<size_t> erased;
 
@@ -128,6 +133,10 @@ public:
   
   std::map<size_t, std::map<mempath, std::set<size_t>>> const& get_pointer_props() {
     return pointer_props;
+  }
+  
+  std::map<size_t, size_t> const& get_unique_hbs() {
+    return unique_hbs;
   }
 
   virtual void accept(analysis_visitor &v) {
