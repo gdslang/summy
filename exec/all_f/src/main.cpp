@@ -321,7 +321,7 @@ int main(int argc, char **argv) {
       else
         multiple_hbs++;
     }
-    cout << "Zero HBs: " << zero_hbs << ", one HB: " << one_hb << ", multiple HBS: " << multiple_hbs
+    cout << "Zero HBs: " << zero_hbs << ", one HB: " << one_hb << ", multiple HBs: " << multiple_hbs
          << endl;
 
     cout << "Hot addresses:" << endl;
