@@ -70,6 +70,20 @@ private:
    */
   std::map<size_t, std::map<mempath, std::set<size_t>>> pointer_props;
   
+  /**
+   * Statistics for function pointer propagation (2)
+   * 
+   * Maps node ids to the number of HBs for each request
+   */
+  std::map<size_t, std::vector<size_t>> hb_counts;
+  
+  /**
+   * Statistics for function pointer propagation (2)
+   * 
+   * Maps node ids to the number of path path construction errors
+   */
+  std::map<size_t, size_t> path_construction_errors;
+  
   /*
    * Statistics: Number of herbrand terms for a single call site
    */
@@ -135,8 +149,16 @@ public:
     return pointer_props;
   }
   
+  std::map<size_t, std::vector<size_t>> const& get_hb_counts() {
+    return hb_counts;
+  }
+  
   std::map<size_t, size_t> const& get_unique_hbs() {
     return unique_hbs;
+  }
+  
+  std::map<size_t, size_t> const& get_path_construction_errors() {
+    return path_construction_errors;
   }
 
   virtual void accept(analysis_visitor &v) {

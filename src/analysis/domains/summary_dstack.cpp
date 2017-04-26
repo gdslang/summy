@@ -167,8 +167,9 @@ void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, 
        fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
     fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
     _dirty_nodes.insert(fd.head_id);
-//     cout << "Added dirty node " << fd.head_id << " for address 0x" << std::hex << f_addr << std::dec
-//          << " because of reqs..." << endl;
+    //     cout << "Added dirty node " << fd.head_id << " for address 0x" << std::hex << f_addr <<
+    //     std::dec
+    //          << " because of reqs..." << endl;
   }
 }
 
@@ -345,12 +346,15 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               //              cout << ptr << endl;
             }
             cfg->commit_updates();
-            
+
             unique_hbs[from] = field_req_ids_new.size();
 
-            set<mempath> field_reqs_new = mempath::from_aliases(field_req_ids_new, mstate);
-//             for(auto &req : field_reqs_new)
-//               std::cout << req << std::endl;
+            set<mempath> field_reqs_new;
+            size_t path_construction_errors =
+              mempath::from_aliases(field_reqs_new, field_req_ids_new, mstate);
+            this->path_construction_errors[from] = path_construction_errors;
+            //             for(auto &req : field_reqs_new)
+            //               std::cout << req << std::endl;
             //            propagate_reqs(f_addr, mps);
             for(auto f_addr : f_addrs)
               propagate_reqs(field_reqs_new, f_addr);
@@ -520,25 +524,38 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           size_t from_parent = *in_edges.begin();
 
           //          cout << "This call requires the following fields:" << endl;
+
+          std::vector<size_t> hbs;
+          size_t hb_index = 0;
+
           for(auto &f : desc.field_reqs) {
             //            cout << f << endl;
+            hbs.push_back(0);
 
-            auto insert = [&](
-              size_t ptr) { (this->pointer_props[(size_t)address])[f].insert(ptr); };
+            optional<set<mempath>> mempaths_new;
+            mp_result prop_res = f.propagate(
+              mempaths_new, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
+            for(auto ptr : prop_res.immediate_ptrs) {
+              (this->pointer_props[(size_t)address])[f].insert(ptr);
+              hbs[hb_index]++;
+            }
+            this->path_construction_errors[from] = prop_res.path_construction_errors;
 
-            optional<set<mempath>> mempaths_new =
-              f.propagate(insert, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
             if(mempaths_new) {
-//               cout << "Propagating..." << endl;
-//               for(auto p : mempaths_new.value())
-//                 cout << p << endl;
+              //               cout << "Propagating..." << endl;
+              //               for(auto p : mempaths_new.value())
+              //                 cout << p << endl;
 
               set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent)->get_f_addr());
               assert(f_addrs.size() > 0);
               for(auto f_addr : f_addrs)
                 propagate_reqs(mempaths_new.value(), f_addr);
             }
+
+            hb_index++;
           }
+
+          this->hb_counts[from] = hbs;
         }
       } else {
         state_new = get_sub(from);

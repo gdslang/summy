@@ -308,6 +308,26 @@ int main(int argc, char **argv) {
           cout << "    -> Propagated address 0x" << std::hex << ptr << std::dec << std::endl;
       }
     }
+    
+    auto const& hb_counts = ds.get_hb_counts();
+    size_t requests = 0;
+    size_t hbs = 0;
+    for(auto const &hbc_mapping : hb_counts) {
+      for(auto const hbc : hbc_mapping.second) {
+        if(hbc > 0) {
+          requests++;
+          hbs += hbc;
+        }
+      }
+    }
+    cout << "Total request: " << requests << ", instantiations: " << hbs << endl;
+    
+    auto const& path_construction_errors = ds.get_path_construction_errors();
+    size_t path_errors_total = 0;
+    for(auto const &path_errors : path_construction_errors) {
+      path_errors_total += path_errors.second;
+    }
+    cout << "Path construction errors: " << path_errors_total << endl;
 
     auto const &unique_hbs = ds.get_unique_hbs();
     size_t zero_hbs = 0;
