@@ -102,13 +102,13 @@ void fixpoint::iterate() {
       if(nits_it != node_iterations.end()) {
         nits_it->second++;
         if(nits_it->second > max_its || nits_it->second > 12) {
-          cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
-          cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
-          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node.id) << dec
-               << endl;
-          sd->print_callstack(node.id);
+//           cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
+//           cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
+//           cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node.id) << dec
+//                << endl;
+//           sd->print_callstack(node.id);
           max_its = nits_it->second;
-          print_distribution_total();
+//           print_distribution_total();
           //          cout << "node id: " << node_id << endl;
           //          cout << "\tMachine address: 0x" << hex << jd_man.machine_address_of(node_id)
           //          << dec << endl;

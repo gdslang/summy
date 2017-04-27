@@ -526,18 +526,17 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
           //          cout << "This call requires the following fields:" << endl;
 
-          cout << "Reqs for call to " << address << endl;
+//           cout << "Reqs for call to " << address << endl;
           for(auto &f : desc.field_reqs) {
-                       cout << f << endl;
+//                        cout << f << endl;
             optional<set<mempath>> mempaths_new;
             mp_result prop_res = f.propagate(
               mempaths_new, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
             
-            ((this->hb_counts[to])[from])[f] = 0;
             for(auto ptr : prop_res.immediate_ptrs) {
-              cout << "\tNew immediate ptr: " << ptr << endl;
+//               cout << "\tNew immediate ptr: " << ptr << endl;
               (this->pointer_props[(size_t)address])[f].insert(ptr);
-              ((this->hb_counts[to])[from])[f]++;
+              ((this->hb_counts[to]))[f].insert(ptr);
             }
             this->path_construction_errors[from] = prop_res.path_construction_errors;
 

@@ -313,21 +313,12 @@ int main(int argc, char **argv) {
     size_t requests = 0;
     size_t hbs = 0;
     for(auto const &head_mapping : hb_counts) {
-      std::map<analysis::mempath, size_t> hb_total;
-
-      for(auto const &cs_mapping : head_mapping.second) {
-        for(auto const &hb_mapping : cs_mapping.second) {
-          hb_total[hb_mapping.first] += hb_mapping.second;
-        }
-      }
-      for(auto const &hb_mapping : hb_total) {
-        if(hb_mapping.second > 0) {
-          requests++;
-          hbs += hb_mapping.second;
-        }
+      for(auto const& hb_mapping : head_mapping.second) {
+        requests++;
+        hbs += hb_mapping.second.size();
       }
     }
-    cout << "Total instantiated requests: " << requests << ", instantiations: " << hbs << endl;
+    cout << "Total requests: " << requests << ", instantiations: " << hbs << endl;
 
     auto const &path_construction_errors = ds.get_path_construction_errors();
     size_t path_errors_total = 0;

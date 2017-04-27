@@ -75,7 +75,7 @@ private:
    * 
    * Maps node ids to the number of HBs for each request
    */
-  std::map<size_t, std::map<size_t, std::map<mempath, size_t>>> hb_counts;
+  std::map<size_t, std::map<mempath, std::set<size_t>>> hb_counts;
   
   /**
    * Statistics for function pointer propagation (2)
@@ -149,7 +149,7 @@ public:
     return pointer_props;
   }
   
-  std::map<size_t, std::map<size_t, std::map<mempath, size_t>>> const& get_hb_counts() {
+  std::map<size_t, std::map<mempath, std::set<size_t>>> const& get_hb_counts() {
     return hb_counts;
   }
   

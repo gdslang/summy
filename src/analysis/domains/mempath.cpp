@@ -247,22 +247,21 @@ mp_result analysis::mempath::propagate(std::experimental::optional<set<mempath>>
     propagate(mapping.first, mapping.second, to);
 
   // Callback for immediate pointers; used for statistics only
-  for(auto &alias : aliases_from_immediate) {
-    result.immediate_ptrs.push_back(0);
-    //       std::cout << "IMMEDIATE ALIAS!!!!" << std::endl;
-    //     optional<size_t> offset;
-    //     value_set_visitor vsv;
-    //     vsv._([&](vs_finite const *v) {
-    //       assert(v->get_elements().size() == 1);
-    //       offset = *v->get_elements().begin();
-    //     });
-    //     alias.offset->accept(vsv);
-    //     assert(offset);
-    //     summy::rreil::id_visitor idv;
-    //     idv._([&](sm_id const *sid) { imm_ptr_cb((size_t)sid->get_address() + *offset); });
-    //     idv._default([&](id const *) { assert(false); });
-    //     alias.id->accept(idv);
-  }
+  for(auto &aliases : aliases_from_immediate)
+    for(auto &alias : aliases.second) {
+      optional<size_t> offset;
+      value_set_visitor vsv;
+      vsv._([&](vs_finite const *v) {
+        assert(v->get_elements().size() == 1);
+        offset = *v->get_elements().begin();
+      });
+      alias.offset->accept(vsv);
+      assert(offset);
+      summy::rreil::id_visitor idv;
+      idv._([&](sm_id const *sid) { result.immediate_ptrs.push_back((size_t)sid->get_address() + *offset); });
+      idv._default([&](id const *) { assert(false); });
+      alias.id->accept(idv);
+    }
 
   return result;
 }
