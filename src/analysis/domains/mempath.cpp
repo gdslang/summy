@@ -252,7 +252,7 @@ mp_result analysis::mempath::propagate(std::experimental::optional<set<mempath>>
       std::set<size_t> offsets;
       value_set_visitor vsv;
       vsv._([&](vs_finite const *v) {
-        assert(v->get_elements().size() == 1);
+//         assert(v->get_elements().size() == 1);
         for(auto e : v->get_elements())
           offsets.insert(e);
       });
