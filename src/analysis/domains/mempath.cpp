@@ -246,19 +246,22 @@ mp_result analysis::mempath::propagate(std::experimental::optional<set<mempath>>
   for(auto mapping : aliases_from_immediate)
     propagate(mapping.first, mapping.second, to);
 
-  // Callback for immediate pointers; used for statistics only
+  // Collect immediate pointers; used for statistics only
   for(auto &aliases : aliases_from_immediate)
     for(auto &alias : aliases.second) {
-      optional<size_t> offset;
+      std::set<size_t> offsets;
       value_set_visitor vsv;
       vsv._([&](vs_finite const *v) {
         assert(v->get_elements().size() == 1);
-        offset = *v->get_elements().begin();
+        for(auto e : v->get_elements())
+          offsets.insert(e);
       });
       alias.offset->accept(vsv);
-      assert(offset);
       summy::rreil::id_visitor idv;
-      idv._([&](sm_id const *sid) { result.immediate_ptrs.push_back((size_t)sid->get_address() + *offset); });
+      idv._([&](sm_id const *sid) {
+        for(auto offset : offsets)
+          result.immediate_ptrs.push_back((size_t)sid->get_address() + offset);
+      });
       idv._default([&](id const *) { assert(false); });
       alias.id->accept(idv);
     }
