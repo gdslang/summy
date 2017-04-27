@@ -308,21 +308,28 @@ int main(int argc, char **argv) {
           cout << "    -> Propagated address 0x" << std::hex << ptr << std::dec << std::endl;
       }
     }
-    
-    auto const& hb_counts = ds.get_hb_counts();
+
+    auto const &hb_counts = ds.get_hb_counts();
     size_t requests = 0;
     size_t hbs = 0;
-    for(auto const &hbc_mapping : hb_counts) {
-      for(auto const hbc : hbc_mapping.second) {
-        if(hbc > 0) {
+    for(auto const &head_mapping : hb_counts) {
+      std::map<analysis::mempath, size_t> hb_total;
+
+      for(auto const &cs_mapping : head_mapping.second) {
+        for(auto const &hb_mapping : cs_mapping.second) {
+          hb_total[hb_mapping.first] += hb_mapping.second;
+        }
+      }
+      for(auto const &hb_mapping : hb_total) {
+        if(hb_mapping.second > 0) {
           requests++;
-          hbs += hbc;
+          hbs += hb_mapping.second;
         }
       }
     }
-    cout << "Total request: " << requests << ", instantiations: " << hbs << endl;
-    
-    auto const& path_construction_errors = ds.get_path_construction_errors();
+    cout << "Total instantiated requests: " << requests << ", instantiations: " << hbs << endl;
+
+    auto const &path_construction_errors = ds.get_path_construction_errors();
     size_t path_errors_total = 0;
     for(auto const &path_errors : path_construction_errors) {
       path_errors_total += path_errors.second;
@@ -346,7 +353,6 @@ int main(int argc, char **argv) {
 
     cout << "Hot addresses:" << endl;
     fp.print_hot_addresses();
-
   } catch(string &s) {
     cout << "Exception: " << s << endl;
     exit(1);

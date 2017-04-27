@@ -347,7 +347,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             }
             cfg->commit_updates();
 
-            unique_hbs[from] = field_req_ids_new.size();
+            if(field_req_ids_new.size() > unique_hbs[from])
+               unique_hbs[from] = field_req_ids_new.size();
 
             set<mempath> field_reqs_new;
             size_t path_construction_errors =
@@ -525,19 +526,18 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
           //          cout << "This call requires the following fields:" << endl;
 
-          std::vector<size_t> hbs;
-          size_t hb_index = 0;
-
+          cout << "Reqs for call to " << address << endl;
           for(auto &f : desc.field_reqs) {
-            //            cout << f << endl;
-            hbs.push_back(0);
-
+                       cout << f << endl;
             optional<set<mempath>> mempaths_new;
             mp_result prop_res = f.propagate(
               mempaths_new, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
+            
+            ((this->hb_counts[to])[from])[f] = 0;
             for(auto ptr : prop_res.immediate_ptrs) {
+              cout << "\tNew immediate ptr: " << ptr << endl;
               (this->pointer_props[(size_t)address])[f].insert(ptr);
-              hbs[hb_index]++;
+              ((this->hb_counts[to])[from])[f]++;
             }
             this->path_construction_errors[from] = prop_res.path_construction_errors;
 
@@ -551,11 +551,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               for(auto f_addr : f_addrs)
                 propagate_reqs(mempaths_new.value(), f_addr);
             }
-
-            hb_index++;
           }
-
-          this->hb_counts[from] = hbs;
         }
       } else {
         state_new = get_sub(from);
