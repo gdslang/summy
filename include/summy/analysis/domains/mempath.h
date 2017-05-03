@@ -19,19 +19,25 @@
 namespace analysis {
   
 struct mempath_assignment;
+class mempath;
 
-struct mp_result {
+struct mp_ext_result {
   std::vector<mempath_assignment> assignments;
+  std::experimental::optional<std::set<mempath>> remaining;
+  size_t path_construction_errors;
+  
+  mp_ext_result();
+  mp_ext_result(mp_ext_result const&) = delete;
+  mp_ext_result(mp_ext_result &&);
+  mp_ext_result operator=(mp_ext_result const&) = delete;
+  mp_ext_result& operator=(mp_ext_result &&);
+  ~mp_ext_result();
+};
+
+struct mp_prop_result {
   // for statistics only
   std::vector<size_t> constant_ptrs;
   size_t path_construction_errors;
-  
-  mp_result();
-  mp_result(mp_result const&) = delete;
-  mp_result(mp_result &&);
-  mp_result operator=(mp_result const&) = delete;
-  mp_result& operator=(mp_result &&);
-  ~mp_result();
 };
 
 class mempath {
@@ -74,8 +80,10 @@ public:
   //       summary_memory_state *from, std::map<size_t, ptr_set_t> &aliases_from_immediate) const;
   void propagate(
     size_t path_length, ptr_set_t aliases_from_immediate, summary_memory_state *to) const;
+    
+  mp_ext_result extract_table_keys(summary_memory_state *from);
 
-  mp_result propagate(std::experimental::optional<std::set<mempath>> &extracted,
+  mp_prop_result propagate(std::experimental::optional<std::set<mempath>> &extracted,
     summary_memory_state *from, summary_memory_state *to) const;
 
   static size_t from_aliases(

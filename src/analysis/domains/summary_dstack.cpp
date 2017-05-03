@@ -530,7 +530,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           for(auto &f : desc.field_reqs) {
 //                        cout << f << endl;
             optional<set<mempath>> mempaths_new;
-            mp_result prop_res = f.propagate(
+            auto prop_res = f.propagate(
               mempaths_new, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
             
             for(auto ptr : prop_res.constant_ptrs) {

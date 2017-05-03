@@ -32,10 +32,10 @@ using namespace analysis;
 using namespace analysis::api;
 using namespace summy::rreil;
 
-mp_result::mp_result() = default;
-mp_result::mp_result(mp_result &&) = default;
-mp_result& mp_result::operator=(mp_result &&) = default;
-mp_result::~mp_result() = default;
+mp_ext_result::mp_ext_result() = default;
+mp_ext_result::mp_ext_result(mp_ext_result &&) = default;
+mp_ext_result& mp_ext_result::operator=(mp_ext_result &&) = default;
+mp_ext_result::~mp_ext_result() = default;
 
 bool mempath::step::operator<(const step &other) const {
   if(offset > other.offset)
@@ -245,20 +245,32 @@ void analysis::mempath::propagate(
   to->child_state->assign(&f_var, aliases_from_immediate);
 }
 
-mp_result analysis::mempath::propagate(std::experimental::optional<set<mempath>> &extracted,
+
+mp_ext_result analysis::mempath::extract_table_keys(summary_memory_state *from) {
+  mp_ext_result result;
+  
+  std::map<size_t, ptr_set_t> aliases_from_immediate;
+  result.path_construction_errors = _extract(result.remaining, from, aliases_from_immediate);
+  for(auto mapping : aliases_from_immediate) {
+    for(auto &alias : mapping.second) {
+      result.assignments.push_back(mempath_assignment(shorten(mapping.first), alias));
+    }
+  }
+  
+  return result;
+}
+
+mp_prop_result analysis::mempath::propagate(std::experimental::optional<set<mempath>> &extracted,
   summary_memory_state *from, summary_memory_state *to) const {
   //   cout << "propagate " << *this << " from" << endl;
   //   cout << *from << endl;
 
-  mp_result result;
+  mp_prop_result result;
 
   std::map<size_t, ptr_set_t> aliases_from_immediate;
   result.path_construction_errors = _extract(extracted, from, aliases_from_immediate);
   for(auto mapping : aliases_from_immediate) {
     propagate(mapping.first, mapping.second, to);
-    for(auto &alias : mapping.second) {
-      result.assignments.push_back(mempath_assignment(shorten(mapping.first), alias));
-    }
   }
 
   // Collect immediate pointers; used for statistics only
