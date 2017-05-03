@@ -17,6 +17,7 @@
 #include <summy/rreil/id/sm_id.h>
 #include <summy/value_set/value_set_visitor.h>
 #include <summy/value_set/vs_finite.h>
+#include <summy/analysis/domains/mempath_assignment.h>
 
 using gdsl::rreil::id;
 using summy::rreil::ptr_memory_id;
@@ -30,6 +31,11 @@ using namespace std::experimental;
 using namespace analysis;
 using namespace analysis::api;
 using namespace summy::rreil;
+
+mp_result::mp_result() = default;
+mp_result::mp_result(mp_result &&) = default;
+mp_result& mp_result::operator=(mp_result &&) = default;
+mp_result::~mp_result() = default;
 
 bool mempath::step::operator<(const step &other) const {
   if(offset > other.offset)
@@ -93,6 +99,11 @@ bool mempath::operator<(const mempath &other) const {
 
 bool mempath::operator==(const mempath &other) const {
   return compare_to(other) == 0;
+}
+
+mempath mempath::shorten(size_t length) const {
+  assert(length <= path.size());
+  return mempath(base, std::vector<step>(path.begin(), path.begin() + length));
 }
 
 std::map<size_t, ptr_set_t> analysis::mempath::resolve(summary_memory_state *from) const {
@@ -243,8 +254,12 @@ mp_result analysis::mempath::propagate(std::experimental::optional<set<mempath>>
 
   std::map<size_t, ptr_set_t> aliases_from_immediate;
   result.path_construction_errors = _extract(extracted, from, aliases_from_immediate);
-  for(auto mapping : aliases_from_immediate)
+  for(auto mapping : aliases_from_immediate) {
     propagate(mapping.first, mapping.second, to);
+    for(auto &alias : mapping.second) {
+      result.assignments.push_back(mempath_assignment(shorten(mapping.first), alias));
+    }
+  }
 
   // Collect immediate pointers; used for statistics only
   for(auto &aliases : aliases_from_immediate)
@@ -260,13 +275,13 @@ mp_result analysis::mempath::propagate(std::experimental::optional<set<mempath>>
       summy::rreil::id_visitor idv;
       idv._([&](sm_id const *sid) {
         for(auto offset : offsets)
-          result.immediate_ptrs.push_back((size_t)sid->get_address() + offset);
+          result.constant_ptrs.push_back((size_t)sid->get_address() + offset);
       });
       idv._default([&](id const *) { assert(false); });
       alias.id->accept(idv);
     }
 
-  return result;
+  return std::move(result);
 }
 
 size_t analysis::mempath::from_aliases(

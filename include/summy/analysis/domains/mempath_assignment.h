@@ -7,7 +7,10 @@ namespace analysis {
 
 struct mempath_assignment {
   mempath mp;
-  ptr_set_t ptrs_immediate;
+  ptr immediate;
+  
+  mempath_assignment(mempath mp, ptr immediate) : mp(mp), immediate(immediate) {
+  }
 
   bool operator<(const mempath_assignment &other) const;
   bool operator==(const mempath_assignment &other) const;
@@ -15,7 +18,7 @@ struct mempath_assignment {
 }
 
 /*
- * Todo:
+ * Idea:
  *   - Model assignment of mempath to an immediate pointer
  *   - This assignment can be used as a key in the summary to context map
  */

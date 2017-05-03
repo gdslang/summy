@@ -533,7 +533,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             mp_result prop_res = f.propagate(
               mempaths_new, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
             
-            for(auto ptr : prop_res.immediate_ptrs) {
+            for(auto ptr : prop_res.constant_ptrs) {
 //               cout << "\tNew immediate ptr: " << ptr << endl;
               (this->pointer_props[(size_t)address])[f].insert(ptr);
               ((this->hb_counts[to]))[f].insert(ptr);

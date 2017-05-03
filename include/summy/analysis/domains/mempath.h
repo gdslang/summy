@@ -17,10 +17,21 @@
 #include <vector>
 
 namespace analysis {
+  
+struct mempath_assignment;
 
 struct mp_result {
-  std::vector<size_t> immediate_ptrs;
+  std::vector<mempath_assignment> assignments;
+  // for statistics only
+  std::vector<size_t> constant_ptrs;
   size_t path_construction_errors;
+  
+  mp_result();
+  mp_result(mp_result const&) = delete;
+  mp_result(mp_result &&);
+  mp_result operator=(mp_result const&) = delete;
+  mp_result& operator=(mp_result &&);
+  ~mp_result();
 };
 
 class mempath {
@@ -48,6 +59,8 @@ public:
 
   bool operator<(const mempath &other) const;
   bool operator==(const mempath &other) const;
+  
+  mempath shorten(size_t length) const;
 
   /**
    * Propagate the described memory field from one state to another

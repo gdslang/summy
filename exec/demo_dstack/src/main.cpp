@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
         n.dot(out);
     });
     dot_fs.close();
-
+    
     unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg(false);
     ofstream dot_machine_fs;
     dot_machine_fs.open("output_machine.dot", ios::out);
