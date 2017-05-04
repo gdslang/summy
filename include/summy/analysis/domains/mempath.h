@@ -66,6 +66,10 @@ public:
   bool operator<(const mempath &other) const;
   bool operator==(const mempath &other) const;
   
+  std::vector<step> const& get_path() const {
+    return path;
+  }
+  
   mempath shorten(size_t length) const;
 
   /**

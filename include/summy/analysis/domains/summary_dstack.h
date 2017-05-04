@@ -9,6 +9,7 @@
 #include <summy/analysis/analysis_visitor.h>
 #include <summy/analysis/caller/caller.h>
 #include <summy/analysis/domains/mempath.h>
+#include <summy/analysis/domains/mempath_assignment.h>
 #include <summy/analysis/domains/summary_dstack_stubs.h>
 #include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/domains/summary_memory_state.h>
@@ -48,6 +49,11 @@ struct function_desc {
    * Field requirements (function pointers)
    */
   std::set<mempath> field_reqs;
+  
+  /*
+   * Ground Herbrand terms to context map
+   */
+  std::map<std::set<mempath_assignment>, size_t> contexts;
 
   function_desc(size_t min_calls_sz, size_t head_id) : min_calls_sz(min_calls_sz), head_id(head_id) {}
 };

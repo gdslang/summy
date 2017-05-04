@@ -11,6 +11,8 @@ struct mempath_assignment {
   
   mempath_assignment(mempath mp, ptr immediate) : mp(mp), immediate(immediate) {
   }
+  
+  void propagate(summary_memory_state *to) const;
 
   bool operator<(const mempath_assignment &other) const;
   bool operator==(const mempath_assignment &other) const;

@@ -2,6 +2,10 @@
 
 namespace analysis {
 
+void mempath_assignment::propagate(summary_memory_state *to) const {
+  mp.propagate(mp.get_path().size(), {immediate}, to);
+}
+
 bool mempath_assignment::operator<(const mempath_assignment &other) const {
   if(mp < other.mp)
     return true;
@@ -14,5 +18,4 @@ bool mempath_assignment::operator<(const mempath_assignment &other) const {
 bool mempath_assignment::operator==(const mempath_assignment &other) const {
   return mp == other.mp && immediate == other.immediate;
 }
-
 }
