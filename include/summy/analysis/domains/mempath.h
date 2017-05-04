@@ -85,7 +85,7 @@ public:
   void propagate(
     size_t path_length, ptr_set_t aliases_from_immediate, summary_memory_state *to) const;
     
-  mp_ext_result extract_table_keys(summary_memory_state *from);
+  mp_ext_result extract_table_keys(summary_memory_state *from) const;
 
   mp_prop_result propagate(std::experimental::optional<std::set<mempath>> &extracted,
     summary_memory_state *from, summary_memory_state *to) const;

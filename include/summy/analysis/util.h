@@ -38,4 +38,10 @@ struct id_less {
   bool operator()(gdsl::rreil::id const &a, gdsl::rreil::id const &b) const;
 };
 
+// #define labelled(blockname) goto blockname; \
+// blockname##_skip: if (0) \
+// blockname:
+// 
+// #define break(blockname) goto blockname##_skip
+
 } // namespace analysis

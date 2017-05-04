@@ -246,7 +246,7 @@ void analysis::mempath::propagate(
 }
 
 
-mp_ext_result analysis::mempath::extract_table_keys(summary_memory_state *from) {
+mp_ext_result analysis::mempath::extract_table_keys(summary_memory_state *from) const {
   mp_ext_result result;
   
   std::map<size_t, ptr_set_t> aliases_from_immediate;

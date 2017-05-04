@@ -348,7 +348,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             cfg->commit_updates();
 
             if(field_req_ids_new.size() > unique_hbs[from])
-               unique_hbs[from] = field_req_ids_new.size();
+              unique_hbs[from] = field_req_ids_new.size();
 
             set<mempath> field_reqs_new;
             size_t path_construction_errors =
@@ -524,33 +524,78 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
           assert(in_edges.size() == 1);
           size_t from_parent = *in_edges.begin();
 
-          //          cout << "This call requires the following fields:" << endl;
 
-//           cout << "Reqs for call to " << address << endl;
-          for(auto &f : desc.field_reqs) {
-//                        cout << f << endl;
-            optional<set<mempath>> mempaths_new;
-            auto prop_res = f.propagate(
-              mempaths_new, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
+          auto accumulate_all = [&]() {
+            //          cout << "This call requires the following fields:" << endl;
+            //           cout << "Reqs for call to " << address << endl;
+            for(auto &f : desc.field_reqs) {
+              //                        cout << f << endl;
+              optional<set<mempath>> mempaths_new;
+              auto prop_res = f.propagate(
+                mempaths_new, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
+
+              for(auto ptr : prop_res.constant_ptrs) {
+                //               cout << "\tNew immediate ptr: " << ptr << endl;
+                (this->pointer_props[(size_t)address])[f].insert(ptr);
+                ((this->hb_counts[to]))[f].insert(ptr);
+              }
+              this->path_construction_errors[from] = prop_res.path_construction_errors;
+
+              if(mempaths_new) {
+                //               cout << "Propagating..." << endl;
+                //               for(auto p : mempaths_new.value())
+                //                 cout << p << endl;
+
+                set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent)->get_f_addr());
+                assert(f_addrs.size() > 0);
+                for(auto f_addr : f_addrs)
+                  propagate_reqs(mempaths_new.value(), f_addr);
+              }
+            }
+          };
+
+          auto tabulate_all = [&]() {
+            std::vector<std::vector<mempath_assignment>> assignments;
+
+            for(auto &f : desc.field_reqs) {
+              cout << f << endl;
+              auto ext_res = f.extract_table_keys(get_sub(from_parent)->get_mstate());
+              if(ext_res.assignments.size() == 0) {
+                cout << *get_sub(from_parent)->get_mstate() << endl;
+                cout << "No instant. :-/" << endl;
+                return;
+              }
+              assignments.push_back(ext_res.assignments);
+            }
             
-            for(auto ptr : prop_res.constant_ptrs) {
-//               cout << "\tNew immediate ptr: " << ptr << endl;
-              (this->pointer_props[(size_t)address])[f].insert(ptr);
-              ((this->hb_counts[to]))[f].insert(ptr);
-            }
-            this->path_construction_errors[from] = prop_res.path_construction_errors;
+            cout << "Propagating to address " << address << std::endl;
 
-            if(mempaths_new) {
-              //               cout << "Propagating..." << endl;
-              //               for(auto p : mempaths_new.value())
-              //                 cout << p << endl;
+            std::vector<size_t> indices(assignments.size(), 0);
+            auto entry = [&]() {
+              auto state_ctx = dynamic_pointer_cast<global_state>(
+                start_value(vs_finite::single((int64_t)address)));
+              for(int i = 0; i < assignments.size(); i++) {
+                assert(assignments[i].size() > indices[i]);
+                (assignments[i])[indices[i]].propagate(state_ctx->get_mstate());
+              }
+              
+              cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
+              cout << *state_ctx << std::endl;
+              cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
+            };
 
-              set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent)->get_f_addr());
-              assert(f_addrs.size() > 0);
-              for(auto f_addr : f_addrs)
-                propagate_reqs(mempaths_new.value(), f_addr);
+            while(true) {
+              entry();
+              size_t digit;
+              for(digit = indices.size(); digit > 0; digit--) {
+                indices[digit - 1] = (indices[digit - 1] + 1) % assignments[digit - 1].size();
+                if(indices[digit - 1] > 0) break;
+              }
+              if(!digit && indices[0] == 0) break;
             }
-          }
+          };
+
+          tabulate_all();
         }
       } else {
         state_new = get_sub(from);
