@@ -30,5 +30,5 @@ int main(int argc) {
     fp0 = &f2;
     fp1 = &g2;
   }
-  h(&fp0, &fp1);
+  h(fp0, fp1);
 }

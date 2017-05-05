@@ -52,7 +52,12 @@ struct dependency {
   size_t sink;
 };
 
-typedef std::function<std::shared_ptr<domain_state>()> constraint_t;
+typedef std::function<std::map<size_t, std::shared_ptr<domain_state>>(size_t context)> constraint_t;
+
+inline std::map<size_t, std::shared_ptr<domain_state>> default_context(
+  std::shared_ptr<domain_state> state) {
+  return {{0, state}};
+}
 
 class fp_analysis {
 private:

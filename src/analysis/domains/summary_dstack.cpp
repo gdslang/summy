@@ -184,15 +184,15 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
   });
   cfg->get_node_payload(to)->accept(nv);
 
-  function<shared_ptr<global_state>()> transfer_f = [=]() { return get_sub(from); };
+  constraint_t transfer_f = [=](size_t) { return default_context(get_sub(from)); };
   auto for_mutable = [&](function<void(summary_memory_state *)> cb) {
-    transfer_f = [=]() {
+    transfer_f = [=](size_t) {
       shared_ptr<global_state> state_c = get_sub(from);
       summary_memory_state *mstate_new = state_c->get_mstate()->copy();
       cb(mstate_new);
       shared_ptr<global_state> global_new =
         shared_ptr<global_state>(new global_state(mstate_new, state_c->get_f_addr()));
-      return global_new;
+      return default_context(global_new);
     };
   };
   auto for_update = [&](auto *update) {
@@ -218,7 +218,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       ref(to, nullopt);
       switch(b->get_hint()) {
         case gdsl::rreil::BRANCH_HINT_CALL: {
-          transfer_f = [=]() {
+          transfer_f = [=](size_t) {
             shared_ptr<global_state> state_c = get_sub(from);
             summary_memory_state *mstate = state_c->get_mstate();
 
@@ -402,12 +402,12 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
             //            cout << *summarized << endl;
 
-            return shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr()));
+            return default_context(shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr())));
           };
           break;
         }
         case gdsl::rreil::BRANCH_HINT_RET: {
-          transfer_f = [=]() {
+          transfer_f = [=](size_t) {
             shared_ptr<global_state> state_c = get_sub(from);
             set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
             assert(f_addrs.size() > 0);
@@ -425,12 +425,12 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 assert_dependency(gen_dependency(to, caller));
               }
             }
-            return state_c;
+            return default_context(state_c);
           };
           break;
         }
         case gdsl::rreil::BRANCH_HINT_JUMP: {
-          transfer_f = [=]() {
+          transfer_f = [=](size_t) {
             shared_ptr<global_state> state_c = get_sub(from);
             summary_memory_state *mstate = state_c->get_mstate();
             ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
@@ -481,7 +481,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               ptr.offset->accept(vsv);
             }
             cfg->commit_updates();
-            return state_c;
+            return default_context(state_c);
           };
           break;
         }
@@ -502,7 +502,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     ref(from, nullopt);
     ref(to, nullopt);
     //    _call = true;
-    transfer_f = [=]() {
+    transfer_f = [=](size_t) {
       shared_ptr<global_state> state_new;
       if(edge->is_target_edge()) {
         node *dest = cfg->get_node_payload(to);
@@ -558,13 +558,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             std::vector<std::vector<mempath_assignment>> assignments;
 
             for(auto &f : desc.field_reqs) {
-              cout << f << endl;
               auto ext_res = f.extract_table_keys(get_sub(from_parent)->get_mstate());
-              if(ext_res.assignments.size() == 0) {
-                cout << *get_sub(from_parent)->get_mstate() << endl;
-                cout << "No instant. :-/" << endl;
+              if(ext_res.assignments.size() == 0)
+                // Unresolved pointer => no instantiation
                 return;
-              }
               assignments.push_back(ext_res.assignments);
             }
             
@@ -572,16 +569,28 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
             std::vector<size_t> indices(assignments.size(), 0);
             auto entry = [&]() {
-              auto state_ctx = dynamic_pointer_cast<global_state>(
-                start_value(vs_finite::single((int64_t)address)));
+              std::set<mempath_assignment> assignments_set;
               for(int i = 0; i < assignments.size(); i++) {
                 assert(assignments[i].size() > indices[i]);
-                (assignments[i])[indices[i]].propagate(state_ctx->get_mstate());
+                assignments_set.insert((assignments[i])[indices[i]]);
               }
               
-              cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
-              cout << *state_ctx << std::endl;
-              cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
+              auto desc_it = desc.contexts.find(assignments_set);
+              if(desc_it == desc.contexts.end()) {
+                size_t context = desc.contexts.size() + 1;
+                desc.contexts[assignments_set] = context;
+                
+                auto state_ctx = dynamic_pointer_cast<global_state>(
+                  start_value(vs_finite::single((int64_t)address)));
+                for(int i = 0; i < assignments.size(); i++) {
+                  assert(assignments[i].size() > indices[i]);
+                  (assignments[i])[indices[i]].propagate(state_ctx->get_mstate());
+                }
+              }
+              
+//               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
+//               cout << *state_ctx << std::endl;
+//               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
             };
 
             while(true) {
@@ -595,7 +604,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             }
           };
 
-          tabulate_all();
+          //tabulate_all();
+          accumulate_all();
         }
       } else {
         state_new = get_sub(from);
@@ -621,16 +631,16 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         }
       }
       //      this->cfg->commit_updates();
-      return state_new;
+      return default_context(state_new);
     };
   });
   e->accept(ev);
-  (constraints[to])[from] = [=]() {
+  (constraints[to])[from] = [=](size_t ctx) {
     //    if(_stmt != NULL)
     //      cout << *_stmt << endl;
     //    cout << "cond: " << _cond << endl;
     //    cout << "call: " << _call << endl;
-    return transfer_f();
+    return transfer_f(ctx);
   };
 }
 

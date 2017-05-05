@@ -175,7 +175,7 @@ void fixpoint::iterate() {
          * Evaluate constraint
          */
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-        auto evaluated = constraint();
+        auto evaluated = constraint(node.context)[0];
         if(ref_management) {
           if(constraints.size() == 1)
             analysis->unref(node_other);

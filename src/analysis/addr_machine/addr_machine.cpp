@@ -5,16 +5,16 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/cfg/node/address_node.h>
-#include <summy/cfg/node/node.h>
-#include <summy/cfg/node/node_visitor.h>
-#include <functional>
-#include <experimental/optional>
 #include <assert.h>
+#include <experimental/optional>
+#include <functional>
 #include <summy/analysis/addr_machine/addr_machine.h>
 #include <summy/analysis/addr_machine/addr_machine_state.h>
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/edge/edge_visitor.h>
+#include <summy/cfg/node/address_node.h>
+#include <summy/cfg/node/node.h>
+#include <summy/cfg/node/node_visitor.h>
 
 using cfg::edge_visitor;
 using cfg::stmt_edge;
@@ -25,17 +25,18 @@ using namespace analysis;
 using namespace analysis::addr_machine;
 using namespace std::experimental;
 
-void analysis::addr_machine::addr_machine::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  function<shared_ptr<addr_machine_state>()> transfer_f = [=]() {
+void analysis::addr_machine::addr_machine::add_constraint(
+  size_t from, size_t to, const ::cfg::edge *) {
+  constraint_t transfer_f = [=](size_t) {
     cfg::node *to_node = cfg->get_node_payload(to);
     cfg::node_visitor nv;
     optional<size_t> address;
     nv._([&](cfg::address_node *cn) { address = cn->get_address(); });
     to_node->accept(nv);
-   if(address)
-      return make_shared<addr_machine_state>(address.value());
+    if(address)
+      return default_context(make_shared<addr_machine_state>(address.value()));
     else
-        return state[from];
+      return default_context(state[from]);
   };
   (constraints[to])[from] = transfer_f;
 }
@@ -86,7 +87,8 @@ std::shared_ptr<domain_state> analysis::addr_machine::addr_machine::get(size_t n
   return state[node];
 }
 
-void analysis::addr_machine::addr_machine::update(size_t node, std::shared_ptr<domain_state> state) {
+void analysis::addr_machine::addr_machine::update(
+  size_t node, std::shared_ptr<domain_state> state) {
   this->state[node] = dynamic_pointer_cast<addr_machine_state>(state);
 }
 

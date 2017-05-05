@@ -5,16 +5,16 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/cfg/node/address_node.h>
-#include <summy/cfg/node/node.h>
-#include <summy/cfg/node/node_visitor.h>
-#include <functional>
-#include <experimental/optional>
 #include <assert.h>
+#include <experimental/optional>
+#include <functional>
 #include <summy/analysis/caller/caller.h>
 #include <summy/analysis/caller/caller_state.h>
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/edge/edge_visitor.h>
+#include <summy/cfg/node/address_node.h>
+#include <summy/cfg/node/node.h>
+#include <summy/cfg/node/node_visitor.h>
 
 using cfg::call_edge;
 using cfg::edge_visitor;
@@ -27,16 +27,16 @@ using namespace analysis::caller;
 using namespace std::experimental;
 
 void analysis::caller::caller::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  function<shared_ptr<caller_state>()> transfer_f = [=]() {
+  constraint_t transfer_f = [=](size_t) {
     bool is_call_target = false;
     edge_visitor ev;
     ev._([&](const call_edge *edge) { is_call_target = edge->is_target_edge(); });
     e->accept(ev);
     auto parent = state[from];
     if(is_call_target)
-      return shared_ptr<caller_state>(parent->add_caller(from));
+      return default_context(shared_ptr<caller_state>(parent->add_caller(from)));
     else
-      return shared_ptr<caller_state>(new caller_state(*parent));
+      return default_context(shared_ptr<caller_state>(new caller_state(*parent)));
 
   };
   (constraints[to])[from] = transfer_f;

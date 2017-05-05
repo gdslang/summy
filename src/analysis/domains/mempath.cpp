@@ -11,13 +11,13 @@
 #include <string>
 #include <summy/analysis/domains/api/numeric/num_var.h>
 #include <summy/analysis/domains/mempath.h>
+#include <summy/analysis/domains/mempath_assignment.h>
 #include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/util.h>
 #include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/value_set/value_set_visitor.h>
 #include <summy/value_set/vs_finite.h>
-#include <summy/analysis/domains/mempath_assignment.h>
 
 using gdsl::rreil::id;
 using summy::rreil::ptr_memory_id;
@@ -34,7 +34,7 @@ using namespace summy::rreil;
 
 mp_ext_result::mp_ext_result() = default;
 mp_ext_result::mp_ext_result(mp_ext_result &&) = default;
-mp_ext_result& mp_ext_result::operator=(mp_ext_result &&) = default;
+mp_ext_result &mp_ext_result::operator=(mp_ext_result &&) = default;
 mp_ext_result::~mp_ext_result() = default;
 
 bool mempath::step::operator<(const step &other) const {
@@ -248,15 +248,22 @@ void analysis::mempath::propagate(
 
 mp_ext_result analysis::mempath::extract_table_keys(summary_memory_state *from) const {
   mp_ext_result result;
-  
+
   std::map<size_t, ptr_set_t> aliases_from_immediate;
   result.path_construction_errors = _extract(result.remaining, from, aliases_from_immediate);
   for(auto mapping : aliases_from_immediate) {
     for(auto &alias : mapping.second) {
-      result.assignments.push_back(mempath_assignment(shorten(mapping.first), alias));
+      std::set<size_t> offsets;
+      value_set_visitor vsv;
+      vsv._([&](vs_finite const *v) {
+        for(auto e : v->get_elements())
+          result.assignments.push_back(
+            mempath_assignment(shorten(mapping.first), ptr(alias.id, vs_finite::single(e))));
+      });
+      alias.offset->accept(vsv);
     }
   }
-  
+
   return result;
 }
 
@@ -279,7 +286,7 @@ mp_prop_result analysis::mempath::propagate(std::experimental::optional<set<memp
       std::set<size_t> offsets;
       value_set_visitor vsv;
       vsv._([&](vs_finite const *v) {
-//         assert(v->get_elements().size() == 1);
+        //         assert(v->get_elements().size() == 1);
         for(auto e : v->get_elements())
           offsets.insert(e);
       });
