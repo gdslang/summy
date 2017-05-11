@@ -109,8 +109,8 @@ shared_ptr<::analysis::domain_state> reaching_defs::reaching_defs::get(size_t no
   return state[node];
 }
 
-void reaching_defs::update(size_t node, shared_ptr<::analysis::domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<rd_state>(state);
+void reaching_defs::update(analysis_node node, shared_ptr<::analysis::domain_state> state) {
+  this->state[node.id] = dynamic_pointer_cast<rd_state>(state);
 }
 
 reaching_defs_result_t analysis::reaching_defs::reaching_defs::result() {

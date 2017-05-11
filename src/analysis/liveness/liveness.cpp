@@ -193,8 +193,8 @@ shared_ptr<analysis::domain_state> analysis::liveness::liveness::get(size_t node
   return state[node];
 }
 
-void analysis::liveness::liveness::update(size_t node, shared_ptr<domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<lv_state>(state);
+void analysis::liveness::liveness::update(analysis_node node, shared_ptr<domain_state> state) {
+  this->state[node.id] = dynamic_pointer_cast<lv_state>(state);
 }
 
 liveness_result analysis::liveness::liveness::result() {

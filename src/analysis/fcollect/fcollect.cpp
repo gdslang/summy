@@ -65,11 +65,11 @@ fcollect::fcollect::fcollect(class cfg *cfg) : fp_analysis::fp_analysis(cfg) {
 
 analysis::fcollect::fcollect::~fcollect() {}
 
-shared_ptr<::analysis::domain_state> fcollect::fcollect::get(size_t node) {
+shared_ptr<::analysis::domain_state> fcollect::fcollect::get(size_t) {
   return make_shared<fcollect_state>();
 }
 
-void fcollect::update(size_t node, shared_ptr<::analysis::domain_state> state) {}
+void fcollect::update(analysis_node, shared_ptr<::analysis::domain_state>) {}
 
 fcollect_result analysis::fcollect::fcollect::result() {
   return fcollect_result(state);

@@ -162,7 +162,7 @@ void fixpoint::iterate() {
 
     //    }
 
-    bool propagate;
+    bool propagate = false;
     bool needs_postprocessing = false;
     std::map<size_t, shared_ptr<domain_state>> accumulator;
     auto &constraints = analysis->constraints_at(node.id);
@@ -209,6 +209,8 @@ void fixpoint::iterate() {
         for(auto &ev_it : evaluated_ctx) {
           size_t context = ev_it.first;
           auto evaluated = ev_it.second;
+          
+          assert(context == 0);
 
           backward = backward || jd != FORWARD;
           if(widening && jd == BACKWARD) {
@@ -219,6 +221,7 @@ void fixpoint::iterate() {
             domain_state *boxed;
             bool np;
             tie(boxed, np) = analysis->get(node.id)->box(evaluated.get(), node.id);
+            assert(needs_postprocessing == false);
             needs_postprocessing = np || needs_postprocessing;
             evaluated = shared_ptr<domain_state>(boxed);
             //          cout << "Boxed: " << *evaluated << endl;
@@ -271,6 +274,7 @@ void fixpoint::iterate() {
        * so that less updates occur
        */
       for(auto &acc_it : accumulator) {
+        assert(propagate == false);
         propagate = propagate || (!backward && constraints.size() == 1) ||
                     !(*analysis->get(node.id) == *acc_it.second);
       }

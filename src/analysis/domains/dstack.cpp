@@ -106,8 +106,8 @@ shared_ptr<domain_state> analysis::dstack::get(size_t node) {
   return state[node];
 }
 
-void analysis::dstack::update(size_t node, shared_ptr<domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<memory_state>(state);
+void analysis::dstack::update(analysis_node node, shared_ptr<domain_state> state) {
+  this->state[node.id] = dynamic_pointer_cast<memory_state>(state);
 }
 
 dstack_result analysis::dstack::result() {

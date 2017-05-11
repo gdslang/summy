@@ -106,7 +106,7 @@ public:
   void clear_pending();
 
   virtual shared_ptr<domain_state> get(size_t node) = 0;
-  virtual void update(size_t node, shared_ptr<domain_state> state) = 0;
+  virtual void update(analysis_node node, shared_ptr<domain_state> state) = 0;
 
   virtual std::set<size_t> dependants(size_t node_id) {
     return _dependants[node_id];

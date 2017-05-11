@@ -136,8 +136,8 @@ shared_ptr<::analysis::domain_state> adaptive_rd::adaptive_rd::get(size_t node) 
   return state[node];
 }
 
-void adaptive_rd::update(size_t node, shared_ptr<::analysis::domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<adaptive_rd_state>(state);
+void adaptive_rd::update(analysis_node node, shared_ptr<::analysis::domain_state> state) {
+  this->state[node.id] = dynamic_pointer_cast<adaptive_rd_state>(state);
 }
 
 adaptive_rd_result analysis::adaptive_rd::adaptive_rd::result() {

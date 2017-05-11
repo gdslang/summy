@@ -88,8 +88,8 @@ std::shared_ptr<domain_state> analysis::addr_machine::addr_machine::get(size_t n
 }
 
 void analysis::addr_machine::addr_machine::update(
-  size_t node, std::shared_ptr<domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<addr_machine_state>(state);
+  analysis_node node, std::shared_ptr<domain_state> state) {
+  this->state[node.id] = dynamic_pointer_cast<addr_machine_state>(state);
 }
 
 addr_machine_result analysis::addr_machine::addr_machine::result() {

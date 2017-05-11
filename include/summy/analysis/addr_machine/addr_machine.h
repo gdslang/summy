@@ -44,7 +44,7 @@ public:
   std::shared_ptr<addr_machine_state> start_value(size_t node);
 
   std::shared_ptr<domain_state> get(size_t node);
-  void update(size_t node, std::shared_ptr<domain_state> state);
+  void update(analysis_node node, std::shared_ptr<domain_state> state);
   addr_machine_result result();
 
   void put(std::ostream &out);

@@ -132,7 +132,7 @@ public:
 
   std::shared_ptr<domain_state> get(size_t node);
   std::shared_ptr<global_state> get_sub(size_t node);
-  void update(size_t node, shared_ptr<domain_state> state);
+  void update(analysis_node node, shared_ptr<domain_state> state);
   summary_dstack_result result();
 
   node_compare_t get_fixpoint_node_comparer();

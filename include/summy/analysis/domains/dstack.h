@@ -42,7 +42,7 @@ public:
   std::shared_ptr<domain_state> start_value();
 
   std::shared_ptr<domain_state> get(size_t node);
-  void update(size_t node, shared_ptr<domain_state> state);
+  void update(analysis_node node, shared_ptr<domain_state> state);
   dstack_result result();
 
   void put(std::ostream &out);

@@ -104,8 +104,8 @@ std::shared_ptr<domain_state> analysis::addr::addr::get(size_t node) {
   return state[node];
 }
 
-void analysis::addr::addr::update(size_t node, std::shared_ptr<domain_state> state) {
-  this->state[node] = dynamic_pointer_cast<addr_state>(state);
+void analysis::addr::addr::update(analysis_node node, std::shared_ptr<domain_state> state) {
+  this->state[node.id] = dynamic_pointer_cast<addr_state>(state);
 }
 
 addr_result analysis::addr::addr::result() {

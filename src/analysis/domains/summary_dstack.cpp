@@ -754,8 +754,8 @@ shared_ptr<global_state> analysis::summary_dstack::get_sub(size_t node) {
   return state[node].at(0);
 }
 
-void analysis::summary_dstack::update(size_t node, shared_ptr<domain_state> state) {
-  (this->state[node])[0] = dynamic_pointer_cast<global_state>(state);
+void analysis::summary_dstack::update(analysis_node node, shared_ptr<domain_state> state) {
+  (this->state[node.id])[node.context] = dynamic_pointer_cast<global_state>(state);
   //  erased.erase(node);
   //  this->state[node]->get_mstate()->check_consistency();
 }

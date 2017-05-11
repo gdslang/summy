@@ -40,7 +40,7 @@ public:
   std::shared_ptr<domain_state> start_value();
 
   std::shared_ptr<domain_state> get(size_t node);
-  void update(size_t node, std::shared_ptr<domain_state> state);
+  void update(analysis_node node, std::shared_ptr<domain_state> state);
   reaching_defs_result_t result();
 
   void put(std::ostream &out);

@@ -56,7 +56,7 @@ public:
   shared_ptr<domain_state> bottom();
 
   shared_ptr<domain_state> get(size_t node);
-  void update(size_t node, shared_ptr<domain_state> state);
+  void update(analysis_node node, shared_ptr<domain_state> state);
   liveness_result result();
 
   void put(std::ostream &out);
