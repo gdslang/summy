@@ -131,7 +131,8 @@ public:
   std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr);
 
   std::shared_ptr<domain_state> get(size_t node);
-  std::shared_ptr<global_state> get_sub(size_t node);
+  std::map<size_t, shared_ptr<domain_state>> get_ctxful(size_t node);
+  std::shared_ptr<global_state> get_sub(size_t node, size_t ctx);
   void update(analysis_node node, shared_ptr<domain_state> state);
   summary_dstack_result result();
 

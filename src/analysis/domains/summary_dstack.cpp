@@ -184,15 +184,16 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
   });
   cfg->get_node_payload(to)->accept(nv);
 
-  constraint_t transfer_f = [=](size_t) { return default_context(get_sub(from)); };
+  constraint_t transfer_f = [=](
+    size_t from_ctx) { return default_context(get_sub(from, from_ctx), from_ctx); };
   auto for_mutable = [&](function<void(summary_memory_state *)> cb) {
-    transfer_f = [=](size_t) {
-      shared_ptr<global_state> state_c = get_sub(from);
+    transfer_f = [=](size_t from_ctx) {
+      shared_ptr<global_state> state_c = get_sub(from, from_ctx);
       summary_memory_state *mstate_new = state_c->get_mstate()->copy();
       cb(mstate_new);
       shared_ptr<global_state> global_new =
         shared_ptr<global_state>(new global_state(mstate_new, state_c->get_f_addr()));
-      return default_context(global_new);
+      return default_context(global_new, from_ctx);
     };
   };
   auto for_update = [&](auto *update) {
@@ -218,8 +219,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       ref(to, nullopt);
       switch(b->get_hint()) {
         case gdsl::rreil::BRANCH_HINT_CALL: {
-          transfer_f = [=](size_t) {
-            shared_ptr<global_state> state_c = get_sub(from);
+          transfer_f = [=](size_t from_ctx) {
+            shared_ptr<global_state> state_c = get_sub(from, from_ctx);
             summary_memory_state *mstate = state_c->get_mstate();
 
             for(auto edge_mapping : *cfg->out_edge_payloads(to))
@@ -248,7 +249,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             while(!callers_rest.empty()) {
               size_t caller = callers_rest.back();
               callers_rest.pop_back();
-              set<void *> caller_f_addrs = unpack_f_addrs(get_sub(caller)->get_f_addr());
+              set<void *> caller_f_addrs = unpack_f_addrs(get_sub(caller, from_ctx)->get_f_addr());
 
               set<void *> intersection;
               set_intersection(caller_f_addrs.begin(), caller_f_addrs.end(),
@@ -259,7 +260,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               }
 
               callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
-              callers_t caller_caller_callers = get_callers(get_sub(caller));
+              callers_t caller_caller_callers = get_callers(get_sub(caller, from_ctx));
               callers_rest.insert(
                 callers_rest.begin(), caller_caller_callers.begin(), caller_caller_callers.end());
             }
@@ -309,8 +310,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     if(fd_it != function_desc_map.end()) {
                       auto &f_desc = fd_it->second;
                       for(size_t s_node : f_desc.summary_nodes) {
-                        add_summary(get_sub(s_node)->get_mstate());
-                        if(state_c->get_f_addr() == get_sub(s_node)->get_f_addr())
+                        add_summary(get_sub(s_node, from_ctx)->get_mstate());
+                        if(state_c->get_f_addr() == get_sub(s_node, from_ctx)->get_f_addr())
                           directly_recursive = true;
                       }
 
@@ -402,13 +403,14 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
             //            cout << *summarized << endl;
 
-            return default_context(shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr())));
+            return default_context(
+              shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr())), 0);
           };
           break;
         }
         case gdsl::rreil::BRANCH_HINT_RET: {
-          transfer_f = [=](size_t) {
-            shared_ptr<global_state> state_c = get_sub(from);
+          transfer_f = [=](size_t from_ctx) {
+            shared_ptr<global_state> state_c = get_sub(from, from_ctx);
             set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
             assert(f_addrs.size() > 0);
             for(auto f_addr : f_addrs) {
@@ -425,13 +427,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 assert_dependency(gen_dependency(to, caller));
               }
             }
-            return default_context(state_c);
+            return default_context(state_c, from_ctx);
           };
           break;
         }
         case gdsl::rreil::BRANCH_HINT_JUMP: {
-          transfer_f = [=](size_t) {
-            shared_ptr<global_state> state_c = get_sub(from);
+          transfer_f = [=](size_t from_ctx) {
+            shared_ptr<global_state> state_c = get_sub(from, from_ctx);
             summary_memory_state *mstate = state_c->get_mstate();
             ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
 
@@ -481,7 +483,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               ptr.offset->accept(vsv);
             }
             cfg->commit_updates();
-            return default_context(state_c);
+            return default_context(state_c, from_ctx);
           };
           break;
         }
@@ -502,8 +504,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     ref(from, nullopt);
     ref(to, nullopt);
     //    _call = true;
-    transfer_f = [=](size_t) {
-      shared_ptr<global_state> state_new;
+    transfer_f = [=](size_t from_ctx) {
+      std::map<size_t, shared_ptr<domain_state>> state_map_new;
       if(edge->is_target_edge()) {
         node *dest = cfg->get_node_payload(to);
         bool is_addr_node = false;
@@ -515,7 +517,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         });
         dest->accept(nv);
         assert(is_addr_node);
-        state_new =
+        auto state_new =
           dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
 
         auto &desc = this->function_desc_map.at(address);
@@ -531,8 +533,8 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             for(auto &f : desc.field_reqs) {
               //                        cout << f << endl;
               optional<set<mempath>> mempaths_new;
-              auto prop_res = f.propagate(
-                mempaths_new, get_sub(from_parent)->get_mstate(), state_new->get_mstate());
+              auto prop_res = f.propagate(mempaths_new,
+                get_sub(from_parent, from_ctx)->get_mstate(), state_new->get_mstate());
 
               for(auto ptr : prop_res.constant_ptrs) {
                 //               cout << "\tNew immediate ptr: " << ptr << endl;
@@ -546,7 +548,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 //               for(auto p : mempaths_new.value())
                 //                 cout << p << endl;
 
-                set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent)->get_f_addr());
+                set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent, from_ctx)->get_f_addr());
                 assert(f_addrs.size() > 0);
                 for(auto f_addr : f_addrs)
                   propagate_reqs(mempaths_new.value(), f_addr);
@@ -558,13 +560,13 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             std::vector<std::vector<mempath_assignment>> assignments;
 
             for(auto &f : desc.field_reqs) {
-              auto ext_res = f.extract_table_keys(get_sub(from_parent)->get_mstate());
+              auto ext_res = f.extract_table_keys(get_sub(from_parent, from_ctx)->get_mstate());
               if(ext_res.assignments.size() == 0)
                 // Unresolved pointer => no instantiation
                 return;
               assignments.push_back(ext_res.assignments);
             }
-            
+
             cout << "Propagating to address " << address << std::endl;
 
             std::vector<size_t> indices(assignments.size(), 0);
@@ -574,23 +576,25 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 assert(assignments[i].size() > indices[i]);
                 assignments_set.insert((assignments[i])[indices[i]]);
               }
-              
+
               auto desc_it = desc.contexts.find(assignments_set);
               if(desc_it == desc.contexts.end()) {
                 size_t context = desc.contexts.size() + 1;
                 desc.contexts[assignments_set] = context;
-                
+
                 auto state_ctx = dynamic_pointer_cast<global_state>(
                   start_value(vs_finite::single((int64_t)address)));
                 for(int i = 0; i < assignments.size(); i++) {
                   assert(assignments[i].size() > indices[i]);
                   (assignments[i])[indices[i]].propagate(state_ctx->get_mstate());
                 }
+
+                state_map_new[context] = state_ctx;
               }
-              
-//               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
-//               cout << *state_ctx << std::endl;
-//               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
+
+              //               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
+              //               cout << *state_ctx << std::endl;
+              //               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
             };
 
             while(true) {
@@ -604,11 +608,14 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             }
           };
 
-          //tabulate_all();
           accumulate_all();
+          //           tabulate_all();
         }
+
+        state_map_new[from_ctx] = state_new;
       } else {
-        state_new = get_sub(from);
+        auto state_new = get_sub(from, from_ctx);
+        state_map_new[from_ctx] = state_new;
         if(!state_new->get_mstate()->is_bottom()) {
           bool needs_decoding = false;
           size_t addr;
@@ -631,7 +638,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         }
       }
       //      this->cfg->commit_updates();
-      return default_context(state_new);
+      return state_map_new;
     };
   });
   e->accept(ev);
@@ -744,14 +751,30 @@ shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
   //  if(node >= state.size())
   //    return bottom();
   //  assert(erased.find(node) == erased.end());
-  return state[node].at(0);
+  if(state[node].find(3) != state[node].end()) {
+    cout << "Returning state X" << endl;
+    return state[node].at(3);
+  } else
+    return state[node].at(0);
 }
 
-shared_ptr<global_state> analysis::summary_dstack::get_sub(size_t node) {
+std::map<size_t, shared_ptr<domain_state>> analysis::summary_dstack::get_ctxful(size_t node) {
+  std::map<size_t, shared_ptr<domain_state>> r;
+  for(auto const &entry : state.at(node))
+    r[entry.first] = entry.second;
+  return r;
+}
+
+shared_ptr<global_state> analysis::summary_dstack::get_sub(size_t node, size_t ctx) {
   //  if(node >= state.size())
   //    return bottom();
-  //  assert(erased.find(node) == erased.end());
-  return state[node].at(0);
+  // override  assert(erased.find(node) == erased.end());
+  auto state = this->state[node];
+  auto it = state.find(ctx);
+  if(it == state.end())
+    return dynamic_pointer_cast<global_state>(bottom());
+  else
+    return it->second;
 }
 
 void analysis::summary_dstack::update(analysis_node node, shared_ptr<domain_state> state) {

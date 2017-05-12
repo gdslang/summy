@@ -209,8 +209,6 @@ void fixpoint::iterate() {
         for(auto &ev_it : evaluated_ctx) {
           size_t context = ev_it.first;
           auto evaluated = ev_it.second;
-          
-          assert(context == 0);
 
           backward = backward || jd != FORWARD;
           if(widening && jd == BACKWARD) {
@@ -274,9 +272,13 @@ void fixpoint::iterate() {
        * so that less updates occur
        */
       for(auto &acc_it : accumulator) {
-        assert(propagate == false);
+        //         assert(propagate == false);
+        auto current_state = analysis->get_ctxful(node.id);
+        auto current_state_it = current_state.find(node.context);
+
         propagate = propagate || (!backward && constraints.size() == 1) ||
-                    !(*analysis->get(node.id) == *acc_it.second);
+                    current_state_it == current_state.end() ||
+                    !(*current_state_it->second == *acc_it.second);
       }
 
       //            cout << "prop: " << propagate << endl;
@@ -299,6 +301,11 @@ void fixpoint::iterate() {
       //      accumulator->check_consistency();
       //            cout << "Updating..." << endl;
       for(auto &acc_it : accumulator) {
+        if(node.id == 325 && acc_it.first == 2) {
+          cout << "Updating node " << node.id << " in context " << node.context << endl;
+          cout << *acc_it.second << endl;
+        }
+
         analysis->update(analysis_node(node.id, acc_it.first), acc_it.second);
         updated.insert(node.id);
       }
@@ -310,12 +317,16 @@ void fixpoint::iterate() {
     //    cout << "Seen: " << (seen.find(node_id) != seen.end()) << endl;
     //    cout << "Number of deps: " << analysis->dependants(node_id).size() << endl;
 
-    if(propagate || seen.find(node) == seen.end()) {
+    bool node_seen = seen.find(node) != seen.end();
+    if(propagate || !node_seen) {
       auto dependants = analysis->dependants(node.id);
       for(auto dependant : dependants) {
         //                cout << "====>  Pushing " << dependant << " as dep. of " << node_id <<
         //                endl;
-        worklist.push(analysis_node(dependant, node.context));
+        for(auto acc_it : accumulator)
+          worklist.push(analysis_node(dependant, acc_it.first));
+        if(!node_seen && accumulator.find(0) == accumulator.end())
+          worklist.push(analysis_node(dependant, 0));
       }
       //      cout << "Deps: " << dependants.size() << endl;
       //      cout << "Children: " << analysis->get_cfg()->out_edge_payloads(node_id)->size() <<

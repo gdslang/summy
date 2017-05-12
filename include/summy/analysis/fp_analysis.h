@@ -55,8 +55,8 @@ struct dependency {
 typedef std::function<std::map<size_t, std::shared_ptr<domain_state>>(size_t context)> constraint_t;
 
 inline std::map<size_t, std::shared_ptr<domain_state>> default_context(
-  std::shared_ptr<domain_state> state) {
-  return {{0, state}};
+  std::shared_ptr<domain_state> state, size_t ctx = 0) {
+  return {{ctx, state}};
 }
 
 class fp_analysis {
@@ -106,6 +106,9 @@ public:
   void clear_pending();
 
   virtual shared_ptr<domain_state> get(size_t node) = 0;
+  virtual std::map<size_t, shared_ptr<domain_state>> get_ctxful(size_t node) {
+    return {{0, get(node)}};
+  }
   virtual void update(analysis_node node, shared_ptr<domain_state> state) = 0;
 
   virtual std::set<size_t> dependants(size_t node_id) {
