@@ -59,6 +59,10 @@ inline std::map<size_t, std::shared_ptr<domain_state>> default_context(
   return {{ctx, state}};
 }
 
+inline std::map<size_t, std::shared_ptr<domain_state>> empty_context_map() {
+  return std::map<size_t, std::shared_ptr<domain_state>>();
+}
+
 class fp_analysis {
 private:
   cfg::recorder rec;

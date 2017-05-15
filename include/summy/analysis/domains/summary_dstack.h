@@ -6,23 +6,23 @@
  */
 
 #pragma once
+#include <experimental/optional>
+#include <map>
+#include <memory>
+#include <set>
 #include <summy/analysis/analysis_visitor.h>
 #include <summy/analysis/caller/caller.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/mempath_assignment.h>
 #include <summy/analysis/domains/summary_dstack_stubs.h>
-#include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/domains/summary_memory_state.h>
+#include <summy/analysis/fp_analysis.h>
 #include <summy/analysis/global_analysis/global_state.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
 #include <summy/value_set/value_set.h>
-#include <memory>
-#include <vector>
-#include <set>
-#include <map>
 #include <unordered_map>
-#include <experimental/optional>
+#include <vector>
 
 namespace analysis {
 
@@ -49,13 +49,14 @@ struct function_desc {
    * Field requirements (function pointers)
    */
   std::set<mempath> field_reqs;
-  
+
   /*
    * Ground Herbrand terms to context map
    */
   std::map<std::set<mempath_assignment>, size_t> contexts;
 
-  function_desc(size_t min_calls_sz, size_t head_id) : min_calls_sz(min_calls_sz), head_id(head_id) {}
+  function_desc(size_t min_calls_sz, size_t head_id)
+      : min_calls_sz(min_calls_sz), head_id(head_id) {}
 };
 
 class summary_dstack : public fp_analysis {
@@ -64,38 +65,38 @@ private:
   bool warnings;
   std::map<void *, function_desc> function_desc_map;
   std::set<analysis_node> _dirty_nodes;
-//  caller::caller caller_analysis;
+  //  caller::caller caller_analysis;
   state_t state;
 
   node_targets_t node_targets;
-  
+
   /**
    * Statistics for function pointer propagation
-   * 
+   *
    * Maps function addresses to memory path to pointer sets
    */
   std::map<size_t, std::map<mempath, std::set<size_t>>> pointer_props;
-  
+
   /**
    * Statistics for function pointer propagation (2)
-   * 
+   *
    * Maps node ids to the number of HBs for each request
    */
   std::map<size_t, std::map<mempath, std::set<size_t>>> hb_counts;
-  
+
   /**
    * Statistics for function pointer propagation (2)
-   * 
+   *
    * Maps node ids to the number of path path construction errors
    */
   std::map<size_t, size_t> path_construction_errors;
-  
+
   /*
    * Statistics: Number of herbrand terms for a single call site
    */
   std::map<size_t, size_t> unique_hbs;
 
-//  std::set<size_t> erased;
+  //  std::set<size_t> erased;
 
   std::unordered_map<size_t, std::experimental::optional<size_t>> ref_map;
 
@@ -114,8 +115,12 @@ private:
   void init_state(summy::vs_shared_t f_addr);
   void init_state();
 
+  std::vector<std::set<mempath_assignment>> tabulation_keys(
+    function_desc const &desc, summary_memory_state *state);
+
 public:
-  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings, std::set<size_t> const &f_starts);
+  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings,
+    std::set<size_t> const &f_starts);
   /**
    * Constructor with initial call to node zero
    */
@@ -148,23 +153,23 @@ public:
   std::experimental::optional<size_t> get_lowest_function_address(size_t node_id);
   void print_callstack(size_t node_id);
 
-  node_targets_t const& get_targets() {
+  node_targets_t const &get_targets() {
     return node_targets;
   }
-  
-  std::map<size_t, std::map<mempath, std::set<size_t>>> const& get_pointer_props() {
+
+  std::map<size_t, std::map<mempath, std::set<size_t>>> const &get_pointer_props() {
     return pointer_props;
   }
-  
-  std::map<size_t, std::map<mempath, std::set<size_t>>> const& get_hb_counts() {
+
+  std::map<size_t, std::map<mempath, std::set<size_t>>> const &get_hb_counts() {
     return hb_counts;
   }
-  
-  std::map<size_t, size_t> const& get_unique_hbs() {
+
+  std::map<size_t, size_t> const &get_unique_hbs() {
     return unique_hbs;
   }
-  
-  std::map<size_t, size_t> const& get_path_construction_errors() {
+
+  std::map<size_t, size_t> const &get_path_construction_errors() {
     return path_construction_errors;
   }
 

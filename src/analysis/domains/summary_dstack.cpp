@@ -220,6 +220,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       switch(b->get_hint()) {
         case gdsl::rreil::BRANCH_HINT_CALL: {
           transfer_f = [=](size_t from_ctx) {
+            cout << "FROM: " << from << ", FROM_CTX: " << from_ctx << endl;
             shared_ptr<global_state> state_c = get_sub(from, from_ctx);
             summary_memory_state *mstate = state_c->get_mstate();
 
@@ -310,9 +311,33 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                     if(fd_it != function_desc_map.end()) {
                       auto &f_desc = fd_it->second;
                       for(size_t s_node : f_desc.summary_nodes) {
-                        add_summary(get_sub(s_node, from_ctx)->get_mstate());
-                        if(state_c->get_f_addr() == get_sub(s_node, from_ctx)->get_f_addr())
-                          directly_recursive = true;
+                        auto tabulate_all = [&]() {
+                          std::vector<std::set<mempath_assignment>> assignments_sets =
+                            tabulation_keys(f_desc, state_c->get_mstate());
+                          for(auto &assignment_set : assignments_sets) {
+                            size_t ctx;
+                            if(assignment_set.size() == 0)
+                              ctx = 0; // No HBs => default context
+                            else {
+                              auto ctx_it = f_desc.contexts.find(assignment_set);
+                              if(ctx_it == f_desc.contexts.end())
+                                continue; // Todo: What has happened here?
+                              ctx = ctx_it->second;
+                            }
+
+                            add_summary(get_sub(s_node, ctx)->get_mstate());
+                            if(state_c->get_f_addr() == get_sub(s_node, ctx)->get_f_addr())
+                              directly_recursive = true;
+                          }
+                        };
+
+                        auto accumulate_all = [&]() {
+                          add_summary(get_sub(s_node, from_ctx)->get_mstate());
+                          if(state_c->get_f_addr() == get_sub(s_node, from_ctx)->get_f_addr())
+                            directly_recursive = true;
+                        };
+
+                        tabulate_all();
                       }
 
                       //                    cout << address << endl;
@@ -402,9 +427,11 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //              cout << "NOOOO BOTTOM :-/!" << endl;
 
             //            cout << *summarized << endl;
+                      
 
             return default_context(
-              shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr())), 0);
+              shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr())),
+              from_ctx);
           };
           break;
         }
@@ -427,7 +454,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 assert_dependency(gen_dependency(to, caller));
               }
             }
-            return default_context(state_c, from_ctx);
+            /*
+             * Todo: Updates to all contexts?!
+             */
+            return get_ctxful(from); //default_context(state_c, 0);
           };
           break;
         }
@@ -555,28 +585,20 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               }
             }
           };
+          
+          cout << "TABULATING at " << from << " in context " << from_ctx << endl;
 
           auto tabulate_all = [&]() {
-            std::vector<std::vector<mempath_assignment>> assignments;
-
-            for(auto &f : desc.field_reqs) {
-              auto ext_res = f.extract_table_keys(get_sub(from_parent, from_ctx)->get_mstate());
-              if(ext_res.assignments.size() == 0)
-                // Unresolved pointer => no instantiation
-                return;
-              assignments.push_back(ext_res.assignments);
-            }
-
-            cout << "Propagating to address " << address << std::endl;
-
-            std::vector<size_t> indices(assignments.size(), 0);
-            auto entry = [&]() {
-              std::set<mempath_assignment> assignments_set;
-              for(int i = 0; i < assignments.size(); i++) {
-                assert(assignments[i].size() > indices[i]);
-                assignments_set.insert((assignments[i])[indices[i]]);
+            std::vector<std::set<mempath_assignment>> assignments_sets =
+              tabulation_keys(desc, get_sub(from_parent, from_ctx)->get_mstate());
+            for(auto assignments_set : assignments_sets) {
+              if(assignments_set.size() == 0) {
+                /*
+                 * No tabulation without field requests
+                 */
+                cout << "No field requests!" << endl;
+                continue;
               }
-
               auto desc_it = desc.contexts.find(assignments_set);
               if(desc_it == desc.contexts.end()) {
                 size_t context = desc.contexts.size() + 1;
@@ -584,32 +606,18 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
                 auto state_ctx = dynamic_pointer_cast<global_state>(
                   start_value(vs_finite::single((int64_t)address)));
-                for(int i = 0; i < assignments.size(); i++) {
-                  assert(assignments[i].size() > indices[i]);
-                  (assignments[i])[indices[i]].propagate(state_ctx->get_mstate());
-                }
+                for(auto assignment : assignments_set)
+                  assignment.propagate(state_ctx->get_mstate());
+                
+                cout << *state_ctx << endl;
 
                 state_map_new[context] = state_ctx;
               }
-
-              //               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
-              //               cout << *state_ctx << std::endl;
-              //               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
-            };
-
-            while(true) {
-              entry();
-              size_t digit;
-              for(digit = indices.size(); digit > 0; digit--) {
-                indices[digit - 1] = (indices[digit - 1] + 1) % assignments[digit - 1].size();
-                if(indices[digit - 1] > 0) break;
-              }
-              if(!digit && indices[0] == 0) break;
             }
           };
 
-          accumulate_all();
-          //           tabulate_all();
+          //           accumulate_all();
+          tabulate_all();
         }
 
         state_map_new[from_ctx] = state_new;
@@ -672,6 +680,54 @@ void analysis::summary_dstack::init_state(summy::vs_shared_t f_addr) {
     } else
       (state[i])[0] = dynamic_pointer_cast<global_state>(bottom());
   }
+}
+
+std::vector<std::set<mempath_assignment>> analysis::summary_dstack::tabulation_keys(
+  function_desc const &desc, summary_memory_state *state) {
+  std::vector<std::set<mempath_assignment>> result;
+
+  std::vector<std::vector<mempath_assignment>> assignments;
+
+  if(desc.field_reqs.size() == 0) {
+    result.push_back({});
+    return result;
+  }
+  for(auto &f : desc.field_reqs) {
+    auto ext_res = f.extract_table_keys(state);
+    if(ext_res.assignments.size() == 0)
+      // Unresolved pointer => no instantiation
+      return result;
+    assignments.push_back(ext_res.assignments);
+  }
+
+  //   cout << "Propagating to address " << address << std::endl;
+
+  std::vector<size_t> indices(assignments.size(), 0);
+  auto entry = [&]() {
+    std::set<mempath_assignment> assignments_set;
+    for(int i = 0; i < assignments.size(); i++) {
+      assert(assignments[i].size() > indices[i]);
+      assignments_set.insert((assignments[i])[indices[i]]);
+    }
+
+    result.push_back(assignments_set);
+
+    //               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
+    //               cout << *state_ctx << std::endl;
+    //               cout << "°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°" << std::endl;
+  };
+
+  while(true) {
+    entry();
+    size_t digit;
+    for(digit = indices.size(); digit > 0; digit--) {
+      indices[digit - 1] = (indices[digit - 1] + 1) % assignments[digit - 1].size();
+      if(indices[digit - 1] > 0) break;
+    }
+    if(!digit && indices[0] == 0) break;
+  }
+
+  return result;
 }
 
 void analysis::summary_dstack::init_state() {

@@ -92,7 +92,7 @@ void fixpoint::iterate() {
     //     }
 
     //    cout << "\033[1;31mNext iteration\033[0m" << endl;
-    //        cout << "Next node: " << node.id << endl;
+           cout << "Next node: " << node.id << endl;
 
     bool _continue = false;
     static optional<size_t> function_last;
@@ -178,6 +178,8 @@ void fixpoint::iterate() {
          * Evaluate constraint
          */
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+        if(node.id == 527 && node.context != 0)
+          cout << "WUHI" << endl;
         auto evaluated_ctx = constraint(node.context);
         if(ref_management) {
           if(constraints.size() == 1)
@@ -209,6 +211,9 @@ void fixpoint::iterate() {
         for(auto &ev_it : evaluated_ctx) {
           size_t context = ev_it.first;
           auto evaluated = ev_it.second;
+          
+          if(context != 0 && node.context == 0)
+            cout << "SOMETHING AT NODE " << node.id << endl;
 
           backward = backward || jd != FORWARD;
           if(widening && jd == BACKWARD) {
@@ -301,7 +306,7 @@ void fixpoint::iterate() {
       //      accumulator->check_consistency();
       //            cout << "Updating..." << endl;
       for(auto &acc_it : accumulator) {
-        if(node.id == 325 && acc_it.first == 2) {
+        if(node.id == 324) {
           cout << "Updating node " << node.id << " in context " << node.context << endl;
           cout << *acc_it.second << endl;
         }
@@ -323,8 +328,11 @@ void fixpoint::iterate() {
       for(auto dependant : dependants) {
         //                cout << "====>  Pushing " << dependant << " as dep. of " << node_id <<
         //                endl;
-        for(auto acc_it : accumulator)
+        for(auto acc_it : accumulator) {
+          if(dependant == 527 && acc_it.first != 0)
+            cout << "WOHO" << endl;
           worklist.push(analysis_node(dependant, acc_it.first));
+        }
         if(!node_seen && accumulator.find(0) == accumulator.end())
           worklist.push(analysis_node(dependant, 0));
       }
