@@ -54,7 +54,7 @@ int mkN(void* s,void* v,void* l) {\n\
 int main(int argc, char **argv) {\n\
   return mkN(argv, argv[0], argv[1]);\n\
 }",
-    C, false, 1));
+    C, false, 1, false));
 }
 
 TEST_F(summary_complex_noerror_test, TestIssue44) {
@@ -94,5 +94,5 @@ int main(int argc, char **argv) {\n\
   rope_print(argv);\n\
   return 0;\n\
 }",
-    C, false, 1));
+    C, false, 1, false));
 }

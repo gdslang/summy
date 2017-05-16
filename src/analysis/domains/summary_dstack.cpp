@@ -605,8 +605,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 for(auto assignment : assignments_set)
                   assignment.propagate(state_ctx->get_mstate());
 
-                cout << *state_ctx << endl;
-
                 state_map_new[context] = state_ctx;
               }
             }
@@ -745,9 +743,9 @@ void analysis::summary_dstack::init_state() {
   init_state(value_set::bottom);
 }
 
-analysis::summary_dstack::summary_dstack(
-  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings, std::set<size_t> const &f_starts)
-    : fp_analysis(cfg), sm(sm), warnings(warnings), stubs(sm, warnings) {
+analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm,
+  bool warnings, std::set<size_t> const &f_starts, bool tabulation)
+    : fp_analysis(cfg), sm(sm), warnings(warnings), stubs(sm, warnings), tabulation(tabulation) {
   init();
 
   for(auto node_id : f_starts) {

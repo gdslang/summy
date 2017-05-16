@@ -30,5 +30,7 @@ int main(int argc) {
     fp0 = &f2;
     fp1 = &g2;
   }
-  return h(fp0, fp1);
+  int x = h(fp0, fp1);
+  int y = h(&f1, &g1);
+  return x + y;
 }

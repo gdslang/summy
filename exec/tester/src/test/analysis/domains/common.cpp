@@ -8,7 +8,9 @@
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/gdsl.h>
 #include <gtest/gtest.h>
-#include <summy/test/compile.h>
+#include <istream>
+#include <memory>
+#include <string>
 #include <summy/analysis/domains/summary_dstack.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/static_memory.h>
@@ -17,9 +19,7 @@
 #include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node_visitor.h>
 #include <summy/test/analysis/domains/common.h>
-#include <istream>
-#include <memory>
-#include <string>
+#include <summy/test/compile.h>
 #include <tuple>
 
 using analysis::fixpoint;
@@ -36,7 +36,8 @@ using std::string;
 using std::tie;
 using std::ignore;
 
-void state(_analysis_result &r, string program, language_t lang, bool gdsl_optimize, uint8_t compiler_opt) {
+void state(_analysis_result &r, string program, language_t lang, bool gdsl_optimize,
+  uint8_t compiler_opt, bool tabulate) {
   SCOPED_TRACE("state()");
 
   switch(lang) {
@@ -48,14 +49,19 @@ void state(_analysis_result &r, string program, language_t lang, bool gdsl_optim
     case C: {
       string filename = c_compile(program, compiler_opt);
       r.elfp = new elf_provider(filename.c_str());
+      string rm_cmd = string("rm ") + filename;
+      system(rm_cmd.c_str());
       break;
     }
     case CPP: {
       string filename = cpp_compile(program, compiler_opt);
       r.elfp = new elf_provider(filename.c_str());
+      string rm_cmd = string("rm ") + filename;
+      system(rm_cmd.c_str());
       break;
     }
   }
+  
 
   //  binary_provider::entry_t e;
   //  tie(ignore, e) = elfp->entry("foo");
@@ -85,7 +91,7 @@ void state(_analysis_result &r, string program, language_t lang, bool gdsl_optim
     throw string("Unable to seek to given function_name");
   }
 
-  r.dt = new analysis_dectran(g, gdsl_optimize, true);
+  r.dt = new analysis_dectran(g, gdsl_optimize, false);
   r.dt->transduce();
   r.dt->register_();
 
@@ -93,7 +99,7 @@ void state(_analysis_result &r, string program, language_t lang, bool gdsl_optim
   cfg.commit_updates();
 
   shared_ptr<static_memory> se = make_shared<static_elf>(r.elfp);
-  r.ds_analyzed = new summary_dstack(&cfg, se, false, false);
+  r.ds_analyzed = new summary_dstack(&cfg, se, false, tabulate);
   jd_manager jd_man(&cfg);
   fixpoint fp(r.ds_analyzed, jd_man, true);
   cfg.register_observer(&fp);
@@ -108,14 +114,14 @@ void state(_analysis_result &r, string program, language_t lang, bool gdsl_optim
   r.max_it = fp.max_iter();
 }
 
-void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize) {
-  state(r, _asm, ASSEMBLY, gdsl_optimize, 1);
+void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize, bool tabulate) {
+  state(r, _asm, ASSEMBLY, gdsl_optimize, 1, tabulate);
 }
 
-void state_c(_analysis_result &r, string c, bool gdsl_optimize) {
-  state(r, c, C, gdsl_optimize, 1);
+void state_c(_analysis_result &r, string c, bool gdsl_optimize, bool tabulate) {
+  state(r, c, C, gdsl_optimize, 1, tabulate);
 }
 
-void state_cpp(_analysis_result &r, string c, bool gdsl_optimize) {
-  state(r, c, CPP, gdsl_optimize, 1);
+void state_cpp(_analysis_result &r, string c, bool gdsl_optimize, bool tabulate) {
+  state(r, c, CPP, gdsl_optimize, 1, tabulate);
 }

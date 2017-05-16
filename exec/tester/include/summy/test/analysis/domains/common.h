@@ -8,9 +8,9 @@
 #pragma once
 
 #include <bjutil/binary/elf_provider.h>
+#include <map>
 #include <summy/analysis/domains/summary_dstack.h>
 #include <summy/big_step/analysis_dectran.h>
-#include <map>
 
 struct _analysis_result {
   analysis_dectran *dt;
@@ -42,7 +42,8 @@ struct _analysis_result {
 
 enum language_t { ASSEMBLY, C, CPP };
 
-void state(_analysis_result &r, string program, language_t lang, bool gdsl_optimize, uint8_t compiler_opt);
-void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = false);
-void state_c(_analysis_result &r, string c, bool gdsl_optimize = false);
-void state_cpp(_analysis_result &r, string c, bool gdsl_optimize = false);
+void state(_analysis_result &r, string program, language_t lang, bool gdsl_optimize,
+  uint8_t compiler_opt, bool tabulate);
+void state_asm(_analysis_result &r, string _asm, bool gdsl_optimize = false, bool tabulate = false);
+void state_c(_analysis_result &r, string c, bool gdsl_optimize = false, bool tabulate = false);
+void state_cpp(_analysis_result &r, string c, bool gdsl_optimize = false, bool tabulate = false);

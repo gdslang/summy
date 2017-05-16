@@ -124,7 +124,7 @@ private:
 
 public:
   summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings,
-    std::set<size_t> const &f_starts);
+    std::set<size_t> const &f_starts, bool tabulation);
   /**
    * Constructor with initial call to node zero
    */

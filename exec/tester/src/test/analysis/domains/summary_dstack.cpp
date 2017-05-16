@@ -5,32 +5,32 @@
  *      Author: Julian Kranz
  */
 
+#include <algorithm>
 #include <bjutil/binary/elf_provider.h>
-#include <summy/analysis/domains/summary_dstack.h>
-#include <summy/analysis/domains/summary_memory_state.h>
-#include <summy/test/compile.h>
-#include <summy/analysis/fixpoint.h>
 #include <bjutil/gdsl_init.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/rreil/rreil.h>
-#include <summy/cfg/node/node_visitor.h>
-#include <summy/rreil/id/numeric_id.h>
-#include <summy/cfg/bfs_iterator.h>
+#include <experimental/optional>
 #include <gtest/gtest.h>
-#include <summy/analysis/domains/util.h>
-#include <summy/big_step/analysis_dectran.h>
-#include <summy/cfg/jd_manager.h>
-#include <summy/cfg/node/address_node.h>
-#include <summy/rreil/id/memory_id.h>
-#include <memory>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
-#include <algorithm>
-#include <experimental/optional>
+#include <summy/analysis/domains/summary_dstack.h>
+#include <summy/analysis/domains/summary_memory_state.h>
+#include <summy/analysis/domains/util.h>
+#include <summy/analysis/fixpoint.h>
+#include <summy/big_step/analysis_dectran.h>
+#include <summy/cfg/bfs_iterator.h>
+#include <summy/cfg/jd_manager.h>
+#include <summy/cfg/node/address_node.h>
+#include <summy/cfg/node/node_visitor.h>
+#include <summy/rreil/id/memory_id.h>
+#include <summy/rreil/id/numeric_id.h>
 #include <summy/test/analysis/domains/common.h>
+#include <summy/test/compile.h>
 
 using namespace analysis;
 using namespace analysis::api;
@@ -54,8 +54,8 @@ protected:
   virtual void TearDown() {}
 };
 
-static void query_val(
-  vs_shared_t &r, _analysis_result &ar, string label, string arch_id_name, size_t offset, size_t size) {
+static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_name,
+  size_t offset, size_t size) {
   SCOPED_TRACE("query_val()");
 
   auto analy_r = ar.ds_analyzed->result();
@@ -71,13 +71,14 @@ static void query_val(
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
   lin_var *lv = new lin_var(make_variable(make_id(arch_id_name), offset));
-  //  cout << *analy_r.result[ar.addr_node_map[e.address]]->get_mstate() << endl;
+//   cout << *analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate() << endl;
 
   r = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate()->queryVal(lv, size);
   delete lv;
 }
 
-// static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_first, string arch_id_second)
+// static void query_eq(vs_shared_t &r, _analysis_result &ar, string label, string arch_id_first,
+// string arch_id_second)
 // {
 //  SCOPED_TRACE("query_eq()");
 //
@@ -120,7 +121,8 @@ static void equal_structure(region_t const &a, region_t const &b) {
   }
 }
 
-static void equal_structure(region_t const &cmp, _analysis_result &ar, string label, id_shared_t id) {
+static void equal_structure(
+  region_t const &cmp, _analysis_result &ar, string label, id_shared_t id) {
   SCOPED_TRACE("equal_structure()");
 
   auto analy_r = ar.ds_analyzed->result();
@@ -135,12 +137,14 @@ static void equal_structure(region_t const &cmp, _analysis_result &ar, string la
 
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
-  region_t const &rr = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate()->query_region_output(id);
+  region_t const &rr =
+    analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate()->query_region_output(id);
 
   equal_structure(cmp, rr);
 }
 
-static void equal_structure(region_t const &cmp, _analysis_result &ar, string label, string arch_id_name) {
+static void equal_structure(
+  region_t const &cmp, _analysis_result &ar, string label, string arch_id_name) {
   SCOPED_TRACE("equal_structure()");
 
   id_shared_t id = shared_ptr<gdsl::rreil::id>(new arch_id(arch_id_name));
@@ -165,7 +169,8 @@ static void mstate_from_label(summary_memory_state **mstate, _analysis_result &a
   *mstate = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate();
 }
 
-static void query_deref(id_shared_t &id, _analysis_result &ar, summary_memory_state *mstate, ptr _ptr, size_t size) {
+static void query_deref(
+  id_shared_t &id, _analysis_result &ar, summary_memory_state *mstate, ptr _ptr, size_t size) {
   SCOPED_TRACE("query_deref()");
 
   int64_t offset;
@@ -205,7 +210,8 @@ static void query_deref(id_shared_t &id, _analysis_result &ar, summary_memory_st
   delete derefed;
 }
 
-static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, summary_memory_state *mstate, ptr _ptr) {
+static void query_deref_als(
+  ptr_set_t &aliases, _analysis_result &ar, summary_memory_state *mstate, ptr _ptr) {
   SCOPED_TRACE("query_deref_als()");
 
   id_shared_t id;
@@ -228,7 +234,8 @@ static void query_deref_als(
   delete a;
 }
 
-static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
+static void query_deref_als(
+  ptr_set_t &aliases, _analysis_result &ar, string label, string arch_id_name) {
   SCOPED_TRACE("query_deref_als()");
   summary_memory_state *mstate;
   mstate_from_label(&mstate, ar, label);
@@ -242,7 +249,8 @@ static void query_deref_als(ptr_set_t &aliases, _analysis_result &ar, string lab
   query_deref_als(aliases, ar, mstate, _ptr);
 }
 
-// static void query_deref_region(region_t &region, _analysis_result &ar, string label, string arch_id_name) {
+// static void query_deref_region(region_t &region, _analysis_result &ar, string label, string
+// arch_id_name) {
 //  SCOPED_TRACE("query_deref_region()");
 //
 //  auto analy_r = ar.ds_analyzed->result();
@@ -319,9 +327,11 @@ static void isTop(bool &result, _analysis_result &ar, string label) {
   delete top;
 }
 
-static void assert_ptrs(optional<vs_shared_t> &offset, ptr_set_t &ptrs, bool expect_null, bool expect_bad, unsigned expect_allocs,
-  unsigned expect_anon, optional<string> ptr_name = nullopt) {
-  ASSERT_EQ(ptrs.size(), (expect_null ? 1 : 0) + (expect_bad ? 1 : 0) + expect_allocs + expect_anon);
+static void assert_ptrs(optional<vs_shared_t> &offset, ptr_set_t &ptrs, bool expect_null,
+  bool expect_bad, unsigned expect_allocs, unsigned expect_anon,
+  optional<string> ptr_name = nullopt) {
+  ASSERT_EQ(
+    ptrs.size(), (expect_null ? 1 : 0) + (expect_bad ? 1 : 0) + expect_allocs + expect_anon);
   bool has_null = false;
   bool has_bad = false;
   unsigned allocs = 0;
@@ -510,7 +520,7 @@ TEST_F(summary_dstack_test, OverlappingFieldMiddle) {
 }
 
 TEST_F(summary_dstack_test, Call) {
-  //test_call.as
+  // test_call.as
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
 f:\n\
@@ -749,18 +759,26 @@ ret",
   ASSERT_EQ(aliases_end_a.size(), 2);
 
   ptr_set_t aliases_start_c_end_deref;
-  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_c_end_deref, ar, "end", unpack_singleton(aliases_start_c)));
+  ASSERT_NO_FATAL_FAILURE(
+    query_deref_als(aliases_start_c_end_deref, ar, "end", unpack_singleton(aliases_start_c)));
   ASSERT_EQ(aliases_start_c_end_deref.size(), 3);
-  ASSERT_NE(aliases_start_c_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_c_end_deref.end());
-  ASSERT_EQ(aliases_start_c_end_deref.find(unpack_singleton(aliases_start_d)), aliases_start_c_end_deref.end());
-  ASSERT_EQ(aliases_start_c_end_deref.find(unpack_singleton(aliases_start_c)), aliases_start_c_end_deref.end());
+  ASSERT_NE(aliases_start_c_end_deref.find(unpack_singleton(aliases_end_a)),
+    aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.find(unpack_singleton(aliases_start_d)),
+    aliases_start_c_end_deref.end());
+  ASSERT_EQ(aliases_start_c_end_deref.find(unpack_singleton(aliases_start_c)),
+    aliases_start_c_end_deref.end());
 
   ptr_set_t aliases_start_d_end_deref;
-  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_d_end_deref, ar, "end", unpack_singleton(aliases_start_c)));
+  ASSERT_NO_FATAL_FAILURE(
+    query_deref_als(aliases_start_d_end_deref, ar, "end", unpack_singleton(aliases_start_c)));
   ASSERT_EQ(aliases_start_d_end_deref.size(), 3);
-  ASSERT_NE(aliases_start_d_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_d_end_deref.end());
-  ASSERT_EQ(aliases_start_d_end_deref.find(unpack_singleton(aliases_start_d)), aliases_start_d_end_deref.end());
-  ASSERT_EQ(aliases_start_d_end_deref.find(unpack_singleton(aliases_start_c)), aliases_start_d_end_deref.end());
+  ASSERT_NE(aliases_start_d_end_deref.find(unpack_singleton(aliases_end_a)),
+    aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.find(unpack_singleton(aliases_start_d)),
+    aliases_start_d_end_deref.end());
+  ASSERT_EQ(aliases_start_d_end_deref.find(unpack_singleton(aliases_start_c)),
+    aliases_start_d_end_deref.end());
 }
 
 TEST_F(summary_dstack_test, Call_2AliasesForOneVariableCallerWithOffsetInCaller) {
@@ -787,31 +805,41 @@ ret",
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_c, ar, "start", "C"));
   ASSERT_EQ(aliases_start_c.size(), 2);
   ptr aliases_start_c_only = unpack_singleton(aliases_start_c);
-  ptr aliases_start_c_only_plus_8 = ptr(aliases_start_c_only.id, *aliases_start_c_only.offset + vs_finite::single(8));
+  ptr aliases_start_c_only_plus_8 =
+    ptr(aliases_start_c_only.id, *aliases_start_c_only.offset + vs_finite::single(8));
 
   ptr_set_t aliases_start_d;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_d, ar, "start", "D"));
   ASSERT_EQ(aliases_start_d.size(), 2);
   ptr aliases_start_d_only = unpack_singleton(aliases_start_d);
-  ptr aliases_start_d_only_plus_8 = ptr(aliases_start_d_only.id, *aliases_start_d_only.offset + vs_finite::single(8));
+  ptr aliases_start_d_only_plus_8 =
+    ptr(aliases_start_d_only.id, *aliases_start_d_only.offset + vs_finite::single(8));
 
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
   ASSERT_EQ(aliases_end_a.size(), 2);
 
   ptr_set_t aliases_start_c_end_deref;
-  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_c_end_deref, ar, "end", aliases_start_c_only_plus_8));
+  ASSERT_NO_FATAL_FAILURE(
+    query_deref_als(aliases_start_c_end_deref, ar, "end", aliases_start_c_only_plus_8));
   ASSERT_EQ(aliases_start_c_end_deref.size(), 3);
-  ASSERT_NE(aliases_start_c_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_c_end_deref.end());
-  ASSERT_EQ(aliases_start_c_end_deref.find(aliases_start_d_only_plus_8), aliases_start_c_end_deref.end());
-  ASSERT_EQ(aliases_start_c_end_deref.find(aliases_start_c_only_plus_8), aliases_start_c_end_deref.end());
+  ASSERT_NE(aliases_start_c_end_deref.find(unpack_singleton(aliases_end_a)),
+    aliases_start_c_end_deref.end());
+  ASSERT_EQ(
+    aliases_start_c_end_deref.find(aliases_start_d_only_plus_8), aliases_start_c_end_deref.end());
+  ASSERT_EQ(
+    aliases_start_c_end_deref.find(aliases_start_c_only_plus_8), aliases_start_c_end_deref.end());
 
   ptr_set_t aliases_start_d_end_deref;
-  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_start_d_end_deref, ar, "end", aliases_start_d_only_plus_8));
+  ASSERT_NO_FATAL_FAILURE(
+    query_deref_als(aliases_start_d_end_deref, ar, "end", aliases_start_d_only_plus_8));
   ASSERT_EQ(aliases_start_d_end_deref.size(), 3);
-  ASSERT_NE(aliases_start_d_end_deref.find(unpack_singleton(aliases_end_a)), aliases_start_d_end_deref.end());
-  ASSERT_EQ(aliases_start_d_end_deref.find(aliases_start_d_only_plus_8), aliases_start_d_end_deref.end());
-  ASSERT_EQ(aliases_start_d_end_deref.find(aliases_start_c_only_plus_8), aliases_start_d_end_deref.end());
+  ASSERT_NE(aliases_start_d_end_deref.find(unpack_singleton(aliases_end_a)),
+    aliases_start_d_end_deref.end());
+  ASSERT_EQ(
+    aliases_start_d_end_deref.find(aliases_start_d_only_plus_8), aliases_start_d_end_deref.end());
+  ASSERT_EQ(
+    aliases_start_d_end_deref.find(aliases_start_c_only_plus_8), aliases_start_d_end_deref.end());
 }
 
 TEST_F(summary_dstack_test, StructuralCompat) {
@@ -1113,7 +1141,7 @@ int main(int argc, char **argv) {\n\
 }
 
 TEST_F(summary_dstack_test, CppVirtualFunctionCallReturnObjectHeap) {
-  //test_vcall_returnobjheap.cpp
+  // test_vcall_returnobjheap.cpp
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_cpp(ar, "\n\
 struct A { virtual long f() = 0; };\n\
@@ -1146,7 +1174,7 @@ int main(void) {\n\
 }
 
 TEST_F(summary_dstack_test, CppVirtualFunctionCallGlobObject) {
-  //test_vcall_returnobjheap.cpp
+  // test_vcall_returnobjheap.cpp
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_cpp(ar, "struct A { virtual long f() = 0; };\n\
 \n\
@@ -1343,7 +1371,7 @@ int main(void) {\n\
   __asm volatile ( \"after_malloc:\" );\n\
   return 0;\n\
 }",
-    C, false, 0));
+    C, false, 0, false));
 
   ptr_set_t sp_before_malloc;
   ASSERT_NO_FATAL_FAILURE(query_als(sp_before_malloc, ar, "before_malloc", "SP"));
@@ -1389,7 +1417,7 @@ int main(int argc, char **argv) {\n\
   }\n\
   return (int)head;\n\
 }",
-    C, false, 1));
+    C, false, 1, false));
 
   ptr_set_t a_after_head_malloc;
   ASSERT_NO_FATAL_FAILURE(query_als(a_after_head_malloc, ar, "after_head_malloc", "A"));
@@ -1432,7 +1460,7 @@ int main(int argc, char **argv) {\n\
   }\n\
   return (int)last;\n\
 }",
-    C, false, 1));
+    C, false, 1, false));
 
   ptr_set_t r11_before_reassignment;
   ASSERT_NO_FATAL_FAILURE(query_als(r11_before_reassignment, ar, "before_reassignment", "R11"));
@@ -1467,4 +1495,63 @@ nop\n",
 TEST_F(summary_dstack_test, TestFormerNoTermination) {
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar, "callq 0x0"));
+}
+
+TEST_F(summary_dstack_test, Tabulation1) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_c(ar, "\n\
+#include <stdlib.h>\n\
+\n\
+int f1() {\n\
+return 42;\n\
+}\n\
+\n\
+int g1() {\n\
+return 99;\n\
+}\n\
+\n\
+int f2() {\n\
+return 86;\n\
+}\n\
+\n\
+int g2() {\n\
+return 0;\n\
+}\n\
+\n\
+int h(int (*fp0)(void), int (*fp1)(void)) {\n\
+return fp0() + fp1();\n\
+}\n\
+\n\
+int main(int argc) {\n\
+int (*fp0)(void);\n\
+int (*fp1)(void);\n\
+if(argc == 0) {\n\
+  fp0 = &f1;\n\
+  fp1 = &g1;\n\
+} else {\n\
+  fp0 = &f2;\n\
+  fp1 = &g2;\n\
+}\n\
+register int x = h(fp0, fp1);\n\
+__asm volatile ( \"movl %0, %%r12d\"\n\
+: \"=a\" (x)\n\
+: \"a\" (x)\n\
+: \"r12\");\n\
+register int y = h(&f1, &g1);\n\
+__asm volatile ( \"movl %0, %%r11d\"\n\
+ : \"=a\" (y)\n\
+ : \"a\" (y)\n\
+ : \"r11\");\n\
+__asm volatile ( \"jmp test\" );\n\
+__asm volatile ( \"test: nop\" );\n\
+return 0;\n\
+}",
+    true, true));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "test", "R11", 0, 32));
+  ASSERT_EQ(*r, vs_finite::single(141));
+
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "test", "R12", 0, 32));
+  ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({42, 86, 141, 185})));
 }
