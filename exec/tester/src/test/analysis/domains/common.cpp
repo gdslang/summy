@@ -93,7 +93,7 @@ void state(_analysis_result &r, string program, language_t lang, bool gdsl_optim
   cfg.commit_updates();
 
   shared_ptr<static_memory> se = make_shared<static_elf>(r.elfp);
-  r.ds_analyzed = new summary_dstack(&cfg, se, false);
+  r.ds_analyzed = new summary_dstack(&cfg, se, false, false);
   jd_manager jd_man(&cfg);
   fixpoint fp(r.ds_analyzed, jd_man, true);
   cfg.register_observer(&fp);

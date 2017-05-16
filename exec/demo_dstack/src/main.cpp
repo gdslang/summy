@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
     cfg.commit_updates();
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-    summary_dstack ds(&cfg, se, false);
+    summary_dstack ds(&cfg, se, false, false);
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man, false);
     cfg.register_observer(&fp);

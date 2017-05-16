@@ -92,7 +92,7 @@ void fixpoint::iterate() {
     //     }
 
     //    cout << "\033[1;31mNext iteration\033[0m" << endl;
-    cout << "Next node: " << node.id << endl;
+//     cout << "Next node: " << node.id << endl;
 
     bool _continue = false;
     static optional<size_t> function_last;
@@ -178,7 +178,6 @@ void fixpoint::iterate() {
          * Evaluate constraint
          */
         //        cout << "~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-        if(node.id == 528 && node.context != 0) cout << "WUHI" << endl;
         auto evaluated_ctx = constraint(node.context);
         if(ref_management) {
           if(constraints.size() == 1)
@@ -210,8 +209,6 @@ void fixpoint::iterate() {
         for(auto &ev_it : evaluated_ctx) {
           size_t context = ev_it.first;
           auto evaluated = ev_it.second;
-
-          if(context != 0 && node.context == 0) cout << "SOMETHING AT NODE " << node.id << endl;
 
           backward = backward || jd != FORWARD;
           if(widening && jd == BACKWARD) {
@@ -254,7 +251,6 @@ void fixpoint::iterate() {
           /*
            * Todo: Which one is better?
            */
-          if(node.id == 528 && node.context != 0) cout << "WUHU" << endl;
           worklist.push(node);
           //          pending.insert(node);
         }
@@ -305,11 +301,6 @@ void fixpoint::iterate() {
       //      accumulator->check_consistency();
       //            cout << "Updating..." << endl;
       for(auto &acc_it : accumulator) {
-        if(node.id == 324) {
-          cout << "Updating node " << node.id << " in context " << node.context << endl;
-          cout << *acc_it.second << endl;
-        }
-
         analysis->update(analysis_node(node.id, acc_it.first), acc_it.second);
         updated.insert(node.id);
       }
@@ -329,7 +320,6 @@ void fixpoint::iterate() {
         //                cout << "====>  Pushing " << dependant << " as dep. of " << node_id <<
         //                endl;
         for(auto acc_it : accumulator) {
-          if(dependant == 528 && acc_it.first != 0) cout << "WOHO" << endl;
           worklist.push(analysis_node(dependant, acc_it.first));
           pushes++;
         }
@@ -348,7 +338,6 @@ void fixpoint::iterate() {
       //      cout << "Children: " << analysis->get_cfg()->out_edge_payloads(node_id)->size() <<
       //      endl;
       if(ref_management) {
-        //         __builtin_trap(); // Broken, needs to move outside of loop
         analysis->ref(node.id, pushes);
       }
     }

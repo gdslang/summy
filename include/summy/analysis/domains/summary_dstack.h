@@ -67,6 +67,7 @@ private:
   std::set<analysis_node> _dirty_nodes;
   //  caller::caller caller_analysis;
   state_t state;
+  
 
   node_targets_t node_targets;
 
@@ -102,6 +103,8 @@ private:
 
   summary_dstack_stubs stubs;
   std::experimental::optional<summary_t> get_stub(void *address, size_t node);
+  
+  bool tabulation;
 
   std::set<size_t> get_callers(std::shared_ptr<global_state> state);
   std::set<size_t> get_function_heads(std::shared_ptr<global_state> state);
@@ -125,7 +128,7 @@ public:
   /**
    * Constructor with initial call to node zero
    */
-  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings);
+  summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings, bool tabulation);
   summary_dstack(cfg::cfg *cfg, bool warnings);
   ~summary_dstack();
 

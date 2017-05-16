@@ -220,8 +220,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       switch(b->get_hint()) {
         case gdsl::rreil::BRANCH_HINT_CALL: {
           transfer_f = [=](size_t from_ctx) {
-            cout << "FROM: " << from << ", FROM_CTX: " << from_ctx << endl;
-            if(from == 528 && from_ctx != 0) __builtin_trap();
             shared_ptr<global_state> state_c = get_sub(from, from_ctx);
             summary_memory_state *mstate = state_c->get_mstate();
 
@@ -338,7 +336,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                             directly_recursive = true;
                         };
 
-                        tabulate_all();
+                        if(tabulation)
+                          tabulate_all();
+                        else
+                          accumulate_all();
                       }
 
                       //                    cout << address << endl;
@@ -584,8 +585,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             }
           };
 
-          cout << "TABULATING at " << from << " in context " << from_ctx << endl;
-
           auto tabulate_all = [&]() {
             std::vector<std::set<mempath_assignment>> assignments_sets =
               tabulation_keys(desc, get_sub(from_parent, from_ctx)->get_mstate());
@@ -594,7 +593,6 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 /*
                  * No tabulation without field requests
                  */
-                cout << "No field requests!" << endl;
                 continue;
               }
               auto desc_it = desc.contexts.find(assignments_set);
@@ -614,8 +612,10 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             }
           };
 
-          //           accumulate_all();
-          tabulate_all();
+          if(tabulation)
+            tabulate_all();
+          else
+            accumulate_all();
         }
 
         state_map_new[from_ctx] = state_new;
@@ -664,7 +664,7 @@ void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
 fp_analysis::depdant_desc analysis::summary_dstack::dependants(size_t node_id) {
   depdant_desc result;
   bool end_node = get_cfg()->out_edge_payloads(node_id)->size() == 0;
-  
+
   if(end_node)
     for(size_t depdant : _dependants[node_id])
       for(auto &ctx_mapping : state[depdant])
@@ -762,8 +762,8 @@ analysis::summary_dstack::summary_dstack(
 }
 
 analysis::summary_dstack::summary_dstack(
-  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings)
-    : fp_analysis(cfg), sm(sm), warnings(warnings), stubs(sm, warnings) {
+  cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings, bool tabulation)
+    : fp_analysis(cfg), sm(sm), warnings(warnings), stubs(sm, warnings), tabulation(tabulation) {
   init();
 
   /*
@@ -779,7 +779,7 @@ analysis::summary_dstack::summary_dstack(
 }
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, bool warnings)
-    : summary_dstack(cfg, make_shared<static_dummy>(), warnings) {
+    : summary_dstack(cfg, make_shared<static_dummy>(), warnings, false) {
   init();
 }
 
