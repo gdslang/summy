@@ -115,8 +115,12 @@ public:
   }
   virtual void update(analysis_node node, shared_ptr<domain_state> state) = 0;
 
-  virtual std::set<size_t> dependants(size_t node_id) {
-    return _dependants[node_id];
+  struct depdant_desc {
+    std::set<size_t> context_free_deps;
+    std::map<size_t, std::set<size_t>> context_deps;
+  };
+  virtual depdant_desc dependants(size_t node_id) {
+    return {_dependants[node_id], std::map<size_t, std::set<size_t>>()};
   }
   void assert_dependency(dependency dep);
 

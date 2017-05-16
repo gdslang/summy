@@ -221,6 +221,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
         case gdsl::rreil::BRANCH_HINT_CALL: {
           transfer_f = [=](size_t from_ctx) {
             cout << "FROM: " << from << ", FROM_CTX: " << from_ctx << endl;
+            if(from == 528 && from_ctx != 0) __builtin_trap();
             shared_ptr<global_state> state_c = get_sub(from, from_ctx);
             summary_memory_state *mstate = state_c->get_mstate();
 
@@ -427,7 +428,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             //              cout << "NOOOO BOTTOM :-/!" << endl;
 
             //            cout << *summarized << endl;
-                      
+
 
             return default_context(
               shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr())),
@@ -454,10 +455,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                 assert_dependency(gen_dependency(to, caller));
               }
             }
-            /*
-             * Todo: Updates to all contexts?!
-             */
-            return get_ctxful(from); //default_context(state_c, 0);
+            return default_context(state_c, from_ctx);
           };
           break;
         }
@@ -585,7 +583,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
               }
             }
           };
-          
+
           cout << "TABULATING at " << from << " in context " << from_ctx << endl;
 
           auto tabulate_all = [&]() {
@@ -608,7 +606,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
                   start_value(vs_finite::single((int64_t)address)));
                 for(auto assignment : assignments_set)
                   assignment.propagate(state_ctx->get_mstate());
-                
+
                 cout << *state_ctx << endl;
 
                 state_map_new[context] = state_ctx;
@@ -661,6 +659,19 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 
 void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
   constraints[to].erase(from);
+}
+
+fp_analysis::depdant_desc analysis::summary_dstack::dependants(size_t node_id) {
+  depdant_desc result;
+  bool end_node = get_cfg()->out_edge_payloads(node_id)->size() == 0;
+  
+  if(end_node)
+    for(size_t depdant : _dependants[node_id])
+      for(auto &ctx_mapping : state[depdant])
+        result.context_deps[ctx_mapping.first].insert(depdant);
+  else
+    result.context_free_deps = _dependants[node_id];
+  return result;
 }
 
 dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {

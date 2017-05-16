@@ -111,6 +111,7 @@ private:
   void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   void remove_constraint(size_t from, size_t to);
+  fp_analysis::depdant_desc dependants(size_t node_id);
   dependency gen_dependency(size_t from, size_t to);
   void init_state(summy::vs_shared_t f_addr);
   void init_state();
