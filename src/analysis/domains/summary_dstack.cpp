@@ -166,7 +166,9 @@ void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, 
   if(!includes(
        fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
     fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
-    _dirty_nodes.insert(fd.head_id);
+    for(auto ctx_mapping : state[fd.head_id])
+      _dirty_nodes.context_deps[ctx_mapping.first].insert(fd.head_id);
+    
     //     cout << "Added dirty node " << fd.head_id << " for address 0x" << std::hex << f_addr <<
     //     std::dec
     //          << " because of reqs..." << endl;
@@ -224,7 +226,9 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
             summary_memory_state *mstate = state_c->get_mstate();
 
             for(auto edge_mapping : *cfg->out_edge_payloads(to))
-              _dirty_nodes.insert(edge_mapping.first);
+              for(auto ctx_mapping : state[edge_mapping.first])
+//                 _dirty_nodes.context_deps[ctx_mapping.first].insert(edge_mapping.first);
+                _dirty_nodes.context_free_deps.insert(edge_mapping.first);
 
             //            cout << *mstate << endl;
 
@@ -659,7 +663,7 @@ void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
   constraints[to].erase(from);
 }
 
-fp_analysis::depdant_desc analysis::summary_dstack::dependants(size_t node_id) {
+depdant_desc analysis::summary_dstack::dependants(size_t node_id) {
   depdant_desc result;
   bool end_node = get_cfg()->out_edge_payloads(node_id)->size() == 0;
 
@@ -894,10 +898,8 @@ node_compare_t analysis::summary_dstack::get_fixpoint_node_comparer() {
   };
 }
 
-std::set<analysis_node> analysis::summary_dstack::dirty_nodes() {
-  set<analysis_node> dirty_nodes = this->_dirty_nodes;
-  this->_dirty_nodes.clear();
-  return dirty_nodes;
+depdant_desc analysis::summary_dstack::dirty_nodes() {
+  return std::move(this->_dirty_nodes);
 }
 
 void analysis::summary_dstack::check_consistency() {

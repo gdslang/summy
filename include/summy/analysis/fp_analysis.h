@@ -23,9 +23,12 @@ using std::shared_ptr;
 
 namespace analysis {
 
+using node_id_t = size_t;
+using context_t = size_t;
+  
 struct analysis_node {
-  size_t id;
-  size_t context;
+  node_id_t id;
+  context_t context;
 
   bool operator<(analysis_node const &other) const {
     if(this->id < other.id)
@@ -62,6 +65,33 @@ inline std::map<size_t, std::shared_ptr<domain_state>> default_context(
 inline std::map<size_t, std::shared_ptr<domain_state>> empty_context_map() {
   return std::map<size_t, std::shared_ptr<domain_state>>();
 }
+
+struct depdant_desc {
+  std::set<size_t> context_free_deps;
+  std::map<context_t, std::set<node_id_t>> context_deps;
+
+  depdant_desc(depdant_desc const &other) = delete;
+  depdant_desc operator=(depdant_desc const &other) = delete;
+
+  depdant_desc(depdant_desc &&other)
+      : context_free_deps(other.context_free_deps), context_deps(other.context_deps) {
+    other.context_free_deps.clear();
+    other.context_deps.clear();
+  }
+  
+  depdant_desc& operator=(depdant_desc &&other) {
+    this->context_free_deps = other.context_free_deps;
+    this->context_deps = other.context_deps;
+    other.context_free_deps.clear();
+    other.context_deps.clear();
+    return *this;
+  }
+  
+  depdant_desc() {}
+
+  depdant_desc(std::set<size_t> context_free_deps, std::map<size_t, std::set<size_t>> context_deps)
+      : context_free_deps(context_free_deps), context_deps(context_deps) {}
+};
 
 class fp_analysis {
 private:
@@ -115,10 +145,7 @@ public:
   }
   virtual void update(analysis_node node, shared_ptr<domain_state> state) = 0;
 
-  struct depdant_desc {
-    std::set<size_t> context_free_deps;
-    std::map<size_t, std::set<size_t>> context_deps;
-  };
+
   virtual depdant_desc dependants(size_t node_id) {
     return {_dependants[node_id], std::map<size_t, std::set<size_t>>()};
   }
@@ -129,8 +156,8 @@ public:
    * evaluation. This allows the analysis to tell the fixpoint engine to re-
    * evaluate additional nodes.
    */
-  virtual std::set<analysis_node> dirty_nodes() {
-    return std::set<analysis_node>();
+  virtual depdant_desc dirty_nodes() {
+    return depdant_desc();
   }
 
   virtual node_compare_t get_fixpoint_node_comparer();

@@ -64,7 +64,7 @@ private:
   std::shared_ptr<static_memory> sm;
   bool warnings;
   std::map<void *, function_desc> function_desc_map;
-  std::set<analysis_node> _dirty_nodes;
+  depdant_desc _dirty_nodes;
   //  caller::caller caller_analysis;
   state_t state;
   
@@ -114,7 +114,7 @@ private:
   void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   void remove_constraint(size_t from, size_t to);
-  fp_analysis::depdant_desc dependants(size_t node_id);
+  depdant_desc dependants(size_t node_id);
   dependency gen_dependency(size_t from, size_t to);
   void init_state(summy::vs_shared_t f_addr);
   void init_state();
@@ -147,7 +147,7 @@ public:
 
   node_compare_t get_fixpoint_node_comparer();
 
-  std::set<analysis_node> dirty_nodes();
+  depdant_desc dirty_nodes();
 
   virtual void check_consistency();
 
