@@ -168,39 +168,30 @@ void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, 
     fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
     for(auto ctx_mapping : state[fd.head_id])
       _dirty_nodes.context_deps[ctx_mapping.first].insert(fd.head_id);
-    
+
     //     cout << "Added dirty node " << fd.head_id << " for address 0x" << std::hex << f_addr <<
     //     std::dec
     //          << " because of reqs..." << endl;
   }
 }
 
-void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  //  cout << cfg->out_edge_payloads(from)->size() << endl;
-  //    cout << "Adding constraint from " << from << " to " << to << endl;
-  //    assert(from != 99 || to != 70);
-  node_visitor nv;
-  nv._([&](address_node *_) {
-    ref(from, nullopt);
-    ref(to, nullopt);
-  });
-  cfg->get_node_payload(to)->accept(nv);
+std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transform(
+  size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {
 
-  constraint_t transfer_f = [=](
-    size_t from_ctx) { return default_context(get_sub(from, from_ctx), from_ctx); };
+  std::map<size_t, std::shared_ptr<domain_state>> result =
+    default_context(get_sub(from, from_ctx), from_ctx);
   auto for_mutable = [&](function<void(summary_memory_state *)> cb) {
-    transfer_f = [=](size_t from_ctx) {
-      shared_ptr<global_state> state_c = get_sub(from, from_ctx);
-      summary_memory_state *mstate_new = state_c->get_mstate()->copy();
-      cb(mstate_new);
-      shared_ptr<global_state> global_new =
-        shared_ptr<global_state>(new global_state(mstate_new, state_c->get_f_addr()));
-      return default_context(global_new, from_ctx);
-    };
+    shared_ptr<global_state> state_c = get_sub(from, from_ctx);
+    summary_memory_state *mstate_new = state_c->get_mstate()->copy();
+    cb(mstate_new);
+    shared_ptr<global_state> global_new =
+      shared_ptr<global_state>(new global_state(mstate_new, state_c->get_f_addr()));
+    result = default_context(global_new, from_ctx);
   };
   auto for_update = [&](auto *update) {
     for_mutable([=](summary_memory_state *state_new) { state_new->update(update); });
   };
+
   edge_visitor ev;
 
   //  statement *_stmt =  NULL;
@@ -221,304 +212,295 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
       ref(to, nullopt);
       switch(b->get_hint()) {
         case gdsl::rreil::BRANCH_HINT_CALL: {
-          transfer_f = [=](size_t from_ctx) {
-            shared_ptr<global_state> state_c = get_sub(from, from_ctx);
-            summary_memory_state *mstate = state_c->get_mstate();
+          shared_ptr<global_state> state_c = get_sub(from, from_ctx);
+          summary_memory_state *mstate = state_c->get_mstate();
 
-            for(auto edge_mapping : *cfg->out_edge_payloads(to))
-              for(auto ctx_mapping : state[edge_mapping.first])
-//                 _dirty_nodes.context_deps[ctx_mapping.first].insert(edge_mapping.first);
-                _dirty_nodes.context_free_deps.insert(edge_mapping.first);
+          for(auto edge_mapping : *cfg->out_edge_payloads(to))
+            for(auto ctx_mapping : state[edge_mapping.first])
+              //                 _dirty_nodes.context_deps[ctx_mapping.first].insert(edge_mapping.first);
+              _dirty_nodes.context_free_deps.insert(edge_mapping.first);
 
-            //            cout << *mstate << endl;
+          //            cout << *mstate << endl;
 
-            set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
-            assert(f_addrs.size() > 0);
-            size_t current_min_calls_sz = 0;
-            for(auto f_addr : f_addrs) {
-              auto f_min_calls_sz = function_desc_map.at(f_addr).min_calls_sz;
-              if(f_min_calls_sz > current_min_calls_sz) current_min_calls_sz = f_min_calls_sz;
+          set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
+          assert(f_addrs.size() > 0);
+          size_t current_min_calls_sz = 0;
+          for(auto f_addr : f_addrs) {
+            auto f_min_calls_sz = function_desc_map.at(f_addr).min_calls_sz;
+            if(f_min_calls_sz > current_min_calls_sz) current_min_calls_sz = f_min_calls_sz;
+          }
+
+          optional<shared_ptr<summary_memory_state>> summary;
+          bool directly_recursive = false;
+
+          /*
+           * Todo: This is an expensive hack to recognize recursion
+           */
+          set<void *> callers_addrs_trans = f_addrs;
+          vector<size_t> callers_rest;
+          callers_t caller_callers = get_callers(state_c);
+          callers_rest.insert(callers_rest.begin(), caller_callers.begin(), caller_callers.end());
+          while(!callers_rest.empty()) {
+            size_t caller = callers_rest.back();
+            callers_rest.pop_back();
+            set<void *> caller_f_addrs = unpack_f_addrs(get_sub(caller, from_ctx)->get_f_addr());
+
+            set<void *> intersection;
+            set_intersection(caller_f_addrs.begin(), caller_f_addrs.end(),
+              callers_addrs_trans.begin(), callers_addrs_trans.end(),
+              inserter(intersection, intersection.begin()));
+            if(intersection.size() > 0) {
+              continue;
             }
 
-            optional<shared_ptr<summary_memory_state>> summary;
-            bool directly_recursive = false;
+            callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
+            callers_t caller_caller_callers = get_callers(get_sub(caller, from_ctx));
+            callers_rest.insert(
+              callers_rest.begin(), caller_caller_callers.begin(), caller_caller_callers.end());
+          }
 
-            /*
-             * Todo: This is an expensive hack to recognize recursion
-             */
-            set<void *> callers_addrs_trans = f_addrs;
-            vector<size_t> callers_rest;
-            callers_t caller_callers = get_callers(state_c);
-            callers_rest.insert(callers_rest.begin(), caller_callers.begin(), caller_callers.end());
-            while(!callers_rest.empty()) {
-              size_t caller = callers_rest.back();
-              callers_rest.pop_back();
-              set<void *> caller_f_addrs = unpack_f_addrs(get_sub(caller, from_ctx)->get_f_addr());
-
-              set<void *> intersection;
-              set_intersection(caller_f_addrs.begin(), caller_f_addrs.end(),
-                callers_addrs_trans.begin(), callers_addrs_trans.end(),
-                inserter(intersection, intersection.begin()));
-              if(intersection.size() > 0) {
-                continue;
+          ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
+          id_set_t field_req_ids_new;
+          //                        cout << *b->get_target() << endl;
+          for(auto ptr : callee_aliases) {
+            summy::rreil::id_visitor idv;
+            bool is_valid_code_address = false;
+            void *text_address;
+            idv._([&](sm_id const *sid) {
+              if(sid->get_symbol() == ".text" || sid->get_symbol() == ".plt") {
+                is_valid_code_address = true;
+                text_address = sid->get_address();
               }
-
-              callers_addrs_trans.insert(caller_f_addrs.begin(), caller_f_addrs.end());
-              callers_t caller_caller_callers = get_callers(get_sub(caller, from_ctx));
-              callers_rest.insert(
-                callers_rest.begin(), caller_caller_callers.begin(), caller_caller_callers.end());
-            }
-
-            ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
-            id_set_t field_req_ids_new;
-            //                        cout << *b->get_target() << endl;
-            for(auto ptr : callee_aliases) {
-              summy::rreil::id_visitor idv;
-              bool is_valid_code_address = false;
-              void *text_address;
-              idv._([&](sm_id const *sid) {
-                if(sid->get_symbol() == ".text" || sid->get_symbol() == ".plt") {
-                  is_valid_code_address = true;
-                  text_address = sid->get_address();
+            });
+            idv._([&](ptr_memory_id const *) {
+              //                cout << "There seems to be an unkown function pointer :/" << endl;
+              field_req_ids_new.insert(ptr.id);
+            });
+            ptr.id->accept(idv);
+            if(!is_valid_code_address) continue;
+            value_set_visitor vsv;
+            vsv._([&](vs_finite const *vsf) {
+              //                cout << "-----" << endl;
+              for(int64_t offset : vsf->get_elements()) {
+                void *address = (char *)text_address + offset;
+                node_targets[from].insert((size_t)address);
+                //                  cout << "Looking up summary for " << hex << address << dec <<
+                //                  endl;
+                if(callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
+                  //                    cout << "Warning: Ignoring recursive call." << endl;
+                  continue;
                 }
-              });
-              idv._([&](ptr_memory_id const *) {
-                //                cout << "There seems to be an unkown function pointer :/" << endl;
-                field_req_ids_new.insert(ptr.id);
-              });
-              ptr.id->accept(idv);
-              if(!is_valid_code_address) continue;
-              value_set_visitor vsv;
-              vsv._([&](vs_finite const *vsf) {
-                //                cout << "-----" << endl;
-                for(int64_t offset : vsf->get_elements()) {
-                  void *address = (char *)text_address + offset;
-                  node_targets[from].insert((size_t)address);
-                  //                  cout << "Looking up summary for " << hex << address << dec <<
-                  //                  endl;
-                  if(callers_addrs_trans.find(address) != callers_addrs_trans.end()) {
-                    //                    cout << "Warning: Ignoring recursive call." << endl;
-                    continue;
-                  }
-                  auto add_summary = [&](summary_memory_state *next) {
-                    if(summary)
-                      summary = shared_ptr<summary_memory_state>(summary.value()->join(next, to));
-                    else
-                      summary = shared_ptr<summary_memory_state>(next->copy());
-                  };
-                  optional<summary_t> stub = get_stub(address, from);
-                  if(stub) {
-                    add_summary(stub.value().get());
-                  } else {
-                    auto fd_it = function_desc_map.find(address);
-                    if(fd_it != function_desc_map.end()) {
-                      auto &f_desc = fd_it->second;
-                      for(size_t s_node : f_desc.summary_nodes) {
-                        auto tabulate_all = [&]() {
-                          std::vector<std::set<mempath_assignment>> assignments_sets =
-                            tabulation_keys(f_desc, state_c->get_mstate());
-                          for(auto &assignment_set : assignments_sets) {
-                            size_t ctx;
-                            if(assignment_set.size() == 0)
-                              ctx = 0; // No HBs => default context
-                            else {
-                              auto ctx_it = f_desc.contexts.find(assignment_set);
-                              if(ctx_it == f_desc.contexts.end())
-                                continue; // Todo: What has happened here?
-                              ctx = ctx_it->second;
-                            }
-
-                            add_summary(get_sub(s_node, ctx)->get_mstate());
-                            if(state_c->get_f_addr() == get_sub(s_node, ctx)->get_f_addr())
-                              directly_recursive = true;
+                auto add_summary = [&](summary_memory_state *next) {
+                  if(summary)
+                    summary = shared_ptr<summary_memory_state>(summary.value()->join(next, to));
+                  else
+                    summary = shared_ptr<summary_memory_state>(next->copy());
+                };
+                optional<summary_t> stub = get_stub(address, from);
+                if(stub) {
+                  add_summary(stub.value().get());
+                } else {
+                  auto fd_it = function_desc_map.find(address);
+                  if(fd_it != function_desc_map.end()) {
+                    auto &f_desc = fd_it->second;
+                    for(size_t s_node : f_desc.summary_nodes) {
+                      auto tabulate_all = [&]() {
+                        std::vector<std::set<mempath_assignment>> assignments_sets =
+                          tabulation_keys(f_desc, state_c->get_mstate());
+                        for(auto &assignment_set : assignments_sets) {
+                          size_t ctx;
+                          if(assignment_set.size() == 0)
+                            ctx = 0; // No HBs => default context
+                          else {
+                            auto ctx_it = f_desc.contexts.find(assignment_set);
+                            if(ctx_it == f_desc.contexts.end())
+                              continue; // Todo: What has happened here?
+                            ctx = ctx_it->second;
                           }
-                        };
 
-                        auto accumulate_all = [&]() {
-                          add_summary(get_sub(s_node, from_ctx)->get_mstate());
-                          if(state_c->get_f_addr() == get_sub(s_node, from_ctx)->get_f_addr())
+                          add_summary(get_sub(s_node, ctx)->get_mstate());
+                          if(state_c->get_f_addr() == get_sub(s_node, ctx)->get_f_addr())
                             directly_recursive = true;
-                        };
+                        }
+                      };
 
-                        if(tabulation)
-                          tabulate_all();
-                        else
-                          accumulate_all();
-                      }
+                      auto accumulate_all = [&]() {
+                        add_summary(get_sub(s_node, from_ctx)->get_mstate());
+                        if(state_c->get_f_addr() == get_sub(s_node, from_ctx)->get_f_addr())
+                          directly_recursive = true;
+                      };
 
-                      //                    cout << address << endl;
-                      //                    cout << "=====================================" << endl;
-                      //                    if(this->state.size() > 91)
-                      //            cout << *this->state[91]->get_mstate() << endl;
-                      //                    cout << "==================================+++" << endl;
-                      //                    cout << *f_desc.summary.get() << endl;
-
-                      f_desc.min_calls_sz = std::max(f_desc.min_calls_sz, current_min_calls_sz);
-
-                      size_t head_id = fd_it->second.head_id;
-                      cfg::in_edges_t const &head_in = cfg->in_edges(head_id);
-                      if(head_in.find(to) == head_in.end()) {
-                        // cout << "New edge from " << to << " to " << head_id << endl;
-                        cfg->update_edge(to, head_id, new call_edge(true));
-                      }
-                    } else {
-                      size_t an_id = cfg->create_node([&](size_t id) {
-                        return new address_node(id, (size_t)address, cfg::DECODABLE);
-                      });
-                      function_desc_map.insert(
-                        make_pair(address, function_desc(current_min_calls_sz + 1, an_id)));
-                      // cout << "New edge from " << to << " to " << an_id << endl;
-                      cfg->update_edge(to, an_id, new call_edge(true));
+                      if(tabulation)
+                        tabulate_all();
+                      else
+                        accumulate_all();
                     }
+
+                    //                    cout << address << endl;
+                    //                    cout << "=====================================" << endl;
+                    //                    if(this->state.size() > 91)
+                    //            cout << *this->state[91]->get_mstate() << endl;
+                    //                    cout << "==================================+++" << endl;
+                    //                    cout << *f_desc.summary.get() << endl;
+
+                    f_desc.min_calls_sz = std::max(f_desc.min_calls_sz, current_min_calls_sz);
+
+                    size_t head_id = fd_it->second.head_id;
+                    cfg::in_edges_t const &head_in = cfg->in_edges(head_id);
+                    if(head_in.find(to) == head_in.end()) {
+                      // cout << "New edge from " << to << " to " << head_id << endl;
+                      cfg->update_edge(to, head_id, new call_edge(true));
+                    }
+                  } else {
+                    size_t an_id = cfg->create_node([&](
+                      size_t id) { return new address_node(id, (size_t)address, cfg::DECODABLE); });
+                    function_desc_map.insert(
+                      make_pair(address, function_desc(current_min_calls_sz + 1, an_id)));
+                    // cout << "New edge from " << to << " to " << an_id << endl;
+                    cfg->update_edge(to, an_id, new call_edge(true));
                   }
                 }
-                //                cout << "-----" << endl;
-              });
-              ptr.offset->accept(vsv);
-              //              cout << ptr << endl;
-            }
-            cfg->commit_updates();
+              }
+              //                cout << "-----" << endl;
+            });
+            ptr.offset->accept(vsv);
+            //              cout << ptr << endl;
+          }
+          cfg->commit_updates();
 
-            if(field_req_ids_new.size() > unique_hbs[from])
-              unique_hbs[from] = field_req_ids_new.size();
+          if(field_req_ids_new.size() > unique_hbs[from])
+            unique_hbs[from] = field_req_ids_new.size();
 
-            set<mempath> field_reqs_new;
-            size_t path_construction_errors =
-              mempath::from_aliases(field_reqs_new, field_req_ids_new, mstate);
-            this->path_construction_errors[from] = path_construction_errors;
-            //             for(auto &req : field_reqs_new)
-            //               std::cout << req << std::endl;
-            //            propagate_reqs(f_addr, mps);
-            for(auto f_addr : f_addrs)
-              propagate_reqs(field_reqs_new, f_addr);
+          set<mempath> field_reqs_new;
+          size_t path_construction_errors =
+            mempath::from_aliases(field_reqs_new, field_req_ids_new, mstate);
+          this->path_construction_errors[from] = path_construction_errors;
+          //             for(auto &req : field_reqs_new)
+          //               std::cout << req << std::endl;
+          //            propagate_reqs(f_addr, mps);
+          for(auto f_addr : f_addrs)
+            propagate_reqs(field_reqs_new, f_addr);
 
-            //            cout << "Need to apply the following summary: " << endl;
-            //            cout << *summary << endl;
+          //            cout << "Need to apply the following summary: " << endl;
+          //            cout << *summary << endl;
 
-            shared_ptr<summary_memory_state> bottom =
-              shared_ptr<summary_memory_state>(sms_bottom());
-            if(directly_recursive && summary)
-              /*
-               * Directly recursive call => We have to rename variables!
-               */
-              summary.value()->rename();
-            //                        if(summary)
-            //                          cout << *summary.value();
-            //                        if(summary)
-            //                          cout << "We have a summary!" << endl;
-            //                        else
-            //                          cout << "We don't have a summary :-(." << endl;
-            //            else
-            //              cout << "We don't have a summary :-/" << endl;
+          shared_ptr<summary_memory_state> bottom = shared_ptr<summary_memory_state>(sms_bottom());
+          if(directly_recursive && summary)
+            /*
+             * Directly recursive call => We have to rename variables!
+             */
+            summary.value()->rename();
+          //                        if(summary)
+          //                          cout << *summary.value();
+          //                        if(summary)
+          //                          cout << "We have a summary!" << endl;
+          //                        else
+          //                          cout << "We don't have a summary :-(." << endl;
+          //            else
+          //              cout << "We don't have a summary :-/" << endl;
 
-            //            summary_memory_state *summarized = summary ? apply_summary(mstate,
-            //            summary.value().get()) :
-            //            bottom->copy();
+          //            summary_memory_state *summarized = summary ? apply_summary(mstate,
+          //            summary.value().get()) :
+          //            bottom->copy();
 
-            summary_memory_state *summarized =
-              summary ? summary_application(mstate, summary.value().get()).apply_summary()
-                      : mstate->copy();
+          summary_memory_state *summarized =
+            summary ? summary_application(mstate, summary.value().get()).apply_summary()
+                    : mstate->copy();
 
-            //            summary_memory_state *summarized;
-            //            if(summary)
-            //              summarized = apply_summary(mstate, summary.value().get());
-            //            else {
-            //              summarized = mstate->copy();
-            //              summarized->topify();
-            //            }
+          //            summary_memory_state *summarized;
+          //            if(summary)
+          //              summarized = apply_summary(mstate, summary.value().get());
+          //            else {
+          //              summarized = mstate->copy();
+          //              summarized->topify();
+          //            }
 
-            //            if(summarized->is_bottom())
-            //              cout << "BOTTOM!" << endl;
-            //            else
-            //              cout << "NOOOO BOTTOM :-/!" << endl;
+          //            if(summarized->is_bottom())
+          //              cout << "BOTTOM!" << endl;
+          //            else
+          //              cout << "NOOOO BOTTOM :-/!" << endl;
 
-            //            cout << *summarized << endl;
+          //            cout << *summarized << endl;
 
 
-            return default_context(
-              shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr())),
-              from_ctx);
-          };
+          result = default_context(
+            shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr())),
+            from_ctx);
           break;
         }
         case gdsl::rreil::BRANCH_HINT_RET: {
-          transfer_f = [=](size_t from_ctx) {
-            shared_ptr<global_state> state_c = get_sub(from, from_ctx);
-            set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
-            assert(f_addrs.size() > 0);
-            for(auto f_addr : f_addrs) {
-              auto fd_it = function_desc_map.find(f_addr);
-              //            if(summary_it == summary_map.end())
-              //              summary_map[state_c->get_f_addr()] =
-              //              shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
-              //            else
-              fd_it->second.summary_nodes.insert(to);
-              callers_t caller_callers = get_callers(state_c);
-              for(size_t caller : caller_callers) {
-                //                cout << "Return-propagating from " << to << " / " << hex << f_addr
-                //                << dec << " to " << caller << endl;
-                assert_dependency(gen_dependency(to, caller));
-              }
+          shared_ptr<global_state> state_c = get_sub(from, from_ctx);
+          set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
+          assert(f_addrs.size() > 0);
+          for(auto f_addr : f_addrs) {
+            auto fd_it = function_desc_map.find(f_addr);
+            //            if(summary_it == summary_map.end())
+            //              summary_map[state_c->get_f_addr()] =
+            //              shared_ptr<summary_memory_state>(state_c->get_mstate()->copy());
+            //            else
+            fd_it->second.summary_nodes.insert(to);
+            callers_t caller_callers = get_callers(state_c);
+            for(size_t caller : caller_callers) {
+              //                cout << "Return-propagating from " << to << " / " << hex << f_addr
+              //                << dec << " to " << caller << endl;
+              assert_dependency(gen_dependency(to, caller));
             }
-            return default_context(state_c, from_ctx);
-          };
+          }
+          result = default_context(state_c, from_ctx);
           break;
         }
         case gdsl::rreil::BRANCH_HINT_JUMP: {
-          transfer_f = [=](size_t from_ctx) {
-            shared_ptr<global_state> state_c = get_sub(from, from_ctx);
-            summary_memory_state *mstate = state_c->get_mstate();
-            ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
+          shared_ptr<global_state> state_c = get_sub(from, from_ctx);
+          summary_memory_state *mstate = state_c->get_mstate();
+          ptr_set_t callee_aliases = mstate->queryAls(&b->get_target());
 
-            //                        cout << *b->get_target() << endl;
-            //                        cout << callee_aliases << endl;
-            for(auto ptr : callee_aliases) {
+          //                        cout << *b->get_target() << endl;
+          //                        cout << callee_aliases << endl;
+          for(auto ptr : callee_aliases) {
 
-              summy::rreil::id_visitor idv;
-              bool is_valid_code_address = false;
-              void *text_address;
-              idv._([&](sm_id const *sid) {
-                if(sid->get_symbol() == ".text" || sid->get_symbol() == ".plt") {
-                  is_valid_code_address = true;
-                  text_address = sid->get_address();
-                }
-              });
-              ptr.id->accept(idv);
-              if(!is_valid_code_address) continue;
-
-              /*
-               * Todo: Find address nodes globally and reuse them
-               */
-              set<size_t> child_addresses;
-              for(auto edge_it : *cfg->out_edge_payloads(to)) {
-                node_visitor nv;
-                nv._([&](address_node *an) { child_addresses.insert(an->get_address()); });
-                cfg->get_node_payload(edge_it.first)->accept(nv);
+            summy::rreil::id_visitor idv;
+            bool is_valid_code_address = false;
+            void *text_address;
+            idv._([&](sm_id const *sid) {
+              if(sid->get_symbol() == ".text" || sid->get_symbol() == ".plt") {
+                is_valid_code_address = true;
+                text_address = sid->get_address();
               }
+            });
+            ptr.id->accept(idv);
+            if(!is_valid_code_address) continue;
 
-
-              value_set_visitor vsv;
-              vsv._([&](vs_finite const *vsf) {
-                //                cout << "-----" << endl;
-                for(int64_t offset : vsf->get_elements()) {
-                  size_t address = (size_t)text_address + offset;
-                  node_targets[from].insert(address);
-                  if(child_addresses.find(address) == child_addresses.end()) {
-                    size_t child_id = cfg->create_node(
-                      [&](size_t id) { return new address_node(id, address, cfg::DECODABLE); });
-                    cfg->update_edge(to, child_id, new cfg::edge());
-                  }
-                }
-                //                cout << "Adding " << vsf->get_elements().size() << " many
-                //                dests..." << endl;
-                //                cout << "-----" << endl;
-              });
-              ptr.offset->accept(vsv);
+            /*
+             * Todo: Find address nodes globally and reuse them
+             */
+            set<size_t> child_addresses;
+            for(auto edge_it : *cfg->out_edge_payloads(to)) {
+              node_visitor nv;
+              nv._([&](address_node *an) { child_addresses.insert(an->get_address()); });
+              cfg->get_node_payload(edge_it.first)->accept(nv);
             }
-            cfg->commit_updates();
-            return default_context(state_c, from_ctx);
-          };
-          break;
+
+
+            value_set_visitor vsv;
+            vsv._([&](vs_finite const *vsf) {
+              //                cout << "-----" << endl;
+              for(int64_t offset : vsf->get_elements()) {
+                size_t address = (size_t)text_address + offset;
+                node_targets[from].insert(address);
+                if(child_addresses.find(address) == child_addresses.end()) {
+                  size_t child_id = cfg->create_node(
+                    [&](size_t id) { return new address_node(id, address, cfg::DECODABLE); });
+                  cfg->update_edge(to, child_id, new cfg::edge());
+                }
+              }
+              //                cout << "Adding " << vsf->get_elements().size() << " many
+              //                dests..." << endl;
+              //                cout << "-----" << endl;
+            });
+            ptr.offset->accept(vsv);
+          }
+          cfg->commit_updates();
+          result = default_context(state_c, from_ctx);
         }
       }
     });
@@ -537,130 +519,152 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
     ref(from, nullopt);
     ref(to, nullopt);
     //    _call = true;
-    transfer_f = [=](size_t from_ctx) {
-      std::map<size_t, shared_ptr<domain_state>> state_map_new;
-      if(edge->is_target_edge()) {
-        node *dest = cfg->get_node_payload(to);
-        bool is_addr_node = false;
-        void *address;
-        node_visitor nv;
-        nv._([&](address_node *an) {
-          is_addr_node = true;
-          address = (void *)an->get_address();
-        });
-        dest->accept(nv);
-        assert(is_addr_node);
-        auto state_new =
-          dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
+    std::map<size_t, shared_ptr<domain_state>> state_map_new;
+    if(edge->is_target_edge()) {
+      node *dest = cfg->get_node_payload(to);
+      bool is_addr_node = false;
+      void *address;
+      node_visitor nv;
+      nv._([&](address_node *an) {
+        is_addr_node = true;
+        address = (void *)an->get_address();
+      });
+      dest->accept(nv);
+      assert(is_addr_node);
+      auto state_new =
+        dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
 
-        auto &desc = this->function_desc_map.at(address);
-        if(desc.field_reqs.size() > 0) {
-          auto const &in_edges = cfg->in_edges(from);
-          assert(in_edges.size() == 1);
-          size_t from_parent = *in_edges.begin();
+      auto &desc = this->function_desc_map.at(address);
+      if(desc.field_reqs.size() > 0) {
+        auto const &in_edges = cfg->in_edges(from);
+        assert(in_edges.size() == 1);
+        size_t from_parent = *in_edges.begin();
 
 
-          auto accumulate_all = [&]() {
-            //          cout << "This call requires the following fields:" << endl;
-            //           cout << "Reqs for call to " << address << endl;
-            for(auto &f : desc.field_reqs) {
-              //                        cout << f << endl;
-              optional<set<mempath>> mempaths_new;
-              auto prop_res = f.propagate(mempaths_new,
-                get_sub(from_parent, from_ctx)->get_mstate(), state_new->get_mstate());
+        auto accumulate_all = [&]() {
+          //          cout << "This call requires the following fields:" << endl;
+          //           cout << "Reqs for call to " << address << endl;
+          for(auto &f : desc.field_reqs) {
+            //                        cout << f << endl;
+            optional<set<mempath>> mempaths_new;
+            auto prop_res = f.propagate(
+              mempaths_new, get_sub(from_parent, from_ctx)->get_mstate(), state_new->get_mstate());
 
-              for(auto ptr : prop_res.constant_ptrs) {
-                //               cout << "\tNew immediate ptr: " << ptr << endl;
-                (this->pointer_props[(size_t)address])[f].insert(ptr);
-                ((this->hb_counts[to]))[f].insert(ptr);
-              }
-              this->path_construction_errors[from] = prop_res.path_construction_errors;
-
-              if(mempaths_new) {
-                //               cout << "Propagating..." << endl;
-                //               for(auto p : mempaths_new.value())
-                //                 cout << p << endl;
-
-                set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent, from_ctx)->get_f_addr());
-                assert(f_addrs.size() > 0);
-                for(auto f_addr : f_addrs)
-                  propagate_reqs(mempaths_new.value(), f_addr);
-              }
+            for(auto ptr : prop_res.constant_ptrs) {
+              //               cout << "\tNew immediate ptr: " << ptr << endl;
+              (this->pointer_props[(size_t)address])[f].insert(ptr);
+              ((this->hb_counts[to]))[f].insert(ptr);
             }
-          };
+            this->path_construction_errors[from] = prop_res.path_construction_errors;
 
-          auto tabulate_all = [&]() {
-            std::vector<std::set<mempath_assignment>> assignments_sets =
-              tabulation_keys(desc, get_sub(from_parent, from_ctx)->get_mstate());
-            for(auto assignments_set : assignments_sets) {
-              if(assignments_set.size() == 0) {
-                /*
-                 * No tabulation without field requests
-                 */
-                continue;
-              }
-              auto desc_it = desc.contexts.find(assignments_set);
-              if(desc_it == desc.contexts.end()) {
-                size_t context = desc.contexts.size() + 1;
-                desc.contexts[assignments_set] = context;
+            if(mempaths_new) {
+              //               cout << "Propagating..." << endl;
+              //               for(auto p : mempaths_new.value())
+              //                 cout << p << endl;
 
-                auto state_ctx = dynamic_pointer_cast<global_state>(
-                  start_value(vs_finite::single((int64_t)address)));
-                for(auto assignment : assignments_set)
-                  assignment.propagate(state_ctx->get_mstate());
-
-                state_map_new[context] = state_ctx;
-              }
+              set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent, from_ctx)->get_f_addr());
+              assert(f_addrs.size() > 0);
+              for(auto f_addr : f_addrs)
+                propagate_reqs(mempaths_new.value(), f_addr);
             }
-          };
-
-          if(tabulation)
-            tabulate_all();
-          else
-            accumulate_all();
-        }
-
-        state_map_new[from_ctx] = state_new;
-      } else {
-        auto state_new = get_sub(from, from_ctx);
-        state_map_new[from_ctx] = state_new;
-        if(!state_new->get_mstate()->is_bottom()) {
-          bool needs_decoding = false;
-          size_t addr;
-          node_visitor nv;
-          nv._([&](address_node *av) {
-            if(av->get_decs() != cfg::DECODED && av->get_decs() != cfg::DECODABLE) {
-              needs_decoding = true;
-              addr = av->get_address();
-            }
-          });
-          this->cfg->get_node_payload(to)->accept(nv);
-
-          if(needs_decoding) {
-            this->cfg->replace_node_payload(new address_node(to, addr, cfg::DECODABLE));
-            /**
-             * Todo: The node state is replaced...?
-             */
-            this->cfg->commit_updates();
           }
+        };
+
+        auto tabulate_all = [&]() {
+          std::vector<std::set<mempath_assignment>> assignments_sets =
+            tabulation_keys(desc, get_sub(from_parent, from_ctx)->get_mstate());
+          for(auto assignments_set : assignments_sets) {
+            if(assignments_set.size() == 0) {
+              /*
+               * No tabulation without field requests
+               */
+              continue;
+            }
+            auto desc_it = desc.contexts.find(assignments_set);
+            if(desc_it == desc.contexts.end()) {
+              size_t context = desc.contexts.size() + 1;
+              desc.contexts[assignments_set] = context;
+
+              auto state_ctx = dynamic_pointer_cast<global_state>(
+                start_value(vs_finite::single((int64_t)address)));
+              for(auto assignment : assignments_set)
+                assignment.propagate(state_ctx->get_mstate());
+
+              state_map_new[context] = state_ctx;
+            }
+          }
+        };
+
+        if(tabulation)
+          tabulate_all();
+        else
+          accumulate_all();
+      }
+
+      state_map_new[from_ctx] = state_new;
+    } else {
+      auto state_new = get_sub(from, from_ctx);
+      state_map_new[from_ctx] = state_new;
+      if(!state_new->get_mstate()->is_bottom()) {
+        bool needs_decoding = false;
+        size_t addr;
+        node_visitor nv;
+        nv._([&](address_node *av) {
+          if(av->get_decs() != cfg::DECODED && av->get_decs() != cfg::DECODABLE) {
+            needs_decoding = true;
+            addr = av->get_address();
+          }
+        });
+        this->cfg->get_node_payload(to)->accept(nv);
+
+        if(needs_decoding) {
+          this->cfg->replace_node_payload(new address_node(to, addr, cfg::DECODABLE));
+          /**
+           * Todo: The node state is replaced...?
+           */
+          this->cfg->commit_updates();
         }
       }
-      //      this->cfg->commit_updates();
-      return state_map_new;
-    };
+    }
+    //      this->cfg->commit_updates();
+    result = state_map_new;
   });
   e->accept(ev);
-  (constraints[to])[from] = [=](size_t ctx) {
-    //    if(_stmt != NULL)
-    //      cout << *_stmt << endl;
-    //    cout << "cond: " << _cond << endl;
-    //    cout << "call: " << _call << endl;
-    return transfer_f(ctx);
-  };
+
+  return result;
+}
+
+std::map<size_t, constraint_t> analysis::summary_dstack::constraints_at(size_t to) {
+  std::map<size_t, constraint_t> r;
+  for(auto from : get_cfg()->in_edges(to)) {
+    auto payload = get_cfg()->out_edge_payloads(from)->at(to);
+    r[from] = [=](size_t ctx) { return transform(from, to, payload, ctx); };
+  }
+  return r;
+}
+
+void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
+  //  cout << cfg->out_edge_payloads(from)->size() << endl;
+  //    cout << "Adding constraint from " << from << " to " << to << endl;
+  //    assert(from != 99 || to != 70);
+  node_visitor nv;
+  nv._([&](address_node *_) {
+    ref(from, nullopt);
+    ref(to, nullopt);
+  });
+  cfg->get_node_payload(to)->accept(nv);
+
+  //(constraints[to])[from] = [=](size_t ctx) {
+  //    if(_stmt != NULL)
+  //      cout << *_stmt << endl;
+  //    cout << "cond: " << _cond << endl;
+  //    cout << "call: " << _call << endl;
+  //     return transform(from, to, e, ctx);
+  //   };
 }
 
 void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
-  constraints[to].erase(from);
+//   constraints[to].erase(from);
 }
 
 depdant_desc analysis::summary_dstack::dependants(size_t node_id) {

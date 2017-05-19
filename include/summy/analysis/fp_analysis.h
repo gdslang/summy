@@ -25,7 +25,7 @@ namespace analysis {
 
 using node_id_t = size_t;
 using context_t = size_t;
-  
+
 struct analysis_node {
   node_id_t id;
   context_t context;
@@ -78,15 +78,15 @@ struct depdant_desc {
     other.context_free_deps.clear();
     other.context_deps.clear();
   }
-  
-  depdant_desc& operator=(depdant_desc &&other) {
+
+  depdant_desc &operator=(depdant_desc &&other) {
     this->context_free_deps = other.context_free_deps;
     this->context_deps = other.context_deps;
     other.context_free_deps.clear();
     other.context_deps.clear();
     return *this;
   }
-  
+
   depdant_desc() {}
 
   depdant_desc(std::set<size_t> context_free_deps, std::map<size_t, std::set<size_t>> context_deps)
@@ -103,11 +103,15 @@ public:
 protected:
   cfg::cfg *cfg;
 
+  [[deprecated]]
   std::map<size_t, std::map<size_t, constraint_t>> constraints;
+  
   dependants_t _dependants;
   std::set<analysis_node> fixpoint_pending;
 
+  [[deprecated]]
   virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e) = 0;
+  [[deprecated]]
   virtual void remove_constraint(size_t from, size_t to) = 0;
   /*
    * Generate a dependency for an edge from node "from" to node "to"
@@ -131,7 +135,7 @@ public:
   void record_updates();
   bool record_stop_commit();
 
-  virtual std::map<size_t, constraint_t> &constraints_at(size_t node) {
+  virtual std::map<size_t, constraint_t> constraints_at(size_t node) {
     return constraints[node];
   }
   virtual std::set<analysis_node> pending() {

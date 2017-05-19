@@ -171,7 +171,7 @@ void fixpoint::iterate() {
     bool propagate = false;
     bool needs_postprocessing = false;
     std::map<size_t, shared_ptr<domain_state>> accumulator;
-    auto &constraints = analysis->constraints_at(node.id);
+    auto constraints = analysis->constraints_at(node.id);
     if(constraints.size() > 0) {
       //      shared_ptr<domain_state> current = analysis->get(node_id);
       //      current->check_consistency();

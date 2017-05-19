@@ -67,7 +67,7 @@ private:
   depdant_desc _dirty_nodes;
   //  caller::caller caller_analysis;
   state_t state;
-  
+
 
   node_targets_t node_targets;
 
@@ -103,7 +103,7 @@ private:
 
   summary_dstack_stubs stubs;
   std::experimental::optional<summary_t> get_stub(void *address, size_t node);
-  
+
   bool tabulation;
 
   std::set<size_t> get_callers(std::shared_ptr<global_state> state);
@@ -112,7 +112,11 @@ private:
   //  void propagate_reqs(void *f_addr, std::set<mempath> &field_reqs_new);
 
   void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
+  std::map<size_t, std::shared_ptr<domain_state>> transform(
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
+  std::map<size_t, constraint_t> constraints_at(size_t node);
+  
   void remove_constraint(size_t from, size_t to);
   depdant_desc dependants(size_t node_id);
   dependency gen_dependency(size_t from, size_t to);
