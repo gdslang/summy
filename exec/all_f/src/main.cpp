@@ -110,7 +110,9 @@ int main(int argc, char **argv) {
 
   g.set_code(buffer, section.size, section.address);
 
-  bool blockwise_optimized = false;
+  bool blockwise_optimized = true;
+  bool ref_management = true;
+  bool tabulate = true;
 
   try {
     cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
@@ -174,7 +176,7 @@ int main(int argc, char **argv) {
       //            if(name != "sem_reg_offset") continue;
       //            if(name != "register_from_bits") continue;
       //            if(name != "rreil_convert_sem_stmt") continue;
-      //      if(name != "main") continue;
+//            if(name != "main") continue;
       //       if(name != "_slash_") continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
@@ -231,9 +233,8 @@ int main(int argc, char **argv) {
 
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
-    summary_dstack ds(&cfg, se, false, dt.get_f_heads(), true);
+    summary_dstack ds(&cfg, se, false, dt.get_f_heads(), tabulate);
     cfg::jd_manager jd_man(&cfg);
-    bool ref_management = false;
     fixpoint fp(&ds, jd_man, ref_management);
 
     cout << "\033[1;31mStarting main analysis.\033[0m" << endl;
@@ -256,7 +257,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 19 || true) {
+      if(n.get_id() == 48 || n.get_id() == 216 || n.get_id() == 125) {
         //out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
         out << n.get_id() << " [label=\"" << n.get_id() << "\n";
         for(auto ctx_mapping : ds.get_ctxful(n.get_id()))

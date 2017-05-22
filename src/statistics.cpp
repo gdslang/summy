@@ -1,12 +1,12 @@
 /*
  * Copyright 2016 Julian Kranz, Technical University of Munich
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,15 +25,15 @@
 #include <cppgdsl/rreil/sexpr/sexpr_cmp.h>
 
 #include <cppgdsl/rreil/statement/branch.h>
+#include <cppgdsl/rreil/statement/branch.h>
 #include <cppgdsl/rreil/statement/cbranch.h>
 #include <summy/analysis/domains/summary_dstack.h>
+#include <summy/cfg/bfs_iterator.h>
 #include <summy/cfg/edge/edge.h>
 #include <summy/cfg/edge/edge_visitor.h>
-#include <summy/cfg/bfs_iterator.h>
+#include <summy/rreil/sexpr/sexpr_visitor.h>
 #include <summy/statistics.h>
 #include <summy/tools/rreil_util.h>
-#include <cppgdsl/rreil/statement/branch.h>
-#include <summy/rreil/sexpr/sexpr_visitor.h>
 
 #include "cppgdsl/rreil/statement/statement_visitor.h"
 #include <algorithm>
@@ -53,7 +53,8 @@ using summy::rreil::sexpr_visitor;
  * branch_statistics
  */
 
-branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack &sd, cfg::jd_manager &jd_manager) {
+branch_statistics::branch_statistics(
+  gdsl::gdsl &gdsl, analysis::summary_dstack &sd, cfg::jd_manager &jd_manager) {
   cfg::cfg *cfg = sd.get_cfg();
 
   node_targets_t const &node_targets = sd.get_targets();
@@ -87,7 +88,7 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
       for(auto address : nt_it.second) {
         int_t ip = gdsl.get_ip();
         bool seekable = !gdsl.seek(address);
-        //        cout << hex << address << " " << dec << seekable << endl;
+        cout << hex << address << " " << dec << seekable << endl;
         assert(!gdsl.seek(ip));
         if(seekable) _new.insert(address);
       }
@@ -95,8 +96,8 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
       auto current_it = address_targets.find(machine_address);
       if(current_it != address_targets.end()) {
         set<size_t> intersection;
-        set_intersection(current_it->second.targets.begin(), current_it->second.targets.end(), _new.begin(), _new.end(),
-          inserter(intersection, intersection.begin()));
+        set_intersection(current_it->second.targets.begin(), current_it->second.targets.end(),
+          _new.begin(), _new.end(), inserter(intersection, intersection.begin()));
         address_targets[machine_address].targets = intersection;
 
       } else
@@ -105,7 +106,8 @@ branch_statistics::branch_statistics(gdsl::gdsl &gdsl, analysis::summary_dstack 
       address_targets[machine_address].is_call = hint == gdsl::rreil::branch_hint::BRANCH_HINT_CALL;
 
       if(address_targets[machine_address].targets.size() == 0)
-        cout << "No targets for " << (address_targets[machine_address].is_call ? "call" : "jump") <<" at 0x" << hex << machine_address << dec << endl;
+        cout << "No targets for " << (address_targets[machine_address].is_call ? "call" : "jump")
+             << " at 0x" << hex << machine_address << dec << endl;
     }
   }
 }

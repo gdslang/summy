@@ -71,6 +71,10 @@ void ::fp_analysis::fp_analysis::init() {
   }
 
   init_fixpoint_pending();
+  
+  for(auto node: fixpoint_pending)
+    add_constraint(node.id, node.id, NULL);
+  
   init_state();
 }
 

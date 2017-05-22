@@ -38,6 +38,11 @@ void analysis::addr_machine::addr_machine::add_constraint(
     else
       return default_context(state[from]);
   };
+  if(to == from) {
+    (constraints[to])[from] = [=](size_t) {
+      return default_context(start_value(to));
+    };
+  } else
   (constraints[to])[from] = transfer_f;
 }
 
@@ -54,9 +59,9 @@ void analysis::addr_machine::addr_machine::init_state() {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end())
-      state[i] = start_value(i);
-    else
+//     if(fixpoint_pending.find(i) != fixpoint_pending.end())
+//       state[i] = start_value(i);
+//     else
       state[i] = dynamic_pointer_cast<addr_machine_state>(bottom());
   }
 }

@@ -45,7 +45,8 @@ void analysis::fcollect::fcollect::add_constraint(size_t from, size_t to, const 
     });
     stmt->accept(v);
   });
-  e->accept(ev);
+  if(to != from)
+    e->accept(ev);
   (constraints[to])[from] = transfer_f;
 }
 

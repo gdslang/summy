@@ -216,9 +216,10 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
           summary_memory_state *mstate = state_c->get_mstate();
 
           for(auto edge_mapping : *cfg->out_edge_payloads(to))
-            for(auto ctx_mapping : state[edge_mapping.first])
-              //                 _dirty_nodes.context_deps[ctx_mapping.first].insert(edge_mapping.first);
-              _dirty_nodes.context_free_deps.insert(edge_mapping.first);
+            _dirty_nodes.context_deps[from_ctx].insert(edge_mapping.first);
+//             for(auto ctx_mapping : state[edge_mapping.first])
+//               _dirty_nodes.context_deps[ctx_mapping.first].insert(edge_mapping.first);
+          //               _dirty_nodes.context_free_deps.insert(edge_mapping.first);
 
           //            cout << *mstate << endl;
 
@@ -636,10 +637,17 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
 
 std::map<size_t, constraint_t> analysis::summary_dstack::constraints_at(size_t to) {
   std::map<size_t, constraint_t> r;
-  for(auto from : get_cfg()->in_edges(to)) {
-    auto payload = get_cfg()->out_edge_payloads(from)->at(to);
-    r[from] = [=](size_t ctx) { return transform(from, to, payload, ctx); };
-  }
+  auto &in_edges = get_cfg()->in_edges(to);
+  if(in_edges.size() == 0) {
+    auto f_addr = state[to].at(0)->get_f_addr();
+    std::shared_ptr<analysis::domain_state> state =
+      dynamic_pointer_cast<global_state>(start_value(f_addr));
+    r[to] = [=](size_t) { return default_context(state); };
+  } else
+    for(auto from : in_edges) {
+      auto payload = get_cfg()->out_edge_payloads(from)->at(to);
+      r[from] = [=](size_t ctx) { return transform(from, to, payload, ctx); };
+    }
   return r;
 }
 
@@ -664,7 +672,7 @@ void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cf
 }
 
 void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
-//   constraints[to].erase(from);
+  //   constraints[to].erase(from);
 }
 
 depdant_desc analysis::summary_dstack::dependants(size_t node_id) {
@@ -691,11 +699,11 @@ void analysis::summary_dstack::init_state(summy::vs_shared_t f_addr) {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end()) {
-      (state[i])[0] = dynamic_pointer_cast<global_state>(start_value(f_addr));
-      ref(i, nullopt);
-    } else
-      (state[i])[0] = dynamic_pointer_cast<global_state>(bottom());
+    //     if(fixpoint_pending.find(i) != fixpoint_pending.end()) {
+    //       (state[i])[0] = dynamic_pointer_cast<global_state>(start_value(f_addr));
+    //       ref(i, nullopt);
+    //     } else
+    (state[i])[0] = dynamic_pointer_cast<global_state>(bottom());
   }
 }
 
