@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
   g.set_code(buffer, section.size, section.address);
 
-  bool blockwise_optimized = true;
+  bool blockwise_optimized = false;
 
   try {
     cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, false, dt.get_f_heads(), true);
     cfg::jd_manager jd_man(&cfg);
-    bool ref_management = true;
+    bool ref_management = false;
     fixpoint fp(&ds, jd_man, ref_management);
 
     cout << "\033[1;31mStarting main analysis.\033[0m" << endl;
@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 768 || n.get_id() == 781) {
+      if(n.get_id() == 19 || true) {
         //out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
         out << n.get_id() << " [label=\"" << n.get_id() << "\n";
         for(auto ctx_mapping : ds.get_ctxful(n.get_id()))

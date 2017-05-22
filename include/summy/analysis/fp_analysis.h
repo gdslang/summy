@@ -44,9 +44,14 @@ struct analysis_node {
   analysis_node(size_t id, size_t context) : id(id), context(context) {}
 };
 
-typedef std::function<std::experimental::optional<bool>(
-  analysis_node const &, analysis_node const &)>
-  node_compare_t;
+inline std::ostream &operator<<(std::ostream &out, analysis_node &_this) {
+  out << "(" << _this.id << ", " << _this.context << ")";
+  return out;
+};
+
+
+using node_compare_t =
+  std::function<std::experimental::optional<bool>(analysis_node const &, analysis_node const &)>;
 
 class domain_state;
 
@@ -103,16 +108,13 @@ public:
 protected:
   cfg::cfg *cfg;
 
-  [[deprecated]]
-  std::map<size_t, std::map<size_t, constraint_t>> constraints;
-  
+  [[deprecated]] std::map<size_t, std::map<size_t, constraint_t>> constraints;
+
   dependants_t _dependants;
   std::set<analysis_node> fixpoint_pending;
 
-  [[deprecated]]
-  virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e) = 0;
-  [[deprecated]]
-  virtual void remove_constraint(size_t from, size_t to) = 0;
+  [[deprecated]] virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e) = 0;
+  [[deprecated]] virtual void remove_constraint(size_t from, size_t to) = 0;
   /*
    * Generate a dependency for an edge from node "from" to node "to"
    */
