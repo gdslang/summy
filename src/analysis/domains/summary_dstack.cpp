@@ -306,6 +306,8 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
                     auto &f_desc = fd_it->second;
                     for(size_t s_node : f_desc.summary_nodes) {
                       auto tabulate_all = [&]() {
+                        cout << "Tabulating..." << endl;
+                        
                         std::vector<std::set<mempath_assignment>> assignments_sets =
                           tabulation_keys(f_desc, state_c->get_mstate());
                         for(auto &assignment_set : assignments_sets) {
@@ -318,6 +320,8 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
                               continue; // Todo: What has happened here?
                             ctx = ctx_it->second;
                           }
+                          
+                          cout << "Adding summary... " << endl;//*get_sub(s_node, ctx)->get_mstate() << endl;
 
                           add_summary(get_sub(s_node, ctx)->get_mstate());
                           if(state_c->get_f_addr() == get_sub(s_node, ctx)->get_f_addr())

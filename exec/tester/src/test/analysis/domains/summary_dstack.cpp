@@ -14,6 +14,7 @@
 #include <cppgdsl/rreil/rreil.h>
 #include <experimental/optional>
 #include <gtest/gtest.h>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -72,6 +73,11 @@ static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string
 
   lin_var *lv = new lin_var(make_variable(make_id(arch_id_name), offset));
 //   cout << *analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate() << endl;
+  
+  cout << hex << e.address << dec << endl;
+  cout << ar.addr_node_map[e.address] << endl;
+  
+  cout << *analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate() << endl;
 
   r = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate()->queryVal(lv, size);
   delete lv;
@@ -1547,6 +1553,11 @@ __asm volatile ( \"test: nop\" );\n\
 return 0;\n\
 }",
     true, true));
+  
+  ofstream dot_noa_fs;
+  dot_noa_fs.open("output_noa_test.dot", ios::out);
+  ar.dt->get_cfg().dot(dot_noa_fs);
+  dot_noa_fs.close();
 
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "test", "R11", 0, 32));

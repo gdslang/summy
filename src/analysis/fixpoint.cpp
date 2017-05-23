@@ -158,7 +158,7 @@ void fixpoint::iterate() {
     analysis->accept(av);
     if(_continue) continue;
 
-//     if(is_sd) cout << "Next node: " << node << endl;
+    if(is_sd) cout << "Next node: " << node << endl;
     
 //     static int ctr = 0;
 //     if(node.id == 211 || node.id == 661) {
