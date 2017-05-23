@@ -2,6 +2,7 @@
 
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/ptr_set.h>
+#include <iostream>
 
 namespace analysis {
 
@@ -17,6 +18,12 @@ struct mempath_assignment {
   bool operator<(const mempath_assignment &other) const;
   bool operator==(const mempath_assignment &other) const;
 };
+
+inline std::ostream &operator<<(std::ostream &out, mempath_assignment &_this) {
+  out << _this.mp << " := " << _this.immediate;
+  return out;
+};
+
 }
 
 /*

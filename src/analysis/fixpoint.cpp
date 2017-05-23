@@ -83,18 +83,23 @@ void fixpoint::iterate() {
 
   std::time_t start_time = std::time(nullptr);
   std::time_t last_check = start_time;
-  
+
   auto enqueue_updated_dirty = [&]() {
     for(auto ud_id : updated_dirty) {
+//       worklist.push(analysis_node(ud_id, 0));
       auto ctx_mappings = analysis->get_ctxful(ud_id);
       for(auto ctx_mapping : ctx_mappings) {
         size_t context = ctx_mapping.first;
+//         if(context == 0 || context == 1 || context == 2 || context == 3 || context == 4 || context == 4)
+//           continue;
+        analysis_node fuu = analysis_node(ud_id, context);
+        cout << "Pushing " << fuu  << endl;
         worklist.push(analysis_node(ud_id, context));
       }
     }
     updated_dirty.clear();
   };
-  
+
   enqueue_updated_dirty();
 
   while(!end()) {
@@ -159,13 +164,13 @@ void fixpoint::iterate() {
     if(_continue) continue;
 
     if(is_sd) cout << "Next node: " << node << endl;
-    
-//     static int ctr = 0;
-//     if(node.id == 211 || node.id == 661) {
-//       if(ctr > 5)
-//         continue;
-//       ctr++;
-//     }
+
+    //     static int ctr = 0;
+    //     if(node.id == 211 || node.id == 661) {
+    //       if(ctr > 5)
+    //         continue;
+    //       ctr++;
+    //     }
 
     //    if(jd_man.machine_address_of(node_id) > 0x40190b)
     //      break;
@@ -231,13 +236,13 @@ void fixpoint::iterate() {
         /*
          * Todo: Backward analysis?
          */
-        
+
         jump_dir jd;
         if(node_other == node.id)
           jd = FORWARD;
         else
           jd = jd_man.jump_direction(node_other, node.id);
-        
+
         for(auto &ev_it : evaluated_ctx) {
           size_t context = ev_it.first;
           auto evaluated = ev_it.second;
@@ -283,6 +288,8 @@ void fixpoint::iterate() {
           /*
            * Todo: Which one is better?
            */
+          if(node.id == 42 && node.context == 1)
+            cout << "ARGH!" << endl;
           worklist.push(node);
           //          pending.insert(node);
         }
@@ -331,15 +338,18 @@ void fixpoint::iterate() {
     //            cout << node_id << " XX->XX " << *accumulator << endl;
     //      accumulator->check_consistency();
     //            cout << "Updating..." << endl;
-    
+
     for(auto &acc_it : accumulator) {
       auto acc = acc_it.second;
       size_t context_acc = acc_it.first;
 
       if(propagate[context_acc]) {
-        if(context_acc == node.context && needs_postprocessing)
+        if(context_acc == node.context && needs_postprocessing) {
+          if(node.id == 42 && node.context == 1)
+            cout << "ARGH!" << endl;
           postprocess_worklist.push(node);
-        
+        }
+
         analysis->update(analysis_node(node.id, context_acc), acc);
         updated.insert(node.id);
       }
@@ -363,6 +373,8 @@ void fixpoint::iterate() {
         //                endl;
         for(auto acc_it : accumulator) {
           if(propagate[acc_it.first]) {
+            if(dependant == 42 && acc_it.first)
+              cout << "free ARGH!" << endl;
             worklist.push(analysis_node(dependant, acc_it.first));
             pushes++;
           }
@@ -374,6 +386,8 @@ void fixpoint::iterate() {
       }
       for(auto context_dep : dependants.context_deps) {
         for(auto depdant : context_dep.second) {
+          if(depdant == 42 && context_dep.first == 1)
+            cout << "ARGH!" << endl;
           worklist.push(analysis_node(depdant, context_dep.first));
           pushes++;
         }
@@ -388,11 +402,12 @@ void fixpoint::iterate() {
 
     auto dependants = analysis->dependants(node.id);
     process_dependencies(dependants);
+    cout << "DIRT!" << endl;
     auto dirty_nodes = analysis->dirty_nodes();
     process_dependencies(dirty_nodes);
 
     //     cout << "Inserting " << node << endl;
-//     seen.insert(node);
+    //     seen.insert(node);
     //    cout << "END OF FP_ROUND" << endl;
     enqueue_updated_dirty();
   }
@@ -402,11 +417,13 @@ void fixpoint::notify(const vector<::cfg::update> &updates) {
   //    analysis->update(updates);
 
   for(auto &update : updates) {
+//     cout << "Update from " << update.from << " to " << update.to << endl;
+    
     updated_dirty.insert(update.from);
     updated_dirty.insert(update.to);
-    
-//     seen.erase(update.from);
-//     seen.erase(update.to);
+
+    //     seen.erase(update.from);
+    //     seen.erase(update.to);
   }
 
   //  iterate();
@@ -484,4 +501,3 @@ void analysis::fixpoint::print_hot_addresses() {
       cout << "  Address: 0x" << hex << addr << dec << endl;
   }
 }
-

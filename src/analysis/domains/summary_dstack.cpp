@@ -166,8 +166,10 @@ void analysis::summary_dstack::propagate_reqs(std::set<mempath> field_reqs_new, 
   if(!includes(
        fd.field_reqs.begin(), fd.field_reqs.end(), field_reqs_new.begin(), field_reqs_new.end())) {
     fd.field_reqs.insert(field_reqs_new.begin(), field_reqs_new.end());
-    for(auto ctx_mapping : state[fd.head_id])
-      _dirty_nodes.context_deps[ctx_mapping.first].insert(fd.head_id);
+    auto ctx_mapping = state[fd.head_id].begin();
+    assert(ctx_mapping != state[fd.head_id].end());
+    cout << fd.head_id << " / " << ctx_mapping->first << endl;
+    _dirty_nodes.context_deps[ctx_mapping->first].insert(fd.head_id);
 
     //     cout << "Added dirty node " << fd.head_id << " for address 0x" << std::hex << f_addr <<
     //     std::dec
@@ -215,10 +217,12 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
           shared_ptr<global_state> state_c = get_sub(from, from_ctx);
           summary_memory_state *mstate = state_c->get_mstate();
 
-          for(auto edge_mapping : *cfg->out_edge_payloads(to))
+          for(auto edge_mapping : *cfg->out_edge_payloads(to)) {
+            cout << edge_mapping.first << " / " << from_ctx << endl;
             _dirty_nodes.context_deps[from_ctx].insert(edge_mapping.first);
-//             for(auto ctx_mapping : state[edge_mapping.first])
-//               _dirty_nodes.context_deps[ctx_mapping.first].insert(edge_mapping.first);
+          }
+          //             for(auto ctx_mapping : state[edge_mapping.first])
+          //               _dirty_nodes.context_deps[ctx_mapping.first].insert(edge_mapping.first);
           //               _dirty_nodes.context_free_deps.insert(edge_mapping.first);
 
           //            cout << *mstate << endl;
@@ -307,7 +311,7 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
                     for(size_t s_node : f_desc.summary_nodes) {
                       auto tabulate_all = [&]() {
                         cout << "Tabulating..." << endl;
-                        
+
                         std::vector<std::set<mempath_assignment>> assignments_sets =
                           tabulation_keys(f_desc, state_c->get_mstate());
                         for(auto &assignment_set : assignments_sets) {
@@ -320,8 +324,9 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
                               continue; // Todo: What has happened here?
                             ctx = ctx_it->second;
                           }
-                          
-                          cout << "Adding summary... " << endl;//*get_sub(s_node, ctx)->get_mstate() << endl;
+
+                          cout << "Adding summary... "
+                               << endl; //*get_sub(s_node, ctx)->get_mstate() << endl;
 
                           add_summary(get_sub(s_node, ctx)->get_mstate());
                           if(state_c->get_f_addr() == get_sub(s_node, ctx)->get_f_addr())
@@ -521,6 +526,8 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
     });
   });
   ev._([&](const call_edge *edge) {
+    cout << "call_edge!" << endl;
+
     ref(from, nullopt);
     ref(to, nullopt);
     //    _call = true;
@@ -540,11 +547,11 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
         dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
 
       auto &desc = this->function_desc_map.at(address);
+      cout << "reqs: " << desc.field_reqs.size() << endl;
       if(desc.field_reqs.size() > 0) {
         auto const &in_edges = cfg->in_edges(from);
         assert(in_edges.size() == 1);
         size_t from_parent = *in_edges.begin();
-
 
         auto accumulate_all = [&]() {
           //          cout << "This call requires the following fields:" << endl;
@@ -579,7 +586,14 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
           std::vector<std::set<mempath_assignment>> assignments_sets =
             tabulation_keys(desc, get_sub(from_parent, from_ctx)->get_mstate());
           for(auto assignments_set : assignments_sets) {
+            cout << "New assignment set!" << endl;
+
+            for(auto a : assignments_set) {
+              cout << a << endl;
+            }
+
             if(assignments_set.size() == 0) {
+              cout << "Zero assignments." << endl;
               /*
                * No tabulation without field requests
                */
@@ -606,7 +620,10 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
           accumulate_all();
       }
 
-      state_map_new[from_ctx] = state_new;
+      if(tabulation) {
+        state_map_new[0] = state_new;
+      } else
+        state_map_new[from_ctx] = state_new;
     } else {
       auto state_new = get_sub(from, from_ctx);
       state_map_new[from_ctx] = state_new;
@@ -863,6 +880,10 @@ shared_ptr<global_state> analysis::summary_dstack::get_sub(size_t node, size_t c
 }
 
 void analysis::summary_dstack::update(analysis_node node, shared_ptr<domain_state> state) {
+  if(node.id == 42 && node.context == 1) {
+    cout << "Fip!";
+    cout << *state << endl;
+  }
   (this->state[node.id])[node.context] = dynamic_pointer_cast<global_state>(state);
   //  erased.erase(node);
   //  this->state[node]->get_mstate()->check_consistency();
