@@ -27,7 +27,10 @@ using namespace std::experimental;
 
 void analysis::addr_machine::addr_machine::add_constraint(
   size_t from, size_t to, const ::cfg::edge *) {
+    cout << "ADDING ADDR ANALYSIS CONSTRAINT FROM " << from << " TO " << to << endl;
   constraint_t transfer_f = [=](size_t) {
+    cout << "ADDR ANALYSIS CONSTRAINT FROM " << from << " TO " << to << "; state from: " << *state[from] << endl;
+    
     cfg::node *to_node = cfg->get_node_payload(to);
     cfg::node_visitor nv;
     optional<size_t> address;
@@ -40,13 +43,16 @@ void analysis::addr_machine::addr_machine::add_constraint(
   };
   if(to == from) {
     (constraints[to])[from] = [=](size_t) {
-      return default_context(start_value(to));
-    };
-  } else
-  (constraints[to])[from] = transfer_f;
+      cout << "Running init constraint for " << to << endl;
+      return default_context(start_value(to)); };
+  } else {
+    remove_constraint(to, to);
+    (constraints[to])[from] = transfer_f;
+  }
 }
 
 void analysis::addr_machine::addr_machine::remove_constraint(size_t from, size_t to) {
+    cout << "REMOVING ADDR ANALYSIS CONSTRAINT FROM " << from << " TO " << to << endl;
   (constraints[to]).erase(from);
 }
 
@@ -59,10 +65,10 @@ void analysis::addr_machine::addr_machine::init_state() {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-//     if(fixpoint_pending.find(i) != fixpoint_pending.end())
-//       state[i] = start_value(i);
-//     else
-      state[i] = dynamic_pointer_cast<addr_machine_state>(bottom());
+    //     if(fixpoint_pending.find(i) != fixpoint_pending.end())
+    //       state[i] = start_value(i);
+    //     else
+    state[i] = dynamic_pointer_cast<addr_machine_state>(bottom());
   }
 }
 
@@ -89,6 +95,11 @@ std::shared_ptr<addr_machine_state> analysis::addr_machine::addr_machine::start_
 }
 
 std::shared_ptr<domain_state> analysis::addr_machine::addr_machine::get(size_t node) {
+  if(node == 637 || node == 634 || node == 636) {
+    cout << "ADDR STATE FOR NODE " << 634 << ": " << *state[634] << endl;
+    cout << "  ADDR STATE FOR NODE " << 636 << ": " << *state[637] << endl;
+    cout << "    ADDR STATE FOR NODE " << 637 << ": " << *state[636] << endl;
+  }
   return state[node];
 }
 

@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
       //            if(name != "sem_reg_offset") continue;
       //            if(name != "register_from_bits") continue;
       //            if(name != "rreil_convert_sem_stmt") continue;
-//            if(name != "main") continue;
+            if(name == "main") continue;
       //       if(name != "_slash_") continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {

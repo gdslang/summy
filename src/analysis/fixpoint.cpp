@@ -83,6 +83,11 @@ void fixpoint::iterate() {
 
   std::time_t start_time = std::time(nullptr);
   std::time_t last_check = start_time;
+  
+  for(auto seen_node : seen) {
+    worklist.push(seen_node);
+  }
+  seen.clear();
 
   while(!end()) {
     analysis_node node = next();
@@ -145,7 +150,14 @@ void fixpoint::iterate() {
     analysis->accept(av);
     if(_continue) continue;
 
-//     if(is_sd) cout << "Next node: " << node << endl;
+    if(is_sd) cout << "Next node: " << node << endl;
+    
+//     static int ctr = 0;
+//     if(node.id == 211 || node.id == 661) {
+//       if(ctr > 5)
+//         continue;
+//       ctr++;
+//     }
 
     //    if(jd_man.machine_address_of(node_id) > 0x40190b)
     //      break;
@@ -211,13 +223,16 @@ void fixpoint::iterate() {
         /*
          * Todo: Backward analysis?
          */
-
+        
+        cout << "FROM: " << node_other << endl;
 
         jump_dir jd;
         if(node_other == node.id)
           jd = FORWARD;
         else
           jd = jd_man.jump_direction(node_other, node.id);
+        
+        cout << "Jump dir: " << jd << endl;
 
         for(auto &ev_it : evaluated_ctx) {
           size_t context = ev_it.first;
@@ -225,6 +240,9 @@ void fixpoint::iterate() {
 
           backward = backward || jd != FORWARD;
           if(widening && jd == BACKWARD) {
+            
+            cout << ">>> WIDENING!" << endl;
+            
             //          cout << "Current: " << *current << endl;
             //          cout << "Evaluated: " << *evaluated << endl;
             //                    cout << "Back jump from " << node_other << " to " << node_id <<
@@ -377,6 +395,10 @@ void fixpoint::iterate() {
     //     cout << "Inserting " << node << endl;
 //     seen.insert(node);
     //    cout << "END OF FP_ROUND" << endl;
+    for(auto seen_node : seen) {
+      worklist.push(seen_node);
+    }
+    seen.clear();
   }
 }
 
@@ -384,8 +406,13 @@ void fixpoint::notify(const vector<::cfg::update> &updates) {
   //    analysis->update(updates);
 
   for(auto &update : updates) {
-    seen.erase(update.from);
-    seen.erase(update.to);
+    cout << "Update from " << update.from << " to " << update.to << endl;
+    
+    seen.insert(update.from);
+    seen.insert(update.to);
+    
+//     seen.erase(update.from);
+//     seen.erase(update.to);
   }
 
   //  iterate();
