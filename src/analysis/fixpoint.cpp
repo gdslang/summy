@@ -84,10 +84,18 @@ void fixpoint::iterate() {
   std::time_t start_time = std::time(nullptr);
   std::time_t last_check = start_time;
   
-  for(auto seen_node : seen) {
-    worklist.push(seen_node);
-  }
-  seen.clear();
+  auto enqueue_updated_dirty = [&]() {
+    for(auto ud_id : updated_dirty) {
+      auto ctx_mappings = analysis->get_ctxful(ud_id);
+      for(auto ctx_mapping : ctx_mappings) {
+        size_t context = ctx_mapping.first;
+        worklist.push(analysis_node(ud_id, context));
+      }
+    }
+    updated_dirty.clear();
+  };
+  
+  enqueue_updated_dirty();
 
   while(!end()) {
     analysis_node node = next();
@@ -150,7 +158,7 @@ void fixpoint::iterate() {
     analysis->accept(av);
     if(_continue) continue;
 
-    if(is_sd) cout << "Next node: " << node << endl;
+//     if(is_sd) cout << "Next node: " << node << endl;
     
 //     static int ctr = 0;
 //     if(node.id == 211 || node.id == 661) {
@@ -224,25 +232,18 @@ void fixpoint::iterate() {
          * Todo: Backward analysis?
          */
         
-        cout << "FROM: " << node_other << endl;
-
         jump_dir jd;
         if(node_other == node.id)
           jd = FORWARD;
         else
           jd = jd_man.jump_direction(node_other, node.id);
         
-        cout << "Jump dir: " << jd << endl;
-
         for(auto &ev_it : evaluated_ctx) {
           size_t context = ev_it.first;
           auto evaluated = ev_it.second;
 
           backward = backward || jd != FORWARD;
           if(widening && jd == BACKWARD) {
-            
-            cout << ">>> WIDENING!" << endl;
-            
             //          cout << "Current: " << *current << endl;
             //          cout << "Evaluated: " << *evaluated << endl;
             //                    cout << "Back jump from " << node_other << " to " << node_id <<
@@ -350,8 +351,6 @@ void fixpoint::iterate() {
     //    cout << "Seen: " << (seen.find(node_id) != seen.end()) << endl;
     //    cout << "Number of deps: " << analysis->dependants(node_id).size() << endl;
 
-    bool node_seen = true;// seen.find(node) != seen.end();
-
     //     if(!node_seen && node.id == 24)
     //       for(auto other : seen) {
     //         cout << "\t\t" << other << endl;
@@ -363,7 +362,7 @@ void fixpoint::iterate() {
         //                cout << "====>  Pushing " << dependant << " as dep. of " << node_id <<
         //                endl;
         for(auto acc_it : accumulator) {
-          if(!node_seen || propagate[acc_it.first]) {
+          if(propagate[acc_it.first]) {
             worklist.push(analysis_node(dependant, acc_it.first));
             pushes++;
           }
@@ -395,10 +394,7 @@ void fixpoint::iterate() {
     //     cout << "Inserting " << node << endl;
 //     seen.insert(node);
     //    cout << "END OF FP_ROUND" << endl;
-    for(auto seen_node : seen) {
-      worklist.push(seen_node);
-    }
-    seen.clear();
+    enqueue_updated_dirty();
   }
 }
 
@@ -406,10 +402,8 @@ void fixpoint::notify(const vector<::cfg::update> &updates) {
   //    analysis->update(updates);
 
   for(auto &update : updates) {
-    cout << "Update from " << update.from << " to " << update.to << endl;
-    
-    seen.insert(update.from);
-    seen.insert(update.to);
+    updated_dirty.insert(update.from);
+    updated_dirty.insert(update.to);
     
 //     seen.erase(update.from);
 //     seen.erase(update.to);

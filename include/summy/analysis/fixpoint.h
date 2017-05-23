@@ -25,7 +25,7 @@ class fp_analysis;
 class fixpoint : public cfg::observer {
 private:
   fp_analysis *analysis;
-  std::set<analysis_node> seen;
+  std::set<size_t> updated_dirty;
   std::set<size_t> updated;
   cfg::jd_manager &jd_man;
 
