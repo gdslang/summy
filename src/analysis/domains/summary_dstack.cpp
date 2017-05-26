@@ -583,8 +583,12 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
         };
 
         auto tabulate_all = [&]() {
-          std::vector<std::set<mempath_assignment>> assignments_sets =
-            tabulation_keys(desc, get_sub(from_parent, from_ctx)->get_mstate());
+          std::vector<std::set<mempath_assignment>> assignments_sets;
+          for(auto ctx_mapping : get_ctxful(from_parent)) {
+            auto s = dynamic_pointer_cast<global_state>(ctx_mapping.second);
+            auto keys_new = tabulation_keys(desc, s->get_mstate());
+            assignments_sets.insert(assignments_sets.end(), keys_new.begin(), keys_new.end());
+          }
           for(auto assignments_set : assignments_sets) {
             cout << "New assignment set!" << endl;
 
@@ -699,7 +703,6 @@ void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
 depdant_desc analysis::summary_dstack::dependants(size_t node_id) {
   depdant_desc result;
   bool end_node = get_cfg()->out_edge_payloads(node_id)->size() == 0;
-
   if(end_node)
     for(size_t depdant : _dependants[node_id])
       for(auto &ctx_mapping : state[depdant])
@@ -861,6 +864,8 @@ shared_ptr<domain_state> analysis::summary_dstack::get(size_t node) {
 }
 
 std::map<size_t, shared_ptr<domain_state>> analysis::summary_dstack::get_ctxful(size_t node) {
+  if(node >= state.size())
+    return {{0, dynamic_pointer_cast<global_state>(bottom())}};
   std::map<size_t, shared_ptr<domain_state>> r;
   for(auto const &entry : state.at(node))
     r[entry.first] = entry.second;

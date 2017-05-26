@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
   g.set_code(buffer, section.size, section.address);
 
-  bool blockwise_optimized = true;
+  bool blockwise_optimized = false;
   bool ref_management = false;
   bool tabulate = true;
 
