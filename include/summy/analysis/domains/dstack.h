@@ -6,22 +6,20 @@
  */
 
 #pragma once
-#include <summy/analysis/fp_analysis.h>
+#include <memory>
+#include <set>
 #include <summy/analysis/domains/memory_state.h>
+#include <summy/analysis/fp_analysis.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/edge/edge.h>
-#include <memory>
 #include <vector>
-#include <set>
 
 namespace analysis {
 
 typedef std::vector<std::shared_ptr<memory_state>> state_t;
 
 struct dstack_result : public ::analysis::analysis_result<state_t> {
-  dstack_result(state_t &s) :
-      analysis_result(s) {
-  }
+  dstack_result(state_t &s) : analysis_result(s) {}
 };
 
 class dstack : public fp_analysis {
@@ -29,10 +27,13 @@ private:
   std::shared_ptr<static_memory> sm;
   state_t state;
 
+  std::shared_ptr<domain_state> transform(size_t from, const ::cfg::edge *e);
   void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
   void remove_constraint(size_t from, size_t to);
+  std::map<size_t, constraint_t> constraints_at(size_t node);
   dependency gen_dependency(size_t from, size_t to);
   void init_state();
+
 public:
   dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm);
   dstack(cfg::cfg *cfg);
@@ -48,4 +49,4 @@ public:
   void put(std::ostream &out);
 };
 
-}  // namespace analysis
+} // namespace analysis

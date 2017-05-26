@@ -110,8 +110,8 @@ int main(int argc, char **argv) {
 
   g.set_code(buffer, section.size, section.address);
 
-  bool blockwise_optimized = false;
-  bool ref_management = false;
+  bool blockwise_optimized = true;
+  bool ref_management = true;
   bool tabulate = true;
 
   try {
@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
       //            if(name != "sem_reg_offset") continue;
       //            if(name != "register_from_bits") continue;
       //            if(name != "rreil_convert_sem_stmt") continue;
-            if(name != "main") continue;
+//             if(name != "main") continue;
       //       if(name != "_slash_") continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
@@ -257,7 +257,7 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 242) {
+      if(n.get_id() == 21 || n.get_id() == 61) {
         //out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
         out << n.get_id() << " [label=\"" << n.get_id() << "\n";
         for(auto ctx_mapping : ds.get_ctxful(n.get_id()))

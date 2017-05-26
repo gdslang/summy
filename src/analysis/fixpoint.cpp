@@ -90,11 +90,6 @@ void fixpoint::iterate() {
       auto ctx_mappings = analysis->get_ctxful(ud_id);
       for(auto ctx_mapping : ctx_mappings) {
         size_t context = ctx_mapping.first;
-        //         if(context == 0 || context == 1 || context == 2 || context == 3 || context == 4
-        //         || context == 4)
-        //           continue;
-        analysis_node fuu = analysis_node(ud_id, context);
-        cout << "Pushing " << fuu << endl;
         worklist.push(analysis_node(ud_id, context));
       }
     }
@@ -164,7 +159,7 @@ void fixpoint::iterate() {
     analysis->accept(av);
     if(_continue) continue;
 
-    if(is_sd) cout << "Next node: " << node << endl;
+//     if(is_sd) cout << "Next node: " << node << endl;
 
     //         static int ctr = 0;
     //         if(node.id == 32 || node.id == 46) {
@@ -289,7 +284,6 @@ void fixpoint::iterate() {
           /*
            * Todo: Which one is better?
            */
-          if(node.id == 42 && node.context == 1) cout << "ARGH!" << endl;
           worklist.push(node);
           //          pending.insert(node);
         }
@@ -317,18 +311,6 @@ void fixpoint::iterate() {
 
         auto acc = acc_it.second;
         size_t context = acc_it.first;
-
-        if(node.id == 30) {
-          cout << "context: " << context << endl;
-          cout << propagate[context] << endl;
-          cout << (!backward && constraints.size() == 1) << endl;
-          cout << "state unknown? " << (current_state_it == current_state.end()) << endl;
-          if(current_state_it != current_state.end()) {
-//             cout << *acc;
-//             cout << *current_state_it->second << endl;
-            cout << "equal states? " << !(*current_state_it->second == *acc) << endl;
-          }
-        }
 
         propagate[context] = propagate[context] || (!backward && constraints.size() == 1) ||
                              current_state_it == current_state.end() ||
@@ -362,8 +344,6 @@ void fixpoint::iterate() {
           postprocess_worklist.push(node);
         }
         
-        cout << "Updating node " << node.id << " in context " << context_acc << endl;
-        
         analysis->update(analysis_node(node.id, context_acc), acc);
         updated.insert(node.id);
       }
@@ -387,7 +367,6 @@ void fixpoint::iterate() {
         //                endl;
         for(auto acc_it : accumulator) {
           if(propagate[acc_it.first]) {
-            if(dependant == 30 && acc_it.first) cout << "free ARGH!" << endl;
             worklist.push(analysis_node(dependant, acc_it.first));
             pushes++;
           }
@@ -399,7 +378,6 @@ void fixpoint::iterate() {
       }
       for(auto context_dep : dependants.context_deps) {
         for(auto depdant : context_dep.second) {
-          if(depdant == 30 && context_dep.first == 1) cout << "ARGH!" << endl;
           worklist.push(analysis_node(depdant, context_dep.first));
           pushes++;
         }
@@ -414,7 +392,6 @@ void fixpoint::iterate() {
 
     auto dependants = analysis->dependants(node.id);
     process_dependencies(dependants);
-    cout << "DIRT!" << endl;
     auto dirty_nodes = analysis->dirty_nodes();
     process_dependencies(dirty_nodes);
 

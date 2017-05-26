@@ -26,15 +26,13 @@ using namespace std;
 using namespace gdsl::rreil;
 using namespace analysis::value_sets;
 
-void analysis::dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  constraint_t transfer_f = [=](size_t) { return default_context(state[from]); };
+std::shared_ptr<domain_state> analysis::dstack::transform(size_t from, const ::cfg::edge *e) {
+  std::shared_ptr<domain_state> r = state[from];
   auto for_mutable = [&](function<void(shared_ptr<memory_state>)> cb) {
-    transfer_f = [=](size_t) {
-      shared_ptr<memory_state> &state_c = this->state[from];
-      shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
-      cb(state_new);
-      return default_context(state_new);
-    };
+    shared_ptr<memory_state> &state_c = this->state[from];
+    shared_ptr<memory_state> state_new = shared_ptr<memory_state>(state_c->copy());
+    cb(state_new);
+    r = state_new;
   };
   auto for_update = [&](auto *update) {
     for_mutable([=](shared_ptr<memory_state> state_new) { state_new->update(update); });
@@ -57,11 +55,30 @@ void analysis::dstack::add_constraint(size_t from, size_t to, const ::cfg::edge 
     });
   });
   e->accept(ev);
-  (constraints[to])[from] = transfer_f;
+
+  return r;
+}
+
+void analysis::dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
+  return;
 }
 
 void analysis::dstack::remove_constraint(size_t from, size_t to) {
-  constraints[to].erase(from);
+  return;
+}
+
+std::map<size_t, constraint_t> analysis::dstack::constraints_at(size_t to) {
+  std::map<size_t, constraint_t> r;
+  auto &in_edges = get_cfg()->in_edges(to);
+  if(in_edges.size() == 0) {
+    std::shared_ptr<analysis::domain_state> state = start_value();
+    r[to] = [=](size_t) { return default_context(state); };
+  } else
+    for(auto from : in_edges) {
+      auto payload = get_cfg()->out_edge_payloads(from)->at(to);
+      r[from] = [=](size_t) { return default_context(transform(from, payload)); };
+    }
+  return r;
 }
 
 dependency analysis::dstack::gen_dependency(size_t from, size_t to) {

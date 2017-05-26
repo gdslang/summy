@@ -75,11 +75,6 @@ static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string
   lin_var *lv = new lin_var(make_variable(make_id(arch_id_name), offset));
 //   cout << *analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate() << endl;
   
-  cout << hex << e.address << dec << endl;
-  cout << ar.addr_node_map[e.address] << endl;
-  
-  cout << *analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate() << endl;
-
   r = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate()->queryVal(lv, size);
   delete lv;
 }
@@ -1434,7 +1429,7 @@ int main(int argc, char **argv) {\n\
   ASSERT_NO_FATAL_FAILURE(query_als(a_after_next_malloc, ar, "after_next_malloc", "A"));
   assert_ptrs(a_after_next_malloc, true, true, 1, 0);
 
-  ASSERT_EQ(ar.max_it, 4);
+  ASSERT_EQ(ar.max_it, 5); // Original value: 4
 }
 
 TEST_F(summary_dstack_test, ListTraverse) {
