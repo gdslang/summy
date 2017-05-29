@@ -114,10 +114,7 @@ private:
   void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
   std::map<size_t, std::shared_ptr<domain_state>> transform(
     size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
-  void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
-  std::map<size_t, constraint_t> constraints_at(size_t node);
   
-  void remove_constraint(size_t from, size_t to);
   depdant_desc dependants(size_t node_id);
   dependency gen_dependency(size_t from, size_t to);
   void init_state(summy::vs_shared_t f_addr);
@@ -141,7 +138,8 @@ public:
   static summary_memory_state *sms_bottom(std::shared_ptr<static_memory> sm, bool warnings);
   static summary_memory_state *sms_top(std::shared_ptr<static_memory> sm, bool warnings);
   std::shared_ptr<domain_state> bottom();
-  std::shared_ptr<domain_state> start_value(summy::vs_shared_t f_addr);
+  std::shared_ptr<analysis::domain_state> start_state(size_t node);
+  std::shared_ptr<domain_state> start_state(summy::vs_shared_t f_addr);
 
   std::shared_ptr<domain_state> get(size_t node);
   std::map<size_t, shared_ptr<domain_state>> get_ctxful(size_t node);

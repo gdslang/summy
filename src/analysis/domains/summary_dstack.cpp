@@ -534,7 +534,7 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
       dest->accept(nv);
       assert(is_addr_node);
       auto state_new =
-        dynamic_pointer_cast<global_state>(start_value(vs_finite::single((int64_t)address)));
+        dynamic_pointer_cast<global_state>(start_state(vs_finite::single((int64_t)address)));
 
       auto &desc = this->function_desc_map.at(address);
       if(desc.field_reqs.size() > 0) {
@@ -591,7 +591,7 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
               desc.contexts[assignments_set] = context;
 
               auto state_ctx = dynamic_pointer_cast<global_state>(
-                start_value(vs_finite::single((int64_t)address)));
+                start_state(vs_finite::single((int64_t)address)));
               for(auto assignment : assignments_set)
                 assignment.propagate(state_ctx->get_mstate());
 
@@ -642,46 +642,6 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
   return result;
 }
 
-std::map<size_t, constraint_t> analysis::summary_dstack::constraints_at(size_t to) {
-  std::map<size_t, constraint_t> r;
-  auto &in_edges = get_cfg()->in_edges(to);
-  if(in_edges.size() == 0) {
-    auto f_addr = state[to].at(0)->get_f_addr();
-    std::shared_ptr<analysis::domain_state> state =
-      dynamic_pointer_cast<global_state>(start_value(f_addr));
-    r[to] = [=](size_t) { return default_context(state); };
-  } else
-    for(auto from : in_edges) {
-      auto payload = get_cfg()->out_edge_payloads(from)->at(to);
-      r[from] = [=](size_t ctx) { return transform(from, to, payload, ctx); };
-    }
-  return r;
-}
-
-void analysis::summary_dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  //  cout << cfg->out_edge_payloads(from)->size() << endl;
-  //    cout << "Adding constraint from " << from << " to " << to << endl;
-  //    assert(from != 99 || to != 70);
-  node_visitor nv;
-  nv._([&](address_node *_) {
-    ref(from, nullopt);
-    ref(to, nullopt);
-  });
-  cfg->get_node_payload(to)->accept(nv);
-
-  //(constraints[to])[from] = [=](size_t ctx) {
-  //    if(_stmt != NULL)
-  //      cout << *_stmt << endl;
-  //    cout << "cond: " << _cond << endl;
-  //    cout << "call: " << _call << endl;
-  //     return transform(from, to, e, ctx);
-  //   };
-}
-
-void analysis::summary_dstack::remove_constraint(size_t from, size_t to) {
-  //   constraints[to].erase(from);
-}
-
 depdant_desc analysis::summary_dstack::dependants(size_t node_id) {
   depdant_desc result;
   bool end_node = get_cfg()->out_edge_payloads(node_id)->size() == 0;
@@ -695,6 +655,14 @@ depdant_desc analysis::summary_dstack::dependants(size_t node_id) {
 }
 
 dependency analysis::summary_dstack::gen_dependency(size_t from, size_t to) {
+  // Todo: Should this be here?
+  node_visitor nv;
+  nv._([&](address_node *_) {
+    ref(from, nullopt);
+    ref(to, nullopt);
+  });
+  cfg->get_node_payload(to)->accept(nv);
+
   //  cout << "Generating dep. " << from << " to " << to << endl;
   return dependency{from, to};
 }
@@ -767,7 +735,8 @@ void analysis::summary_dstack::init_state() {
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm,
   bool warnings, std::set<size_t> const &f_starts, bool tabulation)
-    : fp_analysis(cfg), sm(sm), warnings(warnings), stubs(sm, warnings), tabulation(tabulation) {
+    : fp_analysis(cfg, analysis_direction::FORWARD), sm(sm), warnings(warnings),
+      stubs(sm, warnings), tabulation(tabulation) {
   init();
 
   for(auto node_id : f_starts) {
@@ -783,7 +752,8 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
 
 analysis::summary_dstack::summary_dstack(
   cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings, bool tabulation)
-    : fp_analysis(cfg), sm(sm), warnings(warnings), stubs(sm, warnings), tabulation(tabulation) {
+    : fp_analysis(cfg, analysis_direction::FORWARD), sm(sm), warnings(warnings),
+      stubs(sm, warnings), tabulation(tabulation) {
   init();
 
   /*
@@ -830,7 +800,14 @@ shared_ptr<domain_state> analysis::summary_dstack::bottom() {
   return shared_ptr<domain_state>(new global_state(sms_bottom(), value_set::bottom));
 }
 
-std::shared_ptr<domain_state> analysis::summary_dstack::start_value(vs_shared_t f_addr) {
+std::shared_ptr<analysis::domain_state> analysis::summary_dstack::start_state(size_t node) {
+  auto f_addr = state[node].at(0)->get_f_addr();
+  std::shared_ptr<analysis::domain_state> state =
+    dynamic_pointer_cast<global_state>(start_state(f_addr));
+  return state;
+}
+
+std::shared_ptr<domain_state> analysis::summary_dstack::start_state(vs_shared_t f_addr) {
   return shared_ptr<domain_state>(new global_state(sms_top(), f_addr));
 }
 

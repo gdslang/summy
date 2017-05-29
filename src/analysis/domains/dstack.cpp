@@ -26,7 +26,8 @@ using namespace std;
 using namespace gdsl::rreil;
 using namespace analysis::value_sets;
 
-std::shared_ptr<domain_state> analysis::dstack::transform(size_t from, const ::cfg::edge *e) {
+std::map<size_t, std::shared_ptr<domain_state>> analysis::dstack::transform(
+  size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {
   std::shared_ptr<domain_state> r = state[from];
   auto for_mutable = [&](function<void(shared_ptr<memory_state>)> cb) {
     shared_ptr<memory_state> &state_c = this->state[from];
@@ -55,30 +56,7 @@ std::shared_ptr<domain_state> analysis::dstack::transform(size_t from, const ::c
     });
   });
   e->accept(ev);
-
-  return r;
-}
-
-void analysis::dstack::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  return;
-}
-
-void analysis::dstack::remove_constraint(size_t from, size_t to) {
-  return;
-}
-
-std::map<size_t, constraint_t> analysis::dstack::constraints_at(size_t to) {
-  std::map<size_t, constraint_t> r;
-  auto &in_edges = get_cfg()->in_edges(to);
-  if(in_edges.size() == 0) {
-    std::shared_ptr<analysis::domain_state> state = start_value();
-    r[to] = [=](size_t) { return default_context(state); };
-  } else
-    for(auto from : in_edges) {
-      auto payload = get_cfg()->out_edge_payloads(from)->at(to);
-      r[from] = [=](size_t) { return default_context(transform(from, payload)); };
-    }
-  return r;
+  return default_context(r);
 }
 
 dependency analysis::dstack::gen_dependency(size_t from, size_t to) {
@@ -89,15 +67,15 @@ void analysis::dstack::init_state() {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
   for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end())
-      state[i] = dynamic_pointer_cast<memory_state>(start_value());
-    else
-      state[i] = dynamic_pointer_cast<memory_state>(bottom());
+    //     if(fixpoint_pending.find(i) != fixpoint_pending.end())
+    //       state[i] = dynamic_pointer_cast<memory_state>(start_state());
+    //     else
+    state[i] = dynamic_pointer_cast<memory_state>(bottom());
   }
 }
 
 analysis::dstack::dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm)
-    : fp_analysis(cfg), sm(sm) {
+    : fp_analysis(cfg, analysis_direction::FORWARD), sm(sm) {
   init();
 }
 
@@ -113,7 +91,7 @@ shared_ptr<domain_state> analysis::dstack::bottom() {
   //  return shared_ptr<domain_state>(memory_state::bottom(new als_state(vsd_state::bottom())));
 }
 
-std::shared_ptr<domain_state> analysis::dstack::start_value() {
+std::shared_ptr<domain_state> analysis::dstack::start_state(size_t) {
   return shared_ptr<domain_state>(
     memory_state::start_value(sm, new equality_state(new als_state(vsd_state::top(sm)))));
   //  return shared_ptr<domain_state>(memory_state::start_value(new als_state(vsd_state::top())));

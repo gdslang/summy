@@ -53,8 +53,10 @@ bool analysis::liveness::liveness_result::contains(size_t node_id, singleton_t s
   return result[node_id]->contains_bit(s);
 }
 
-void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
-  function<shared_ptr<lv_state>()> transfer_f = [=]() { return state[to]; };
+std::map<size_t, std::shared_ptr<analysis::domain_state>> analysis::liveness::liveness::transform(
+  size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {
+  auto result = state[from];
+
   auto acc_newly_live = [&](int_t size, function<void(visitor &)> accept_live) {
     sr::copy_visitor cv;
     vector<singleton_t> newly_live;
@@ -65,7 +67,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
         shared_ptr<gdsl::rreil::id>(cv.retrieve_id().release()), range(var->get_offset(), size)));
     }));
     accept_live(id_acc);
-    pn_newly_live[from].insert(pn_newly_live[from].end(), newly_live.begin(), newly_live.end());
+    pn_newly_live[to].insert(pn_newly_live[to].end(), newly_live.begin(), newly_live.end());
     return newly_live;
   };
   auto assignment = [&](int_t size, variable const *assignee, vector<singleton_t> newly_live) {
@@ -73,31 +75,21 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
     assignee->get_id().accept(cv);
     singleton_t lhs(
       shared_ptr<gdsl::rreil::id>(cv.retrieve_id().release()), range(assignee->get_offset(), size));
-
-    transfer_f = [=]() {
-      auto current_state = transfer_f();
-      bool edge_live = current_state->contains_bit(lhs);
-      this->edge_liveness[edge_id(from, to)] = edge_live;
+    
+      bool edge_live = result->contains_bit(lhs);
+      this->edge_liveness[edge_id(to, from)] = edge_live;
       if(edge_live) {
-        shared_ptr<lv_state> dead_removed(current_state->remove({lhs}));
-        return shared_ptr<lv_state>(dead_removed->add(newly_live));
-      } else
-        return current_state;
-    };
+        shared_ptr<lv_state> dead_removed(result->remove({lhs}));
+        result = shared_ptr<lv_state>(dead_removed->add(newly_live));
+      }
   };
   auto memory_phi_ass = [&](const phi_memory &m) {
     if(m.from != m.to)
-      transfer_f = [=]() {
-        auto current_state = transfer_f();
-        this->edge_liveness[edge_id(from, to)] = true;
-        return current_state;
-      };
+     this->edge_liveness[edge_id(to, from)] = true;
   };
   auto access = [&](vector<singleton_t> newly_live) {
-    transfer_f = [=]() {
-      this->edge_liveness[edge_id(from, to)] = true;
-      return shared_ptr<lv_state>(transfer_f()->add(newly_live));
-    };
+      this->edge_liveness[edge_id(to, from)] = true;
+      result = shared_ptr<lv_state>(result->add(newly_live));
   };
   edge_visitor ev;
   ev._([&](const stmt_edge *edge) {
@@ -116,11 +108,11 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
     v._([&](store const *s) {
       function<void(visitor &)> accept_live = [&](
         visitor &v) { s->get_address().get_lin().accept(v); };
-      auto newly_live = acc_newly_live(s->get_address().get_size(), accept_live);
-      access(newly_live);
-      accept_live = [&](visitor &v) { s->get_rhs().accept(v); };
-      newly_live = acc_newly_live(s->get_size(), accept_live);
-      access(newly_live);
+        auto newly_live = acc_newly_live(s->get_address().get_size(), accept_live);
+        access(newly_live);
+        accept_live = [&](visitor &v) { s->get_rhs().accept(v); };
+        newly_live = acc_newly_live(s->get_size(), accept_live);
+        access(newly_live);
     });
     v._([&](cbranch const *c) {
       auto newly_live = acc_newly_live(1, [&](visitor &v) { c->get_cond().accept(v); });
@@ -134,7 +126,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
     });
     v._([&](branch const *b) {
       auto newly_live =
-        acc_newly_live(b->get_target().get_size(), [&](visitor &v) { b->get_target().accept(v); });
+      acc_newly_live(b->get_target().get_size(), [&](visitor &v) { b->get_target().accept(v); });
       access(newly_live);
     });
     v._([&](floating const *_) { throw string("Not implemented"); });
@@ -161,11 +153,7 @@ void analysis::liveness::liveness::add_constraint(size_t from, size_t to, const 
     memory_phi_ass(edge->get_memory());
   });
   e->accept(ev);
-  (constraints[from])[to] = [=](size_t) { return default_context(transfer_f()); };
-}
-
-void analysis::liveness::liveness::remove_constraint(size_t from, size_t to) {
-  (constraints[from]).erase(to);
+  return default_context(result);
 }
 
 analysis::dependency analysis::liveness::liveness::gen_dependency(size_t from, size_t to) {
@@ -179,7 +167,7 @@ void analysis::liveness::liveness::init_state() {
     state[i] = dynamic_pointer_cast<lv_state>(bottom());
 }
 
-analysis::liveness::liveness::liveness(class cfg *cfg) : fp_analysis(cfg) {
+analysis::liveness::liveness::liveness(class cfg *cfg) : fp_analysis(cfg, analysis_direction::BACKWARD) {
   init();
 }
 
@@ -187,6 +175,13 @@ analysis::liveness::liveness::~liveness() {}
 
 shared_ptr<analysis::domain_state> analysis::liveness::liveness::bottom() {
   return make_shared<lv_state>(elements_t{});
+}
+
+std::shared_ptr<analysis::domain_state> analysis::liveness::liveness::start_state(size_t) {
+  /*
+   * Todo: This is wrong!
+   */
+  return bottom();
 }
 
 shared_ptr<analysis::domain_state> analysis::liveness::liveness::get(size_t node) {

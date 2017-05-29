@@ -27,10 +27,8 @@ private:
   std::shared_ptr<static_memory> sm;
   state_t state;
 
-  std::shared_ptr<domain_state> transform(size_t from, const ::cfg::edge *e);
-  void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
-  void remove_constraint(size_t from, size_t to);
-  std::map<size_t, constraint_t> constraints_at(size_t node);
+  std::map<size_t, std::shared_ptr<domain_state>> transform(
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
   dependency gen_dependency(size_t from, size_t to);
   void init_state();
 
@@ -40,7 +38,7 @@ public:
   ~dstack();
 
   std::shared_ptr<domain_state> bottom();
-  std::shared_ptr<domain_state> start_value();
+  std::shared_ptr<domain_state> start_state(size_t);
 
   std::shared_ptr<domain_state> get(size_t node);
   void update(analysis_node node, shared_ptr<domain_state> state);

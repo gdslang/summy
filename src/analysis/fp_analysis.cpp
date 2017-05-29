@@ -18,6 +18,34 @@ using namespace cfg;
 using namespace std;
 using namespace analysis;
 
+static size_t first_if_pair(size_t x) {
+  return x;
+}
+
+static size_t first_if_pair(std::pair<const unsigned long, const ::cfg::edge *> const &p) {
+  return p.first;
+}
+
+std::map<size_t, constraint_t> fp_analysis::constraints_at(size_t node) {
+  std::map<size_t, constraint_t> r;
+  auto inner = [&](const auto &edges) {
+    if(edges.size() == 0) {
+      std::shared_ptr<analysis::domain_state> state = start_state(node);
+      r[node] = [=](size_t) { return default_context(state); };
+    } else
+      for(auto other : edges) {
+        auto ss_other = first_if_pair(other);
+        auto payload = get_cfg()->out_edge_payloads(ss_other)->at(node);
+        r[ss_other] = [=](size_t ctx) { return transform(ss_other, node, payload, ctx); };
+      }
+  };
+  if(direction == analysis_direction::FORWARD)
+    inner(cfg->in_edges(node));
+  else
+    inner(*cfg->out_edge_payloads(node));
+  return r;
+}
+
 set<analysis_node> fp_analysis::roots(
   set<analysis_node> const &all, const dependants_t &dep_dants) {
   set<analysis_node> result;
@@ -57,24 +85,25 @@ void fp_analysis::init_fixpoint_pending() {
   fixpoint_pending = roots(fixpoint_pending, _dependants);
 }
 
-fp_analysis::fp_analysis(class cfg *cfg) : rec(cfg, false), cfg(cfg) {}
+fp_analysis::fp_analysis(class cfg *cfg, analysis_direction direction)
+    : direction(direction), rec(cfg, false), cfg(cfg) {}
 
 void ::fp_analysis::fp_analysis::init() {
   for(auto node : *cfg) {
     size_t node_id = node->get_id();
     auto &edges = *cfg->out_edge_payloads(node_id);
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
-      add_constraint(node_id, edge_it->first, edge_it->second);
+//       add_constraint(node_id, edge_it->first, edge_it->second);
       auto dep = gen_dependency(node_id, edge_it->first);
       assert_dependency(dep);
     }
   }
 
   init_fixpoint_pending();
-  
-  for(auto node: fixpoint_pending)
-    add_constraint(node.id, node.id, NULL);
-  
+
+//   for(auto node : fixpoint_pending)
+//     add_constraint(node.id, node.id, NULL);
+
   init_state();
 }
 
@@ -140,12 +169,12 @@ void fp_analysis::update(vector<struct update> const &updates) {
   for(auto &update : updates) {
     auto insert = [&]() {
       //      cout << "INSERT " << update.from << " -> " << update.to << endl;
-      if(cfg->contains_edge(update.from, update.to))
-        add_constraint(update.from, update.to, cfg->out_edge_payloads(update.from)->at(update.to));
+//       if(cfg->contains_edge(update.from, update.to))
+//         add_constraint(update.from, update.to, cfg->out_edge_payloads(update.from)->at(update.to));
     };
     auto erase = [&]() {
       //      cout << "ERASE " << update.from << " -> " << update.to << endl;
-      remove_constraint(update.from, update.to);
+//       remove_constraint(update.from, update.to);
     };
     switch(update.kind) {
       case UPDATE: {
@@ -193,3 +222,4 @@ std::ostream &operator<<(std::ostream &out, fp_analysis &_this) {
   _this.put(out);
   return out;
 }
+

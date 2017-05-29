@@ -49,6 +49,10 @@ inline std::ostream &operator<<(std::ostream &out, analysis_node &_this) {
   return out;
 };
 
+enum class analysis_direction {
+  FORWARD,
+  BACKWARD
+};
 
 using node_compare_t =
   std::function<std::experimental::optional<bool>(analysis_node const &, analysis_node const &)>;
@@ -100,6 +104,7 @@ struct depdant_desc {
 
 class fp_analysis {
 private:
+  const analysis_direction direction;
   cfg::recorder rec;
 
 public:
@@ -108,13 +113,14 @@ public:
 protected:
   cfg::cfg *cfg;
 
-  [[deprecated]] std::map<size_t, std::map<size_t, constraint_t>> constraints;
-
   dependants_t _dependants;
   std::set<analysis_node> fixpoint_pending;
 
-  [[deprecated]] virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e) = 0;
-  [[deprecated]] virtual void remove_constraint(size_t from, size_t to) = 0;
+  virtual std::map<size_t, std::shared_ptr<domain_state>> transform(
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) = 0;
+
+  virtual std::shared_ptr<analysis::domain_state> start_state(size_t node) = 0;
+
   /*
    * Generate a dependency for an edge from node "from" to node "to"
    */
@@ -130,16 +136,15 @@ public:
     return cfg;
   }
 
-  fp_analysis(cfg::cfg *cfg);
+  fp_analysis(cfg::cfg *cfg, analysis_direction direction);
   virtual ~fp_analysis() {}
 
   void update(std::vector<::cfg::update> const &updates);
   void record_updates();
   bool record_stop_commit();
 
-  virtual std::map<size_t, constraint_t> constraints_at(size_t node) {
-    return constraints[node];
-  }
+  std::map<size_t, constraint_t> constraints_at(size_t to);
+
   virtual std::set<analysis_node> pending() {
     return fixpoint_pending;
   }
