@@ -48,7 +48,7 @@ std::map<size_t, std::shared_ptr<analysis::domain_state>> analysis::fcollect::fc
     stmt->accept(v);
   });
   e->accept(ev);
-  known_nodes.insert(to);
+  known_nodes.insert(from);
   return transfer_f(from_ctx);
 }
 

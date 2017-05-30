@@ -159,7 +159,9 @@ void fixpoint::iterate() {
     analysis->accept(av);
     if(_continue) continue;
 
-//     if(is_sd) cout << "Next node: " << node << endl;
+    if(is_sd) cout << "Next node: " << node << endl;
+    
+    cout << "Incomings: " << this->analysis->get_cfg()->in_edges(node.id).size() << endl;
 
     //         static int ctr = 0;
     //         if(node.id == 32 || node.id == 46) {
