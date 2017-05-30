@@ -25,7 +25,8 @@ using namespace analysis;
 using namespace analysis::addr;
 using namespace std::experimental;
 
-void analysis::addr::addr::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
+std::map<size_t, std::shared_ptr<domain_state>> analysis::addr::addr::transform(
+  size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {
   constraint_t transfer_f = [=](size_t) {
     cfg::node *to_node = cfg->get_node_payload(to);
     cfg::node_visitor nv;
@@ -49,11 +50,7 @@ void analysis::addr::addr::add_constraint(size_t from, size_t to, const ::cfg::e
         return default_context(state[from]);
     }
   };
-  (constraints[to])[from] = transfer_f;
-}
-
-void analysis::addr::addr::remove_constraint(size_t from, size_t to) {
-  (constraints[to]).erase(from);
+  return transfer_f(from_ctx);
 }
 
 dependency analysis::addr::addr::gen_dependency(size_t from, size_t to) {
@@ -64,15 +61,11 @@ void analysis::addr::addr::init_state() {
   //  cout << "Resize: " << cfg->node_count() << endl;
   size_t old_size = state.size();
   state.resize(cfg->node_count());
-  for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end())
-      state[i] = start_value(i);
-    else
-      state[i] = dynamic_pointer_cast<addr_state>(bottom());
-  }
+  for(size_t i = old_size; i < cfg->node_count(); i++)
+    state[i] = dynamic_pointer_cast<addr_state>(bottom());
 }
 
-analysis::addr::addr::addr(cfg::cfg *cfg) : fp_analysis(cfg) {
+analysis::addr::addr::addr(cfg::cfg *cfg) : fp_analysis(cfg, analysis_direction::FORWARD) {
   get_next_virt = [&](size_t address) {
     auto it = addr_virt_counter_map.find(address);
     //    assert(it != addr_virt_counter_map.end());
@@ -91,7 +84,7 @@ std::shared_ptr<addr_state> analysis::addr::addr::bottom() {
   return make_shared<addr_state>(get_next_virt);
 }
 
-std::shared_ptr<addr_state> analysis::addr::addr::start_value(size_t node) {
+std::shared_ptr<domain_state> analysis::addr::addr::start_state(size_t node) {
   cfg::node *node_pl = cfg->get_node_payload(node);
   cfg::node_visitor nv;
   optional<node_addr> address;

@@ -30,9 +30,10 @@ struct fcollect_result : public ::analysis::analysis_result<state_t> {
 class fcollect: public fp_analysis {
 private:
   state_t state;
+  std::set<size_t> known_nodes;
 
-  virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
-  virtual void remove_constraint(size_t from, size_t to);
+  std::map<size_t, std::shared_ptr<domain_state>> transform(
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
   virtual dependency gen_dependency(size_t from, size_t to);
   virtual void init_state();
 public:
@@ -40,6 +41,7 @@ public:
   ~fcollect();
 
   std::shared_ptr<domain_state> get(size_t node);
+  std::shared_ptr<domain_state> start_state(size_t);
   void update(analysis_node node, std::shared_ptr<domain_state> state);
   fcollect_result result();
 

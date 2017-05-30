@@ -22,9 +22,10 @@ namespace fcollect {
 
 class fcollect_state : public domain_state {
 private:
+  char v;
 
 public:
-  fcollect_state()  {
+  fcollect_state(char v) : v(v)  {
   }
 
   /*
@@ -34,18 +35,20 @@ public:
   }
 
   virtual fcollect_state *join(::analysis::domain_state *other, size_t current_node) {
-    return new fcollect_state();
+    auto other_casted = dynamic_cast<fcollect_state*>(other);
+    return new fcollect_state(other_casted->v | this->v);
   }
   virtual fcollect_state *narrow(::analysis::domain_state *other, size_t current_node) {
-    return new fcollect_state();
+    auto other_casted = dynamic_cast<fcollect_state*>(other);
+    return new fcollect_state(other_casted->v & this->v);
   }
   virtual fcollect_state *widen(::analysis::domain_state *other, size_t current_node) {
-    return new fcollect_state();
-
+    return join(other, current_node);
   }
 
   virtual bool operator>=(::analysis::domain_state const &other) const {
-    return true;
+    auto const& other_casted = dynamic_cast<fcollect_state const&>(other);
+    return v >= other_casted.v;
   }
 
   virtual void put(std::ostream &out) const {

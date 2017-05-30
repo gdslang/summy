@@ -44,11 +44,13 @@ using namespace analysis::adaptive_rd;
 using analysis::liveness::liveness_result;
 namespace sr = summy::rreil;
 
-void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
+std::map<size_t, std::shared_ptr<analysis::domain_state>> analysis::adaptive_rd::adaptive_rd::transform(
+  size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {
   auto cleanup_live = [=](shared_ptr<adaptive_rd_state> acc) {
     return shared_ptr<adaptive_rd_state>(acc->remove(
       [&](shared_ptr<id> id, singleton_value_t v) { return !lv_result.contains(to, id, 0, 64); }));
   };
+  
   function<shared_ptr<adaptive_rd_state>()> transfer_f = [=]() {
     //    cout << "default handler for edge " << node_id << "->" << dest_node << ", input state: "
     //    << *state[node_id] << endl;
@@ -69,7 +71,7 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
       return cleanup_live(acc);
     };
   };
-
+  
   edge_visitor ev;
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
@@ -87,18 +89,14 @@ void adaptive_rd::add_constraint(size_t from, size_t to, const edge *e) {
     }
   });
   e->accept(ev);
-
-  auto transfer_f_with_se = [=](size_t) {
+  
+  auto transfer_f_with_se = [=]() {
     auto in_state = transfer_f();
     this->in_states[to][from] = in_state;
     return default_context(in_state);
   };
-  (constraints[to])[from] = transfer_f_with_se;
-}
-
-void analysis::adaptive_rd::adaptive_rd::remove_constraint(size_t from, size_t to) {
-  (constraints[to]).erase(from);
-  (in_states[to]).erase(from);
+  
+  return transfer_f_with_se();
 }
 
 analysis::dependency analysis::adaptive_rd::adaptive_rd::gen_dependency(size_t from, size_t to) {
@@ -108,17 +106,14 @@ analysis::dependency analysis::adaptive_rd::adaptive_rd::gen_dependency(size_t f
 void analysis::adaptive_rd::adaptive_rd::init_state() {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
-  for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end())
-      state[i] = dynamic_pointer_cast<adaptive_rd_state>(start_value());
-    else
-      state[i] = dynamic_pointer_cast<adaptive_rd_state>(bottom());
-  }
+  for(size_t i = old_size; i < cfg->node_count(); i++)
+    state[i] = dynamic_pointer_cast<adaptive_rd_state>(bottom());
   in_states.resize(cfg->node_count());
 }
 
 adaptive_rd::adaptive_rd::adaptive_rd(class cfg *cfg, liveness_result lv_result)
-    : fp_analysis(cfg), in_states(cfg->node_count()), lv_result(lv_result) {
+    : fp_analysis(cfg, analysis_direction::FORWARD), in_states(cfg->node_count()),
+      lv_result(lv_result) {
   init();
 }
 
@@ -128,7 +123,7 @@ shared_ptr<analysis::domain_state> adaptive_rd::adaptive_rd::bottom() {
   return shared_ptr<adaptive_rd_state>(new adaptive_rd_state(false, elements_t(), 0));
 }
 
-shared_ptr<analysis::domain_state> adaptive_rd::adaptive_rd::start_value() {
+shared_ptr<analysis::domain_state> adaptive_rd::adaptive_rd::start_state(size_t) {
   return shared_ptr<adaptive_rd_state>(new adaptive_rd_state(true, elements_t(), 0));
 }
 

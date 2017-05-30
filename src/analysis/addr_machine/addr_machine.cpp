@@ -25,8 +25,8 @@ using namespace analysis;
 using namespace analysis::addr_machine;
 using namespace std::experimental;
 
-void analysis::addr_machine::addr_machine::add_constraint(
-  size_t from, size_t to, const ::cfg::edge *) {
+std::map<size_t, std::shared_ptr<domain_state>> analysis::addr_machine::addr_machine::transform(
+  size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {
   constraint_t transfer_f = [=](size_t) {
     cfg::node *to_node = cfg->get_node_payload(to);
     cfg::node_visitor nv;
@@ -38,17 +38,7 @@ void analysis::addr_machine::addr_machine::add_constraint(
     else
       return default_context(state[from]);
   };
-  if(to == from) {
-    (constraints[to])[from] = [=](size_t) {
-      return default_context(start_value(to)); };
-  } else {
-    remove_constraint(to, to);
-    (constraints[to])[from] = transfer_f;
-  }
-}
-
-void analysis::addr_machine::addr_machine::remove_constraint(size_t from, size_t to) {
-  (constraints[to]).erase(from);
+  return transfer_f(from_ctx);
 }
 
 dependency analysis::addr_machine::addr_machine::gen_dependency(size_t from, size_t to) {
@@ -67,7 +57,8 @@ void analysis::addr_machine::addr_machine::init_state() {
   }
 }
 
-analysis::addr_machine::addr_machine::addr_machine(cfg::cfg *cfg) : fp_analysis(cfg) {
+analysis::addr_machine::addr_machine::addr_machine(cfg::cfg *cfg)
+    : fp_analysis(cfg, analysis_direction::FORWARD) {
   init();
 }
 
@@ -77,7 +68,7 @@ std::shared_ptr<addr_machine_state> analysis::addr_machine::addr_machine::bottom
   return make_shared<addr_machine_state>();
 }
 
-std::shared_ptr<addr_machine_state> analysis::addr_machine::addr_machine::start_value(size_t node) {
+std::shared_ptr<domain_state> analysis::addr_machine::addr_machine::start_state(size_t node) {
   cfg::node *node_pl = cfg->get_node_payload(node);
   cfg::node_visitor nv;
   optional<size_t> address;

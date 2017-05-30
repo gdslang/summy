@@ -26,7 +26,8 @@ using namespace analysis;
 using namespace analysis::caller;
 using namespace std::experimental;
 
-void analysis::caller::caller::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
+std::map<size_t, std::shared_ptr<domain_state>> analysis::caller::caller::transform(
+  size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {
   constraint_t transfer_f = [=](size_t) {
     bool is_call_target = false;
     edge_visitor ev;
@@ -39,11 +40,7 @@ void analysis::caller::caller::add_constraint(size_t from, size_t to, const ::cf
       return default_context(shared_ptr<caller_state>(new caller_state(*parent)));
 
   };
-  (constraints[to])[from] = transfer_f;
-}
-
-void analysis::caller::caller::remove_constraint(size_t from, size_t to) {
-  (constraints[to]).erase(from);
+  return transfer_f(from_ctx);
 }
 
 dependency analysis::caller::caller::gen_dependency(size_t from, size_t to) {
@@ -54,15 +51,11 @@ void analysis::caller::caller::init_state() {
   //  cout << "Resize: " << cfg->node_count() << endl;
   size_t old_size = state.size();
   state.resize(cfg->node_count());
-  for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end())
-      state[i] = start_value(i);
-    else
-      state[i] = dynamic_pointer_cast<caller_state>(bottom());
-  }
+  for(size_t i = old_size; i < cfg->node_count(); i++)
+    state[i] = dynamic_pointer_cast<caller_state>(bottom());
 }
 
-analysis::caller::caller::caller(cfg::cfg *cfg) : fp_analysis(cfg) {
+analysis::caller::caller::caller(cfg::cfg *cfg) : fp_analysis(cfg, analysis_direction::FORWARD) {
   init();
 }
 
@@ -72,7 +65,10 @@ std::shared_ptr<caller_state> analysis::caller::caller::bottom() {
   return make_shared<caller_state>();
 }
 
-std::shared_ptr<caller_state> analysis::caller::caller::start_value(size_t node) {
+std::shared_ptr<domain_state> analysis::caller::caller::start_state(size_t) {
+  /*
+   * Todo: This is wrong!
+   */
   return bottom();
 }
 

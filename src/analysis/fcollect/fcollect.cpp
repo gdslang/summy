@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <set>
+#include <summy/analysis/domain_state.h>
 #include <summy/analysis/fcollect/fcollect.h>
 #include <summy/analysis/fcollect/fcollect_state.h>
 #include <summy/cfg/bfs_iterator.h>
@@ -26,7 +27,8 @@ using namespace cfg;
 using namespace gdsl::rreil;
 using namespace analysis::fcollect;
 
-void analysis::fcollect::fcollect::add_constraint(size_t from, size_t to, const ::cfg::edge *e) {
+std::map<size_t, std::shared_ptr<analysis::domain_state>> analysis::fcollect::fcollect::transform(
+  size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {
   constraint_t transfer_f = [=](size_t) { return default_context(get(0)); };
   edge_visitor ev;
   ev._([&](const stmt_edge *edge) {
@@ -45,13 +47,9 @@ void analysis::fcollect::fcollect::add_constraint(size_t from, size_t to, const 
     });
     stmt->accept(v);
   });
-  if(to != from)
-    e->accept(ev);
-  (constraints[to])[from] = transfer_f;
-}
-
-void analysis::fcollect::fcollect::remove_constraint(size_t from, size_t to) {
-  constraints[to].erase(from);
+  e->accept(ev);
+  known_nodes.insert(to);
+  return transfer_f(from_ctx);
 }
 
 analysis::dependency analysis::fcollect::fcollect::gen_dependency(size_t from, size_t to) {
@@ -60,14 +58,22 @@ analysis::dependency analysis::fcollect::fcollect::gen_dependency(size_t from, s
 
 void analysis::fcollect::fcollect::init_state() {}
 
-fcollect::fcollect::fcollect(class cfg *cfg) : fp_analysis::fp_analysis(cfg) {
+fcollect::fcollect::fcollect(class cfg *cfg)
+    : fp_analysis::fp_analysis(cfg, analysis_direction::FORWARD) {
   init();
 }
 
 analysis::fcollect::fcollect::~fcollect() {}
 
-shared_ptr<::analysis::domain_state> fcollect::fcollect::get(size_t) {
-  return make_shared<fcollect_state>();
+shared_ptr<::analysis::domain_state> fcollect::fcollect::get(size_t node) {
+  if(known_nodes.find(node) != known_nodes.end())
+    return make_shared<fcollect_state>(1);
+  else
+    return make_shared<fcollect_state>(0);
+}
+
+std::shared_ptr<::analysis::domain_state> fcollect::fcollect::start_state(size_t) {
+  return make_shared<fcollect_state>(1);
 }
 
 void fcollect::update(analysis_node, shared_ptr<::analysis::domain_state>) {}

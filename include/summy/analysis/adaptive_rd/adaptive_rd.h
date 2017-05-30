@@ -37,8 +37,8 @@ private:
   in_states_t in_states;
   liveness::liveness_result lv_result;
 
-  virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
-  virtual void remove_constraint(size_t from, size_t to);
+  std::map<size_t, std::shared_ptr<domain_state>> transform(
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
   virtual dependency gen_dependency(size_t from, size_t to);
   virtual void init_state();
 
@@ -47,7 +47,7 @@ public:
   ~adaptive_rd();
 
   std::shared_ptr<domain_state> bottom();
-  std::shared_ptr<domain_state> start_value();
+  std::shared_ptr<domain_state> start_state(size_t);
 
   std::shared_ptr<domain_state> get(size_t node);
   void update(analysis_node node, std::shared_ptr<domain_state> state);

@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <set>
+#include <summy/analysis/domain_state.h>
 #include <summy/analysis/liveness/liveness.h>
 #include <summy/analysis/reaching_defs/reaching_defs.h>
 #include <summy/cfg/bfs_iterator.h>
@@ -27,8 +28,9 @@ using namespace gdsl::rreil;
 using namespace analysis::reaching_defs;
 using analysis::liveness::liveness_result;
 
-void analysis::reaching_defs::reaching_defs::add_constraint(
-  size_t from, size_t to, const ::cfg::edge *e) {
+std::map<size_t, std::shared_ptr<::analysis::domain_state>>
+analysis::reaching_defs::reaching_defs::transform(
+  size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {
   auto cleanup_live = [=](shared_ptr<rd_state> acc) {
     //        id_set_t rm_by_lv;
     //        cout << node_id << "->" << dest_node << ": ";
@@ -67,11 +69,8 @@ void analysis::reaching_defs::reaching_defs::add_constraint(
     stmt->accept(v);
   });
   e->accept(ev);
-  (constraints[to])[from] = transfer_f;
-}
 
-void analysis::reaching_defs::reaching_defs::remove_constraint(size_t from, size_t to) {
-  constraints[to].erase(from);
+  return transfer_f(from_ctx);
 }
 
 analysis::dependency analysis::reaching_defs::reaching_defs::gen_dependency(
@@ -82,16 +81,12 @@ analysis::dependency analysis::reaching_defs::reaching_defs::gen_dependency(
 void analysis::reaching_defs::reaching_defs::init_state() {
   size_t old_size = state.size();
   state.resize(cfg->node_count());
-  for(size_t i = old_size; i < cfg->node_count(); i++) {
-    if(fixpoint_pending.find(i) != fixpoint_pending.end())
-      state[i] = dynamic_pointer_cast<rd_state>(start_value());
-    else
-      state[i] = dynamic_pointer_cast<rd_state>(bottom());
-  }
+  for(size_t i = old_size; i < cfg->node_count(); i++)
+    state[i] = dynamic_pointer_cast<rd_state>(bottom());
 }
 
 reaching_defs::reaching_defs::reaching_defs(class cfg *cfg, liveness_result lv_result)
-    : fp_analysis::fp_analysis(cfg), lv_result(lv_result) {
+    : fp_analysis::fp_analysis(cfg, analysis_direction::FORWARD), lv_result(lv_result) {
   init();
 }
 
@@ -101,7 +96,7 @@ shared_ptr<analysis::domain_state> reaching_defs::reaching_defs::bottom() {
   return shared_ptr<rd_state>(new rd_state());
 }
 
-shared_ptr<analysis::domain_state> reaching_defs::reaching_defs::start_value() {
+shared_ptr<analysis::domain_state> reaching_defs::reaching_defs::start_state(size_t) {
   return shared_ptr<rd_state>(new rd_state(rd_state::elements_t{}));
 }
 

@@ -32,8 +32,8 @@ class caller: public fp_analysis {
 private:
   state_t state;
 
-  virtual void add_constraint(size_t from, size_t to, const ::cfg::edge *e);
-  virtual void remove_constraint(size_t from, size_t to);
+  std::map<size_t, std::shared_ptr<domain_state>> transform(
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
   virtual dependency gen_dependency(size_t from, size_t to);
   virtual void init_state();
 public:
@@ -41,7 +41,7 @@ public:
   ~caller();
 
   std::shared_ptr<caller_state> bottom();
-  std::shared_ptr<caller_state> start_value(size_t node);
+  std::shared_ptr<domain_state> start_state(size_t node);
 
   std::shared_ptr<domain_state> get(size_t node);
   void update(size_t node, std::shared_ptr<domain_state> state);
