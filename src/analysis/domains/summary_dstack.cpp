@@ -759,7 +759,7 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
     nv._([&](address_node *an) { addr = an->get_address(); });
     n->accept(nv);
     function_desc_map.insert(make_pair((void *)addr.value(), function_desc(0, n->get_id())));
-    state[n->get_id()].at(0)->set_f_addr(vs_finite::single(addr.value()));
+//     state[n->get_id()].at(0)->set_f_addr(vs_finite::single(addr.value()));
     
     if(n->get_id() == 324)
       cout << *state[n->get_id()].at(0) << endl;
@@ -781,7 +781,7 @@ analysis::summary_dstack::summary_dstack(
   nv._([&](address_node *an) { addr = an->get_address(); });
   n->accept(nv);
   function_desc_map.insert(make_pair((void *)addr.value(), function_desc(0, n->get_id())));
-  state[n->get_id()].at(0)->set_f_addr(vs_finite::single(addr.value()));
+//   state[n->get_id()].at(0)->set_f_addr(vs_finite::single(addr.value()));
 }
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, bool warnings)
@@ -816,17 +816,25 @@ shared_ptr<domain_state> analysis::summary_dstack::bottom() {
   return shared_ptr<domain_state>(new global_state(sms_bottom(), value_set::bottom));
 }
 
-std::shared_ptr<analysis::domain_state> analysis::summary_dstack::start_state(size_t node) {
-  if(node == 324) {
+std::shared_ptr<analysis::domain_state> analysis::summary_dstack::start_state(size_t node_id) {
+  if(node_id == 324) {
     cout << "XXXXXXXXX" << endl;
-    cout << *state[node].at(0);
+    cout << *state[node_id].at(0);
   }
   
-  auto f_addr = state[node].at(0)->get_f_addr();
+  node *n = cfg->get_node_payload(node_id);
+  optional<size_t> addr;
+  node_visitor nv;
+  nv._([&](address_node *an) { addr = an->get_address(); });
+  n->accept(nv);
+  
+  assert(addr);
+  assert(function_desc_map.find((void*)*addr) != function_desc_map.end());
+  
   std::shared_ptr<analysis::domain_state> state =
-    dynamic_pointer_cast<global_state>(start_state(f_addr));
+    dynamic_pointer_cast<global_state>(start_state(vs_finite::single(addr.value())));
     
-  if(node == 324)
+  if(node_id == 324)
     cout << *state << endl;
     
   return state;
