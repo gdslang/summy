@@ -17,6 +17,7 @@
 #include <summy/rreil/id/sm_id.h>
 #include <summy/value_set/value_set_visitor.h>
 #include <summy/value_set/vs_finite.h>
+#include <summy/analysis/domains/mempath_assignment.h>
 
 using gdsl::rreil::id;
 using summy::rreil::ptr_memory_id;
@@ -30,6 +31,11 @@ using namespace std::experimental;
 using namespace analysis;
 using namespace analysis::api;
 using namespace summy::rreil;
+
+mp_ext_result::mp_ext_result() = default;
+mp_ext_result::mp_ext_result(mp_ext_result &&) = default;
+mp_ext_result& mp_ext_result::operator=(mp_ext_result &&) = default;
+mp_ext_result::~mp_ext_result() = default;
 
 bool mempath::step::operator<(const step &other) const {
   if(offset > other.offset)
@@ -66,21 +72,26 @@ int mempath::compare_to(const mempath &other) const {
   return 0;
 }
 
-std::experimental::optional<std::set<mempath>> mempath::_extract(
+size_t mempath::_extract(std::experimental::optional<std::set<mempath>> &extracted,
   summary_memory_state *from, std::map<size_t, ptr_set_t> &aliases_from_immediate) const {
-    std::map<size_t, ptr_set_t> aliases_from = resolve(from);
-    
-    ptr_set_t aliases_from_symbolic;
-    tie(aliases_from_immediate, aliases_from_symbolic) = split(aliases_from);
-    
-    if(aliases_from_symbolic.size() > 0) {
-      id_set_t aliases_from_symbolic_ids;
-      for(auto ptr : aliases_from_symbolic)
-        aliases_from_symbolic_ids.insert(ptr.id);
-      return from_aliases(aliases_from_symbolic_ids, from);
-    } else
-      return experimental::nullopt;
+  std::map<size_t, ptr_set_t> aliases_from = resolve(from);
+
+  ptr_set_t aliases_from_symbolic;
+  tie(aliases_from_immediate, aliases_from_symbolic) = split(aliases_from);
+
+  if(aliases_from_symbolic.size() > 0) {
+    id_set_t aliases_from_symbolic_ids;
+    for(auto ptr : aliases_from_symbolic)
+      aliases_from_symbolic_ids.insert(ptr.id);
+    std::set<mempath> e;
+    size_t path_construction_errors = from_aliases(e, aliases_from_symbolic_ids, from);
+    extracted = e;
+    return path_construction_errors;
+  } else {
+    extracted = experimental::nullopt;
+    return 0;
   }
+}
 
 bool mempath::operator<(const mempath &other) const {
   return compare_to(other) == -1;
@@ -88,6 +99,11 @@ bool mempath::operator<(const mempath &other) const {
 
 bool mempath::operator==(const mempath &other) const {
   return compare_to(other) == 0;
+}
+
+mempath mempath::shorten(size_t length) const {
+  assert(length <= path.size());
+  return mempath(base, std::vector<step>(path.begin(), path.begin() + length));
 }
 
 std::map<size_t, ptr_set_t> analysis::mempath::resolve(summary_memory_state *from) const {
@@ -181,7 +197,6 @@ std::tuple<std::map<size_t, ptr_set_t>, ptr_set_t> analysis::mempath::split(
 }
 
 
-
 void analysis::mempath::propagate(
   size_t path_length, ptr_set_t aliases_from_immediate, summary_memory_state *to) const {
   if(aliases_from_immediate.size() == 0) return;
@@ -230,40 +245,61 @@ void analysis::mempath::propagate(
   to->child_state->assign(&f_var, aliases_from_immediate);
 }
 
-std::experimental::optional<set<mempath>> analysis::mempath::propagate(
-  std::function<void(size_t)> imm_ptr_cb, summary_memory_state *from,
-  summary_memory_state *to) const {
-  //   cout << "propagate " << *this << " from" << endl;
-  //   cout << *from << endl;
 
+mp_ext_result analysis::mempath::extract_table_keys(summary_memory_state *from) {
+  mp_ext_result result;
+  
   std::map<size_t, ptr_set_t> aliases_from_immediate;
-  auto result = _extract(from, aliases_from_immediate);
-  for(auto mapping : aliases_from_immediate)
-    propagate(mapping.first, mapping.second, to);
-
-  // Callback for immediate pointers; used for statistics only
-  //   for(auto &alias : aliases_from_immediate) {
-  //     std::cout << "IMMEDIATE ALIAS!!!!" << std::endl;
-  //     optional<size_t> offset;
-  //     value_set_visitor vsv;
-  //     vsv._([&](vs_finite const *v) {
-  //       assert(v->get_elements().size() == 1);
-  //       offset = *v->get_elements().begin();
-  //     });
-  //     alias.offset->accept(vsv);
-  //     assert(offset);
-  //     summy::rreil::id_visitor idv;
-  //     idv._([&](sm_id const *sid) { imm_ptr_cb((size_t)sid->get_address() + *offset); });
-  //     alias.id->accept(idv);
-  //   }
-
+  result.path_construction_errors = _extract(result.remaining, from, aliases_from_immediate);
+  for(auto mapping : aliases_from_immediate) {
+    for(auto &alias : mapping.second) {
+      result.assignments.push_back(mempath_assignment(shorten(mapping.first), alias));
+    }
+  }
+  
   return result;
 }
 
-std::set<mempath> analysis::mempath::from_aliases(
-  api::id_set_t aliases, summary_memory_state *state) {
+mp_prop_result analysis::mempath::propagate(std::experimental::optional<set<mempath>> &extracted,
+  summary_memory_state *from, summary_memory_state *to) const {
+  //   cout << "propagate " << *this << " from" << endl;
+  //   cout << *from << endl;
+
+  mp_prop_result result;
+
+  std::map<size_t, ptr_set_t> aliases_from_immediate;
+  result.path_construction_errors = _extract(extracted, from, aliases_from_immediate);
+  for(auto mapping : aliases_from_immediate) {
+    propagate(mapping.first, mapping.second, to);
+  }
+
+  // Collect immediate pointers; used for statistics only
+  for(auto &aliases : aliases_from_immediate)
+    for(auto &alias : aliases.second) {
+      std::set<size_t> offsets;
+      value_set_visitor vsv;
+      vsv._([&](vs_finite const *v) {
+//         assert(v->get_elements().size() == 1);
+        for(auto e : v->get_elements())
+          offsets.insert(e);
+      });
+      alias.offset->accept(vsv);
+      summy::rreil::id_visitor idv;
+      idv._([&](sm_id const *sid) {
+        for(auto offset : offsets)
+          result.constant_ptrs.push_back((size_t)sid->get_address() + offset);
+      });
+      idv._default([&](id const *) { assert(false); });
+      alias.id->accept(idv);
+    }
+
+  return std::move(result);
+}
+
+size_t analysis::mempath::from_aliases(
+  set<mempath> &extracted, api::id_set_t aliases, summary_memory_state *state) {
   //  cout << "std::set<mempath> analysis::mempath::from_aliases()" << endl;
-  set<mempath> result;
+  size_t path_construction_errors = 0;
   for(auto &alias : aliases) {
     if(*alias == *special_ptr::_nullptr || *alias == *special_ptr::badptr) continue;
     bool found = false;
@@ -288,7 +324,7 @@ std::set<mempath> analysis::mempath::from_aliases(
       };
       if(handle_region(region_it)) {
         //        cout << mempath(region_it->first, steps) << endl;
-        result.insert(mempath(region_it->first, steps));
+        extracted.insert(mempath(region_it->first, steps));
         found = true;
         return true;
       }
@@ -314,10 +350,11 @@ std::set<mempath> analysis::mempath::from_aliases(
     //          if(for_region_mapping(region_it)) break;
     //      }
     if(!found) {
-      cout << "analysis::mempath::from_pointers() - Warning: Unable to find pointer." << endl;
+      cout << "analysis::mempath::from_aliases() - Warning: Unable to find pointer." << endl;
+      path_construction_errors++;
     }
   }
-  return result;
+  return path_construction_errors;
 }
 
 std::ostream &analysis::operator<<(std::ostream &out, const mempath &_this) {

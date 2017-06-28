@@ -8,11 +8,11 @@ bool mempath_assignment::operator<(const mempath_assignment &other) const {
   else if(other.mp < mp)
     return false;
   else
-    return ptrs_immediate < other.ptrs_immediate;
+    return immediate < other.immediate;
 }
 
 bool mempath_assignment::operator==(const mempath_assignment &other) const {
-  return mp == other.mp && ptrs_immediate == other.ptrs_immediate;
+  return mp == other.mp && immediate == other.immediate;
 }
 
 }

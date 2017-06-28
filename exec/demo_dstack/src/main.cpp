@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
       function_map[e.address] = name;
     }
 
-    analysis_dectran dt(g, true, false, function_map);
+    analysis_dectran dt(g, false, false, function_map);
 
     dt.transduce();
     dt.register_();
@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, false);
     cfg::jd_manager jd_man(&cfg);
-    fixpoint fp(&ds, jd_man, true);
+    fixpoint fp(&ds, jd_man, false);
     cfg.register_observer(&fp);
 
     fp.iterate();
@@ -165,13 +165,13 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 51 || true) out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+      if(true || n.get_id() == 51 || true) out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
       //      out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *jd_man.address_of(n.get_id()) << "\"]";
       else
         n.dot(out);
     });
     dot_fs.close();
-
+    
     unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg(false);
     ofstream dot_machine_fs;
     dot_machine_fs.open("output_machine.dot", ios::out);

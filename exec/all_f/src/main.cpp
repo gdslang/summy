@@ -1,42 +1,42 @@
-#include <summy/cfg/cfg.h>
-#include <summy/cfg/node/address_node.h>
-#include <cppgdsl/gdsl.h>
-#include <cppgdsl/frontend/bare_frontend.h>
 #include <bjutil/binary/elf_provider.h>
-#include <bjutil/printer.h>
 #include <bjutil/gdsl_init.h>
+#include <bjutil/printer.h>
+#include <cppgdsl/frontend/bare_frontend.h>
+#include <cppgdsl/gdsl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
 #include <string.h>
 #include <summy/analysis/domains/api/api.h>
+#include <summy/cfg/cfg.h>
+#include <summy/cfg/node/address_node.h>
 //#include <summy/analysis/domains/dstack.h>
-#include <summy/analysis/domains/summary_dstack.h>
-#include <summy/analysis/domains/numeric/vsd_state.h>
-#include <iosfwd>
-#include <vector>
-#include <map>
-#include <tuple>
-#include <iostream>
 #include <fstream>
 #include <functional>
+#include <iosfwd>
+#include <iostream>
+#include <map>
+#include <summy/analysis/domains/numeric/vsd_state.h>
+#include <summy/analysis/domains/summary_dstack.h>
+#include <tuple>
+#include <vector>
 
+#include <algorithm>
+#include <bjutil/sort.h>
+#include <experimental/optional>
+#include <summy/analysis/fcollect/fcollect.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/static_memory.h>
-#include <summy/cfg/jd_manager.h>
-#include <summy/rreil/id/numeric_id.h>
-#include <summy/transformers/resolved_connector.h>
-#include <bjutil/sort.h>
-#include <summy/analysis/fcollect/fcollect.h>
 #include <summy/big_step/analysis_dectran.h>
 #include <summy/big_step/sweep.h>
+#include <summy/cfg/jd_manager.h>
+#include <summy/rreil/id/numeric_id.h>
 #include <summy/statistics.h>
+#include <summy/transformers/resolved_connector.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
 #include <summy/value_set/vs_top.h>
-#include <algorithm>
-#include <experimental/optional>
 
 #include <cstdio>
 #include <memory>
@@ -58,7 +58,7 @@ using namespace std::experimental;
 
 /**
  * @brief ...
- * 
+ *
  * @param argc p_argc:...
  * @param argv ${p_argv:...}
  * @return int
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
     //    for(size_t address : fc.result().result)
     //      cout << hex << address << dec << endl;
     set<size_t> fstarts = fc.result().result;
-    
+
     condition_statistics_data_t c_stats = condition_statistics(sweep.get_cfg()).get_stats();
     cout << "Total conditions: " << c_stats.total_conditions << endl;
     cout << "Comparison conditions: " << c_stats.cmp_conditions << " ("
@@ -155,13 +155,14 @@ int main(int argc, char **argv) {
       binary_provider::entry_t e;
       string name;
       tie(name, e) = f;
-      //      if(name != "p_slash_66_slash_f3Action2" && name != "p_slash_66_slash_f3_slash_f2Action8" && name !=
+      //      if(name != "p_slash_66_slash_f3Action2" && name !=
+      //      "p_slash_66_slash_f3_slash_f2Action8" && name !=
       //      "with_f3") {
       //        continue;
       //      }
       //      if(name != "_slash_vex_slash_0f_slash_vexv")
       //        continue;
-      //if(name != "sweep") continue;
+      // if(name != "sweep") continue;
       //            if(name != "_slash_") continue;
       //            if(name != "show_slash_op") continue;
       //            if(name != "consume") continue;
@@ -174,7 +175,7 @@ int main(int argc, char **argv) {
       //            if(name != "register_from_bits") continue;
       //            if(name != "rreil_convert_sem_stmt") continue;
       //      if(name != "main") continue;
-//       if(name != "_slash_") continue;
+      //       if(name != "_slash_") continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
         fstarts.erase(e.address);
@@ -192,7 +193,7 @@ int main(int argc, char **argv) {
       auto &cfg = dt.get_cfg();
       cfg.commit_updates();
     }
-    
+
     for(auto f : functions) {
       binary_provider::entry_t e;
       string name;
@@ -213,11 +214,11 @@ int main(int argc, char **argv) {
       }
     }
 
-//    dt.transduce_function(0x401900, nullopt);
-//    {
-//      auto &cfg = dt.get_cfg();
-//      cfg.commit_updates();
-//    }
+    //    dt.transduce_function(0x401900, nullopt);
+    //    {
+    //      auto &cfg = dt.get_cfg();
+    //      cfg.commit_updates();
+    //    }
 
     auto &cfg = dt.get_cfg();
 
@@ -254,9 +255,10 @@ int main(int argc, char **argv) {
     ofstream dot_fs;
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
-      if(n.get_id() == 304 || n.get_id() == 602)
+      if(n.get_id() == 304 || n.get_id() == 602 || true)
         out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-      //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " << *jd_man.address_of(n.get_id()) << "\"]";
+      //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " <<
+      //            *jd_man.address_of(n.get_id()) << "\"]";
       else
         n.dot(out);
     });
@@ -282,32 +284,66 @@ int main(int argc, char **argv) {
     size_t total_indirect = b_stats.calls_total_indirect + b_stats.jmps_total_indirect;
     size_t with_targets = b_stats.calls_with_targets + b_stats.jmps_with_targets;
     cout << "Total indirect branches: " << total_indirect << endl;
-    cout << "Indirect branches with targets: " << with_targets << " (" << (100.0 * with_targets / (float)total_indirect)
-         << "%)" << endl;
+    cout << "Indirect branches with targets: " << with_targets << " ("
+         << (100.0 * with_targets / (float)total_indirect) << "%)" << endl;
 
     cout << "Total indirect jmps: " << b_stats.jmps_total_indirect << endl;
     cout << "Indirect jmps with targets: " << b_stats.jmps_with_targets << " ("
-         << (100.0 * b_stats.jmps_with_targets / (float)b_stats.jmps_total_indirect) << "%)" << endl;
+         << (100.0 * b_stats.jmps_with_targets / (float)b_stats.jmps_total_indirect) << "%)"
+         << endl;
 
     cout << "Total indirect calls: " << b_stats.calls_total_indirect << endl;
     cout << "Indirect calls with targets: " << b_stats.calls_with_targets << " ("
-         << (100.0 * b_stats.calls_with_targets / (float)b_stats.calls_total_indirect) << "%)" << endl;
+         << (100.0 * b_stats.calls_with_targets / (float)b_stats.calls_total_indirect) << "%)"
+         << endl;
 
     dt.print_decoding_holes();
-    
-    auto const& pointer_props = ds.get_pointer_props();
-    for(auto const& pp : pointer_props) {
+
+    auto const &pointer_props = ds.get_pointer_props();
+    for(auto const &pp : pointer_props) {
       cout << "PP for address 0x" << std::hex << pp.first << std::dec << ":" << std::endl;
-      for(auto const& fr : pp.second) {
+      for(auto const &fr : pp.second) {
         cout << "  -> Field requirement " << std::endl;
-      for(auto const& ptr : fr.second)
-        cout << "    -> Propagated address 0x" << std::hex << ptr << std::dec << std::endl;
+        for(auto const &ptr : fr.second)
+          cout << "    -> Propagated address 0x" << std::hex << ptr << std::dec << std::endl;
       }
     }
-    
+
+    auto const &hb_counts = ds.get_hb_counts();
+    size_t requests = 0;
+    size_t hbs = 0;
+    for(auto const &head_mapping : hb_counts) {
+      for(auto const& hb_mapping : head_mapping.second) {
+        requests++;
+        hbs += hb_mapping.second.size();
+      }
+    }
+    cout << "Total requests: " << requests << ", instantiations: " << hbs << endl;
+
+    auto const &path_construction_errors = ds.get_path_construction_errors();
+    size_t path_errors_total = 0;
+    for(auto const &path_errors : path_construction_errors) {
+      path_errors_total += path_errors.second;
+    }
+    cout << "Path construction errors: " << path_errors_total << endl;
+
+    auto const &unique_hbs = ds.get_unique_hbs();
+    size_t zero_hbs = 0;
+    size_t one_hb = 0;
+    size_t multiple_hbs = 0;
+    for(auto const &uh : unique_hbs) {
+      if(uh.second == 0)
+        zero_hbs++;
+      else if(uh.second == 1)
+        one_hb++;
+      else
+        multiple_hbs++;
+    }
+    cout << "Zero HBs: " << zero_hbs << ", one HB: " << one_hb << ", multiple HBs: " << multiple_hbs
+         << endl;
+
     cout << "Hot addresses:" << endl;
     fp.print_hot_addresses();
-    
   } catch(string &s) {
     cout << "Exception: " << s << endl;
     exit(1);
