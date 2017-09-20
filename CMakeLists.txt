@@ -2,14 +2,6 @@ cmake_minimum_required (VERSION 2.8)
 project (summy)
 
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/llvm)
-#include_directories("${CMAKE_SOURCE_DIR}/llvm")
-#find_package(LLVM REQUIRED CONFIG)
-llvm_map_components_to_libnames(llvm_libs support core irreader)
-message(STATUS "Found LLVM ${LLVM_INCLUDE_DIRS}")
-message(STATUS "Found LLVM ${LLVM_DEFINITIONS}")
-message(STATUS "Found LLVM ${llvm_libs}")
-
 file(GLOB_RECURSE SOURCES
     "src/**.cpp"
 )
@@ -41,7 +33,7 @@ target_link_libraries(summy bjutil cppgdsl)
 
 add_subdirectory(exec/demo_dstack)
 add_subdirectory(exec/all_f)
-#add_subdirectory(exec/tester)
+add_subdirectory(exec/tester)
 
-#enable_testing()
-#add_test(all exec/tester/tester)
+enable_testing()
+add_test(all exec/tester/tester)
