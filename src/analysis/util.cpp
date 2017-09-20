@@ -5,16 +5,16 @@
  *      Author: Julian Kranz
  */
 
+#include <assert.h>
+#include <cppgdsl/rreil/rreil.h>
+#include <summy/analysis/domain_state.h>
 #include <summy/analysis/util.h>
 #include <summy/rreil/id/id_visitor.h>
-#include <cppgdsl/rreil/rreil.h>
-#include <summy/rreil/id/ssa_id.h>
-#include <assert.h>
-#include <summy/analysis/domain_state.h>
 #include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/id/special_ptr.h>
+#include <summy/rreil/id/ssa_id.h>
 #include <typeindex>
 
 #include <iostream>
@@ -45,11 +45,13 @@ bool analysis::id_less::operator()(
   return *a < *b;
 }
 
-bool analysis::id_less::operator()(const gdsl::rreil::id &a, const std::shared_ptr<gdsl::rreil::id> &b) const {
+bool analysis::id_less::operator()(
+  const gdsl::rreil::id &a, const std::shared_ptr<gdsl::rreil::id> &b) const {
   return a < *b;
 }
 
-bool analysis::id_less::operator()(const std::shared_ptr<gdsl::rreil::id> &a, const gdsl::rreil::id &b) const {
+bool analysis::id_less::operator()(
+  const std::shared_ptr<gdsl::rreil::id> &a, const gdsl::rreil::id &b) const {
   return *a < b;
 }
 

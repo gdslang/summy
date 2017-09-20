@@ -605,12 +605,10 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
         else
           accumulate_all();
       }
-
-      if(tabulation) {
+      
+      if(tabulation)
         state_map_new[0] = state_new;
-        
-        cout << state_new << endl;
-      } else
+      else
         state_map_new[from_ctx] = state_new;
     } else {
       auto state_new = get_sub(from, from_ctx);
@@ -640,18 +638,6 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
     result = state_map_new;
   });
   e->accept(ev);
-  
-  for(auto mapping : result) {
-    auto foo = dynamic_pointer_cast<global_state>(mapping.second);
-    set<void *> f_addrs = unpack_f_addrs(foo->get_f_addr());
-    if(!foo->get_mstate()->is_bottom() && f_addrs.size() == 0) {
-      cout << "ctx: " << mapping.first << endl;
-      cout << from << endl;
-//       cout << *foo << endl;
-    }
-    assert(foo->get_mstate()->is_bottom() || f_addrs.size() > 0);
-  }
-  
   return result;
 }
 
@@ -759,10 +745,6 @@ analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_m
     nv._([&](address_node *an) { addr = an->get_address(); });
     n->accept(nv);
     function_desc_map.insert(make_pair((void *)addr.value(), function_desc(0, n->get_id())));
-    state[n->get_id()].at(0)->set_f_addr(vs_finite::single(addr.value()));
-    
-    if(n->get_id() == 324)
-      cout << *state[n->get_id()].at(0) << endl;
   }
 }
 
@@ -781,7 +763,6 @@ analysis::summary_dstack::summary_dstack(
   nv._([&](address_node *an) { addr = an->get_address(); });
   n->accept(nv);
   function_desc_map.insert(make_pair((void *)addr.value(), function_desc(0, n->get_id())));
-  state[n->get_id()].at(0)->set_f_addr(vs_finite::single(addr.value()));
 }
 
 analysis::summary_dstack::summary_dstack(cfg::cfg *cfg, bool warnings)
@@ -816,18 +797,18 @@ shared_ptr<domain_state> analysis::summary_dstack::bottom() {
   return shared_ptr<domain_state>(new global_state(sms_bottom(), value_set::bottom));
 }
 
-std::shared_ptr<analysis::domain_state> analysis::summary_dstack::start_state(size_t node) {
-  if(node == 324) {
-    cout << "XXXXXXXXX" << endl;
-    cout << *state[node].at(0);
-  }
+std::shared_ptr<analysis::domain_state> analysis::summary_dstack::start_state(size_t node_id) {
+  node *n = cfg->get_node_payload(node_id);
+  optional<size_t> addr;
+  node_visitor nv;
+  nv._([&](address_node *an) { addr = an->get_address(); });
+  n->accept(nv);
   
-  auto f_addr = state[node].at(0)->get_f_addr();
+  assert(addr);
+  assert(function_desc_map.find((void*)*addr) != function_desc_map.end());
+  
   std::shared_ptr<analysis::domain_state> state =
-    dynamic_pointer_cast<global_state>(start_state(f_addr));
-    
-  if(node == 324)
-    cout << *state << endl;
+    dynamic_pointer_cast<global_state>(start_state(vs_finite::single(addr.value())));
     
   return state;
 }
@@ -864,11 +845,6 @@ shared_ptr<global_state> analysis::summary_dstack::get_sub(size_t node, size_t c
 }
 
 void analysis::summary_dstack::update(analysis_node node, shared_ptr<domain_state> state) {
-  if(node.id == 324) {
-  cout << "SETTING 324" << endl;
-    cout << *state << endl;
-  }
-  
   (this->state[node.id])[node.context] = dynamic_pointer_cast<global_state>(state);
   //  erased.erase(node);
   //  this->state[node]->get_mstate()->check_consistency();
