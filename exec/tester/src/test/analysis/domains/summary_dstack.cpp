@@ -1550,27 +1550,6 @@ return 0;\n\
 }",
     true, true));
   
-  ofstream dot_noa_fs;
-  dot_noa_fs.open("output_noa_test.dot", ios::out);
-  ar.dt->get_cfg().dot(dot_noa_fs, [&](::cfg::node &n, ostream &out) {
-    if(n.get_id() == 33 || n.get_id() == 42) {
-      //out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-      out << n.get_id() << " [label=\"" << n.get_id() << "\n";
-      for(auto ctx_mapping : ar.ds_analyzed->get_ctxful(n.get_id()))
-        out << "CTX: " << ctx_mapping.first << "\t" << *ctx_mapping.second << endl;
-      
-      
-      out << "\"]";
-    }
-    
-    
-    //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " <<
-    //            *jd_man.address_of(n.get_id()) << "\"]";
-    else
-      n.dot(out);
-  });
-  dot_noa_fs.close();
-
   vs_shared_t r;
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "test", "R11", 0, 32));
   ASSERT_EQ(*r, vs_finite::single(141));
