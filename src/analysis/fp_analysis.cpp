@@ -93,16 +93,12 @@ void ::fp_analysis::fp_analysis::init() {
     size_t node_id = node->get_id();
     auto &edges = *cfg->out_edge_payloads(node_id);
     for(auto edge_it = edges.begin(); edge_it != edges.end(); edge_it++) {
-//       add_constraint(node_id, edge_it->first, edge_it->second);
       auto dep = gen_dependency(node_id, edge_it->first);
       assert_dependency(dep);
     }
   }
 
   init_fixpoint_pending();
-
-//   for(auto node : fixpoint_pending)
-//     add_constraint(node.id, node.id, NULL);
 
   init_state();
 }
@@ -165,33 +161,6 @@ void fp_analysis::update(vector<struct update> const &updates) {
   }
   fixpoint_pending = roots(fixpoint_pending, local_deps);
   init_state();
-
-  for(auto &update : updates) {
-    auto insert = [&]() {
-      //      cout << "INSERT " << update.from << " -> " << update.to << endl;
-//       if(cfg->contains_edge(update.from, update.to))
-//         add_constraint(update.from, update.to, cfg->out_edge_payloads(update.from)->at(update.to));
-    };
-    auto erase = [&]() {
-      //      cout << "ERASE " << update.from << " -> " << update.to << endl;
-//       remove_constraint(update.from, update.to);
-    };
-    switch(update.kind) {
-      case UPDATE: {
-        erase();
-        insert();
-        break;
-      }
-      case INSERT: {
-        insert();
-        break;
-      }
-      case ERASE: {
-        erase();
-        break;
-      }
-    }
-  }
 }
 
 void analysis::fp_analysis::record_updates() {
