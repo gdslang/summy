@@ -28,9 +28,9 @@ private:
   state_t state;
 
   std::map<size_t, std::shared_ptr<domain_state>> transform(
-    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
-  dependency gen_dependency(size_t from, size_t to);
-  void init_state();
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) override;
+  dependency gen_dependency(size_t from, size_t to) override;
+  void init_state() override;
 
 public:
   dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm);
@@ -38,13 +38,13 @@ public:
   ~dstack();
 
   std::shared_ptr<domain_state> bottom();
-  std::shared_ptr<domain_state> start_state(size_t);
+  std::shared_ptr<domain_state> start_state(size_t) override;
 
-  std::shared_ptr<domain_state> get(size_t node);
-  void update(analysis_node node, shared_ptr<domain_state> state);
+  std::shared_ptr<domain_state> get(size_t node) override;
+  void update(analysis_node node, shared_ptr<domain_state> state) override;
   dstack_result result();
 
-  void put(std::ostream &out);
+  void put(std::ostream &out) override;
 };
 
 } // namespace analysis

@@ -33,21 +33,21 @@ private:
   state_t state;
 
   std::map<size_t, std::shared_ptr<domain_state>> transform(
-    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
-  virtual dependency gen_dependency(size_t from, size_t to);
-  virtual void init_state();
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) override;
+  virtual dependency gen_dependency(size_t from, size_t to) override;
+  virtual void init_state() override;
 public:
   addr_machine(cfg::cfg *cfg);
   ~addr_machine();
 
   std::shared_ptr<addr_machine_state> bottom();
-  std::shared_ptr<domain_state> start_state(size_t node);
+  std::shared_ptr<domain_state> start_state(size_t node) override;
 
-  std::shared_ptr<domain_state> get(size_t node);
-  void update(analysis_node node, std::shared_ptr<domain_state> state);
+  std::shared_ptr<domain_state> get(size_t node) override;
+  void update(analysis_node node, std::shared_ptr<domain_state> state) override;
   addr_machine_result result();
 
-  void put(std::ostream &out);
+  void put(std::ostream &out) override;
 };
 
 }  // namespace addr

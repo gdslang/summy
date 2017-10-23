@@ -116,6 +116,16 @@ protected:
   dependants_t _dependants;
   std::set<analysis_node> fixpoint_pending;
 
+  /**
+   * Run a given transformer on the current state.
+   * 
+   * \param from the source node of the transformer edge
+   * \param to the destination node of the transformer edge
+   * \param e the edge payload that describes the transformer
+   * \param from_ctx the context in which the transformer is applied
+   * 
+   * \return a mapping from context to transformed state
+   */
   virtual std::map<size_t, std::shared_ptr<domain_state>> transform(
     size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) = 0;
 

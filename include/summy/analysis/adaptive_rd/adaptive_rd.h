@@ -38,22 +38,22 @@ private:
   liveness::liveness_result lv_result;
 
   std::map<size_t, std::shared_ptr<domain_state>> transform(
-    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
-  virtual dependency gen_dependency(size_t from, size_t to);
-  virtual void init_state();
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) override;
+  virtual dependency gen_dependency(size_t from, size_t to) override;
+  virtual void init_state() override;
 
 public:
   adaptive_rd(cfg::cfg *cfg, liveness::liveness_result lv_result);
   ~adaptive_rd();
 
   std::shared_ptr<domain_state> bottom();
-  std::shared_ptr<domain_state> start_state(size_t);
+  std::shared_ptr<domain_state> start_state(size_t) override;
 
-  std::shared_ptr<domain_state> get(size_t node);
-  void update(analysis_node node, std::shared_ptr<domain_state> state);
+  std::shared_ptr<domain_state> get(size_t node) override;
+  void update(analysis_node node, std::shared_ptr<domain_state> state) override;
   adaptive_rd_result result();
 
-  void put(std::ostream &out);
+  void put(std::ostream &out) override;
 };
 
 } // namespace reaching_defs

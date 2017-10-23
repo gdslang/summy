@@ -33,19 +33,19 @@ private:
   std::set<size_t> known_nodes;
 
   std::map<size_t, std::shared_ptr<domain_state>> transform(
-    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
-  virtual dependency gen_dependency(size_t from, size_t to);
-  virtual void init_state();
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) override;
+  virtual dependency gen_dependency(size_t from, size_t to) override;
+  virtual void init_state() override;
 public:
   fcollect(cfg::cfg *cfg);
   ~fcollect();
 
-  std::shared_ptr<domain_state> get(size_t node);
-  std::shared_ptr<domain_state> start_state(size_t);
-  void update(analysis_node node, std::shared_ptr<domain_state> state);
+  std::shared_ptr<domain_state> get(size_t node) override;
+  std::shared_ptr<domain_state> start_state(size_t) override;
+  void update(analysis_node node, std::shared_ptr<domain_state> state) override;
   fcollect_result result();
 
-  void put(std::ostream &out);
+  void put(std::ostream &out) override;
 };
 
 }
