@@ -195,10 +195,6 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
 
   edge_visitor ev;
 
-  //  statement *_stmt =  NULL;
-  //  bool _cond = false;
-  //  bool _call = false;
-
   ev._([&](const stmt_edge *edge) {
     statement *stmt = edge->get_stmt();
     //    _stmt = stmt;
@@ -218,9 +214,6 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
 
           for(auto edge_mapping : *cfg->out_edge_payloads(to))
             _dirty_nodes.context_deps[from_ctx].insert(edge_mapping.first);
-          //             for(auto ctx_mapping : state[edge_mapping.first])
-          //               _dirty_nodes.context_deps[ctx_mapping.first].insert(edge_mapping.first);
-          //               _dirty_nodes.context_free_deps.insert(edge_mapping.first);
 
           //            cout << *mstate << endl;
           
@@ -392,38 +385,11 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
              * Directly recursive call => We have to rename variables!
              */
             summary.value()->rename();
-          //                        if(summary)
-          //                          cout << *summary.value();
-          //                        if(summary)
-          //                          cout << "We have a summary!" << endl;
-          //                        else
-          //                          cout << "We don't have a summary :-(." << endl;
-          //            else
-          //              cout << "We don't have a summary :-/" << endl;
 
-          //            summary_memory_state *summarized = summary ? apply_summary(mstate,
-          //            summary.value().get()) :
-          //            bottom->copy();
 
           summary_memory_state *summarized =
             summary ? summary_application(mstate, summary.value().get()).apply_summary()
                     : mstate->copy();
-
-          //            summary_memory_state *summarized;
-          //            if(summary)
-          //              summarized = apply_summary(mstate, summary.value().get());
-          //            else {
-          //              summarized = mstate->copy();
-          //              summarized->topify();
-          //            }
-
-          //            if(summarized->is_bottom())
-          //              cout << "BOTTOM!" << endl;
-          //            else
-          //              cout << "NOOOO BOTTOM :-/!" << endl;
-
-          //            cout << *summarized << endl;
-
 
           result = default_context(
             shared_ptr<global_state>(new global_state(summarized, state_c->get_f_addr())),

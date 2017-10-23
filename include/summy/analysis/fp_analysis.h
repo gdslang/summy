@@ -150,7 +150,13 @@ public:
   }
   void clear_pending();
 
+  /**
+   * Get the state in the default context for a given node
+   */
   virtual shared_ptr<domain_state> get(size_t node) = 0;
+  /**
+   * Get the context-to-state map for a given node.
+   */
   virtual std::map<size_t, shared_ptr<domain_state>> get_ctxful(size_t node) {
     return {{0, get(node)}};
   }

@@ -113,12 +113,12 @@ private:
 
   void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
   std::map<size_t, std::shared_ptr<domain_state>> transform(
-    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx);
+    size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) override;
   
-  depdant_desc dependants(size_t node_id);
-  dependency gen_dependency(size_t from, size_t to);
+  depdant_desc dependants(size_t node_id) override;
+  dependency gen_dependency(size_t from, size_t to) override;
   void init_state(summy::vs_shared_t f_addr);
-  void init_state();
+  void init_state() override;
 
   std::vector<std::set<mempath_assignment>> tabulation_keys(
     function_desc const &desc, summary_memory_state *state);
@@ -138,23 +138,23 @@ public:
   static summary_memory_state *sms_bottom(std::shared_ptr<static_memory> sm, bool warnings);
   static summary_memory_state *sms_top(std::shared_ptr<static_memory> sm, bool warnings);
   std::shared_ptr<domain_state> bottom();
-  std::shared_ptr<analysis::domain_state> start_state(size_t node);
+  std::shared_ptr<analysis::domain_state> start_state(size_t node) override;
   std::shared_ptr<domain_state> start_state(summy::vs_shared_t f_addr);
 
-  std::shared_ptr<domain_state> get(size_t node);
-  std::map<size_t, shared_ptr<domain_state>> get_ctxful(size_t node);
+  std::shared_ptr<domain_state> get(size_t node) override;
+  std::map<size_t, shared_ptr<domain_state>> get_ctxful(size_t node) override;
   std::shared_ptr<global_state> get_sub(size_t node, size_t ctx);
-  void update(analysis_node node, shared_ptr<domain_state> state);
+  void update(analysis_node node, shared_ptr<domain_state> state) override;
   summary_dstack_result result();
 
-  node_compare_t get_fixpoint_node_comparer();
+  node_compare_t get_fixpoint_node_comparer() override;
 
-  depdant_desc dirty_nodes();
+  depdant_desc dirty_nodes() override;
 
-  virtual void check_consistency();
+  virtual void check_consistency() override;
 
-  void ref(size_t node, std::experimental::optional<size_t> count);
-  void unref(size_t node);
+  void ref(size_t node, std::experimental::optional<size_t> count) override;
+  void unref(size_t node) override;
 
   std::experimental::optional<size_t> get_lowest_function_address(size_t node_id);
   void print_callstack(size_t node_id);
@@ -179,11 +179,11 @@ public:
     return path_construction_errors;
   }
 
-  virtual void accept(analysis_visitor &v) {
+  virtual void accept(analysis_visitor &v) override {
     v.visit(this);
   }
 
-  void put(std::ostream &out);
+  void put(std::ostream &out) override;
 };
 
 } // namespace analysis
