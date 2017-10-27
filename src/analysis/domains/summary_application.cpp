@@ -69,11 +69,9 @@ void analysis::summary_application::build_pmap_region(id_shared_t region_key_sum
 
     /*
      * Todo: Warning if an alias is found in the summary plus this alias has a region in the deref
-     * map
-     * and no alias is found in 'c'
+     * map and no alias is found in 'c'
      * Todo: What about an alias in 'me' with no alias in the summary? We should somehow remove the
-     * alias in 'c'
-     * then
+     * alias in 'c' then
      */
 
     ptr_set_t aliases_fld_c;
@@ -315,7 +313,7 @@ summary_memory_state *analysis::summary_application::apply_summary() {
 
     bool static_or_dynamic = false;
     summy::rreil::id_visitor idv;
-    idv._([&](allocation_memory_id const *ami) { static_or_dynamic = true; });
+    idv._([&](allocation_memory_id const *) { static_or_dynamic = true; });
     idv._([&](sm_id const *) { static_or_dynamic = true; });
     region_key_summary->accept(idv);
     if(!static_or_dynamic) continue;
@@ -380,7 +378,10 @@ summary_memory_state *analysis::summary_application::apply_summary() {
     if(ptrs_s.size() > 1) {
       map<int64_t, size_t> dirty_bits;
 
+      cout << *rev_mapping.first << " (caller) <=> ";
       for(auto &ptr : ptrs_s) {
+         cout << ptr << ", ";
+        
         id_shared_t ptr_id = ptr.id;
         vs_shared_t offset = ptr.offset;
         optional<int64_t> offset_int;
@@ -406,7 +407,9 @@ summary_memory_state *analysis::summary_application::apply_summary() {
           if(field_mapping.second.size != 0) dirty_bits[offset_f] = field_mapping.second.size;
         }
       }
-    _collect_end:
+      _collect_end:;
+    
+      cout << "(summary)" << endl;
       if(dirty) break;
 
       optional<int64_t> offset;
@@ -439,7 +442,7 @@ summary_memory_state *analysis::summary_application::apply_summary() {
     }
   }
   if(dirty) {
-    //    cout << "dirty :-(." << endl;
+    cout << "Warning: Wrong aliasing assumption." << endl;
     return_site->topify();
     return return_site;
   }
