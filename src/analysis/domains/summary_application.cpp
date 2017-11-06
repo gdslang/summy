@@ -371,12 +371,17 @@ summary_memory_state *analysis::summary_application::apply_summary() {
     for(auto &p_c : ptr_mapping.second)
       if(summary->output.deref.find(ptr_mapping.first) != summary->output.deref.end())
         ptr_map_rev[p_c.id].insert(ptr(ptr_mapping.first, p_c.offset));
+      
+      
+  std::set<std::set<id_shared_t>> conflict_aliasings;
 
   bool dirty = false;
   for(auto &rev_mapping : ptr_map_rev) {
     ptr_set_t &ptrs_s = rev_mapping.second;
     if(ptrs_s.size() > 1) {
       map<int64_t, size_t> dirty_bits;
+      
+      std::set<id_shared_t> conflict_aliasings_next;
 
       cout << *rev_mapping.first << " (caller) <=> ";
       for(auto &ptr : ptrs_s) {
@@ -391,8 +396,10 @@ summary_memory_state *analysis::summary_application::apply_summary() {
         });
         offset->accept(vsv);
         if(!offset_int) {
-          dirty = true;
-          break;
+          conflict_aliasings_next.insert(ptr.id);
+          continue;
+//           dirty = true;
+//           break;
         }
         int64_t offset_int_bits = offset_int.value() * 8;
 
@@ -401,16 +408,20 @@ summary_memory_state *analysis::summary_application::apply_summary() {
           int64_t offset_f = field_mapping.first + offset_int_bits;
 
           if(dirty_bits.find(offset_f) != dirty_bits.end()) {
-            dirty = true;
-            goto _collect_end;
+//             dirty = true;
+//             goto _collect_end;
+            conflict_aliasings_next.insert(ptr.id);
+            goto continue_collect;
           }
           if(field_mapping.second.size != 0) dirty_bits[offset_f] = field_mapping.second.size;
         }
+        
+        continue_collect:;
       }
-      _collect_end:;
+//       _collect_end:;
     
       cout << "(summary)" << endl;
-      if(dirty) break;
+//       if(dirty) break;
 
       optional<int64_t> offset;
       for(auto dirty_mapping : dirty_bits) {
@@ -426,22 +437,9 @@ summary_memory_state *analysis::summary_application::apply_summary() {
         }
         offset = dirty_mapping.first + dirty_mapping.second - 1;
       }
-
-      //      for(auto &__ptr : ptrs_s)
-      //        cout << *__ptr << ", ";
-      //      cout << endl;
-      /*
-       * Handling of unexpected aliases...
-       */
-      //      auto ptrs_it = ptrs_s.begin();
-      //      region_t cr = summary->output.deref.at(*ptrs_it);
-      //      while(++ptrs_it != ptrs_s.end())
-      //        cr = join_region_aliases(cr, summary->output.deref.at(*ptrs_it),
-      //        summary->child_state);
-      //      conflict_regions[rev_mapping.first] = cr;
     }
   }
-  if(dirty) {
+  if(conflict_aliasings.size() > 0) {
     cout << "Warning: Wrong aliasing assumption." << endl;
     return_site->topify();
     return return_site;
