@@ -372,8 +372,7 @@ summary_memory_state *analysis::summary_application::apply_summary() {
       if(summary->output.deref.find(ptr_mapping.first) != summary->output.deref.end())
         ptr_map_rev[p_c.id].insert(ptr(ptr_mapping.first, p_c.offset));
 
-
-  std::set<std::set<id_shared_t>> conflict_aliasings;
+  conflict_aliasings.clear();
 
   for(auto &rev_mapping : ptr_map_rev) {
     ptr_set_t &ptrs_s = rev_mapping.second;
@@ -381,8 +380,6 @@ summary_memory_state *analysis::summary_application::apply_summary() {
       // Stores the bits touched by the summary in different regions which alias
       // in the caller. If the fields overlap, we have an aliasing conflict.
       map<int64_t, size_t> dirty_bits;
-
-      std::set<id_shared_t> conflict_aliasings_next;
 
       //       cout << *rev_mapping.first << " (caller) <=> ";
       bool dirty = false;
@@ -436,10 +433,15 @@ summary_memory_state *analysis::summary_application::apply_summary() {
         }
       }
 
+      /*
+       * Todo: Wir werden hier alle möglichen Konflikte in einen Topf, ohne
+       * zu schauen, welcher Pointer welche Konflikt-Bits beisteuerte. Dadurch
+       * werden mehr Aliase erfragt als nötig.
+       */
       if(dirty) {
-        std::set<id_shared_t> conflict_aliasings_next;
+        std::set<mempath> conflict_aliasings_next;
         for(auto &ptr : ptrs_s) {
-          conflict_aliasings_next.insert(ptr.id);
+          mempath::from_aliases(conflict_aliasings_next, {ptr.id}, summary);
         }
         conflict_aliasings.insert(std::move(conflict_aliasings_next));
       }
@@ -448,7 +450,14 @@ summary_memory_state *analysis::summary_application::apply_summary() {
 
   if(conflict_aliasings.size() > 0) {
     cout << "Warning: Wrong aliasing assumption." << endl;
-    return_site->topify();
+    for(const auto &next_set : conflict_aliasings) {
+      cout << "Next aliasing set:" << endl;
+      for(const auto &next : next_set) {
+        cout << "  ~> " << next << endl;
+      }
+    }
+    // If there are aliasing problems, we continue the analysis with a simulated
+    // call to the identity function.
     return return_site;
   }
 

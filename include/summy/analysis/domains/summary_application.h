@@ -8,6 +8,7 @@
 #pragma once
 
 #include <summy/analysis/domains/api/numeric/num_var.h>
+#include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/numeric/numeric_state.h>
 #include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/summary_memory_state.h>
@@ -27,6 +28,8 @@ class summary_application {
 private:
   summary_memory_state *caller;
   summary_memory_state *summary;
+  
+  std::set<std::set<mempath>> conflict_aliasings;
 
   std::experimental::optional<summary_memory_state *> return_site;
   std::map<id_shared_t, ptr_set_t, id_less> ptr_map;
@@ -43,8 +46,12 @@ private:
     region_t &region_so);
 
 public:
+  const std::set<std::set<mempath>>& get_conflict_aliasings() {
+    return conflict_aliasings;
+  }
+  
   summary_application(summary_memory_state *caller, summary_memory_state *summary);
 
   summary_memory_state *apply_summary();
 };
-}
+} // namespace analysis
