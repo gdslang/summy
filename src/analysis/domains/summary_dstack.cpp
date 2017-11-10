@@ -538,6 +538,12 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
         };
 
         auto tabulate_all = [&]() {
+          /*
+           * Todo: Tabulate aliasing conflicts; a summary is specialized if and only if
+           * a pointer from the conflict set aliases with another pointer in the conflict
+           * set in the caller...
+           */
+          
           std::vector<std::set<mempath_assignment>> assignments_sets;
           for(auto ctx_mapping : get_ctxful(from_parent)) {
             auto s = dynamic_pointer_cast<global_state>(ctx_mapping.second);

@@ -372,7 +372,7 @@ summary_memory_state *analysis::summary_application::apply_summary() {
       if(summary->output.deref.find(ptr_mapping.first) != summary->output.deref.end())
         ptr_map_rev[p_c.id].insert(ptr(ptr_mapping.first, p_c.offset));
 
-  conflict_aliasings.clear();
+  alias_conflict_queries.clear();
 
   for(auto &rev_mapping : ptr_map_rev) {
     ptr_set_t &ptrs_s = rev_mapping.second;
@@ -439,18 +439,18 @@ summary_memory_state *analysis::summary_application::apply_summary() {
        * werden mehr Aliase erfragt als nötig.
        */
       if(dirty) {
-        std::set<mempath> conflict_aliasings_next;
+        alias_conflict_query_t alias_query;
         for(auto &ptr : ptrs_s) {
-          mempath::from_aliases(conflict_aliasings_next, {ptr.id}, summary);
+          mempath::from_aliases(alias_query, {ptr.id}, summary);
         }
-        conflict_aliasings.insert(std::move(conflict_aliasings_next));
+        alias_conflict_queries.insert(std::move(alias_query));
       }
     }
   }
 
-  if(conflict_aliasings.size() > 0) {
+  if(alias_conflict_queries.size() > 0) {
     cout << "Warning: Wrong aliasing assumption." << endl;
-    for(const auto &next_set : conflict_aliasings) {
+    for(const auto &next_set : alias_conflict_queries) {
       cout << "Next aliasing set:" << endl;
       for(const auto &next : next_set) {
         cout << "  ~> " << next << endl;

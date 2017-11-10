@@ -12,6 +12,7 @@
 #include <set>
 #include <summy/analysis/analysis_visitor.h>
 #include <summy/analysis/caller/caller.h>
+#include <summy/analysis/domains/herbrand.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/mempath_assignment.h>
 #include <summy/analysis/domains/summary_dstack_stubs.h>
@@ -41,14 +42,21 @@ struct function_desc {
    * Minimal call stack size
    */
   size_t min_calls_sz;
+
   /*
    * Node id of head node
    */
   size_t head_id;
+
   /*
    * Field requirements (function pointers)
    */
-  std::set<mempath> field_reqs;
+  std::set<fptr_query_t> field_reqs;
+  
+  /*
+   * Queries for alias tabulation
+   */
+  std::set<alias_conflict_query_t> alias_conflict_queries;
 
   /*
    * Ground Herbrand terms to context map
@@ -114,7 +122,7 @@ private:
   void propagate_reqs(std::set<mempath> field_reqs_new, void *f_addr);
   std::map<size_t, std::shared_ptr<domain_state>> transform(
     size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) override;
-  
+
   depdant_desc dependants(size_t node_id) override;
   dependency gen_dependency(size_t from, size_t to) override;
   void init_state(summy::vs_shared_t f_addr);
