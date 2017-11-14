@@ -6,6 +6,7 @@
  */
 
 #pragma once
+
 #include <experimental/optional>
 #include <map>
 #include <memory>
@@ -14,7 +15,7 @@
 #include <summy/analysis/caller/caller.h>
 #include <summy/analysis/domains/herbrand.h>
 #include <summy/analysis/domains/mempath.h>
-#include <summy/analysis/domains/mempath_assignment.h>
+#include <summy/analysis/domains/herbrand_answer.h>
 #include <summy/analysis/domains/summary_dstack_stubs.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/fp_analysis.h>
@@ -61,7 +62,7 @@ struct function_desc {
   /*
    * Ground Herbrand terms to context map
    */
-  std::map<std::set<mempath_assignment>, size_t> contexts;
+  std::map<tabulation_key, size_t> contexts;
 
   function_desc(size_t min_calls_sz, size_t head_id)
       : min_calls_sz(min_calls_sz), head_id(head_id) {}

@@ -458,6 +458,7 @@ summary_memory_state *analysis::summary_application::apply_summary() {
     }
     // If there are aliasing problems, we continue the analysis with a simulated
     // call to the identity function.
+    // return_site->topify();
     return return_site;
   }
 

@@ -875,6 +875,9 @@ ret",
 }
 
 TEST_F(summary_dstack_test, SummaryAppStructuralConflict1) {
+  // Todo: This test is broken because the summary application no longer
+  // returns top in case of an aliasing conflict.
+
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
 f:\n\
@@ -934,6 +937,9 @@ end: ret",
 }
 
 TEST_F(summary_dstack_test, SummaryAppStructuralConflict2) {
+  // Todo: This test is broken because the summary application no longer
+  // returns top in case of an aliasing conflict.
+
   _analysis_result ar;
   ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
 f:\n\

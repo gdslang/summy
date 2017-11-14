@@ -16,7 +16,11 @@
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
-            }
+            },
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ]
         },
         {
             "name": "Linux",
@@ -34,7 +38,8 @@
                 "/usr/lib/clang/4.0.0/include",
                 "/usr/include",
                 "/usr/include/x86_64-linux-gnu",
-                "/usr/include/newlib"
+                "/usr/include/newlib",
+                "/usr/lib/llvm-5.0/lib/clang/5.0.0/include"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -72,5 +77,6 @@
                 "databaseFilename": ""
             }
         }
-    ]
+    ],
+    "version": 3
 }

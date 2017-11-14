@@ -307,7 +307,8 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
                           if(assignment_set.size() == 0)
                             ctx = 0; // No HBs => default context
                           else {
-                            auto ctx_it = f_desc.contexts.find(assignment_set);
+                            auto table_key = tabulation_key(assignment_set);
+                            auto ctx_it = f_desc.contexts.find(table_key);
                             if(ctx_it == f_desc.contexts.end())
                               continue; // Todo: What has happened here?
                             ctx = ctx_it->second;
