@@ -202,7 +202,7 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
   };
   queue<node_parent> bfs_queue;
   bfs_queue.push(node_parent(0));
-  unique_ptr<cfg::cfg> cfg_new = unique_ptr<cfg::cfg>(new cfg());
+  unique_ptr<class cfg::cfg> cfg_new = unique_ptr<class cfg::cfg>(new cfg());
   map<size_t, size_t> cfg_new_node_map;
   auto get_node_new = [&](size_t node_old) {
     auto it = cfg_new_node_map.find(node_old);

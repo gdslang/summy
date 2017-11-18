@@ -890,18 +890,29 @@ main:\n\
 mov %rcx, %rax\n\
 mov %rcx, %rbx\n\
 mov %r13, (%rax)\n\
-call f\n\
+bc: call f\n\
 ac: mov $42, %rax\n\
 end: ret",
     false));
 
-  bool ac_top;
-  isTop(ac_top, ar, "ac");
-  ASSERT_TRUE(ac_top);
+  // If an aliasing conflict during summary application results in the state
+  // being set to top, use the following
+  // bool ac_top;
+  // isTop(ac_top, ar, "ac");
+  // ASSERT_TRUE(ac_top);
+  // bool end_top;
+  // isTop(end_top, ar, "end");
+  // ASSERT_FALSE(end_top);
 
-  bool end_top;
-  isTop(end_top, ar, "end");
-  ASSERT_FALSE(end_top);
+
+  // Test for no change due to call?
+  // summary_memory_state *before_call;
+  // mstate_from_label(&before_call, ar, "bc");
+  // summary_memory_state *after_call;
+  // mstate_from_label(&after_call, ar, "ac");
+  // ASSERT_TRUE(*before_call >= *after_call);
+  // ASSERT_TRUE(*after_call >= *before_call);
+
 
   //  ptr_set_t aliases_r13_deref;
   //  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_r13_deref, ar, "end", "R13"));
@@ -956,9 +967,11 @@ call f\n\
 end: ret",
     false));
 
-  bool end_top;
-  isTop(end_top, ar, "end");
-  ASSERT_TRUE(end_top);
+  // If an aliasing conflict during summary application results in the state
+  // being set to top, use the following
+  // bool end_top;
+  // isTop(end_top, ar, "end");
+  // ASSERT_TRUE(end_top);
 
   //  ptr_set_t aliases_r13_deref;
   //  ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_r13_deref, ar, "end", "R13"));
