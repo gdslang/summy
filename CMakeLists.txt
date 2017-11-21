@@ -1,7 +1,6 @@
 cmake_minimum_required (VERSION 2.8)
 project (summy)
 
-
 file(GLOB_RECURSE SOURCES
     "src/**.cpp"
 )
@@ -28,7 +27,7 @@ dep(bjutil bjutil)
 #  ...
 
 add_library(summy ${SOURCES})
-set_property(TARGET summy PROPERTY CXX_STANDARD 14)
+set_property(TARGET summy PROPERTY CXX_STANDARD 17)
 target_link_libraries(summy bjutil cppgdsl)
 
 add_subdirectory(exec/demo_dstack)

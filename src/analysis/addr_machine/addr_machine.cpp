@@ -6,7 +6,6 @@
  */
 
 #include <assert.h>
-#include <experimental/optional>
 #include <functional>
 #include <summy/analysis/addr_machine/addr_machine.h>
 #include <summy/analysis/addr_machine/addr_machine_state.h>
