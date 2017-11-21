@@ -6,11 +6,11 @@
  */
 #include <algorithm>
 #include <assert.h>
-#include <experimental/optional>
+#include <optional>
 #include <iostream>
 #include <summy/analysis/fp_priority_queue.h>
 
-using std::experimental::optional;
+using std::optional;
 
 using namespace std;
 using namespace analysis;

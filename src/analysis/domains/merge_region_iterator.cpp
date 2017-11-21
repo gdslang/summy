@@ -9,21 +9,21 @@
 #include <assert.h>
 
 using namespace std;
-using namespace std::experimental;
+
 using namespace analysis;
 
 /*
  * region_pair_desc
  */
 
-std::experimental::optional<field_desc_t> region_pair_desc_t::field_first_region() {
+std::optional<field_desc_t> region_pair_desc_t::field_first_region() {
   if(ending_first.region_first)
     return ending_first;
   else
     return ending_last;
 }
 
-std::experimental::optional<field_desc_t> region_pair_desc_t::field_second_region() {
+std::optional<field_desc_t> region_pair_desc_t::field_second_region() {
   if(ending_first.region_first)
     return ending_last;
   else

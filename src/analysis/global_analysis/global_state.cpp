@@ -12,7 +12,7 @@
 using namespace std;
 using namespace analysis;
 using namespace summy;
-using namespace std::experimental;
+
 
 
 analysis::global_state::~global_state() {

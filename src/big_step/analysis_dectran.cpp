@@ -23,10 +23,10 @@
 
 using namespace gdsl::rreil;
 using namespace std;
-using namespace std::experimental;
+
 
 size_t analysis_dectran::initial_cfg(
-  cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
+  cfg::cfg &cfg, bool decode_multiple, std::optional<std::string> name) {
   size_t head_node = dectran::initial_cfg(cfg, decode_multiple, name);
 
   vector<transformer *> transformers;
@@ -53,14 +53,14 @@ analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized, b
 analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
     : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding), big_step::big_step(cfg), tc(&cfg), cfg() {}
 
-void analysis_dectran::transduce(bool decode_multiple, std::experimental::optional<std::string> function_name) {
+void analysis_dectran::transduce(bool decode_multiple, std::optional<std::string> function_name) {
   size_t head_node = initial_cfg(cfg, decode_multiple, function_name);
   tc.set_root(head_node);
   tc.transform();
   f_heads.insert(head_node);
 }
 
-void analysis_dectran::transduce_function(size_t address, std::experimental::optional<std::string> function_name) {
+void analysis_dectran::transduce_function(size_t address, std::optional<std::string> function_name) {
   if(gdsl.seek(address)) {
     throw string("Unable to seek to function");
   }

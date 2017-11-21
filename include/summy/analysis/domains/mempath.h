@@ -23,7 +23,7 @@ class mempath;
 
 struct mp_ext_result {
   std::vector<mempath_assignment> assignments;
-  std::experimental::optional<std::set<mempath>> remaining;
+  std::optional<std::set<mempath>> remaining;
   size_t path_construction_errors;
   
   mp_ext_result();
@@ -57,7 +57,7 @@ private:
 
   int compare_to(const mempath &other) const;
 
-  size_t _extract(std::experimental::optional<std::set<mempath>> &extracted,
+  size_t _extract(std::optional<std::set<mempath>> &extracted,
     summary_memory_state *from, std::map<size_t, ptr_set_t> &aliases_from_immediate) const;
 
 public:
@@ -80,14 +80,14 @@ public:
   std::map<size_t, ptr_set_t> resolve(summary_memory_state *from) const;
   std::tuple<std::map<size_t, ptr_set_t>, ptr_set_t> split(
     std::map<size_t, ptr_set_t> aliases) const;
-  //     std::experimental::optional<std::set<mempath>> extract(
+  //     std::optional<std::set<mempath>> extract(
   //       summary_memory_state *from, std::map<size_t, ptr_set_t> &aliases_from_immediate) const;
   void propagate(
     size_t path_length, ptr_set_t aliases_from_immediate, summary_memory_state *to) const;
     
   mp_ext_result extract_table_keys(summary_memory_state *from) const;
 
-  mp_prop_result propagate(std::experimental::optional<std::set<mempath>> &extracted,
+  mp_prop_result propagate(std::optional<std::set<mempath>> &extracted,
     summary_memory_state *from, summary_memory_state *to) const;
 
   static size_t from_aliases(

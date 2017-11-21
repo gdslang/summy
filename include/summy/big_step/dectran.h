@@ -10,7 +10,7 @@
 #include <summy/cfg/cfg.h>
 #include <summy/transformers/trivial_connector.h>
 #include <cppgdsl/gdsl.h>
-#include <experimental/optional>
+#include <optional>
 
 #include <set>
 #include <map>
@@ -43,7 +43,7 @@ protected:
 
   std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> decode_translate(bool decode_multiple);
   virtual size_t initial_cfg(
-    cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
+    cfg::cfg &cfg, bool decode_multiple, std::optional<std::string> name = std::nullopt);
 public:
   dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap);
   dectran(cfg::cfg &cfg, gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding);

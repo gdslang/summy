@@ -29,7 +29,7 @@
 #include <tuple>
 #include <functional>
 #include <string>
-#include <experimental/optional>
+#include <optional>
 
 #include <new>
 
@@ -58,7 +58,7 @@ struct relation {
 struct io_region {
   region_t &in_r;
   region_t &out_r;
-  std::experimental::optional<std::string> name;
+  std::optional<std::string> name;
 
   io_region &operator=(io_region &&other) {
     if(this != &other) {
@@ -84,10 +84,10 @@ struct io_region {
   io_region(io_region &&other) : in_r(other.in_r), out_r(other.out_r), name(other.name) {}
 
   struct rf_result {
-    std::experimental::optional<field> f;
+    std::optional<field> f;
     bool changed;
 
-    rf_result(std::experimental::optional<field> f, bool changed) : f(f), changed(changed) {
+    rf_result(std::optional<field> f, bool changed) : f(f), changed(changed) {
     }
   };
 
@@ -105,8 +105,8 @@ struct io_region {
     numeric_state *child_state, int64_t offset, size_t size, bool replacement, bool handle_conflicts);
 
   io_region(region_t &in_r, region_t &out_r) : in_r(in_r), out_r(out_r){};
-  io_region(region_t &in_r, region_t &out_r, std::experimental::optional<id_shared_t const> r_key);
-  io_region(region_t &in_r, region_t &out_r, std::experimental::optional<std::string> name)
+  io_region(region_t &in_r, region_t &out_r, std::optional<id_shared_t const> r_key);
+  io_region(region_t &in_r, region_t &out_r, std::optional<std::string> name)
       : in_r(in_r), out_r(out_r), name(name) {}
 };
 
@@ -174,7 +174,7 @@ protected:
     region_t::iterator field_it;
   };
   void topify(io_region &region, int64_t offset, size_t size);
-  std::experimental::optional<id_shared_t> transVarReg(io_region io, int64_t offset, size_t size, bool handle_conflict);
+  std::optional<id_shared_t> transVarReg(io_region io, int64_t offset, size_t size, bool handle_conflict);
   id_shared_t transVarReg(io_region io, int64_t offset, size_t size);
   id_shared_t transVar(id_shared_t var_id, int64_t offset, size_t size);
   id_shared_t transDeref(id_shared_t var_id, int64_t offset, size_t size);

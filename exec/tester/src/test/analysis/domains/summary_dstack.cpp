@@ -12,7 +12,7 @@
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/rreil/rreil.h>
-#include <experimental/optional>
+#include <optional>
 #include <gtest/gtest.h>
 #include <fstream>
 #include <iostream>
@@ -42,7 +42,7 @@ using namespace cfg;
 using namespace summy::rreil;
 
 using namespace std;
-using namespace std::experimental;
+
 using namespace summy;
 
 class summary_dstack_test : public ::testing::Test {

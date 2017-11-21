@@ -23,7 +23,7 @@
 
 #include <algorithm>
 #include <bjutil/sort.h>
-#include <experimental/optional>
+#include <optional>
 #include <summy/analysis/fcollect/fcollect.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/static_memory.h>
@@ -53,7 +53,7 @@ using namespace analysis;
 using namespace summy;
 using namespace analysis::api;
 
-using namespace std::experimental;
+
 
 
 /**

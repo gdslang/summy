@@ -6,7 +6,7 @@
  */
 
 #include <assert.h>
-#include <experimental/optional>
+#include <optional>
 #include <iostream>
 #include <queue>
 #include <summy/analysis/domain_state.h>
@@ -18,8 +18,8 @@
 #include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node_visitor.h>
 
-using std::experimental::optional;
-using std::experimental::nullopt;
+using std::optional;
+using std::nullopt;
 
 using namespace cfg;
 using namespace std;

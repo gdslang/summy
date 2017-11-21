@@ -11,7 +11,7 @@
 #include <summy/cfg/cfg.h>
 #include <summy/transformers/trivial_connector.h>
 #include <cppgdsl/gdsl.h>
-#include <experimental/optional>
+#include <optional>
 #include <summy/big_step/dectran.h>
 
 #include <set>
@@ -21,7 +21,7 @@ private:
   cfg::cfg cfg;
 
   size_t initial_cfg(
-    cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
+    cfg::cfg &cfg, bool decode_multiple, std::optional<std::string> name = std::nullopt);
 
 public:
   sweep(gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding);

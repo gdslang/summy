@@ -14,8 +14,8 @@ using namespace analysis;
 
 // static_dummy
 
-std::experimental::optional<reference_wrapper<fmap_t>> analysis::static_dummy::functions() {
-  return std::experimental::nullopt;
+std::optional<reference_wrapper<fmap_t>> analysis::static_dummy::functions() {
+  return std::nullopt;
 }
 
 bool static_dummy::read(void *address, size_t bytes, uint8_t *buffer) const {
@@ -29,7 +29,7 @@ std::tuple<bool, symbol> analysis::static_dummy::lookup(void *address) const {
 
 // static_elf
 
-std::experimental::optional<reference_wrapper<fmap_t>> analysis::static_elf::functions() {
+std::optional<reference_wrapper<fmap_t>> analysis::static_elf::functions() {
   if(!this->fmap) {
     this->fmap = fmap_t();
     auto for_functions = [&](auto functions, link_type lt) {

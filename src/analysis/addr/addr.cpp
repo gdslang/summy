@@ -6,7 +6,7 @@
  */
 
 #include <assert.h>
-#include <experimental/optional>
+#include <optional>
 #include <functional>
 #include <summy/analysis/addr/addr.h>
 #include <summy/analysis/addr/addr_state.h>
@@ -23,7 +23,7 @@ using cfg::cond_edge;
 using namespace std;
 using namespace analysis;
 using namespace analysis::addr;
-using namespace std::experimental;
+
 
 std::map<size_t, std::shared_ptr<domain_state>> analysis::addr::addr::transform(
   size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {

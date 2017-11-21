@@ -21,7 +21,7 @@
 #include <string>
 
 using namespace std;
-using namespace std::experimental;
+
 using namespace gdsl::rreil;
 
 namespace sr = summy::rreil;

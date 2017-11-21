@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <bjutil/printer.h>
 #include <cppgdsl/rreil/rreil.h>
-#include <experimental/optional>
+#include <optional>
 #include <functional>
 #include <iterator>
 #include <summy/analysis/domains/api/api.h>
@@ -51,9 +51,9 @@ using namespace analysis::value_sets;
 using namespace api;
 using namespace summy::rreil;
 using namespace summy;
-using namespace std::experimental;
 
-std::experimental::optional<summary_t> analysis::summary_dstack::get_stub(
+
+std::optional<summary_t> analysis::summary_dstack::get_stub(
   void *address, size_t node) {
   //  symbol symb;
   //  bool success;
@@ -880,7 +880,7 @@ void analysis::summary_dstack::check_consistency() {
    */
 }
 
-void analysis::summary_dstack::ref(size_t node, std::experimental::optional<size_t> count) {
+void analysis::summary_dstack::ref(size_t node, std::optional<size_t> count) {
   if(!count)
     ref_map[node] = nullopt;
   else {

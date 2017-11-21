@@ -53,7 +53,7 @@ void summy::rreil::numeric_id::accept(gdsl::rreil::id_visitor &v) const {
 }
 
 std::shared_ptr<gdsl::rreil::id> summy::rreil::numeric_id::generate(
-  std::experimental::optional<std::string> name, std::experimental::optional<bool> input) {
+  std::optional<std::string> name, std::optional<bool> input) {
   static int_t counter = 0;
   return shared_ptr<gdsl::rreil::id>(new numeric_id(counter++, name, input));
 }

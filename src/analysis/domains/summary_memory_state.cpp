@@ -29,7 +29,7 @@
 #include <summy/analysis/domains/util.h>
 #include <summy/rreil/id/memory_id.h>
 #include <queue>
-#include <experimental/optional>
+#include <optional>
 
 using namespace analysis::api;
 using namespace summy;
@@ -38,14 +38,14 @@ using namespace summy::rreil;
 
 using namespace analysis;
 using namespace std;
-using namespace std::experimental;
+
 
 void analysis::relation::clear() {
   regions.clear();
   deref.clear();
 }
 
-analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::experimental::optional<id_shared_t const> r_key)
+analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::optional<id_shared_t const> r_key)
     : in_r(in_r), out_r(out_r) {
   if(r_key) name = r_key.value()->to_string();
 }
@@ -486,7 +486,7 @@ summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handl
   id_shared_t alias_id) {
   bool force_weak = false;
   bool ignore = false;
-  std::experimental::optional<summy::rreil::special_ptr_kind> ptr_kind;
+  std::optional<summy::rreil::special_ptr_kind> ptr_kind;
   summy::rreil::id_visitor idv;
   idv._([&](special_ptr const *sp) { ptr_kind = sp->get_kind(); });
   alias_id->accept(idv);

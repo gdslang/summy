@@ -11,7 +11,7 @@
 #include <tuple>
 
 using namespace std;
-using namespace std::experimental;
+
 using namespace summy::rreil;
 using namespace analysis;
 

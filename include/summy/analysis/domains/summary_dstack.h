@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <experimental/optional>
+#include <optional>
 #include <map>
 #include <memory>
 #include <set>
@@ -108,10 +108,10 @@ private:
 
   //  std::set<size_t> erased;
 
-  std::unordered_map<size_t, std::experimental::optional<size_t>> ref_map;
+  std::unordered_map<size_t, std::optional<size_t>> ref_map;
 
   summary_dstack_stubs stubs;
-  std::experimental::optional<summary_t> get_stub(void *address, size_t node);
+  std::optional<summary_t> get_stub(void *address, size_t node);
 
   bool tabulation;
 
@@ -162,10 +162,10 @@ public:
 
   virtual void check_consistency() override;
 
-  void ref(size_t node, std::experimental::optional<size_t> count) override;
+  void ref(size_t node, std::optional<size_t> count) override;
   void unref(size_t node) override;
 
-  std::experimental::optional<size_t> get_lowest_function_address(size_t node_id);
+  std::optional<size_t> get_lowest_function_address(size_t node_id);
   void print_callstack(size_t node_id);
 
   node_targets_t const &get_targets() {

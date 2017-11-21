@@ -7,11 +7,11 @@
 
 #include <summy/analysis/domains/util.h>
 #include <summy/rreil/id/special_ptr.h>
-#include <experimental/optional>
+#include <optional>
 #include <assert.h>
 #include <summy/analysis/domains/numeric/als_state.h>
 
-using std::experimental::optional;
+using std::optional;
 using summy::rreil::special_ptr;
 
 using namespace analysis;

@@ -11,7 +11,7 @@
 #include <summy/cfg/cfg.h>
 #include <summy/transformers/trivial_connector.h>
 #include <cppgdsl/gdsl.h>
-#include <experimental/optional>
+#include <optional>
 #include <summy/big_step/dectran.h>
 
 #include <set>
@@ -25,7 +25,7 @@ private:
   std::set<size_t> f_heads;
 
   size_t initial_cfg(
-    cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name = std::experimental::nullopt);
+    cfg::cfg &cfg, bool decode_multiple, std::optional<std::string> name = std::nullopt);
 
 public:
   analysis_dectran(gdsl::gdsl &g, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap);
@@ -51,9 +51,9 @@ public:
    * Decode and translate first block
    */
   void transduce(
-    bool decode_multiple, std::experimental::optional<std::string> function_name = std::experimental::nullopt);
+    bool decode_multiple, std::optional<std::string> function_name = std::nullopt);
   void transduce_function(
-    size_t address, std::experimental::optional<std::string> function_name = std::experimental::nullopt);
+    size_t address, std::optional<std::string> function_name = std::nullopt);
   void transduce() {
     transduce(false);
   }

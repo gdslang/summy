@@ -7,7 +7,7 @@
 
 #include <algorithm>
 #include <assert.h>
-#include <experimental/optional>
+#include <optional>
 #include <summy/analysis/domains/api/numeric/num_expr.h>
 #include <summy/analysis/domains/api/numeric/num_linear.h>
 #include <summy/analysis/domains/api/numeric/num_var.h>
@@ -26,8 +26,8 @@ using analysis::api::num_linear_vs;
 using analysis::api::num_var;
 using analysis::api::num_vars;
 using analysis::value_sets::vsd_state;
-using std::experimental::nullopt;
-using std::experimental::optional;
+using std::nullopt;
+using std::optional;
 using summy::value_set_visitor;
 using summy::vs_finite;
 using summy::vs_shared_t;

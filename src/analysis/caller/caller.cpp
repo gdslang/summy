@@ -6,7 +6,7 @@
  */
 
 #include <assert.h>
-#include <experimental/optional>
+#include <optional>
 #include <functional>
 #include <summy/analysis/caller/caller.h>
 #include <summy/analysis/caller/caller_state.h>
@@ -24,7 +24,7 @@ using cfg::cond_edge;
 using namespace std;
 using namespace analysis;
 using namespace analysis::caller;
-using namespace std::experimental;
+
 
 std::map<size_t, std::shared_ptr<domain_state>> analysis::caller::caller::transform(
   size_t from, size_t to, const ::cfg::edge *e, size_t from_ctx) {

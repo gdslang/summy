@@ -55,7 +55,7 @@ enum class analysis_direction {
 };
 
 using node_compare_t =
-  std::function<std::experimental::optional<bool>(analysis_node const &, analysis_node const &)>;
+  std::function<std::optional<bool>(analysis_node const &, analysis_node const &)>;
 
 class domain_state;
 
@@ -222,7 +222,7 @@ public:
 
   virtual void check_consistency() {}
 
-  virtual void ref(size_t node, std::experimental::optional<size_t> count) {}
+  virtual void ref(size_t node, std::optional<size_t> count) {}
   virtual void unref(size_t node) {}
 
   virtual void accept(analysis_visitor &v) {

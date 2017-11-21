@@ -5,6 +5,7 @@
  *      Author: Julian Kranz
  */
 
+#include <optional>
 #include <algorithm>
 #include <assert.h>
 #include <cppgdsl/block.h>
@@ -30,7 +31,6 @@ using gdsl::gdsl_exception;
 
 using namespace gdsl::rreil;
 using namespace std;
-using namespace std::experimental;
 
 using std::upper_bound;
 
@@ -58,7 +58,7 @@ std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_tra
 
     gdsl::rreil::statements_t rreil;
     if(blockwise_optimized) {
-      optional<gdsl::block> b = [&]() -> optional<gdsl::block> {
+      optional<gdsl::block> b = [&]() -> std::optional<gdsl::block> {
         try {
           return gdsl.decode_translate_block(gdsl::optimization_configuration::CONTEXT |
                                                gdsl::optimization_configuration::LIVENESS |
@@ -121,7 +121,7 @@ std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_tra
 }
 
 size_t dectran::initial_cfg(
-  cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
+  cfg::cfg &cfg, bool decode_multiple, std::optional<std::string> name) {
   size_t ip = (size_t)gdsl.get_ip();
   auto fmap_it = fmap.find(ip);
   if(!name && fmap_it != fmap.end()) name = fmap_it->second;

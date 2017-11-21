@@ -15,7 +15,7 @@
 #include <tuple>
 #include <stdint.h>
 #include <functional>
-#include <experimental/optional>
+#include <optional>
 #include <memory>
 
 #include <cppgdsl/rreil/statement/statement.h>
@@ -100,8 +100,8 @@ public:
   ~cfg();
 
   template<typename T>
-  size_t add_program(std::vector<std::tuple<uint64_t, T>> const& translated_binary, std::experimental::optional<std::string> name) {
-    std::experimental::optional<size_t> head_node;
+  size_t add_program(std::vector<std::tuple<uint64_t, T>> const& translated_binary, std::optional<std::string> name) {
+    std::optional<size_t> head_node;
     for(auto const& elem : translated_binary) {
       size_t address = std::get<0>(elem);
       T const& statements = std::get<1>(elem);
@@ -114,7 +114,7 @@ public:
 
   template<typename T>
   size_t add_program(std::vector<std::tuple<uint64_t, T>> const& translated_binary) {
-    return add_program(translated_binary, std::experimental::nullopt);
+    return add_program(translated_binary, std::nullopt);
   }
 
   template<typename T>
@@ -139,9 +139,9 @@ public:
   }
 
 //  size_t add_program(translated_program_t &translated_binary);
-//  size_t add_program(translated_program_t &translated_binary, std::experimental::optional<std::string> name);
+//  size_t add_program(translated_program_t &translated_binary, std::optional<std::string> name);
 //  size_t add_program(std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> &translated_binary);
-//  size_t add_program(std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> &, std::experimental::optional<std::string> name);
+//  size_t add_program(std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> &, std::optional<std::string> name);
 //  size_t add_nodes(gdsl::iterable<gdsl::rreil::statement> statements, size_t from_node);
 
   size_t next_node_id();

@@ -13,12 +13,12 @@
 #include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/id/special_ptr.h>
 #include <iostream>
-#include <experimental/optional>
+#include <optional>
 
 using summy::value_set;
 using summy::vs_finite;
 using summy::vs_shared_t;
-using std::experimental::optional;
+using std::optional;
 
 using namespace std;
 using namespace analysis;

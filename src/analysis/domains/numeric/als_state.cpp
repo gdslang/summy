@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <cppgdsl/rreil/rreil.h>
-#include <experimental/optional>
+#include <optional>
 #include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/numeric/als_state.h>
 #include <summy/rreil/id/id_visitor.h>
@@ -18,7 +18,7 @@
 #include <summy/value_set/value_set.h>
 
 using gdsl::rreil::id;
-using std::experimental::optional;
+using std::optional;
 
 using namespace analysis;
 using namespace analysis::api;

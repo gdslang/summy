@@ -17,7 +17,7 @@
 #include <ostream>
 #include <memory>
 #include <stdint.h>
-#include <experimental/optional>
+#include <optional>
 
 namespace analysis {
 namespace addr {
@@ -61,10 +61,10 @@ std::ostream &operator<<(std::ostream &out, node_addr const &_this);
 class addr_state : public domain_state {
 private:
   const path_virts_s path_virts;
-  const std::experimental::optional<node_addr> address;
+  const std::optional<node_addr> address;
   const get_next_virt_t get_next_virt;
 
-  std::experimental::optional<size_t> next_virt_value;
+  std::optional<size_t> next_virt_value;
 
   addr_state *domop(::analysis::domain_state *other);
 
@@ -72,7 +72,7 @@ private:
       : domain_state(), path_virts(path_virts), address(address), get_next_virt(get_next_virt) {}
 
 public:
-  std::experimental::optional<node_addr> const &get_address() {
+  std::optional<node_addr> const &get_address() {
     return address;
   }
 
@@ -89,7 +89,7 @@ public:
    * Bottom constructor
    */
   addr_state(get_next_virt_t get_next_virt)
-      : domain_state(), path_virts(0), address(std::experimental::nullopt), get_next_virt(get_next_virt) {}
+      : domain_state(), path_virts(0), address(std::nullopt), get_next_virt(get_next_virt) {}
 
   virtual addr_state *join(::analysis::domain_state *other, size_t current_node);
   virtual addr_state *narrow(::analysis::domain_state *other, size_t current_node);

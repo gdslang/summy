@@ -23,9 +23,9 @@
 
 using namespace gdsl::rreil;
 using namespace std;
-using namespace std::experimental;
 
-size_t sweep::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::experimental::optional<std::string> name) {
+
+size_t sweep::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::optional<std::string> name) {
   size_t head_node = dectran::initial_cfg(cfg, decode_multiple, name);
 
   vector<transformer *> transformers;

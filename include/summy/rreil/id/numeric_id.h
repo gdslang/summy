@@ -13,7 +13,7 @@
 #include <memory>
 #include <string>
 #include <assert.h>
-#include <experimental/optional>
+#include <optional>
 
 namespace summy {
 namespace rreil {
@@ -25,14 +25,14 @@ class numeric_id : public gdsl::rreil::id {
 
 private:
   int_t counter;
-  std::experimental::optional<std::string> name;
-  std::experimental::optional<bool> input;
+  std::optional<std::string> name;
+  std::optional<bool> input;
 
   void put(std::ostream &out) const override;
 
   static size_t subclass_counter;
 
-  numeric_id(int_t counter, std::experimental::optional<std::string> name, std::experimental::optional<bool> input)
+  numeric_id(int_t counter, std::optional<std::string> name, std::optional<bool> input)
       : counter(counter), name(name), input(input) {}
 
 public:
@@ -48,11 +48,11 @@ public:
     return counter;
   }
 
-  std::experimental::optional<std::string> get_name() const {
+  std::optional<std::string> get_name() const {
     return name;
   }
 
-  std::experimental::optional<bool> get_input() const {
+  std::optional<bool> get_input() const {
     return input;
   }
 
@@ -62,8 +62,8 @@ public:
   void accept(gdsl::rreil::id_visitor &v) const override;
 
   static std::shared_ptr<gdsl::rreil::id> generate(
-    std::experimental::optional<std::string> name = std::experimental::nullopt,
-    std::experimental::optional<bool> input = std::experimental::nullopt);
+    std::optional<std::string> name = std::nullopt,
+    std::optional<bool> input = std::nullopt);
   static std::shared_ptr<gdsl::rreil::id> generate(std::string reg_name, int64_t offset, size_t size, bool input);
 };
 }

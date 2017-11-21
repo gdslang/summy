@@ -31,7 +31,7 @@ private:
 
   std::set<alias_conflict_query_t> alias_conflict_queries;
 
-  std::experimental::optional<summary_memory_state *> return_site;
+  std::optional<summary_memory_state *> return_site;
   std::map<id_shared_t, ptr_set_t, id_less> ptr_map;
   typedef std::set<id_shared_t, id_less> alias_queue_t;
   alias_queue_t ptr_worklist;

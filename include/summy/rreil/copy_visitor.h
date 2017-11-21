@@ -11,7 +11,7 @@
 #include <summy/rreil/visitor.h>
 #include <memory>
 #include <string>
-#include <experimental/optional>
+#include <optional>
 
 namespace summy {
 namespace rreil {
@@ -22,7 +22,7 @@ class copy_visitor : public gdsl::rreil::copy_visitor, public virtual summy::rre
 public:
   typedef std::function<std::unique_ptr<gdsl::rreil::id>(std::unique_ptr<gdsl::rreil::id>, int_t)> ssa_id_ctor_t;
   typedef std::function<std::unique_ptr<gdsl::rreil::id>(
-    int_t, std::experimental::optional<std::string>, std::experimental::optional<bool>)> numeric_id_ctor_t;
+    int_t, std::optional<std::string>, std::optional<bool>)> numeric_id_ctor_t;
   typedef std::function<std::unique_ptr<gdsl::rreil::id>(std::unique_ptr<gdsl::rreil::id>)> ptr_memory_id_ctor_t;
   typedef std::function<std::unique_ptr<gdsl::rreil::id>(size_t)> allocation_memory_id_ctor_t;
   typedef std::function<std::unique_ptr<gdsl::rreil::id>(std::string, void *)> sm_id_ctor_t;

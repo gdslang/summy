@@ -7,7 +7,7 @@
 
 #include <assert.h>
 #include <cppgdsl/rreil/id/id.h>
-#include <experimental/optional>
+#include <optional>
 #include <string>
 #include <summy/analysis/domains/api/numeric/num_var.h>
 #include <summy/analysis/domains/mempath.h>
@@ -27,7 +27,7 @@ using summy::value_set_visitor;
 using summy::vs_finite;
 
 using namespace std;
-using namespace std::experimental;
+
 using namespace analysis;
 using namespace analysis::api;
 using namespace summy::rreil;
@@ -72,7 +72,7 @@ int mempath::compare_to(const mempath &other) const {
   return 0;
 }
 
-size_t mempath::_extract(std::experimental::optional<std::set<mempath>> &extracted,
+size_t mempath::_extract(std::optional<std::set<mempath>> &extracted,
   summary_memory_state *from, std::map<size_t, ptr_set_t> &aliases_from_immediate) const {
   std::map<size_t, ptr_set_t> aliases_from = resolve(from);
 
@@ -88,7 +88,7 @@ size_t mempath::_extract(std::experimental::optional<std::set<mempath>> &extract
     extracted = e;
     return path_construction_errors;
   } else {
-    extracted = experimental::nullopt;
+    extracted = std::nullopt;
     return 0;
   }
 }
@@ -267,7 +267,7 @@ mp_ext_result analysis::mempath::extract_table_keys(summary_memory_state *from) 
   return result;
 }
 
-mp_prop_result analysis::mempath::propagate(std::experimental::optional<set<mempath>> &extracted,
+mp_prop_result analysis::mempath::propagate(std::optional<set<mempath>> &extracted,
   summary_memory_state *from, summary_memory_state *to) const {
   //   cout << "propagate " << *this << " from" << endl;
   //   cout << *from << endl;

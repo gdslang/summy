@@ -15,10 +15,10 @@
 #include <memory>
 #include <assert.h>
 #include <summy/rreil/id/special_ptr.h>
-#include <experimental/optional>
+#include <optional>
 
 using summy::rreil::sm_id;
-using std::experimental::optional;
+using std::optional;
 using summy::rreil::special_ptr;
 
 using namespace summy;

@@ -11,9 +11,9 @@
 #pragma once
 #include <summy/analysis/domains/memstate_util.h>
 #include <iterator>
-#include <experimental/optional>
+#include <optional>
 #include "merge_region_iterator.h"
-#include <experimental/optional>
+#include <optional>
 
 namespace analysis {
 
@@ -26,7 +26,7 @@ private:
   merge_region_iterator mri;
 
   region_t &region;
-  std::experimental::optional<int64_t> fn_from;
+  std::optional<int64_t> fn_from;
   int64_t fn_to;
 
   void insert_f();

@@ -17,12 +17,12 @@
 #include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/special_ptr.h>
 #include <summy/value_set/vs_finite.h>
-#include <experimental/optional>
+#include <optional>
 #include <queue>
 
 using analysis::api::num_var;
-using std::experimental::optional;
-using std::experimental::nullopt;
+using std::optional;
+using std::nullopt;
 using summy::rreil::ptr_memory_id;
 using summy::rreil::special_ptr;
 using summy::vs_finite;
@@ -89,7 +89,7 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(sms_compat::compatMatchSeparate)(boo
           //          cout << "a: " << *a_sms_after << endl;
           //          cout << "b: " << *b_sms_after << endl;
         });
-        collision = std::experimental::nullopt;
+        collision = std::nullopt;
       }
     };
 

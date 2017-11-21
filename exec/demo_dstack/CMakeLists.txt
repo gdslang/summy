@@ -10,4 +10,4 @@ include_directories("../../include/")
 
 add_executable(demo_dstack ${SOURCES})
 target_link_libraries(demo_dstack summy bjutil dl gmp gtest pthread elf)
-set_property(TARGET demo_dstack PROPERTY CXX_STANDARD 14)
+set_property(TARGET demo_dstack PROPERTY CXX_STANDARD 17)

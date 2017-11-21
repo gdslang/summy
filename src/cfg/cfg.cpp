@@ -19,7 +19,7 @@
 #include <assert.h>
 
 using namespace std;
-using namespace std::experimental;
+
 
 bool cfg::edge_id::operator<(const edge_id &other) const {
   if(from < other.from)
@@ -77,7 +77,7 @@ cfg::cfg::~cfg() {
 //}
 //
 //size_t cfg::cfg::add_program(translated_program_t &translated_binary) {
-//  return add_program(translated_binary, experimental::nullopt);
+//  return add_program(translated_binary, std::nullopt);
 //}
 //
 //size_t cfg::cfg::add_nodes(gdsl::iterable<gdsl::rreil::statement> statements, size_t from_node) {

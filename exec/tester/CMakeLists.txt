@@ -19,4 +19,4 @@ dep(googletest)
 
 add_executable(tester ${SOURCES})
 target_link_libraries(tester summy bjutil cppgdsl gmp gtest pthread elf)
-set_property(TARGET tester PROPERTY CXX_STANDARD 14)
+set_property(TARGET tester PROPERTY CXX_STANDARD 17)

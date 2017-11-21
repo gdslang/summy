@@ -8,7 +8,7 @@
 #pragma once
 #include <summy/analysis/domains/memstate_util.h>
 #include <iterator>
-#include <experimental/optional>
+#include <optional>
 
 namespace analysis {
 
@@ -21,11 +21,11 @@ struct field_desc_t {
 struct region_pair_desc_t {
   bool collision;
 
-  std::experimental::optional<field_desc_t> field_first_region();
-  std::experimental::optional<field_desc_t> field_second_region();
+  std::optional<field_desc_t> field_first_region();
+  std::optional<field_desc_t> field_second_region();
 
   field_desc_t ending_first;
-  std::experimental::optional<field_desc_t> ending_last;
+  std::optional<field_desc_t> ending_last;
 };
 
 class merge_region_iterator;

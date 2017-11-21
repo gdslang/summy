@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include <experimental/optional>
+#include <optional>
 #include <summy/analysis/domains/api/numeric/num_linear.h>
 #include <summy/analysis/domains/api/numeric/num_visitor.h>
 
@@ -24,17 +24,17 @@ struct sign_interp_t {
 
 class num_expr {
 private:
-  std::experimental::optional<sign_interp_t> sign_interp;
+  std::optional<sign_interp_t> sign_interp;
 
 protected:
   virtual void put(std::ostream &out);
 
 public:
-  std::experimental::optional<sign_interp_t> get_sign_interp() {
+  std::optional<sign_interp_t> get_sign_interp() {
     return sign_interp;
   }
 
-  num_expr(std::experimental::optional<sign_interp_t> sign_interp = std::experimental::nullopt)
+  num_expr(std::optional<sign_interp_t> sign_interp = std::nullopt)
       : sign_interp(sign_interp) {}
   virtual ~num_expr() {}
 
@@ -82,7 +82,7 @@ private:
 
 public:
   num_expr_lin(num_linear *inner,
-    std::experimental::optional<sign_interp_t> sign_interp = std::experimental::nullopt)
+    std::optional<sign_interp_t> sign_interp = std::nullopt)
       : num_expr(sign_interp), inner(inner) {}
   ~num_expr_lin();
 

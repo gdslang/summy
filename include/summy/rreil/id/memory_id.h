@@ -12,7 +12,7 @@
 #include <iostream>
 #include <assert.h>
 #include <memory>
-#include <experimental/optional>
+#include <optional>
 
 namespace summy {
 namespace rreil {
