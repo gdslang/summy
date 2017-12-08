@@ -6,8 +6,8 @@
  */
 
 #include <assert.h>
-#include <optional>
 #include <iostream>
+#include <optional>
 #include <queue>
 #include <summy/analysis/domain_state.h>
 #include <summy/analysis/domains/summary_dstack.h>
@@ -18,8 +18,8 @@
 #include <summy/cfg/node/address_node.h>
 #include <summy/cfg/node/node_visitor.h>
 
-using std::optional;
 using std::nullopt;
+using std::optional;
 
 using namespace cfg;
 using namespace std;
@@ -35,8 +35,8 @@ void fixpoint::iterate() {
   node_iterations.clear();
   set<analysis_node> pending = analysis->pending();
 
-  node_compare_t addr_comparer = [&](
-    analysis_node const &a, analysis_node const &b) -> optional<bool> {
+  node_compare_t addr_comparer = [&](analysis_node const &a,
+                                   analysis_node const &b) -> optional<bool> {
     size_t addr_a = jd_man.machine_address_of(a.id);
     size_t addr_b = jd_man.machine_address_of(b.id);
     if(addr_a < addr_b)
@@ -159,8 +159,8 @@ void fixpoint::iterate() {
     analysis->accept(av);
     if(_continue) continue;
 
-//     if(is_sd) cout << "Next node: " << node << endl;
-    
+    //     if(is_sd) cout << "Next node: " << node << endl;
+
     //         static int ctr = 0;
     //         if(node.id == 32 || node.id == 46) {
     //           if(ctr > 5)
@@ -245,16 +245,20 @@ void fixpoint::iterate() {
 
           backward = backward || jd != FORWARD;
           if(widening && jd == BACKWARD) {
+            auto context_map = analysis->get_ctxful(node.id);
+            auto current_state_it = context_map.find(context);
             //          cout << "Current: " << *current << endl;
             //          cout << "Evaluated: " << *evaluated << endl;
             //                    cout << "Back jump from " << node_other << " to " << node_id <<
             //                    endl;
-            domain_state *boxed;
-            bool np;
-            tie(boxed, np) =
-              analysis->get_ctxful(node.id).at(context)->box(evaluated.get(), node.id);
-            needs_postprocessing = np || needs_postprocessing;
-            evaluated = shared_ptr<domain_state>(boxed);
+            if(current_state_it != context_map.end()) {
+              domain_state *boxed;
+              bool widened;
+              tie(boxed, widened) =
+                current_state_it->second->box(evaluated.get(), node.id);
+              needs_postprocessing = widened || needs_postprocessing;
+              evaluated = shared_ptr<domain_state>(boxed);
+            }
             //          cout << "Boxed: " << *evaluated << endl;
           }
 
@@ -316,15 +320,15 @@ void fixpoint::iterate() {
                              current_state_it == current_state.end() ||
                              !(*current_state_it->second == *acc);
 
-//         cout << propagate[context] << endl;
+        //         cout << propagate[context] << endl;
       }
 
       //            cout << "prop: " << propagate << endl;
     } // else
-      /*
-       * If the node has no incoming analysis dependency edges, we keep its default
-       * state.
-       */
+    /*
+     * If the node has no incoming analysis dependency edges, we keep its default
+     * state.
+     */
     // propagate = false;
 
     //     cout << "Propagate: " << propagate << endl;
@@ -343,7 +347,7 @@ void fixpoint::iterate() {
         if(context_acc == node.context && needs_postprocessing) {
           postprocess_worklist.push(node);
         }
-        
+
         analysis->update(analysis_node(node.id, context_acc), acc);
         updated.insert(node.id);
       }

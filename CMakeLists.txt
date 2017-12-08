@@ -1,6 +1,9 @@
 cmake_minimum_required (VERSION 2.8)
 project (summy)
 
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+
 file(GLOB_RECURSE SOURCES
     "src/**.cpp"
 )

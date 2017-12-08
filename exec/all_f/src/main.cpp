@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
 
   bool blockwise_optimized = true;
   bool ref_management = true;
-  bool tabulate = false;
+  bool tabulate = true;
 
   try {
     cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
