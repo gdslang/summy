@@ -512,16 +512,16 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
         auto accumulate_all = [&]() {
           //          cout << "This call requires the following fields:" << endl;
           //           cout << "Reqs for call to " << address << endl;
-          for(auto &f : desc.field_reqs) {
-            //                        cout << f << endl;
+          for(auto &req : desc.field_reqs) {
+            //                        cout << req << endl;
             optional<set<mempath>> mempaths_new;
-            auto prop_res = f.propagate(
+            auto prop_res = req.propagate(
               mempaths_new, get_sub(from_parent, from_ctx)->get_mstate(), state_new->get_mstate());
 
             for(auto ptr : prop_res.constant_ptrs) {
               //               cout << "\tNew immediate ptr: " << ptr << endl;
-              (this->pointer_props[(size_t)address])[f].insert(ptr);
-              ((this->hb_counts[to]))[f].insert(ptr);
+              (this->pointer_props[(size_t)address])[req].insert(ptr);
+              ((this->hb_counts[to]))[req].insert(ptr);
             }
             this->path_construction_errors[from] = prop_res.path_construction_errors;
 

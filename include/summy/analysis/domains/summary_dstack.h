@@ -172,6 +172,10 @@ public:
     return node_targets;
   }
 
+  std::map<void *, function_desc> const &get_function_desc_map() {
+    return function_desc_map;
+  }
+
   std::map<size_t, std::map<mempath, std::set<size_t>>> const &get_pointer_props() {
     return pointer_props;
   }

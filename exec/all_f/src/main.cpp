@@ -329,7 +329,20 @@ int main(int argc, char **argv) {
         hbs += hb_mapping.second.size();
       }
     }
-    cout << "Total requests: " << requests << ", instantiations: " << hbs << endl;
+    cout << "(only valid if accumulating) Total requests: " << requests << ", instantiations: " << hbs << endl;
+
+    auto const &ds_functions = ds.get_function_desc_map();
+    size_t max_entries = 0;
+    size_t entries_sum = 0;
+    for(auto& [ address, fd ] : ds_functions) {
+      const auto& state_map = ds.get_ctxful(fd.head_id);
+      size_t table_entries = state_map.size();
+      if(table_entries > max_entries)
+        max_entries = table_entries;
+      entries_sum += table_entries;
+    }
+    cout << "Maximum table entries: " << max_entries << endl;
+    cout << "Average table entries: " << (entries_sum / (double)ds_functions.size()) << endl;
 
     auto const &path_construction_errors = ds.get_path_construction_errors();
     size_t path_errors_total = 0;
