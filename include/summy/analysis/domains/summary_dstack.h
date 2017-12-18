@@ -7,15 +7,15 @@
 
 #pragma once
 
-#include <optional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <summy/analysis/analysis_visitor.h>
 #include <summy/analysis/caller/caller.h>
 #include <summy/analysis/domains/herbrand.h>
-#include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/herbrand_answer.h>
+#include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/summary_dstack_stubs.h>
 #include <summy/analysis/domains/summary_memory_state.h>
 #include <summy/analysis/fp_analysis.h>
@@ -53,7 +53,7 @@ struct function_desc {
    * Field requirements (function pointers)
    */
   std::set<fptr_query_t> field_reqs;
-  
+
   /*
    * Queries for alias tabulation
    */
@@ -95,11 +95,12 @@ private:
   std::map<size_t, std::map<mempath, std::set<size_t>>> hb_counts;
 
   /**
-   * Statistics for function pointer propagation (2)
+   * Statistics for function pointer propagation (3)
    *
-   * Maps node ids to the number of path path construction errors
+   * Maps node id and context to the number of path path construction errors
    */
-  std::map<size_t, size_t> path_construction_errors;
+  using path_construction_errors_t = std::map<size_t, std::map<size_t, size_t>>;
+  path_construction_errors_t path_construction_errors;
 
   /*
    * Statistics: Number of herbrand terms for a single call site
@@ -129,8 +130,8 @@ private:
   void init_state(summy::vs_shared_t f_addr);
   void init_state() override;
 
-  std::vector<std::set<mempath_assignment>> tabulation_keys(
-    function_desc const &desc, summary_memory_state *state);
+  std::vector<std::set<mempath_assignment>> tabulation_keys(std::set<mempath> &remaining,
+    size_t &path_construction_errors, function_desc const &desc, summary_memory_state *state);
 
 public:
   summary_dstack(cfg::cfg *cfg, std::shared_ptr<static_memory> sm, bool warnings,
@@ -188,7 +189,7 @@ public:
     return unique_hbs;
   }
 
-  std::map<size_t, size_t> const &get_path_construction_errors() {
+  path_construction_errors_t const &get_path_construction_errors() {
     return path_construction_errors;
   }
 

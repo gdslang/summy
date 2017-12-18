@@ -9,9 +9,9 @@
 #include <assert.h>
 #include <bjutil/printer.h>
 #include <cppgdsl/rreil/rreil.h>
-#include <optional>
 #include <functional>
 #include <iterator>
+#include <optional>
 #include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/numeric/als_state.h>
@@ -34,8 +34,8 @@
 #include <summy/value_set/vs_finite.h>
 
 using cfg::address_node;
-using cfg::cond_edge;
 using cfg::call_edge;
+using cfg::cond_edge;
 using cfg::decoding_state;
 using cfg::edge_visitor;
 using cfg::node;
@@ -53,8 +53,7 @@ using namespace summy::rreil;
 using namespace summy;
 
 
-std::optional<summary_t> analysis::summary_dstack::get_stub(
-  void *address, size_t node) {
+std::optional<summary_t> analysis::summary_dstack::get_stub(void *address, size_t node) {
   //  symbol symb;
   //  bool success;
   //  tie(success, symb) = sm->lookup(address);
@@ -216,7 +215,7 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
             _dirty_nodes.context_deps[from_ctx].insert(edge_mapping.first);
 
           //            cout << *mstate << endl;
-          
+
           set<void *> f_addrs = unpack_f_addrs(state_c->get_f_addr());
           assert(f_addrs.size() > 0);
           size_t current_min_calls_sz = 0;
@@ -300,8 +299,11 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
                     auto &f_desc = fd_it->second;
                     for(size_t s_node : f_desc.summary_nodes) {
                       auto tabulate_all = [&]() {
+                        std::set<mempath> remaining; // Don't care?!
+                        size_t path_construction_errors = 0;
                         std::vector<std::set<mempath_assignment>> assignments_sets =
-                          tabulation_keys(f_desc, state_c->get_mstate());
+                          tabulation_keys(
+                            remaining, path_construction_errors, f_desc, state_c->get_mstate());
                         for(auto &assignment_set : assignments_sets) {
                           size_t ctx;
                           if(assignment_set.size() == 0)
@@ -348,8 +350,9 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
                       cfg->update_edge(to, head_id, new call_edge(true));
                     }
                   } else {
-                    size_t an_id = cfg->create_node([&](
-                      size_t id) { return new address_node(id, (size_t)address, cfg::DECODABLE); });
+                    size_t an_id = cfg->create_node([&](size_t id) {
+                      return new address_node(id, (size_t)address, cfg::DECODABLE);
+                    });
                     function_desc_map.insert(
                       make_pair(address, function_desc(current_min_calls_sz + 1, an_id)));
                     // cout << "New edge from " << to << " to " << an_id << endl;
@@ -370,7 +373,7 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
           set<mempath> field_reqs_new;
           size_t path_construction_errors =
             mempath::from_aliases(field_reqs_new, field_req_ids_new, mstate);
-          this->path_construction_errors[from] = path_construction_errors;
+          (this->path_construction_errors[from])[from_ctx] = path_construction_errors;
           //             for(auto &req : field_reqs_new)
           //               std::cout << req << std::endl;
           //            propagate_reqs(f_addr, mps);
@@ -509,32 +512,25 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
         assert(in_edges.size() == 1);
         size_t from_parent = *in_edges.begin();
 
+        set<mempath> mempaths_new;
         auto accumulate_all = [&]() {
           //          cout << "This call requires the following fields:" << endl;
           //           cout << "Reqs for call to " << address << endl;
+          (this->path_construction_errors[from])[0] = 0;
           for(auto &req : desc.field_reqs) {
             //                        cout << req << endl;
-            optional<set<mempath>> mempaths_new;
-            auto prop_res = req.propagate(
-              mempaths_new, get_sub(from_parent, from_ctx)->get_mstate(), state_new->get_mstate());
+            optional<set<mempath>> mempaths_new_next = nullopt;
+            auto prop_res = req.propagate(mempaths_new_next,
+              get_sub(from_parent, from_ctx)->get_mstate(), state_new->get_mstate());
+            if(mempaths_new_next)
+              mempaths_new.insert(mempaths_new_next->begin(), mempaths_new_next->end());
 
             for(auto ptr : prop_res.constant_ptrs) {
               //               cout << "\tNew immediate ptr: " << ptr << endl;
               (this->pointer_props[(size_t)address])[req].insert(ptr);
               ((this->hb_counts[to]))[req].insert(ptr);
             }
-            this->path_construction_errors[from] = prop_res.path_construction_errors;
-
-            if(mempaths_new) {
-              //               cout << "Propagating..." << endl;
-              //               for(auto p : mempaths_new.value())
-              //                 cout << p << endl;
-
-              set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent, from_ctx)->get_f_addr());
-              assert(f_addrs.size() > 0);
-              for(auto f_addr : f_addrs)
-                propagate_reqs(mempaths_new.value(), f_addr);
-            }
+            (this->path_construction_errors[from])[0] += prop_res.path_construction_errors;
           }
         };
 
@@ -544,11 +540,14 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
            * a pointer from the conflict set aliases with another pointer in the conflict
            * set in the caller...
            */
-          
+
           std::vector<std::set<mempath_assignment>> assignments_sets;
-          for(auto ctx_mapping : get_ctxful(from_parent)) {
-            auto s = dynamic_pointer_cast<global_state>(ctx_mapping.second);
-            auto keys_new = tabulation_keys(desc, s->get_mstate());
+          for(auto & [ context, from_parent_state ] : get_ctxful(from_parent)) {
+            auto s = dynamic_pointer_cast<global_state>(from_parent_state);
+            size_t path_construction_errors = 0;
+            auto keys_new =
+              tabulation_keys(mempaths_new, path_construction_errors, desc, s->get_mstate());
+            (this->path_construction_errors[from])[context] = path_construction_errors;
             assignments_sets.insert(assignments_sets.end(), keys_new.begin(), keys_new.end());
           }
           for(auto assignments_set : assignments_sets) {
@@ -565,8 +564,12 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
 
               auto state_ctx = dynamic_pointer_cast<global_state>(
                 start_state(vs_finite::single((int64_t)address)));
-              for(auto assignment : assignments_set)
+              (this->path_construction_errors[from])[context] = 0;
+              for(auto assignment : assignments_set) {
                 assignment.propagate(state_ctx->get_mstate());
+                // (this->path_construction_errors[from])[context] +=
+                //   prop_res.path_construction_errors;
+              }
 
               state_map_new[context] = state_ctx;
             }
@@ -577,8 +580,19 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
           tabulate_all();
         else
           accumulate_all();
+
+        if(mempaths_new.size() > 0) {
+          //               cout << "Propagating..." << endl;
+          //               for(auto p : mempaths_new.value())
+          //                 cout << p << endl;
+
+          set<void *> f_addrs = unpack_f_addrs(get_sub(from_parent, from_ctx)->get_f_addr());
+          assert(f_addrs.size() > 0);
+          for(auto f_addr : f_addrs)
+            propagate_reqs(mempaths_new, f_addr);
+        }
       }
-      
+
       if(tabulation)
         state_map_new[0] = state_new;
       else
@@ -654,7 +668,8 @@ void analysis::summary_dstack::init_state(summy::vs_shared_t f_addr) {
 }
 
 std::vector<std::set<mempath_assignment>> analysis::summary_dstack::tabulation_keys(
-  function_desc const &desc, summary_memory_state *state) {
+  std::set<mempath> &remaining, size_t &path_construction_errors, function_desc const &desc,
+  summary_memory_state *state) {
   std::vector<std::set<mempath_assignment>> result;
 
   std::vector<std::vector<mempath_assignment>> assignments;
@@ -665,6 +680,10 @@ std::vector<std::set<mempath_assignment>> analysis::summary_dstack::tabulation_k
   }
   for(auto &f : desc.field_reqs) {
     auto ext_res = f.extract_table_keys(state);
+    path_construction_errors += ext_res.path_construction_errors;
+    if(ext_res.remaining) {
+      remaining.insert(ext_res.remaining->begin(), ext_res.remaining->end());
+    }
     if(ext_res.assignments.size() == 0)
       // Unresolved pointer => no instantiation
       return result;
@@ -776,13 +795,13 @@ std::shared_ptr<analysis::domain_state> analysis::summary_dstack::start_state(si
   node_visitor nv;
   nv._([&](address_node *an) { addr = an->get_address(); });
   n->accept(nv);
-  
+
   assert(addr);
-  assert(function_desc_map.find((void*)*addr) != function_desc_map.end());
-  
+  assert(function_desc_map.find((void *)*addr) != function_desc_map.end());
+
   std::shared_ptr<analysis::domain_state> state =
     dynamic_pointer_cast<global_state>(start_state(vs_finite::single(addr.value())));
-    
+
   return state;
 }
 

@@ -340,22 +340,6 @@ size_t analysis::mempath::from_aliases(
     for(region_map_t::iterator region_it = state->input.regions.begin();
         region_it != state->input.regions.end(); region_it++)
       if(for_region_mapping(region_it)) break;
-    //    if(!found)
-    //      for(region_map_t::iterator region_it = state->input.deref.begin(); region_it !=
-    //      state->input.deref.end();
-    //          region_it++) {
-    //        if(*alias == *region_it->first) {
-    //          result.insert(mempath(region_it->first, vector<mempath::step> {step(0, 64)}));
-    //          found = true;
-    //          break;
-    //        }
-    //        id_visitor idv;
-    //        bool ptr_mem = false;
-    //        idv._([&](ptr_memory_id *pid) { ptr_mem = true; });
-    //        region_it->first->accept(idv);
-    //        if(!ptr_mem)
-    //          if(for_region_mapping(region_it)) break;
-    //      }
     if(!found) {
       cout << "analysis::mempath::from_aliases() - Warning: Unable to find pointer." << endl;
       path_construction_errors++;

@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
     auto const &ds_functions = ds.get_function_desc_map();
     size_t max_entries = 0;
     size_t entries_sum = 0;
-    for(auto& [ address, fd ] : ds_functions) {
+    for(auto const& [address, fd] : ds_functions) {
       const auto& state_map = ds.get_ctxful(fd.head_id);
       size_t table_entries = state_map.size();
       if(table_entries > max_entries)
@@ -346,9 +346,9 @@ int main(int argc, char **argv) {
 
     auto const &path_construction_errors = ds.get_path_construction_errors();
     size_t path_errors_total = 0;
-    for(auto const &path_errors : path_construction_errors) {
-      path_errors_total += path_errors.second;
-    }
+    for(auto const& [node, context_path_errors] : path_construction_errors)
+      for(auto const& [context, path_errors] : context_path_errors)
+        path_errors_total += path_errors;
     cout << "Path construction errors: " << path_errors_total << endl;
 
     auto const &unique_hbs = ds.get_unique_hbs();
