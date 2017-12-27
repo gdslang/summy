@@ -10,8 +10,8 @@
 #include <optional>
 #include <string>
 #include <summy/analysis/domains/api/numeric/num_var.h>
-#include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/herbrand_answer.h>
+#include <summy/analysis/domains/mempath.h>
 #include <summy/analysis/domains/ptr_set.h>
 #include <summy/analysis/domains/util.h>
 #include <summy/rreil/id/memory_id.h>
@@ -72,8 +72,8 @@ int mempath::compare_to(const mempath &other) const {
   return 0;
 }
 
-size_t mempath::_extract(std::optional<std::set<mempath>> &extracted,
-  summary_memory_state *from, std::map<size_t, ptr_set_t> &aliases_from_immediate) const {
+size_t mempath::_extract(std::optional<std::set<mempath>> &extracted, summary_memory_state *from,
+  std::map<size_t, ptr_set_t> &aliases_from_immediate) const {
   std::map<size_t, ptr_set_t> aliases_from = resolve(from);
 
   ptr_set_t aliases_from_symbolic;
@@ -180,9 +180,8 @@ std::tuple<std::map<size_t, ptr_set_t>, ptr_set_t> analysis::mempath::split(
   std::map<size_t, ptr_set_t> aliases) const {
   std::map<size_t, ptr_set_t> aliases_immediate;
   ptr_set_t aliases_symbolic;
-  for(auto &mapping : aliases) {
-    auto path_length = mapping.first;
-    for(auto &alias : mapping.second) {
+  for(auto const & [ path_length, aliases ] : aliases) {
+    for(auto const &alias : aliases) {
       summy::rreil::id_visitor idv;
       idv._([&](sm_id const *) { aliases_immediate[path_length].insert(alias); });
       idv._default([&](id const *) {
@@ -276,13 +275,13 @@ mp_prop_result analysis::mempath::propagate(std::optional<set<mempath>> &extract
 
   std::map<size_t, ptr_set_t> aliases_from_immediate;
   result.path_construction_errors = _extract(extracted, from, aliases_from_immediate);
-  for(auto mapping : aliases_from_immediate) {
-    propagate(mapping.first, mapping.second, to);
+  for(auto & [ path_length, aliases_from_immediate ] : aliases_from_immediate) {
+    propagate(path_length, aliases_from_immediate, to);
   }
 
   // Collect immediate pointers; used for statistics only
-  for(auto &aliases : aliases_from_immediate)
-    for(auto &alias : aliases.second) {
+  for(auto & [ path_length, aliases_from_immediate ] : aliases_from_immediate)
+    for(auto &alias : aliases_from_immediate) {
       std::set<size_t> offsets;
       value_set_visitor vsv;
       vsv._([&](vs_finite const *v) {
