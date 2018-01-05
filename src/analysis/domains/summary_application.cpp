@@ -449,13 +449,13 @@ summary_memory_state *analysis::summary_application::apply_summary() {
   }
 
   if(alias_conflict_queries.size() > 0) {
-    cout << "Warning: Wrong aliasing assumption." << endl;
-    for(const auto &next_set : alias_conflict_queries) {
-      cout << "Next aliasing set:" << endl;
-      for(const auto &next : next_set) {
-        cout << "  ~> " << next << endl;
-      }
-    }
+    // cout << "Warning: Wrong aliasing assumption." << endl;
+    // for(const auto &next_set : alias_conflict_queries) {
+    //   cout << "Next aliasing set:" << endl;
+    //   for(const auto &next : next_set) {
+    //     cout << "  ~> " << next << endl;
+    //   }
+    // }
     // If there are aliasing problems, we continue the analysis with a simulated
     // call to the identity function.
     // return_site->topify();

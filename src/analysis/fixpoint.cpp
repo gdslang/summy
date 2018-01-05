@@ -122,7 +122,7 @@ void fixpoint::iterate() {
         // if(nits_it->second > max_its || nits_it->second > 12) {
 
         std::time_t current_time = std::time(nullptr);
-        if(current_time - last_check > 10) {
+        if(current_time - last_check > 60) {
           last_check = current_time;
           cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
           cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
