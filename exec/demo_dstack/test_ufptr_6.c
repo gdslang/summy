@@ -21,8 +21,5 @@ int h(int (*fp)(void), int (*fq)(void), int a) {
 int main() {
   int x = h(&f, &q, 99);
 
-          __asm volatile ( "movl %0, %%r11d"
-          : "=a" (x)
-          : "a" (x)
-          : "r11");
+  __asm volatile("movl %0, %%r11d" : "=a"(x) : "a"(x) : "r11");
 }

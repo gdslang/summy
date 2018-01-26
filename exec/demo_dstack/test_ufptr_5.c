@@ -1,11 +1,11 @@
 #include <stdlib.h>
 
 int f() {
-	return 42;
+  return 42;
 }
 
 int q() {
-	return 99;
+  return 99;
 }
 
 int h(int (*fp)(void)) {
@@ -13,10 +13,7 @@ int h(int (*fp)(void)) {
 }
 
 int main() {
-	int x = h(&f) + h(&q);
+  int x = h(&f) + h(&q);
 
-          __asm volatile ( "movl %0, %%r11d"
-          : "=a" (x)
-          : "a" (x)
-          : "r11");
+  __asm volatile("movl %0, %%r11d" : "=a"(x) : "a"(x) : "r11");
 }

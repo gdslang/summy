@@ -19,7 +19,7 @@ struct mempath_assignment {
   bool operator==(const mempath_assignment &other) const;
 };
 
-inline std::ostream &operator<<(std::ostream &out, mempath_assignment &_this) {
+inline std::ostream &operator<<(std::ostream &out, mempath_assignment const &_this) {
   out << _this.mp << " := " << _this.immediate;
   return out;
 };

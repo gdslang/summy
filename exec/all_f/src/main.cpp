@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
   g.set_code(buffer, section.size, section.address);
 
-  bool blockwise_optimized = true;
+  bool blockwise_optimized = false;
   bool ref_management = true;
   bool tabulate = true;
 
@@ -334,15 +334,20 @@ int main(int argc, char **argv) {
     auto const &ds_functions = ds.get_function_desc_map();
     size_t max_entries = 0;
     size_t entries_sum = 0;
+    size_t field_requests = 0;
     for(auto const& [address, fd] : ds_functions) {
       const auto& state_map = ds.get_ctxful(fd.head_id);
       size_t table_entries = state_map.size();
       if(table_entries > max_entries)
         max_entries = table_entries;
       entries_sum += table_entries;
+      field_requests += fd.field_reqs.size();
     }
     cout << "Maximum table entries: " << max_entries << endl;
     cout << "Average table entries: " << (entries_sum / (double)ds_functions.size()) << endl;
+    cout << "Total number of functions: " << ds_functions.size() << endl;
+    cout << "Total table entries: " << entries_sum << endl;
+    cout << "Total number of field requests: " << field_requests << endl;
 
     auto const &path_construction_errors = ds.get_path_construction_errors();
     size_t path_errors_total = 0;

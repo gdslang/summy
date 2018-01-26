@@ -550,7 +550,13 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
             (this->path_construction_errors[from])[context] = path_construction_errors;
             assignments_sets.insert(assignments_sets.end(), keys_new.begin(), keys_new.end());
           }
+          // cout << "****** assignments start" << endl;
           for(auto assignments_set : assignments_sets) {
+            // cout << "<<< assignment" << endl;
+            for(const auto& assignment : assignments_set)
+              cout << assignment << endl;
+            // cout << ">>> assignment" << endl;
+
             if(assignments_set.size() == 0) {
               /*
                * No tabulation without field requests
@@ -574,6 +580,7 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
               state_map_new[context] = state_ctx;
             }
           }
+          // cout << "****** assignments end" << endl;
         };
 
         if(tabulation)
@@ -682,6 +689,9 @@ std::vector<std::set<mempath_assignment>> analysis::summary_dstack::tabulation_k
     auto ext_res = f.extract_table_keys(state);
     path_construction_errors += ext_res.path_construction_errors;
     if(ext_res.remaining) {
+      /*
+       * We log requests that we could not satisfy.
+       */
       remaining.insert(ext_res.remaining->begin(), ext_res.remaining->end());
     }
     if(ext_res.assignments.size() == 0)
