@@ -98,8 +98,11 @@ void fixpoint::iterate() {
 
   enqueue_updated_dirty();
 
+  uint64_t node_counter = 0;
+
   while(!end()) {
     analysis_node node = next();
+    node_counter++;
 
     //     std::time_t current_time = std::time(nullptr);
     //     if(current_time - construct_time > 20 * 60) {
@@ -122,7 +125,8 @@ void fixpoint::iterate() {
         // if(nits_it->second > max_its || nits_it->second > 12) {
 
         std::time_t current_time = std::time(nullptr);
-        if(current_time - last_check > 60) {
+        std::time_t diff = current_time - last_check;
+        if(diff > 60) {
           last_check = current_time;
           cout << "Fixpoint -- New maximal iteration count: " << nits_it->second << endl;
           cout << "Fixpoint -- Average iteration count: " << avg_iteration_count() << endl;
@@ -131,6 +135,8 @@ void fixpoint::iterate() {
           sd->print_callstack(node.id);
           max_its = nits_it->second;
           print_distribution_total();
+          cout << "Current speed: " << ((float)node_counter / diff) << " nodes per second" << endl;
+          node_counter = 0;
           //                    cout << "node id: " << node.id << endl;
           //                    cout << "\tMachine address: 0x" << hex <<
           //                    jd_man.machine_address_of(node.id)

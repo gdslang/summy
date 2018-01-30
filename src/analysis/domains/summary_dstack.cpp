@@ -553,8 +553,8 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
           // cout << "****** assignments start" << endl;
           for(auto assignments_set : assignments_sets) {
             // cout << "<<< assignment" << endl;
-            for(const auto& assignment : assignments_set)
-              cout << assignment << endl;
+            // for(const auto& assignment : assignments_set)
+            //   cout << assignment << endl;
             // cout << ">>> assignment" << endl;
 
             if(assignments_set.size() == 0) {
