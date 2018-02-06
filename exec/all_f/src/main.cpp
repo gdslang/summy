@@ -349,6 +349,18 @@ int main(int argc, char **argv) {
     cout << "Total table entries: " << entries_sum << endl;
     cout << "Total number of field requests: " << field_requests << endl;
 
+    const auto& context_uses = ds.get_context_uses();
+    size_t total_contexts_at_head = 0;
+    size_t total_users = 0;
+    for(auto const& [head_node, context_user_map] : context_uses) {
+      // auto state_map = ds.get_ctxful(head_node);
+      total_contexts_at_head += context_user_map.size();
+      for(const auto& [context, users] : context_user_map)
+        total_users += users.size();
+    }
+    cout << "Total contexts at head nodes: " << total_contexts_at_head << endl;
+    cout << "Total users of contexts: " << total_users << endl;
+
     auto const &path_construction_errors = ds.get_path_construction_errors();
     size_t path_errors_total = 0;
     for(auto const& [node, context_path_errors] : path_construction_errors)

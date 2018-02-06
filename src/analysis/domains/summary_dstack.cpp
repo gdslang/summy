@@ -578,6 +578,9 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
               }
 
               state_map_new[context] = state_ctx;
+              (context_uses[to])[context].insert(from);
+            } else {
+              (context_uses[to])[desc_it->second].insert(from);
             }
           }
           // cout << "****** assignments end" << endl;

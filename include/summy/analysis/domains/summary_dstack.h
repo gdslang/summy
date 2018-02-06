@@ -107,6 +107,13 @@ private:
    */
   std::map<size_t, size_t> unique_hbs;
 
+  /*
+   * Statistics: Context uses
+   * 
+   * function head node -> context -> source nodes
+   */
+  std::map<size_t, std::map<size_t, std::set<size_t>>> context_uses;
+
   //  std::set<size_t> erased;
 
   std::unordered_map<size_t, std::optional<size_t>> ref_map;
@@ -191,6 +198,10 @@ public:
 
   path_construction_errors_t const &get_path_construction_errors() {
     return path_construction_errors;
+  }
+
+  const std::map<size_t, std::map<size_t, std::set<size_t>>>& get_context_uses() {
+    return context_uses;
   }
 
   virtual void accept(analysis_visitor &v) override {
