@@ -54,8 +54,6 @@ using namespace summy;
 using namespace analysis::api;
 
 
-
-
 /**
  * @brief ...
  *
@@ -176,7 +174,7 @@ int main(int argc, char **argv) {
       //            if(name != "sem_reg_offset") continue;
       //            if(name != "register_from_bits") continue;
       //            if(name != "rreil_convert_sem_stmt") continue;
-//             if(name != "main") continue;
+      //             if(name != "main") continue;
       //       if(name != "_slash_") continue;
       cout << hex << e.address << dec << " (" << name << ")" << endl;
       try {
@@ -258,16 +256,16 @@ int main(int argc, char **argv) {
     dot_fs.open("output.dot", ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
       if(n.get_id() == 604 || n.get_id() == 436 || n.get_id() == 618) {
-        //out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+        // out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
         out << n.get_id() << " [label=\"" << n.get_id() << "\n";
         for(auto ctx_mapping : ds.get_ctxful(n.get_id()))
           out << "CTX: " << ctx_mapping.first << "\t" << *ctx_mapping.second << endl;
-        
-        
+
+
         out << "\"]";
       }
-      
-      
+
+
       //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " <<
       //            *jd_man.address_of(n.get_id()) << "\"]";
       else
@@ -324,22 +322,22 @@ int main(int argc, char **argv) {
     size_t requests = 0;
     size_t hbs = 0;
     for(auto const &head_mapping : hb_counts) {
-      for(auto const& hb_mapping : head_mapping.second) {
+      for(auto const &hb_mapping : head_mapping.second) {
         requests++;
         hbs += hb_mapping.second.size();
       }
     }
-    cout << "(only valid if accumulating) Total requests: " << requests << ", instantiations: " << hbs << endl;
+    cout << "(only valid if accumulating) Total requests: " << requests
+         << ", instantiations: " << hbs << endl;
 
     auto const &ds_functions = ds.get_function_desc_map();
     size_t max_entries = 0;
     size_t entries_sum = 0;
     size_t field_requests = 0;
-    for(auto const& [address, fd] : ds_functions) {
-      const auto& state_map = ds.get_ctxful(fd.head_id);
+    for(auto const & [ address, fd ] : ds_functions) {
+      const auto &state_map = ds.get_ctxful(fd.head_id);
       size_t table_entries = state_map.size();
-      if(table_entries > max_entries)
-        max_entries = table_entries;
+      if(table_entries > max_entries) max_entries = table_entries;
       entries_sum += table_entries;
       field_requests += fd.field_reqs.size();
     }
@@ -349,22 +347,39 @@ int main(int argc, char **argv) {
     cout << "Total table entries: " << entries_sum << endl;
     cout << "Total number of field requests: " << field_requests << endl;
 
-    const auto& context_uses = ds.get_context_uses();
-    size_t total_contexts_at_head = 0;
-    size_t total_users = 0;
-    for(auto const& [head_node, context_user_map] : context_uses) {
+    const auto &context_uses = ds.get_context_uses();
+    size_t nonzero_contexts_at_head = 0;
+    size_t nonzero_users = 0;
+    size_t zero_contexts_at_head = 0;
+    size_t zero_users = 0;
+    for(auto const & [ head_node, context_user_map ] : context_uses) {
+      // cout << "++- head node: " << head_node << endl;
       // auto state_map = ds.get_ctxful(head_node);
-      total_contexts_at_head += context_user_map.size();
-      for(const auto& [context, users] : context_user_map)
-        total_users += users.size();
+      nonzero_contexts_at_head += context_user_map.size();
+      bool has_zero = false;
+      for(const auto & [ context, users ] : context_user_map) {
+        // cout << " ~~~ context: " << context << endl;
+        // cout << " ~~~ users: " << users.size() << endl;
+        if(context == 0) {
+          zero_users += users.size();
+          has_zero = true;
+        } else
+          nonzero_users += users.size();
+      }
+      if(has_zero) {
+        nonzero_contexts_at_head--;
+        zero_contexts_at_head++;
+      }
     }
-    cout << "Total contexts at head nodes: " << total_contexts_at_head << endl;
-    cout << "Total users of contexts: " << total_users << endl;
+    cout << "Non-zero contexts at head nodes: " << nonzero_contexts_at_head
+         << " (zero: " << zero_contexts_at_head << ")" << endl;
+    cout << "Non-zero users of contexts: " << nonzero_users << " (zero: " << zero_users << ")"
+         << endl;
 
     auto const &path_construction_errors = ds.get_path_construction_errors();
     size_t path_errors_total = 0;
-    for(auto const& [node, context_path_errors] : path_construction_errors)
-      for(auto const& [context, path_errors] : context_path_errors)
+    for(auto const & [ node, context_path_errors ] : path_construction_errors)
+      for(auto const & [ context, path_errors ] : context_path_errors)
         path_errors_total += path_errors;
     cout << "Path construction errors: " << path_errors_total << endl;
 

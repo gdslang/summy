@@ -577,6 +577,8 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
                 //   prop_res.path_construction_errors;
               }
 
+              cout << "FOOOBAR: " << context << " / " << to << endl;
+
               state_map_new[context] = state_ctx;
               (context_uses[to])[context].insert(from);
             } else {
@@ -603,9 +605,10 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
         }
       }
 
-      if(tabulation)
+      if(tabulation) {
         state_map_new[0] = state_new;
-      else
+        (context_uses[to])[0].insert(from);
+      } else
         state_map_new[from_ctx] = state_new;
     } else {
       auto state_new = get_sub(from, from_ctx);
