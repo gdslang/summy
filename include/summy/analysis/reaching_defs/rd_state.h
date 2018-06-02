@@ -23,7 +23,7 @@ namespace reaching_defs {
 typedef std::tuple<size_t, std::shared_ptr<gdsl::rreil::id>> singleton_t;
 
 struct singleton_less {
-  bool operator()(singleton_t a, singleton_t b);
+  bool operator()(singleton_t a, singleton_t b) const;
 };
 
 typedef std::set<std::shared_ptr<gdsl::rreil::id>, id_less_no_version> id_set_t;

@@ -19,7 +19,7 @@ using namespace gdsl::rreil;
 
 #include <iostream>
 
-bool analysis::reaching_defs::singleton_less::operator ()(singleton_t a, singleton_t b) {
+bool analysis::reaching_defs::singleton_less::operator ()(singleton_t a, singleton_t b) const {
   size_t a_node;
   shared_ptr<id> a_id;
   tie(a_node, a_id) = a;

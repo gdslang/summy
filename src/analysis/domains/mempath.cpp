@@ -181,6 +181,7 @@ std::tuple<std::map<size_t, ptr_set_t>, ptr_set_t> analysis::mempath::split(
   std::map<size_t, ptr_set_t> aliases_immediate;
   ptr_set_t aliases_symbolic;
   for(auto const & [ path_length, aliases ] : aliases) {
+    // auto const &path_length_fu_clang = path_length;
     for(auto const &alias : aliases) {
       summy::rreil::id_visitor idv;
       idv._([&](sm_id const *) { aliases_immediate[path_length].insert(alias); });
