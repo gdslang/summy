@@ -35,7 +35,7 @@ public:
 
 int main(void) {
   __asm__("mov $0xfffffffffffffff0, %rsp\n");
-  long unsigned int *x = 0x4943E0;
+  long unsigned int *x = (long unsigned int*)0x4943E0;
   *x = 77777;
 
   void *foo = (void*)99;

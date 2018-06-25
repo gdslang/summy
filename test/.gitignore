@@ -2,6 +2,8 @@
 /example_*
 !/example_*.c
 !/example_*.cpp
+!/example_*.as
 /test*
 !/test*.c
 !/test*.cpp
+!/test*.as
