@@ -33,9 +33,9 @@ add_library(summy ${SOURCES})
 set_property(TARGET summy PROPERTY CXX_STANDARD 17)
 target_link_libraries(summy bjutil cppgdsl)
 
-add_subdirectory(exec/demo_dstack)
-add_subdirectory(exec/all_f)
-add_subdirectory(exec/tester)
+add_subdirectory(tools/demo_dstack)
+add_subdirectory(tools/all_f)
+add_subdirectory(tools/tester)
 
 enable_testing()
-add_test(all exec/tester/tester)
+add_test(all tools/tester/tester)
