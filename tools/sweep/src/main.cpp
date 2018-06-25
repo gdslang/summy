@@ -3,21 +3,20 @@
 #include <bjutil/printer.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/gdsl.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <summy/analysis/domains/api/api.h>
-#include <summy/cfg/cfg.h>
-#include <summy/cfg/node/address_node.h>
-//#include <summy/analysis/domains/dstack.h>
 #include <fstream>
 #include <functional>
 #include <iosfwd>
 #include <iostream>
+#include <limits.h>
 #include <map>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/numeric/vsd_state.h>
 #include <summy/analysis/domains/summary_dstack.h>
+#include <summy/cfg/cfg.h>
+#include <summy/cfg/node/address_node.h>
 #include <tuple>
 #include <vector>
 
@@ -53,41 +52,32 @@ using namespace analysis;
 using namespace summy;
 using namespace analysis::api;
 
+std::set<size_t> run_fcollect(gdsl::gdsl &g, bool blockwise_optimized) {
+  cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
+  sweep sweep(g, blockwise_optimized, true);
+  sweep.transduce();
+  analysis::fcollect::fcollect fc(&sweep.get_cfg());
+  cfg::jd_manager jd_man_fc(&sweep.get_cfg());
+  fixpoint fp_collect(&fc, jd_man_fc, true);
+  fp_collect.iterate();
 
-/**
- * @brief ...
- *
- * @param argc p_argc:...
- * @param argv ${p_argv:...}
- * @return int
- */
+  size_t loc_sweep = loc_statistics(sweep.get_cfg()).get_loc();
+  cout << "Loc (sweep): " << loc_sweep << endl;
+  cout << "Decode iterations (sweep): " << sweep.get_decode_iterations() << endl;
+
+  //    for(size_t address : fc.result().result)
+  //      cout << hex << address << dec << endl;
+  set<size_t> fstarts = fc.result().result;
+
+  condition_statistics_data_t c_stats = condition_statistics(sweep.get_cfg()).get_stats();
+  cout << "Total conditions: " << c_stats.total_conditions << endl;
+  cout << "Comparison conditions: " << c_stats.cmp_conditions << " ("
+       << (100.0 * c_stats.cmp_conditions / (float)c_stats.total_conditions) << "%)" << endl;
+
+  return fstarts;
+}
+
 int main(int argc, char **argv) {
-  //  int a, b, c;
-  //  tie(a, b, c) = tsort(9, 2, 10);
-  //
-  //  cout << a << endl;
-  //  cout << b << endl;
-  //  cout << c << endl;
-  //
-  ////  auto v = foo(9, 2, 10);
-  ////  for(auto x : v)
-  ////    cout << x << endl;
-  //
-  //  exit(0);
-
-  //  set<int, function<bool (int, int)>> s([&](int a, int b) {
-  //    return a > b;
-  //  });
-  //
-  //  s.insert(10);
-  //  s.insert(20);
-  //
-  //  for(int x : s)
-  //    cout << x << endl;
-  //
-  //  exit(0);
-
-
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
@@ -96,9 +86,6 @@ int main(int argc, char **argv) {
   bool success;
   tie(success, section) = elfp.section(".text");
   if(!success) throw string("Invalid section .text");
-
-  //  binary_provider::entry_t function;
-  //  tie(ignore, function) = elfp.symbol("main");
 
   unsigned char *buffer = (unsigned char *)malloc(section.size);
   memcpy(buffer, elfp.get_data().data + section.offset, section.size);
@@ -111,114 +98,62 @@ int main(int argc, char **argv) {
   bool blockwise_optimized = true;
   bool ref_management = true;
   bool tabulate = true;
+  std::optional<std::set<std::string>> filter_functions = std::set{std::string("#fcollect_0")};
 
   try {
-    cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
-    sweep sweep(g, blockwise_optimized, true);
-    sweep.transduce();
-    analysis::fcollect::fcollect fc(&sweep.get_cfg());
-    cfg::jd_manager jd_man_fc(&sweep.get_cfg());
-    fixpoint fp_collect(&fc, jd_man_fc, true);
-    fp_collect.iterate();
+    std::set<size_t> fstarts = run_fcollect(g, blockwise_optimized);
 
-    size_t loc_sweep = loc_statistics(sweep.get_cfg()).get_loc();
-    cout << "Loc (sweep): " << loc_sweep << endl;
-    cout << "Decode iterations (sweep): " << sweep.get_decode_iterations() << endl;
-
-    //    for(size_t address : fc.result().result)
-    //      cout << hex << address << dec << endl;
-    set<size_t> fstarts = fc.result().result;
-
-    condition_statistics_data_t c_stats = condition_statistics(sweep.get_cfg()).get_stats();
-    cout << "Total conditions: " << c_stats.total_conditions << endl;
-    cout << "Comparison conditions: " << c_stats.cmp_conditions << " ("
-         << (100.0 * c_stats.cmp_conditions / (float)c_stats.total_conditions) << "%)" << endl;
-
-    //  bj_gdsl bjg = gdsl_init_elf(&f, argv[1], ".text", "main", (size_t)1000);
-    //    int n = 0;
-
-    cout << "*** Function from ELF data..." << endl;
+    cout << "*** Collecting functions from ELF data..." << endl;
     auto functions = elfp.functions();
 
     function_map_t function_map;
-    for(auto f : functions) {
-      binary_provider::entry_t e;
-      string name;
-      tie(name, e) = f;
-      function_map[e.address] = name;
+    {
+      size_t i = 0;
+      for(size_t addr : fstarts)
+        function_map[addr] = std::string("#fcollect_") + std::to_string(i++);
     }
+    for(const auto &[name, e] : functions)
+      function_map[e.address] = name;
+
 
     analysis_dectran dt(g, blockwise_optimized, false, function_map);
     dt.register_();
 
-    for(auto f : functions) {
-      binary_provider::entry_t e;
-      string name;
-      tie(name, e) = f;
-      //      if(name != "p_slash_66_slash_f3Action2" && name !=
-      //      "p_slash_66_slash_f3_slash_f2Action8" && name !=
-      //      "with_f3") {
-      //        continue;
-      //      }
-      //      if(name != "_slash_vex_slash_0f_slash_vexv")
-      //        continue;
+    for(const auto &[address, name] : function_map) {
+      if(filter_functions && filter_functions->find(name) == filter_functions->end()) continue;
       // if(name != "sweep") continue;
-      //            if(name != "_slash_") continue;
-      //            if(name != "show_slash_op") continue;
-      //            if(name != "consume") continue;
-      //            if(name != "rval_uint") continue;
-      //      if(name != "traverse") continue;
-      //      if(name != "alloc") continue;
-      //      if(name != "del_fields") continue;
-      //            if(name != "sweep") continue;
-      //            if(name != "sem_reg_offset") continue;
-      //            if(name != "register_from_bits") continue;
-      //            if(name != "rreil_convert_sem_stmt") continue;
-      //             if(name != "main") continue;
-      //       if(name != "_slash_") continue;
-      cout << hex << e.address << dec << " (" << name << ")" << endl;
+      cout << hex << address << dec << " (" << name << ")" << endl;
       try {
-        fstarts.erase(e.address);
-        dt.transduce_function(e.address, name);
+        dt.transduce_function(address, name);
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
       } catch(string &s) {
         //        cout << "\t Unable to seek!" << endl;
       }
     }
-    if(functions.size() == 0) {
+    if(function_map.size() == 0) {
       size_t entry_address = elfp.entry_address();
-      fstarts.erase(entry_address);
       dt.transduce_function(entry_address, string("@@_entry"));
       auto &cfg = dt.get_cfg();
       cfg.commit_updates();
     }
 
-    for(auto f : functions) {
-      binary_provider::entry_t e;
-      string name;
-      tie(name, e) = f;
-      cout << "0x400000 + " << e.address << ", ";
-    }
+    std::cout << "+++ All functions:" << std::endl;
+    for(const auto &[address, name] : function_map)
+      cout << "0x400000 + " << address << ", ";
     cout << std::endl;
 
-    cout << "*** Additionally collected functions..." << endl;
-    for(size_t address : fstarts) {
-      //      cout << hex << address << dec << endl;
-      try {
-        dt.transduce_function(address);
-        auto &cfg = dt.get_cfg();
-        cfg.commit_updates();
-      } catch(string &s) {
-        //        cout << "\t Unable to seek!" << endl;
-      }
-    }
-
-    //    dt.transduce_function(0x401900, nullopt);
-    //    {
-    //      auto &cfg = dt.get_cfg();
-    //      cfg.commit_updates();
-    //    }
+    // cout << "** Adding Additionally collected functions..." << endl;
+    // for(size_t address : fstarts) {
+    //   //      cout << hex << address << dec << endl;
+    //   try {
+    //     dt.transduce_function(address);
+    //     auto &cfg = dt.get_cfg();
+    //     cfg.commit_updates();
+    //   } catch(string &s) {
+    //     //        cout << "\t Unable to seek!" << endl;
+    //   }
+    // }
 
     auto &cfg = dt.get_cfg();
 
@@ -228,7 +163,6 @@ int main(int argc, char **argv) {
     //    dot_noa_fs.close();
 
     //    return 0;
-
 
     shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, false, dt.get_f_heads(), tabulate);
@@ -263,12 +197,7 @@ int main(int argc, char **argv) {
 
 
         out << "\"]";
-      }
-
-
-      //            out << n.get_id() << " [label=\"" << n.get_id() << " ~ " <<
-      //            *jd_man.address_of(n.get_id()) << "\"]";
-      else
+      } else
         n.dot(out);
     });
     dot_fs.close();
@@ -334,7 +263,7 @@ int main(int argc, char **argv) {
     size_t max_entries = 0;
     size_t entries_sum = 0;
     size_t field_requests = 0;
-    for(auto const & [ address, fd ] : ds_functions) {
+    for(auto const &[address, fd] : ds_functions) {
       const auto &state_map = ds.get_ctxful(fd.head_id);
       size_t table_entries = state_map.size();
       if(table_entries > max_entries) max_entries = table_entries;
@@ -352,12 +281,12 @@ int main(int argc, char **argv) {
     size_t nonzero_users = 0;
     size_t zero_contexts_at_head = 0;
     size_t zero_users = 0;
-    for(auto const & [ head_node, context_user_map ] : context_uses) {
+    for(auto const &[head_node, context_user_map] : context_uses) {
       // cout << "++- head node: " << head_node << endl;
       // auto state_map = ds.get_ctxful(head_node);
       nonzero_contexts_at_head += context_user_map.size();
       bool has_zero = false;
-      for(const auto & [ context, users ] : context_user_map) {
+      for(const auto &[context, users] : context_user_map) {
         // cout << " ~~~ context: " << context << endl;
         // cout << " ~~~ users: " << users.size() << endl;
         if(context == 0) {
@@ -378,8 +307,8 @@ int main(int argc, char **argv) {
 
     auto const &path_construction_errors = ds.get_path_construction_errors();
     size_t path_errors_total = 0;
-    for(auto const & [ node, context_path_errors ] : path_construction_errors)
-      for(auto const & [ context, path_errors ] : context_path_errors)
+    for(auto const &[node, context_path_errors] : path_construction_errors)
+      for(auto const &[context, path_errors] : context_path_errors)
         path_errors_total += path_errors;
     cout << "Path construction errors: " << path_errors_total << endl;
 

@@ -227,6 +227,7 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
   while(true) {
     optional<node_parent> next_opt = [&]() -> optional<node_parent> {
       if(bfs_queue.empty()) {
+        cout << "EMPTY!" << endl;
         while(!possible_roots.empty()) {
           bool is_addr = false;
           auto next_it = possible_roots.begin();
@@ -248,7 +249,8 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
     if(!next_opt) break;
     node_parent next = next_opt.value();
 
-    //    cout << "Next node: " << *node_payloads[next.node] << endl;
+   cout << "Next node: " << next.node << endl;
+   cout << "Next node: " << node_payloads.at(next.node) << endl;
 
     node_visitor nv;
     nv._([&](address_node *nv) {
