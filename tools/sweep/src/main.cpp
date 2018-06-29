@@ -98,7 +98,8 @@ int main(int argc, char **argv) {
   bool blockwise_optimized = true;
   bool ref_management = true;
   bool tabulate = true;
-  std::optional<std::set<std::string>> filter_functions = std::set{std::string("#fcollect_0")};
+  // std::optional<std::set<std::string>> filter_functions = nullopt;
+  std::optional<std::set<std::string>> filter_functions = std::set{std::string("#fcollect_50")};
 
   try {
     std::set<size_t> fstarts = run_fcollect(g, blockwise_optimized);
@@ -122,13 +123,13 @@ int main(int argc, char **argv) {
     for(const auto &[address, name] : function_map) {
       if(filter_functions && filter_functions->find(name) == filter_functions->end()) continue;
       // if(name != "sweep") continue;
-      cout << hex << address << dec << " (" << name << ")" << endl;
+      cout << "Adding function @" << hex << address << dec << " (" << name << ")" << endl;
       try {
         dt.transduce_function(address, name);
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
       } catch(string &s) {
-        //        cout << "\t Unable to seek!" << endl;
+        cout << "\033[1;31m-> Exception while adding :-/\033[0m" << endl;
       }
     }
     if(function_map.size() == 0) {

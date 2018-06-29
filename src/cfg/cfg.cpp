@@ -5,18 +5,18 @@
  *      Author: jucs
  */
 
-#include <summy/cfg/cfg.h>
+#include <assert.h>
 #include <iostream>
+#include <map>
 #include <stdlib.h>
-#include <summy/cfg/edge/edge.h>
-#include <summy/cfg/node/node.h>
 #include <summy/cfg/bfs_iterator.h>
+#include <summy/cfg/cfg.h>
+#include <summy/cfg/edge/edge.h>
 #include <summy/cfg/edge/edge_copy_visitor.h>
 #include <summy/cfg/node/address_node.h>
+#include <summy/cfg/node/node.h>
 #include <summy/cfg/node/node_copy_visitor.h>
 #include <summy/cfg/observer.h>
-#include <map>
-#include <assert.h>
 
 using namespace std;
 
@@ -64,23 +64,23 @@ cfg::cfg::~cfg() {
   }
 }
 
-//size_t cfg::cfg::add_program(translated_program_t &translated_binary, experimental::optional<string> name) {
+// size_t cfg::cfg::add_program(translated_program_t &translated_binary,
+// experimental::optional<string> name) {
 //  optional<size_t> head_node;
 //  for(auto elem : translated_binary) {
 //    size_t address = get<0>(elem);
 //    gdsl::iterable<gdsl::rreil::statement> statements = get<1>(elem);
-//    size_t from_node = create_node([&](size_t id) { return new address_node(id, address, DECODED, name); });
-//    if(!head_node) head_node = from_node;
-//    add_nodes(statements, from_node);
+//    size_t from_node = create_node([&](size_t id) { return new address_node(id, address, DECODED,
+//    name); }); if(!head_node) head_node = from_node; add_nodes(statements, from_node);
 //  }
 //  return head_node.value();
 //}
 //
-//size_t cfg::cfg::add_program(translated_program_t &translated_binary) {
+// size_t cfg::cfg::add_program(translated_program_t &translated_binary) {
 //  return add_program(translated_binary, std::nullopt);
 //}
 //
-//size_t cfg::cfg::add_nodes(gdsl::iterable<gdsl::rreil::statement> statements, size_t from_node) {
+// size_t cfg::cfg::add_nodes(gdsl::iterable<gdsl::rreil::statement> statements, size_t from_node) {
 //  size_t to_node = from_node;
 //  for(auto const& stmt : statements) {
 //    to_node = create_node([&](size_t id) { return new node(id); });
@@ -201,7 +201,7 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
     node_parent(size_t node) : node(node), parent(nullopt) {}
   };
   queue<node_parent> bfs_queue;
-  bfs_queue.push(node_parent(0));
+  if(possible_roots.erase(0) > 0) bfs_queue.push(node_parent(0));
   unique_ptr<class cfg::cfg> cfg_new = unique_ptr<class cfg::cfg>(new cfg());
   map<size_t, size_t> cfg_new_node_map;
   auto get_node_new = [&](size_t node_old) {
@@ -227,11 +227,11 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
   while(true) {
     optional<node_parent> next_opt = [&]() -> optional<node_parent> {
       if(bfs_queue.empty()) {
-        cout << "EMPTY!" << endl;
         while(!possible_roots.empty()) {
           bool is_addr = false;
           auto next_it = possible_roots.begin();
           size_t next = *next_it;
+          if(seen.find(next) != seen.end()) continue;
           node_visitor nv;
           nv._([&](address_node *nv) { is_addr = true; });
           node_payloads[next]->accept(nv);
@@ -249,8 +249,8 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
     if(!next_opt) break;
     node_parent next = next_opt.value();
 
-   cout << "Next node: " << next.node << endl;
-   cout << "Next node: " << node_payloads.at(next.node) << endl;
+    // cout << "Next node: " << next.node << endl;
+    // cout << "Next node: " << node_payloads.at(next.node) << endl;
 
     node_visitor nv;
     nv._([&](address_node *nv) {
@@ -260,7 +260,7 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
     node_payloads[next.node]->accept(nv);
 
     assert(next.parent);
-//    cout << "parent: " << *node_payloads[next.parent.value()] << endl;
+    //    cout << "parent: " << *node_payloads[next.parent.value()] << endl;
 
     for(auto edge_it : *edge_payloads.at(next.node)) {
       size_t child = edge_it.first;
@@ -280,14 +280,14 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
       edge_visitor ev;
       bool is_call_target_edge = false;
       ev._([&](call_edge const *ce) {
-        if(ce->is_target_edge())
-          is_call_target_edge = true;
+        if(ce->is_target_edge()) is_call_target_edge = true;
       });
       edge_it.second->accept(ev);
 
       if(child_is_addr && (call_targets || !is_call_target_edge)) {
         //        cout << "Edge from " << next.parent.value() << " to " << child << endl;
-//        cout << "Edge from " << *node_payloads[next.parent.value()] << " to " << *node_payloads[child] << endl;
+        //        cout << "Edge from " << *node_payloads[next.parent.value()] << " to " <<
+        //        *node_payloads[child] << endl;
         size_t from = get_node_new(next.parent.value());
         size_t to = get_node_new(child);
         edge_copy_visitor ecv;
@@ -311,7 +311,8 @@ void cfg::cfg::dot(std::ostream &stream, node_callback_t node_cb, edge_callback_
   for(size_t i = 0; i < edge_payloads.size(); i++) {
     auto &c = *edge_payloads[i];
     for(auto it = c.begin(); it != c.end(); it++) {
-      stream << "  " << node_payloads[i]->get_id() << " -> " << node_payloads[it->first]->get_id() << " [label=";
+      stream << "  " << node_payloads[i]->get_id() << " -> " << node_payloads[it->first]->get_id()
+             << " [label=";
       edge_cb(edge_id(i, it->first), stream);
       stream << "];" << endl;
     }
@@ -320,7 +321,8 @@ void cfg::cfg::dot(std::ostream &stream, node_callback_t node_cb, edge_callback_
 }
 
 void cfg::cfg::dot(std::ostream &stream, node_callback_t node_cb) {
-  dot(stream, node_cb, [&](edge_id eid, std::ostream &stream) { edge_payloads[eid.from]->at(eid.to)->dot(stream); });
+  dot(stream, node_cb,
+    [&](edge_id eid, std::ostream &stream) { edge_payloads[eid.from]->at(eid.to)->dot(stream); });
 }
 
 void cfg::cfg::dot(std::ostream &stream) {
@@ -349,7 +351,8 @@ cfg::node *cfg::cfg::get_node_payload(size_t id) {
 
 void cfg::cfg::replace_node_payload(node *n) {
   if(n->get_id() >= node_payloads.size())
-    throw new string("cfg::cfg::replace_node_payload(size_t, node*): Invalid node payload replacement");
+    throw new string(
+      "cfg::cfg::replace_node_payload(size_t, node*): Invalid node payload replacement");
   delete node_payloads[n->get_id()];
   for(auto in : in_edges(n->get_id()))
     updates_stack.top().push_back(update{update_kind::UPDATE, in, n->get_id()});
@@ -412,7 +415,8 @@ void cfg::cfg::merge(class cfg &other, size_t merge_node, size_t other_merge_nod
       edge_mapping.second->accept(ecv);
       edge *e = ecv.get_edge();
       dst_edges[mapped_id(edge_mapping.first)] = e;
-      updates_stack.top().push_back(update{update_kind::INSERT, mapped_id(i), mapped_id(edge_mapping.first)});
+      updates_stack.top().push_back(
+        update{update_kind::INSERT, mapped_id(i), mapped_id(edge_mapping.first)});
     }
   }
 
