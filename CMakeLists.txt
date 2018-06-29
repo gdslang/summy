@@ -34,6 +34,7 @@ set_property(TARGET summy PROPERTY CXX_STANDARD 17)
 target_link_libraries(summy bjutil cppgdsl)
 
 add_subdirectory(tools/sweep)
+add_subdirectory(tools/legacy/demo_dstack)
 add_subdirectory(tools/tester)
 
 enable_testing()
