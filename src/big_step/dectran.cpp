@@ -67,6 +67,7 @@ std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_tra
             LONG_MAX);
         } catch(gdsl_exception &s) {
           cout << "GDSL Error @0x" << hex << gdsl.get_ip() << dec << ": " << s << endl;
+          gdsl.seek(gdsl.get_ip() + 1);
           gdsl.reset_heap();
           return nullopt;
         }
@@ -79,6 +80,7 @@ std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_tra
           return optional<gdsl::instruction>(gdsl.decode());
         } catch(gdsl_exception &s) {
           cout << "Decoding error @0x" << hex << gdsl.get_ip() << dec << ": " << s << endl;
+          gdsl.seek(gdsl.get_ip() + 1);
           gdsl.reset_heap();
           return nullopt;
         }

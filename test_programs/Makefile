@@ -8,7 +8,7 @@ LIBDS=-L$(MLTK)/lib
 LIBS=
 OPT ?= 1
 LIBFLAGS=$(LIBDS) $(LIBS)
-LDFLAGS=-static
+#LDFLAGS=-static
 INCDS=-Iinclude -I$(MLTK)/include
 #CFLAGS=-c -fomit-frame-pointer -O0 -g3 -std=gnu99 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)
 #CPPFLAGS=-c -fomit-frame-pointer -fpermissive -O0 -g3 -std=c++11 -Wall -Wfatal-errors -DRELAXEDFATAL $(INCDS)

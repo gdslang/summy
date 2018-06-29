@@ -1,34 +1,31 @@
+#include <algorithm>
 #include <bjutil/binary/elf_provider.h>
 #include <bjutil/gdsl_init.h>
 #include <bjutil/printer.h>
+#include <bjutil/sort.h>
 #include <cppgdsl/frontend/bare_frontend.h>
 #include <cppgdsl/gdsl.h>
+#include <fmt/printf.h>
 #include <fstream>
 #include <functional>
-#include <iosfwd>
-#include <iostream>
 #include <limits.h>
 #include <map>
+#include <memory>
+#include <optional>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/numeric/vsd_state.h>
 #include <summy/analysis/domains/summary_dstack.h>
-#include <summy/cfg/cfg.h>
-#include <summy/cfg/node/address_node.h>
-#include <tuple>
-#include <vector>
-
-#include <algorithm>
-#include <bjutil/sort.h>
-#include <optional>
 #include <summy/analysis/fcollect/fcollect.h>
 #include <summy/analysis/fixpoint.h>
 #include <summy/analysis/static_memory.h>
 #include <summy/big_step/analysis_dectran.h>
 #include <summy/big_step/sweep.h>
+#include <summy/cfg/cfg.h>
 #include <summy/cfg/jd_manager.h>
+#include <summy/cfg/node/address_node.h>
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/statistics.h>
 #include <summy/transformers/resolved_connector.h>
@@ -36,11 +33,8 @@
 #include <summy/value_set/vs_finite.h>
 #include <summy/value_set/vs_open.h>
 #include <summy/value_set/vs_top.h>
-
-#include <fmt/printf.h>
-
-#include <cstdio>
-#include <memory>
+#include <tuple>
+#include <vector>
 
 using analysis::fixpoint;
 using analysis::value_sets::vsd_state;
@@ -79,10 +73,50 @@ std::set<size_t> run_fcollect(gdsl::gdsl &g, bool blockwise_optimized) {
 }
 
 int main(int argc, char **argv) {
+  bool blockwise_optimized = true;
+  bool ref_management = true;
+  bool tabulate = true;
+  std::optional<std::set<std::string>> filter_functions = std::nullopt;
+  // std::optional<std::set<std::string>> filter_functions = std::set{std::string("XYZ")};
+  std::optional<std::set<size_t>> filter_nodes = std::nullopt;
+  // std::optional<std::set<size_t>> filter_nodes = std::set<size_t>{1, 2, 3};
+
+  char *path = nullptr;
+  for(int i = 1; i < argc; i++) {
+    auto insert = [&](auto &opt_set, auto value) {
+      if(!opt_set) opt_set = std::set<typeof(value)>();
+      opt_set->insert(value);
+    };
+    std::string arg = argv[i];
+    const string func_str("--func");
+    const string node_str("--node=");
+    if(!arg.find("--noopt"))
+      blockwise_optimized = false;
+    else if(!arg.find("--noref"))
+      ref_management = false;
+    else if(!arg.find("--notab"))
+      tabulate = false;
+    else if(!arg.find(func_str)) {
+      string func = arg.substr(func_str.length());
+      insert(filter_functions, std::move(func));
+    } else if(!arg.find(node_str)) {
+      size_t node = (size_t)std::atoll(arg.substr(node_str.length()).c_str());
+      insert(filter_nodes, node);
+    } else if(!arg.find("--")) {
+      fmt::printf("Invalid argument: %s\n", arg);
+      return 2;
+    } else
+      path = argv[i];
+  }
+  if(path == nullptr) {
+    fmt::printf("Please pass the path to the executable.\n");
+    return 1;
+  }
+
   gdsl::bare_frontend f("current");
   gdsl::gdsl g(&f);
 
-  elf_provider elfp = elf_provider(argv[1]);
+  elf_provider elfp = elf_provider(path);
   binary_provider::entry_t section;
   bool success;
   std::tie(success, section) = elfp.section(".text");
@@ -95,12 +129,6 @@ int main(int argc, char **argv) {
   //  if(size > section.size) size = section.size;
 
   g.set_code(buffer, section.size, section.address);
-
-  bool blockwise_optimized = true;
-  bool ref_management = true;
-  bool tabulate = true;
-  std::optional<std::set<std::string>> filter_functions = std::nullopt;
-  // std::optional<std::set<std::string>> filter_functions = std::set{std::string("XYZ")};
 
   try {
     std::set<size_t> fstarts = run_fcollect(g, blockwise_optimized);
@@ -145,26 +173,7 @@ int main(int argc, char **argv) {
       fmt::printf("0x400000 + %d, ", address);
     fmt::printf("\n");
 
-    // fmt::printf( "** Adding Additionally collected functions..." );
-    // for(size_t address : fstarts) {
-    //   //      fmt::printf( hex << address << dec );
-    //   try {
-    //     dt.transduce_function(address);
-    //     auto &cfg = dt.get_cfg();
-    //     cfg.commit_updates();
-    //   } catch(string &s) {
-    //     //        fmt::printf( "\t Unable to seek!" );
-    //   }
-    // }
-
     auto &cfg = dt.get_cfg();
-
-    //    ofstream dot_noa_fs;
-    //    dot_noa_fs.open("output_noa.dot", ios::out);
-    //    cfg.dot(dot_noa_fs);
-    //    dot_noa_fs.close();
-
-    //    return 0;
 
     shared_ptr<static_memory> se = std::make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, false, dt.get_f_heads(), tabulate);
@@ -184,18 +193,13 @@ int main(int argc, char **argv) {
     cfg.dot(dot_noa_fs);
     dot_noa_fs.close();
 
-    //  fmt::printf( "++++++++++" );
-    //  ds.put(std::cout);
-    //  fmt::printf( "++++++++++" );
-
     std::ofstream dot_fs;
     dot_fs.open("output.dot", std::ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, std::ostream &out) {
-      if(n.get_id() == 604 || n.get_id() == 436 || n.get_id() == 618) {
-        // out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
+      if(!filter_nodes || filter_nodes->find(n.get_id()) != filter_nodes->end()) {
         fmt::fprintf(out, "%d [label=\"%d\n", n.get_id(), n.get_id());
         for(auto ctx_mapping : ds.get_ctxful(n.get_id()))
-          fmt::fprintf(out, "CTX: %s\t%s\n", ctx_mapping.first, *ctx_mapping.second);
+          fmt::fprintf(out, "CTX: %d\t%s\n", ctx_mapping.first, *ctx_mapping.second);
         fmt::fprintf(out, "\"]");
       } else
         n.dot(out);

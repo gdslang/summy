@@ -231,11 +231,11 @@ std::unique_ptr<cfg::cfg> cfg::cfg::machine_cfg(bool call_targets) {
           bool is_addr = false;
           auto next_it = possible_roots.begin();
           size_t next = *next_it;
-          if(seen.find(next) != seen.end()) continue;
           node_visitor nv;
           nv._([&](address_node *nv) { is_addr = true; });
           node_payloads[next]->accept(nv);
           possible_roots.erase(next_it);
+          if(seen.find(next) != seen.end()) continue;
           if(!is_addr) continue;
           return node_parent(next);
         }
