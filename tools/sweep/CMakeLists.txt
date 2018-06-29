@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (all_f)
+project (sweep)
 
 file(GLOB_RECURSE SOURCES
     "src/**.cpp"
@@ -8,6 +8,14 @@ file(GLOB_RECURSE SOURCES
 include_directories("include/")
 include_directories("../../include/")
 
-add_executable(all_f ${SOURCES})
-target_link_libraries(all_f summy bjutil cppgdsl dl gmp gtest pthread elf)
-set_property(TARGET all_f PROPERTY CXX_STANDARD 17)
+function(dep dirname)
+  if(EXISTS ${CMAKE_SOURCE_DIR}/dependencies/${dirname}/CMakeLists.txt)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/${dirname} ${dirname})
+  endif()
+endfunction(dep)
+
+dep(fmt)
+
+add_executable(sweep ${SOURCES})
+target_link_libraries(sweep summy bjutil cppgdsl dl gmp gtest pthread elf fmt)
+set_property(TARGET sweep PROPERTY CXX_STANDARD 17)

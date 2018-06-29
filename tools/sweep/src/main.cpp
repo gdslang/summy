@@ -37,6 +37,8 @@
 #include <summy/value_set/vs_open.h>
 #include <summy/value_set/vs_top.h>
 
+#include <fmt/printf.h>
+
 #include <cstdio>
 #include <memory>
 
@@ -47,13 +49,12 @@ using cfg::edge;
 using summy::rreil::numeric_id;
 
 using namespace gdsl::rreil;
-using namespace std;
 using namespace analysis;
 using namespace summy;
 using namespace analysis::api;
 
 std::set<size_t> run_fcollect(gdsl::gdsl &g, bool blockwise_optimized) {
-  cout << "\033[1;31m*** Starting the 'fcollect' analysis...\033[0m" << endl;
+  fmt::printf("\033[1;31m*** Starting the 'fcollect' analysis...\033[0m\n");
   sweep sweep(g, blockwise_optimized, true);
   sweep.transduce();
   analysis::fcollect::fcollect fc(&sweep.get_cfg());
@@ -62,17 +63,17 @@ std::set<size_t> run_fcollect(gdsl::gdsl &g, bool blockwise_optimized) {
   fp_collect.iterate();
 
   size_t loc_sweep = loc_statistics(sweep.get_cfg()).get_loc();
-  cout << "Loc (sweep): " << loc_sweep << endl;
-  cout << "Decode iterations (sweep): " << sweep.get_decode_iterations() << endl;
+  fmt::printf("Loc (sweep): %d\n", loc_sweep);
+  fmt::printf("Decode iterations (sweep): %d\n", sweep.get_decode_iterations());
 
   //    for(size_t address : fc.result().result)
-  //      cout << hex << address << dec << endl;
-  set<size_t> fstarts = fc.result().result;
+  //      fmt::printf( hex << address << dec );
+  std::set<size_t> fstarts = fc.result().result;
 
   condition_statistics_data_t c_stats = condition_statistics(sweep.get_cfg()).get_stats();
-  cout << "Total conditions: " << c_stats.total_conditions << endl;
-  cout << "Comparison conditions: " << c_stats.cmp_conditions << " ("
-       << (100.0 * c_stats.cmp_conditions / (float)c_stats.total_conditions) << "%)" << endl;
+  fmt::printf("Total conditions: %d\n", c_stats.total_conditions);
+  fmt::printf("Comparison conditions: %d (%f)\n", c_stats.cmp_conditions,
+    100.0 * c_stats.cmp_conditions / (float)c_stats.total_conditions);
 
   return fstarts;
 }
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
   elf_provider elfp = elf_provider(argv[1]);
   binary_provider::entry_t section;
   bool success;
-  tie(success, section) = elfp.section(".text");
+  std::tie(success, section) = elfp.section(".text");
   if(!success) throw string("Invalid section .text");
 
   unsigned char *buffer = (unsigned char *)malloc(section.size);
@@ -98,13 +99,13 @@ int main(int argc, char **argv) {
   bool blockwise_optimized = true;
   bool ref_management = true;
   bool tabulate = true;
-  // std::optional<std::set<std::string>> filter_functions = nullopt;
-  std::optional<std::set<std::string>> filter_functions = std::set{std::string("#fcollect_50")};
+  std::optional<std::set<std::string>> filter_functions = std::nullopt;
+  // std::optional<std::set<std::string>> filter_functions = std::set{std::string("XYZ")};
 
   try {
     std::set<size_t> fstarts = run_fcollect(g, blockwise_optimized);
 
-    cout << "*** Collecting functions from ELF data..." << endl;
+    fmt::printf("*** Collecting functions from ELF data...\n");
     auto functions = elfp.functions();
 
     function_map_t function_map;
@@ -123,13 +124,13 @@ int main(int argc, char **argv) {
     for(const auto &[address, name] : function_map) {
       if(filter_functions && filter_functions->find(name) == filter_functions->end()) continue;
       // if(name != "sweep") continue;
-      cout << "Adding function @" << hex << address << dec << " (" << name << ")" << endl;
+      fmt::printf("Adding function @%x (%s)\n", address, name);
       try {
         dt.transduce_function(address, name);
         auto &cfg = dt.get_cfg();
         cfg.commit_updates();
       } catch(string &s) {
-        cout << "\033[1;31m-> Exception while adding :-/\033[0m" << endl;
+        fmt::printf("\033[1;31m-> Exception while adding :-/\033[0m\n");
       }
     }
     if(function_map.size() == 0) {
@@ -139,20 +140,20 @@ int main(int argc, char **argv) {
       cfg.commit_updates();
     }
 
-    std::cout << "+++ All functions:" << std::endl;
+    fmt::printf("+++ All functions:");
     for(const auto &[address, name] : function_map)
-      cout << "0x400000 + " << address << ", ";
-    cout << std::endl;
+      fmt::printf("0x400000 + %d, ", address);
+    fmt::printf("\n");
 
-    // cout << "** Adding Additionally collected functions..." << endl;
+    // fmt::printf( "** Adding Additionally collected functions..." );
     // for(size_t address : fstarts) {
-    //   //      cout << hex << address << dec << endl;
+    //   //      fmt::printf( hex << address << dec );
     //   try {
     //     dt.transduce_function(address);
     //     auto &cfg = dt.get_cfg();
     //     cfg.commit_updates();
     //   } catch(string &s) {
-    //     //        cout << "\t Unable to seek!" << endl;
+    //     //        fmt::printf( "\t Unable to seek!" );
     //   }
     // }
 
@@ -165,86 +166,82 @@ int main(int argc, char **argv) {
 
     //    return 0;
 
-    shared_ptr<static_memory> se = make_shared<static_elf>(&elfp);
+    shared_ptr<static_memory> se = std::make_shared<static_elf>(&elfp);
     summary_dstack ds(&cfg, se, false, dt.get_f_heads(), tabulate);
     cfg::jd_manager jd_man(&cfg);
     fixpoint fp(&ds, jd_man, ref_management);
 
-    cout << "\033[1;31mStarting main analysis.\033[0m" << endl;
+    fmt::printf("\033[1;31mStarting main analysis.\033[0m\n");
 
     fp.iterate();
 
-    cout << "\033[1;31mEnd of main analysis.\033[0m" << endl;
+    fmt::printf("\033[1;31mEnd of main analysis.\033[0m\n");
     fp.print_distribution_total();
-    cout << "Max its: " << fp.max_iter() << endl;
+    fmt::printf("Max its: %d\n", fp.max_iter());
 
-    ofstream dot_noa_fs;
-    dot_noa_fs.open("output_noa.dot", ios::out);
+    std::ofstream dot_noa_fs;
+    dot_noa_fs.open("output_noa.dot", std::ios::out);
     cfg.dot(dot_noa_fs);
     dot_noa_fs.close();
 
-    //  cout << "++++++++++" << endl;
-    //  ds.put(cout);
-    //  cout << "++++++++++" << endl;
+    //  fmt::printf( "++++++++++" );
+    //  ds.put(std::cout);
+    //  fmt::printf( "++++++++++" );
 
-    ofstream dot_fs;
-    dot_fs.open("output.dot", ios::out);
-    cfg.dot(dot_fs, [&](cfg::node &n, ostream &out) {
+    std::ofstream dot_fs;
+    dot_fs.open("output.dot", std::ios::out);
+    cfg.dot(dot_fs, [&](cfg::node &n, std::ostream &out) {
       if(n.get_id() == 604 || n.get_id() == 436 || n.get_id() == 618) {
         // out << n.get_id() << " [label=\"" << n.get_id() << "\n" << *ds.get(n.get_id()) << "\"]";
-        out << n.get_id() << " [label=\"" << n.get_id() << "\n";
+        fmt::fprintf(out, "%d [label=\"%d\n", n.get_id(), n.get_id());
         for(auto ctx_mapping : ds.get_ctxful(n.get_id()))
-          out << "CTX: " << ctx_mapping.first << "\t" << *ctx_mapping.second << endl;
-
-
-        out << "\"]";
+          fmt::fprintf(out, "CTX: %s\t%s\n", ctx_mapping.first, *ctx_mapping.second);
+        fmt::fprintf(out, "\"]");
       } else
         n.dot(out);
     });
     dot_fs.close();
 
-    unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg(false);
-    ofstream dot_machine_fs;
-    dot_machine_fs.open("output_machine.dot", ios::out);
+    std::unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg(false);
+    std::ofstream dot_machine_fs;
+    dot_machine_fs.open("output_machine.dot", std::ios::out);
     machine_cfg->dot(dot_machine_fs);
     dot_machine_fs.close();
 
-    printf("Section size: %zu\n", section.size);
-    printf("Decoded bytes: %lld\n", dt.bytes_decoded());
-    printf("Analyzed addresses: %zu\n", fp.analyzed_addresses());
-    printf("Decoded start addresses: %lld\n", dt.start_addresses_decoded());
+    fmt::printf("Section size: %d\n", section.size);
+    fmt::printf("Decoded bytes: %d\n", dt.bytes_decoded());
+    fmt::printf("Analyzed addresses: %d\n", fp.analyzed_addresses());
+    fmt::printf("Decoded start addresses: %d\n", dt.start_addresses_decoded());
 
     size_t loc = loc_statistics(dt.get_cfg()).get_loc();
-    cout << "Loc: " << loc << endl;
-    cout << "Decode iterations: " << dt.get_decode_iterations() << endl;
+    fmt::printf("Loc: %d\n", loc);
+    fmt::printf("Decode iterations: %d\n", dt.get_decode_iterations());
 
     branch_statistics bs(g, ds, jd_man);
     auto b_stats = bs.get_stats();
     size_t total_indirect = b_stats.calls_total_indirect + b_stats.jmps_total_indirect;
     size_t with_targets = b_stats.calls_with_targets + b_stats.jmps_with_targets;
-    cout << "Total indirect branches: " << total_indirect << endl;
-    cout << "Indirect branches with targets: " << with_targets << " ("
-         << (100.0 * with_targets / (float)total_indirect) << "%)" << endl;
+    fmt::printf("Total indirect branches: %d\n", total_indirect);
+    fmt::printf("Indirect branches with targets: %d (%f%%)\n", with_targets,
+      (100.0 * with_targets / (float)total_indirect));
 
-    cout << "Total indirect jmps: " << b_stats.jmps_total_indirect << endl;
-    cout << "Indirect jmps with targets: " << b_stats.jmps_with_targets << " ("
-         << (100.0 * b_stats.jmps_with_targets / (float)b_stats.jmps_total_indirect) << "%)"
-         << endl;
+    fmt::printf("Total indirect jmps: %d\n", b_stats.jmps_total_indirect);
+    fmt::printf("Indirect jmps with targets: %d (%f%%)\n", b_stats.jmps_with_targets,
+      100.0 * b_stats.jmps_with_targets / (float)b_stats.jmps_total_indirect);
 
-    cout << "Total indirect calls: " << b_stats.calls_total_indirect << endl;
-    cout << "Indirect calls with targets: " << b_stats.calls_with_targets << " ("
-         << (100.0 * b_stats.calls_with_targets / (float)b_stats.calls_total_indirect) << "%)"
-         << endl;
+    fmt::printf("Total indirect calls: %d\n", b_stats.calls_total_indirect);
+    fmt::printf("Indirect calls with targets: %d (%f%%)\n", b_stats.calls_with_targets,
+      100.0 * b_stats.calls_with_targets / (float)b_stats.calls_total_indirect);
 
     dt.print_decoding_holes();
 
     auto const &pointer_props = ds.get_pointer_props();
     for(auto const &pp : pointer_props) {
-      cout << "PP for address 0x" << std::hex << pp.first << std::dec << ":" << std::endl;
+      fmt::printf("PP for address 0x%x:\n", pp.first);
       for(auto const &fr : pp.second) {
-        cout << "  -> Field requirement " << std::endl;
+        fmt::printf("  -> Field requirement \n");
         for(auto const &ptr : fr.second)
-          cout << "    -> Propagated address 0x" << std::hex << ptr << std::dec << std::endl;
+          fmt::printf("    -> Propagated address 0x%x\n", ptr);
       }
     }
 
@@ -257,8 +254,8 @@ int main(int argc, char **argv) {
         hbs += hb_mapping.second.size();
       }
     }
-    cout << "(only valid if accumulating) Total requests: " << requests
-         << ", instantiations: " << hbs << endl;
+    fmt::printf(
+      "(only valid if accumulating) Total requests: %d, instantiations: %d\n", requests, hbs);
 
     auto const &ds_functions = ds.get_function_desc_map();
     size_t max_entries = 0;
@@ -271,11 +268,11 @@ int main(int argc, char **argv) {
       entries_sum += table_entries;
       field_requests += fd.field_reqs.size();
     }
-    cout << "Maximum table entries: " << max_entries << endl;
-    cout << "Average table entries: " << (entries_sum / (double)ds_functions.size()) << endl;
-    cout << "Total number of functions: " << ds_functions.size() << endl;
-    cout << "Total table entries: " << entries_sum << endl;
-    cout << "Total number of field requests: " << field_requests << endl;
+    fmt::printf("Maximum table entries: %d\n", max_entries);
+    fmt::printf("Average table entries: %f\n", entries_sum / (double)ds_functions.size());
+    fmt::printf("Total number of functions: %d\n", ds_functions.size());
+    fmt::printf("Total table entries: %d\n", entries_sum);
+    fmt::printf("Total number of field requests: %d\n", field_requests);
 
     const auto &context_uses = ds.get_context_uses();
     size_t nonzero_contexts_at_head = 0;
@@ -283,13 +280,13 @@ int main(int argc, char **argv) {
     size_t zero_contexts_at_head = 0;
     size_t zero_users = 0;
     for(auto const &[head_node, context_user_map] : context_uses) {
-      // cout << "++- head node: " << head_node << endl;
+      // fmt::printf( "++- head node: " , head_node );
       // auto state_map = ds.get_ctxful(head_node);
       nonzero_contexts_at_head += context_user_map.size();
       bool has_zero = false;
       for(const auto &[context, users] : context_user_map) {
-        // cout << " ~~~ context: " << context << endl;
-        // cout << " ~~~ users: " << users.size() << endl;
+        // fmt::printf( " ~~~ context: " , context );
+        // fmt::printf( " ~~~ users: " , users.size() );
         if(context == 0) {
           zero_users += users.size();
           has_zero = true;
@@ -301,17 +298,16 @@ int main(int argc, char **argv) {
         zero_contexts_at_head++;
       }
     }
-    cout << "Non-zero contexts at head nodes: " << nonzero_contexts_at_head
-         << " (zero: " << zero_contexts_at_head << ")" << endl;
-    cout << "Non-zero users of contexts: " << nonzero_users << " (zero: " << zero_users << ")"
-         << endl;
+    fmt::printf("Non-zero contexts at head nodes: %d (zero: %d)\n", nonzero_contexts_at_head,
+      zero_contexts_at_head);
+    fmt::printf("Non-zero users of contexts: %d (zero: %d)\n", nonzero_users, zero_users);
 
     auto const &path_construction_errors = ds.get_path_construction_errors();
     size_t path_errors_total = 0;
     for(auto const &[node, context_path_errors] : path_construction_errors)
       for(auto const &[context, path_errors] : context_path_errors)
         path_errors_total += path_errors;
-    cout << "Path construction errors: " << path_errors_total << endl;
+    fmt::printf("Path construction errors: %d\n", path_errors_total);
 
     auto const &unique_hbs = ds.get_unique_hbs();
     size_t zero_hbs = 0;
@@ -325,13 +321,12 @@ int main(int argc, char **argv) {
       else
         multiple_hbs++;
     }
-    cout << "Zero HBs: " << zero_hbs << ", one HB: " << one_hb << ", multiple HBs: " << multiple_hbs
-         << endl;
+    fmt::printf("Zero HBs: %d, one HB: %d, multiple HBs: %d\n", zero_hbs, one_hb, multiple_hbs);
 
-    cout << "Hot addresses:" << endl;
+    fmt::printf("Hot addresses:");
     fp.print_hot_addresses();
   } catch(string &s) {
-    cout << "Exception: " << s << endl;
+    fmt::printf("Exception: %s", s);
     exit(1);
   }
 
