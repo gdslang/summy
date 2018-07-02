@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
     std::ofstream dot_fs;
     dot_fs.open("cfg.dot", std::ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, std::ostream &out) {
-      if(!filter_nodes || filter_nodes->find(n.get_id()) != filter_nodes->end()) {
+      if(filter_nodes && filter_nodes->find(n.get_id()) != filter_nodes->end()) {
         fmt::fprintf(out, "%d [label=\"%d\n", n.get_id(), n.get_id());
         for(auto ctx_mapping : ds.get_ctxful(n.get_id()))
           fmt::fprintf(out, "CTX: %d\t%s\n", ctx_mapping.first, *ctx_mapping.second);
