@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (sweep)
+project (driver)
 
 file(GLOB_RECURSE SOURCES
     "src/**.cpp"
@@ -16,6 +16,6 @@ endfunction(dep)
 
 dep(fmt)
 
-add_executable(sweep ${SOURCES})
-target_link_libraries(sweep summy bjutil cppgdsl dl gmp gtest pthread elf fmt)
-set_property(TARGET sweep PROPERTY CXX_STANDARD 17)
+add_executable(driver ${SOURCES})
+target_link_libraries(driver summy bjutil cppgdsl dl gmp gtest pthread elf fmt)
+set_property(TARGET driver PROPERTY CXX_STANDARD 17)

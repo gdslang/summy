@@ -18,7 +18,7 @@ build:
       - build/dependencies/gdsl-toolkit/libs/gdsl-multiplex/libmultiplex.so
       - build/dependencies/gdsl-toolkit/libgdsl_x86_rreil.so
       - build/libsummy.a
-      - build/tools/sweep/sweep
+      - build/tools/driver/driver
       - build/tools/legacy/demo_dstack
       - build/tools/tester/tester
   # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time

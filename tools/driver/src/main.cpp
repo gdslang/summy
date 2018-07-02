@@ -188,13 +188,13 @@ int main(int argc, char **argv) {
     fp.print_distribution_total();
     fmt::printf("Max its: %d\n", fp.max_iter());
 
-    std::ofstream dot_noa_fs;
-    dot_noa_fs.open("output_noa.dot", std::ios::out);
-    cfg.dot(dot_noa_fs);
-    dot_noa_fs.close();
+    // std::ofstream dot_noa_fs;
+    // dot_noa_fs.open("output_noa.dot", std::ios::out);
+    // cfg.dot(dot_noa_fs);
+    // dot_noa_fs.close();
 
     std::ofstream dot_fs;
-    dot_fs.open("output.dot", std::ios::out);
+    dot_fs.open("cfg.dot", std::ios::out);
     cfg.dot(dot_fs, [&](cfg::node &n, std::ostream &out) {
       if(!filter_nodes || filter_nodes->find(n.get_id()) != filter_nodes->end()) {
         fmt::fprintf(out, "%d [label=\"%d\n", n.get_id(), n.get_id());
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
 
     std::unique_ptr<cfg::cfg> machine_cfg = cfg.machine_cfg(false);
     std::ofstream dot_machine_fs;
-    dot_machine_fs.open("output_machine.dot", std::ios::out);
+    dot_machine_fs.open("cfg_machine.dot", std::ios::out);
     machine_cfg->dot(dot_machine_fs);
     dot_machine_fs.close();
 
