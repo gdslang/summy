@@ -5,8 +5,8 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/rreil/id/special_ptr.h>
 #include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/special_ptr.h>
 
 using namespace std;
 
@@ -50,12 +50,29 @@ bool summy::rreil::special_ptr::operator<(const id &other) const {
 
 std::unique_ptr<gdsl::rreil::id> summy::rreil::special_ptr::copy() const {
   return std::unique_ptr<gdsl::rreil::id>(new special_ptr(*this));
-
 }
 
 void summy::rreil::special_ptr::accept(gdsl::rreil::id_visitor &v) const {
   auto &summy_v = dynamic_cast<summy::rreil::id_visitor &>(v);
   summy_v.visit(this);
+}
+
+bool summy::rreil::special_ptr::is_bad(std::shared_ptr<gdsl::rreil::id> id) {
+  bool _is_bad = false;
+  summy::rreil::id_visitor idv;
+  idv._([&](special_ptr const *sptr) {
+    switch(sptr->get_kind()) {
+      case NULL_PTR: {
+        break;
+      }
+      case BAD_PTR: {
+        _is_bad = true;
+        break;
+      }
+    }
+  });
+  id->accept(idv);
+  return _is_bad;
 }
 
 shared_ptr<gdsl::rreil::id> summy::rreil::special_ptr::_nullptr =

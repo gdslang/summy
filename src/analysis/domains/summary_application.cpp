@@ -217,7 +217,7 @@ void analysis::summary_application::process_region(
     };
 
     summary_memory_state::updater_t strong = [&](api::num_var *nv_fld_c) {
-             cout << *nv_fld_c << " <- " << aliases_c << endl;
+      // cout << *nv_fld_c << " <- " << aliases_c << endl;
       ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
       return_site->child_state->kill({nv_fld_c});
       if(aliases_c.size() > 0) {
@@ -226,7 +226,7 @@ void analysis::summary_application::process_region(
         return_site->child_state->assign(nv_fld_c, value_summary_expr);
     };
     summary_memory_state::updater_t weak = [&](api::num_var *nv_fld_c) {
-             cout << "weak for " << *nv_fld_c << endl;
+      // cout << "weak for " << *nv_fld_c << endl;
       ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
       if(aliases_c_assignment.size() > 0) {
         ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
@@ -256,8 +256,8 @@ void analysis::summary_application::process_region(
 
 summary_memory_state *analysis::summary_application::apply_summary() {
   assert(!return_site);
-  
-  cout << "\033[1;31msummary_appl\033[0m" << endl;
+
+  // cout << "\033[1;31msummary_appl\033[0m" << endl;
 
   return_site = caller->copy();
   summary_memory_state *return_site = *(this->return_site);
@@ -390,27 +390,33 @@ summary_memory_state *analysis::summary_application::apply_summary() {
 
         id_shared_t ptr_id = ptr.id;
         vs_shared_t offset = ptr.offset;
-        optional<int64_t> offset_int;
+        std::set<int64_t> offsets_int;
         value_set_visitor vsv(true);
         vsv._([&](vs_finite const *vsf) {
-          if(vsf->is_singleton()) offset_int = vsf->min();
+          offsets_int = vsf->get_elements();
+          // if(vsf->is_singleton()) offset_int = vsf->min();
         });
         offset->accept(vsv);
-        if(!offset_int) {
+        if(offsets_int.size() == 0) {
+          // cout << "No int offset: " << *offset << endl;
           dirty = true;
           break;
         }
-        int64_t offset_int_bits = offset_int.value() * 8;
+        for(int64_t offset_int : offsets_int) {
+          int64_t offset_int_bits = offset_int * 8;
 
-        region_t &r = summary->output.deref.at(ptr_id);
-        for(auto field_mapping : r) {
-          int64_t offset_f = field_mapping.first + offset_int_bits;
+          region_t &r = summary->output.deref.at(ptr_id);
+          for(auto field_mapping : r) {
+            int64_t offset_f = field_mapping.first + offset_int_bits;
 
-          if(dirty_bits.find(offset_f) != dirty_bits.end()) {
-            dirty = true;
-            goto _collect_end;
+            // cout << "offset: " << offset_f << endl;
+            if(dirty_bits.find(offset_f) != dirty_bits.end()) {
+              // cout << "Dirty offset " + offset_f << endl;
+              dirty = true;
+              goto _collect_end;
+            }
+            if(field_mapping.second.size != 0) dirty_bits[offset_f] = field_mapping.second.size;
           }
-          if(field_mapping.second.size != 0) dirty_bits[offset_f] = field_mapping.second.size;
         }
       }
     _collect_end:;
@@ -451,13 +457,13 @@ summary_memory_state *analysis::summary_application::apply_summary() {
   }
 
   if(alias_conflict_queries.size() > 0) {
-    // cout << "Warning: Wrong aliasing assumption." << endl;
-    // for(const auto &next_set : alias_conflict_queries) {
-    //   cout << "Next aliasing set:" << endl;
-    //   for(const auto &next : next_set) {
-    //     cout << "  ~> " << next << endl;
-    //   }
-    // }
+    cout << "Warning: Wrong aliasing assumption." << endl;
+    for(const auto &next_set : alias_conflict_queries) {
+      cout << "Next aliasing set:" << endl;
+      for(const auto &next : next_set) {
+        cout << "  ~> " << next << endl;
+      }
+    }
     // If there are aliasing problems, we continue the analysis with a simulated
     // call to the identity function.
     // return_site->topify();
@@ -511,5 +517,6 @@ summary_memory_state *analysis::summary_application::apply_summary() {
   return_site->project(_vars);
   delete _vars;
 
+  // cout << *return_site << endl;
   return return_site;
 }

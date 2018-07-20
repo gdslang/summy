@@ -412,7 +412,7 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
       symbol symb;
       bool success;
       tie(success, symb) = sm->lookup(address);
-      if(success && symb.address != NULL) {
+      if(success/* && symb.address != NULL*/) {
         vs_shared_t offset_bytes = vs_finite::single(e - (int64_t)symb.address);
         symbol_offsets[sm_id::from_symbol(symb)].push_back(offset_bytes);
       } else

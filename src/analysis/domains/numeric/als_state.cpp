@@ -115,8 +115,25 @@ api::num_linear *analysis::als_state::replace_pointers(
     auto e_it = elements.find(lt->get_var()->get_id());
     if(e_it != elements.end()) {
       id_set_t const &aliases = e_it->second;
-      if(aliases.size() == 1) {
-        terms[*aliases.begin()] += lt->get_scale();
+
+      bool has_bad = false;
+      std::optional<id_shared_t> ptr = std::nullopt;
+      for(id_shared_t alias : aliases) {
+        if(special_ptr::is_bad(alias)) {
+          has_bad = true;
+          continue;
+        }
+        if(ptr) {
+          ptr = std::nullopt;
+          break;
+        }
+        ptr = alias;
+      }
+      if(ptr && has_bad)
+        cout << "Warning: Ignoring bad pointer in replace_pointers()..." << endl;
+
+      if(ptr) {
+        terms[*ptr] += lt->get_scale();
         terms[lt->get_var()->get_id()] += lt->get_scale();
       } else {
         auto gen_it = id_gen_map.find(lt->get_var()->get_id());
@@ -324,9 +341,9 @@ void als_state::assign(api::num_var *lhs, api::num_expr *rhs, bool strong) {
     }
   } else {
     /*
-     * If the expression is not a linear expression, the result is a number and not a pointer.
-     * Therefore,
-     * we replace pointers in the expression and re-offset the result to the null pointer.
+     * If the expression is not a linear expression, the result is a number and
+     * not a pointer. Therefore, we replace pointers in the expression and
+     * re-offset the result to the null pointer.
      */
 
     num_expr *rhs_replaced = replace_pointers(rhs);
@@ -629,6 +646,7 @@ ptr_set_t analysis::als_state::queryAls(api::num_var *nv) {
 
 summy::vs_shared_t analysis::als_state::queryVal(api::num_linear *lin) {
   num_linear *replaced = replace_pointers(lin);
+  // cout << "als_state::queryVal(" << *lin << ") / " << *replaced << endl;
   vs_shared_t result = child_state->queryVal(replaced);
   delete replaced;
   return result;
@@ -645,20 +663,17 @@ summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
    */
   //  if(id_set_it->second.size() == 0)
   //    return value_set::bottom;
-  vs_shared_t acc;
-  bool first = true;
+  std::optional<vs_shared_t> acc = std::nullopt;
   for(auto alias : alias_set_it->second) {
+    if(special_ptr::is_bad(alias))
+      continue;
     num_var *alias_var = new num_var(alias);
     vs_shared_t ptr_value = child_state->queryVal(alias_var);
     delete alias_var;
     vs_shared_t next = *child_value + ptr_value;
-    if(first) {
-      acc = next;
-      first = false;
-    } else
-      acc = value_set::join(next, acc);
+    acc = acc ? value_set::join(next, *acc) : next;
   }
-  return acc;
+  return acc ? *acc : vs_finite::top;
 }
 
 bool analysis::als_state::cleanup(api::num_var *var) {
@@ -745,8 +760,8 @@ ptr_set_t analysis::als_state::normalise(ptr_set_t aliases) {
 std::tuple<bool, elements_t, numeric_state *, numeric_state *> analysis::als_state::compat(
   bool widening, const als_state *a, const als_state *b) {
   bool als_a_ge_b = true;
-  auto a_ = static_cast<value_sets::vsd_state*>(a->child_state->copy());
-  auto b_ = static_cast<value_sets::vsd_state*>(b->child_state->copy());
+  auto a_ = static_cast<value_sets::vsd_state *>(a->child_state->copy());
+  auto b_ = static_cast<value_sets::vsd_state *>(b->child_state->copy());
   elements_t result_elements;
 
   auto const &a_elements = a->get_elements();

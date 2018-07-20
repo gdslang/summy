@@ -73,7 +73,7 @@ static void query_val(vs_shared_t &r, _analysis_result &ar, string label, string
   ASSERT_GT(analy_r.result.size(), addr_it->second);
 
   lin_var *lv = new lin_var(make_variable(make_id(arch_id_name), offset));
-//   cout << *analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate() << endl;
+  // cout << *analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate() << endl;
   
   r = analy_r.result[ar.addr_node_map[e.address]].at(0)->get_mstate()->queryVal(lv, size);
   delete lv;
@@ -1575,4 +1575,45 @@ return 0;\n\
 
   ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "test", "R12", 0, 32));
   ASSERT_EQ(*r, shared_ptr<value_set>(new vs_finite({42, 86, 141, 185})));
+}
+
+TEST_F(summary_dstack_test, CMultipleCallerRegions) {
+  _analysis_result ar;
+  ASSERT_NO_FATAL_FAILURE(state_c(ar, R"CODE(
+void f(int *p, int *q) {
+  *p += 10;
+  *q = *p;
+}
+
+int main(int argc, char **argv) {
+  int x = 1;
+  int y = 2;
+  //int *p = &y;
+  int *p;
+  if(argc > 3)
+    p = &x;
+  else
+    p = &y;
+  int q;
+  f(p, &q);
+
+  __asm volatile (
+    "mov %0, %%r11d\n"\
+    "mov %1, %%r12d\n"\
+    "mov %2, %%r13d\n"\
+    "end: jmp end"
+    : "=r" (x), "=r" (y), "=r" (q)
+    : "r" (x), "r" (y), "r" (q)
+    : "r11", "r12", "r13");
+  return 0;
+})CODE",
+    true, true));
+
+  vs_shared_t r;
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R11", 0, 32));
+  ASSERT_EQ(*r, make_shared<vs_finite>(vs_finite::elements_t{1, 11, 12}));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R12", 0, 32));
+  ASSERT_EQ(*r, make_shared<vs_finite>(vs_finite::elements_t{2, 11, 12}));
+  ASSERT_NO_FATAL_FAILURE(query_val(r, ar, "end", "R13", 0, 32));
+  ASSERT_EQ(*r, make_shared<vs_finite>(vs_finite::elements_t{11, 12}));
 }

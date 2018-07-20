@@ -577,7 +577,7 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
                 //   prop_res.path_construction_errors;
               }
 
-              cout << "FOOOBAR: " << context << " / " << to << endl;
+              // cout << "FOOOBAR: " << context << " / " << to << endl;
 
               state_map_new[context] = state_ctx;
               (context_uses[to])[context].insert(from);

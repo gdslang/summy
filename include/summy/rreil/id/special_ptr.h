@@ -47,6 +47,8 @@ public:
   std::unique_ptr<gdsl::rreil::id> copy() const override;
   void accept(gdsl::rreil::id_visitor &v) const override;
 
+  static bool is_bad(std::shared_ptr<gdsl::rreil::id> id);
+
   static std::shared_ptr<gdsl::rreil::id> _nullptr;
   static std::shared_ptr<gdsl::rreil::id> badptr;
 };

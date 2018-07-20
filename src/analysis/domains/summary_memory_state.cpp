@@ -5,31 +5,31 @@
  *      Author: Julian Kranz
  */
 
+#include <algorithm>
+#include <assert.h>
+#include <cppgdsl/rreil/rreil.h>
+#include <iosfwd>
+#include <optional>
+#include <queue>
+#include <sstream>
+#include <string>
 #include <summy/analysis/domains/api/api.h>
 #include <summy/analysis/domains/api/numeric/converter.h>
-#include <summy/analysis/domains/summary_memory_state.h>
+#include <summy/analysis/domains/cr_merge_region_iterator.h>
 #include <summy/analysis/domains/merge_region_iterator.h>
+#include <summy/analysis/domains/sms_compat.h>
+#include <summy/analysis/domains/summary_memory_state.h>
+#include <summy/analysis/domains/util.h>
+#include <summy/rreil/id/id_visitor.h>
+#include <summy/rreil/id/memory_id.h>
 #include <summy/rreil/id/numeric_id.h>
 #include <summy/rreil/id/sm_id.h>
 #include <summy/rreil/shared_copy.h>
 #include <summy/value_set/value_set.h>
-#include <summy/value_set/vs_finite.h>
 #include <summy/value_set/value_set_visitor.h>
-#include <cppgdsl/rreil/rreil.h>
-#include <summy/rreil/id/id_visitor.h>
-#include <algorithm>
-#include <iosfwd>
-#include <string>
-#include <sstream>
+#include <summy/value_set/vs_finite.h>
 #include <tuple>
 #include <vector>
-#include <assert.h>
-#include <summy/analysis/domains/cr_merge_region_iterator.h>
-#include <summy/analysis/domains/sms_compat.h>
-#include <summy/analysis/domains/util.h>
-#include <summy/rreil/id/memory_id.h>
-#include <queue>
-#include <optional>
 
 using namespace analysis::api;
 using namespace summy;
@@ -45,14 +45,17 @@ void analysis::relation::clear() {
   deref.clear();
 }
 
-analysis::io_region::io_region(region_t &in_r, region_t &out_r, std::optional<id_shared_t const> r_key)
+analysis::io_region::io_region(
+  region_t &in_r, region_t &out_r, std::optional<id_shared_t const> r_key)
     : in_r(in_r), out_r(out_r) {
   if(r_key) name = r_key.value()->to_string();
 }
 
-analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state *child_state, int64_t offset,
-  size_t size, bool replacement, bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
-//    cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement << ", handle_conflicts=" << handle_conflicts << endl;
+analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state *child_state,
+  int64_t offset, size_t size, bool replacement, bool handle_conflicts,
+  std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
+  //    cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement
+  //    << ", handle_conflicts=" << handle_conflicts << endl;
   //  struct field_desc_t {
   //    int64_t offset;
   //    field f;
@@ -86,7 +89,8 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
     int64_t offset_current = out_r_it->first;
     if(offset_current >= offset + (int64_t)size) break;
 
-//        cout << "In the way: offset:" << offset_current << " size: " << out_r_it->second.size << endl;
+    //        cout << "In the way: offset:" << offset_current << " size: " << out_r_it->second.size
+    //        << endl;
 
     if(offset_current < offset) prefix_needed = true;
     if(!offset_first) offset_first = offset_current;
@@ -139,12 +143,12 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
   //  cout << "offsets[0]: " << offsets[0] << endl;
   //  cout << "offset: " << offset << endl;
   //  }
-  
+
   if(replaced.size() == 1 && offsets[0] == offset && replaced[0].size == size)
     return rf_result(out_r.find(offset)->second, false);
   else if(!handle_conflicts && (replaced.size() > 0 || !contiguous))
     return rf_result(nullopt, false);
-  
+
   vector<num_var *> kill_vars;
   for(auto offset : offsets) {
     //    cout << "REMOVING AT OFFSET " << offset << endl;
@@ -167,11 +171,13 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
   ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
 
   auto insert_in = [&](int64_t offset, size_t size) {
-    id_shared_t nid_in = name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
+    id_shared_t nid_in =
+      name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
     num_var n_in(nid_in);
     field f_before = field{size, nid_in};
     in_r.insert(make_pair(offset, f_before));
-    ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in->copy())), vs_finite::zero);
+    ptr fresh =
+      ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in->copy())), vs_finite::zero);
     ptr_set_t ptr_set = ptr_set_t({badptr, fresh});
     child_state->assume(&n_in, ptr_set);
     return ptr_set;
@@ -192,7 +198,8 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
     fd_before = fd;
   }
 
-  id_shared_t nid_in = name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
+  id_shared_t nid_in =
+    name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
   num_var n_in(nid_in);
   ptr_set_t ptr_set_fresh = ptr_set_ct(nid_in);
   /*
@@ -201,13 +208,13 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
   child_state->assume(&n_in, ptr_set_fresh);
 
   /*
-   * We do not assign from the input to the output so that there is no equality relation between the input
-   * and output. Equality relations result in tests to apply to all equal variables which, in turn, may result
-   * in input variables to get their aliasing relations or offsets constrained.
+   * We do not assign from the input to the output so that there is no equality relation between the
+   * input and output. Equality relations result in tests to apply to all equal variables which, in
+   * turn, may result in input variables to get their aliasing relations or offsets constrained.
    */
   //  num_expr *ass_e = new num_expr_lin(new num_linear_term(n_in));
-  //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0, nid_in)),
-  //  vs_finite::zero) << endl;
+  //  cout << "assume " << *n_in << " aliases " << ptr(shared_ptr<gdsl::rreil::id>(new memory_id(0,
+  //  nid_in)), vs_finite::zero) << endl;
 
   optional<field_desc> fd_after;
   if(suffix_needed) {
@@ -218,10 +225,11 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
     fd_after = fd;
   }
 
-  id_shared_t nid_out = name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
+  id_shared_t nid_out =
+    name ? numeric_id::generate(name.value(), offset, size, false) : numeric_id::generate();
   num_var *n_out = new num_var(nid_out);
 
-//   cout << "contiguous=" << contiguous << ", size = " << size << endl;
+  //   cout << "contiguous=" << contiguous << ", size = " << size << endl;
 
   /*
    * Todo: size > 64?
@@ -234,16 +242,16 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
     for(size_t i = replaced.size(); i > 0; i--) {
       field f = replaced[i - 1];
       if(temp) {
-        num_expr *shift =
-          new num_expr_bin(new num_linear_term((*temp)->copy()), SHL, new num_linear_vs(vs_finite::single(f.size)));
+        num_expr *shift = new num_expr_bin(
+          new num_linear_term((*temp)->copy()), SHL, new num_linear_vs(vs_finite::single(f.size)));
         id_shared_t temp_next = numeric_id::generate();
         num_var *temp_var = new num_var(temp_next);
         child_state->assign(temp_var, shift);
-//                cout << "assign " << *temp_var << " = " << *shift << endl;
-        num_expr *addition =
-          new num_expr_lin(new num_linear_term(1, temp_var->copy(), new num_linear_term(new num_var(f.num_id))));
+        //                cout << "assign " << *temp_var << " = " << *shift << endl;
+        num_expr *addition = new num_expr_lin(
+          new num_linear_term(1, temp_var->copy(), new num_linear_term(new num_var(f.num_id))));
         child_state->assign(*temp, addition);
-//                cout << "assign " << **temp << " = " << *addition << endl;
+        //                cout << "assign " << **temp << " = " << *addition << endl;
         child_state->kill({temp_var});
         delete addition;
         delete temp_var;
@@ -259,19 +267,21 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
     child_state->assume(n_out, ptr_set_fresh);
   } else {
     if(fd_before) {
-      id_shared_t nid_out_before =
-        name ? numeric_id::generate(name.value(), fd_before.value().offset, fd_before.value().size, false)
-             : numeric_id::generate();
-      out_r.insert(make_pair(fd_before.value().offset, field{fd_before.value().size, nid_out_before}));
+      id_shared_t nid_out_before = name ? numeric_id::generate(name.value(),
+                                            fd_before.value().offset, fd_before.value().size, false)
+                                        : numeric_id::generate();
+      out_r.insert(
+        make_pair(fd_before.value().offset, field{fd_before.value().size, nid_out_before}));
       num_var n_out_before(nid_out_before);
       child_state->assume(&n_out_before, {badptr});
     }
     child_state->assume(n_out, {badptr});
     if(fd_after) {
-      //      cout << "Have after! offset: " << fd_after.value().offset << ", size: " << fd_after.value().size << endl;
-      id_shared_t nid_out_after =
-        name ? numeric_id::generate(name.value(), fd_after.value().offset, fd_after.value().size, false)
-             : numeric_id::generate();
+      //      cout << "Have after! offset: " << fd_after.value().offset << ", size: " <<
+      //      fd_after.value().size << endl;
+      id_shared_t nid_out_after = name ? numeric_id::generate(name.value(), fd_after.value().offset,
+                                           fd_after.value().size, false)
+                                       : numeric_id::generate();
       out_r.insert(make_pair(fd_after.value().offset, field{fd_after.value().size, nid_out_after}));
       num_var n_out_after(nid_out_after);
       child_state->assume(&n_out_after, {badptr});
@@ -296,12 +306,13 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
   return rf_result(field_out_it->second, true);
 }
 
-analysis::io_region::rf_result analysis::io_region::retrieve_field(
-  numeric_state *child_state, int64_t offset, size_t size, bool replacement, bool handle_conflicts) {
+analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state *child_state,
+  int64_t offset, size_t size, bool replacement, bool handle_conflicts) {
   auto ptr_set_fresh = [](id_shared_t nid_in) {
     //    ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
     ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
-    ptr fresh = ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in->copy())), vs_finite::zero);
+    ptr fresh =
+      ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in->copy())), vs_finite::zero);
     return ptr_set_t({badptr, fresh});
   };
   return retrieve_field(child_state, offset, size, replacement, handle_conflicts, ptr_set_fresh);
@@ -327,12 +338,13 @@ summary_memory_state *analysis::summary_memory_state::domop(
   numeric_state *me_compat;
   numeric_state *other_compat;
   memory_head head_compat;
-  tie(ignore, head_compat, me_compat, other_compat) = sms_compat::compat(widening, this, other_casted);
+  tie(ignore, head_compat, me_compat, other_compat) =
+    sms_compat::compat(widening, this, other_casted);
 
   //  cout << *me_compat << " ^^^JOIN^^^ " << *other_compat << endl;
 
-  summary_memory_state *result = new summary_memory_state(
-    sm, warnings, (me_compat->*domopper)(other_compat, current_node), head_compat.input, head_compat.output);
+  summary_memory_state *result = new summary_memory_state(sm, warnings,
+    (me_compat->*domopper)(other_compat, current_node), head_compat.input, head_compat.output);
   delete me_compat;
   delete other_compat;
   result->cleanup();
@@ -345,8 +357,9 @@ summary_memory_state *analysis::summary_memory_state::domop(
 std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_temporary(
   int_t size, std::function<num_expr *(analysis::api::converter &)> cvc) {
   num_var *var = new num_var(numeric_id::generate());
-  converter addr_cv(
-    size, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
+  converter addr_cv(size, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
+  });
   num_expr *addr_expr = cvc(addr_cv);
 
   child_state->assign(var, addr_expr);
@@ -359,11 +372,13 @@ io_region analysis::summary_memory_state::region_by_id(regions_getter_t getter, 
   region_map_t &input_rmap = (input.*getter)();
   region_map_t &output_rmap = (output.*getter)();
   auto id_in_it = input_rmap.find(id);
-  if(id_in_it == input_rmap.end()) tie(id_in_it, ignore) = input_rmap.insert(make_pair(id, region_t{}));
+  if(id_in_it == input_rmap.end())
+    tie(id_in_it, ignore) = input_rmap.insert(make_pair(id, region_t{}));
   auto id_out_it = output_rmap.find(id);
-  if(id_out_it == output_rmap.end()) tie(id_out_it, ignore) = output_rmap.insert(make_pair(id, region_t{}));
-  return io_region(
-    id_in_it->second, id_out_it->second, getter == &relation::get_regions ? optional<id_shared_t const>(id) : nullopt);
+  if(id_out_it == output_rmap.end())
+    tie(id_out_it, ignore) = output_rmap.insert(make_pair(id, region_t{}));
+  return io_region(id_in_it->second, id_out_it->second,
+    getter == &relation::get_regions ? optional<id_shared_t const>(id) : nullopt);
 }
 
 void analysis::summary_memory_state::bottomify() {
@@ -456,8 +471,7 @@ void analysis::summary_memory_state::put(std::ostream &out) const {
 
   out << "Child state: {" << endl;
   out << *child_state;
-  out << endl
-      << "}";
+  out << endl << "}";
 }
 
 // region_t &analysis::summary_memory_state::region(id_shared_t id) {
@@ -482,8 +496,8 @@ tuple<bool, void *> analysis::summary_memory_state::static_address(id_shared_t i
   return make_tuple(is_static, symbol_address);
 }
 
-summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handle_special_dereference(
-  id_shared_t alias_id) {
+summary_memory_state::special_deref_desc_t
+analysis::summary_memory_state::handle_special_dereference(id_shared_t alias_id) {
   bool force_weak = false;
   bool ignore = false;
   std::optional<summy::rreil::special_ptr_kind> ptr_kind;
@@ -493,12 +507,14 @@ summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handl
   if(ptr_kind) {
     switch(ptr_kind.value()) {
       case NULL_PTR: {
-        if(warnings) cout << "Warning (load/store): Ignoring possible null pointer dereference" << endl;
+        if(warnings)
+          cout << "Warning (load/store): Ignoring possible null pointer dereference" << endl;
         ignore = true;
         break;
       }
       case BAD_PTR: {
-        if(warnings) cout << "Warning (load/store): Ignoring possible bad pointer dereference" << endl;
+        if(warnings)
+          cout << "Warning (load/store): Ignoring possible bad pointer dereference" << endl;
         ignore = true;
         //        force_weak = true;
         break;
@@ -508,20 +524,24 @@ summary_memory_state::special_deref_desc_t analysis::summary_memory_state::handl
   return special_deref_desc_t{force_weak, ignore};
 }
 
-void analysis::summary_memory_state::initialize_static(io_region io, void *address, size_t offset, size_t size) {
+void analysis::summary_memory_state::initialize_static(
+  io_region io, void *address, size_t offset, size_t size) {
   io_region::rf_result rfr = io.retrieve_field(child_state, offset, size, false, false);
   if(!rfr.f) {
     if(warnings) cout << "Warning: Skipping static initialization due to conflict." << endl;
     return;
   }
-  if(size > 64) throw string("analysis::summary_memory_state::initialize_static(region_t,void*,size_t): size > 64");
+  if(size > 64)
+    throw string(
+      "analysis::summary_memory_state::initialize_static(region_t,void*,size_t): size > 64");
 
   if(!rfr.changed) // No change and no conflict => field is already present!
     return;
 
   int64_t sv = 0;
   bool success = sm->read((char *)address + (offset / 8), size / 8, (uint8_t *)&sv);
-  //  cout << "read " << (size_t)address << "/" << + (offset/8) << " " << size/8 << " " << sv << " " << success << endl;
+  //  cout << "read " << (size_t)address << "/" << + (offset/8) << " " << size/8 << " " << sv << " "
+  //  << success << endl;
   if(success) {
     vs_shared_t sv_vs = vs_finite::single(sv);
     num_var *v_mem_id = new num_var(rfr.f->num_id);
@@ -580,15 +600,18 @@ id_shared_t analysis::summary_memory_state::transVarReg(io_region io, int64_t of
   return transVarReg(io, offset, size, true).value();
 }
 
-id_shared_t analysis::summary_memory_state::transVar(id_shared_t var_id, int64_t offset, size_t size) {
+id_shared_t analysis::summary_memory_state::transVar(
+  id_shared_t var_id, int64_t offset, size_t size) {
   return transVarReg(region_by_id(&relation::get_regions, var_id), offset, size);
 }
 
-id_shared_t analysis::summary_memory_state::transDeref(id_shared_t var_id, int64_t offset, size_t size) {
+id_shared_t analysis::summary_memory_state::transDeref(
+  id_shared_t var_id, int64_t offset, size_t size) {
   return transVarReg(region_by_id(&relation::get_deref, var_id), offset, size);
 }
 
-vector<field> analysis::summary_memory_state::transLERegFields(region_t &region, int64_t offset, size_t size) {
+vector<field> analysis::summary_memory_state::transLERegFields(
+  region_t &region, int64_t offset, size_t size) {
   vector<field> fields;
   int64_t consumed = 0;
   while(true) {
@@ -659,12 +682,14 @@ num_linear *analysis::summary_memory_state::transLE(
   return transLEReg(io, offset, size);
 }
 
-num_linear *analysis::summary_memory_state::transLE(id_shared_t var_id, int64_t offset, size_t size) {
+num_linear *analysis::summary_memory_state::transLE(
+  id_shared_t var_id, int64_t offset, size_t size) {
   //  cout << "transLE(" << *var_id << ", ...)" << endl;
   return transLE(&relation::get_regions, var_id, offset, size);
 }
 
-num_linear *analysis::summary_memory_state::transLEInput(id_shared_t var_id, int64_t offset, size_t size) {
+num_linear *analysis::summary_memory_state::transLEInput(
+  id_shared_t var_id, int64_t offset, size_t size) {
   auto id_in_it = input.regions.find(var_id);
   if(id_in_it == input.regions.end()) return new num_linear_vs(value_set::top);
   region_t &region = id_in_it->second;
@@ -757,7 +782,8 @@ bool analysis::summary_memory_state::operator>=(const domain_state &other) const
   return result;
 }
 
-summary_memory_state *analysis::summary_memory_state::join(domain_state *other, size_t current_node) {
+summary_memory_state *analysis::summary_memory_state::join(
+  domain_state *other, size_t current_node) {
   summary_memory_state *other_casted = (summary_memory_state *)other;
   if(is_bottom()) return other_casted->copy();
   if(other_casted->is_bottom()) return this->copy();
@@ -766,7 +792,8 @@ summary_memory_state *analysis::summary_memory_state::join(domain_state *other, 
   return result;
 }
 
-summary_memory_state *analysis::summary_memory_state::widen(domain_state *other, size_t current_node) {
+summary_memory_state *analysis::summary_memory_state::widen(
+  domain_state *other, size_t current_node) {
   //  cout << "WIDENING OF" << endl;
   //  cout << "THIS: " << *this << endl;
   //  cout << "OTHER: " << *other << endl;
@@ -776,12 +803,13 @@ summary_memory_state *analysis::summary_memory_state::widen(domain_state *other,
   return result;
 }
 
-summary_memory_state *analysis::summary_memory_state::narrow(domain_state *other, size_t current_node) {
+summary_memory_state *analysis::summary_memory_state::narrow(
+  domain_state *other, size_t current_node) {
   return domop(false, other, current_node, &numeric_state::narrow);
 }
 
-// region_t analysis::summary_memory_state::join_region_aliases(region_t const &r1, region_t const &r2, numeric_state
-// *n) {
+// region_t analysis::summary_memory_state::join_region_aliases(region_t const &r1, region_t const
+// &r2, numeric_state *n) {
 //  region_t result;
 //  cr_merge_region_iterator mri(r1, r2, result);
 //  while(mri != cr_merge_region_iterator::end(r1, r2)) {
@@ -825,8 +853,9 @@ void analysis::summary_memory_state::update(gdsl::rreil::assign const *assign) {
   variable const &var = assign->get_lhs();
   id_shared_t num_id = transVar(shared_copy(&var.get_id()), var.get_offset(), assign->get_size());
   num_var *n_var = new num_var(num_id);
-  converter cv(assign->get_size(),
-    [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
+  converter cv(assign->get_size(), [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
+  });
   num_expr *n_expr = cv.conv_expr(&assign->get_rhs());
   child_state->assign(n_var, n_expr);
   delete n_expr;
@@ -875,7 +904,7 @@ summary_memory_state *analysis::summary_memory_state::bottom(
 void analysis::summary_memory_state::update(gdsl::rreil::load const *load) {
   if(is_bottom()) return;
 
-  address const& addr = load->get_address();
+  address const &addr = load->get_address();
   auto temp = assign_temporary(&addr.get_lin(), addr.get_size());
   vector<num_linear *> lins;
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
@@ -915,8 +944,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load const *load) {
     offset_bits->accept(vsv);
   }
 
-  num_var *lhs =
-    new num_var(transVar(shared_copy(&load->get_lhs().get_id()), load->get_lhs().get_offset(), load->get_size()));
+  num_var *lhs = new num_var(transVar(
+    shared_copy(&load->get_lhs().get_id()), load->get_lhs().get_offset(), load->get_size()));
   if(lins.size() == 0) {
     num_expr *rhs_expr = new num_expr_lin(new num_linear_vs(value_set::top));
     child_state->assign(lhs, rhs_expr);
@@ -952,8 +981,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::load const *load) {
   assert(!is_bottom());
 }
 
-void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_getter_t getter, size_t size,
-  updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
+void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_getter_t getter,
+  size_t size, updater_t strong, updater_t weak, bool bit_offsets, bool handle_conflicts) {
   //    cout << "update_multiple(" << aliases << ", size: " << size << ")" << endl;
   bool bottom_before = is_bottom();
 
@@ -1012,8 +1041,8 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
       //      switch(o->get_open_dir()) {
       //        case UPWARD: {
       //          for(auto field_it = io.out_r.begin(); field_it != io.out_r.end(); field_it++)
-      //            if(field_it->first + field_it->second.size > o->get_limit()) topify(io.out_r, field_it->first,
-      //            size);
+      //            if(field_it->first + field_it->second.size > o->get_limit()) topify(io.out_r,
+      //            field_it->first, size);
       //          break;
       //        }
       //        case DOWNWARD: {
@@ -1026,7 +1055,6 @@ void analysis::summary_memory_state::update_multiple(ptr_set_t aliases, regions_
       //          break;
       //        }
       //      }
-
     });
     vsv._([&](vs_top const *t) {
       _continue = true;
@@ -1067,7 +1095,8 @@ void analysis::summary_memory_state::store(ptr_set_t aliases, size_t size, api::
   /*
    * Todo: Use bits in als_state and vsd_state
    */
-  update_multiple(aliases, &relation::get_deref, size, [&](num_var *lhs) { child_state->assign(lhs, rhs); },
+  update_multiple(aliases, &relation::get_deref, size,
+    [&](num_var *lhs) { child_state->assign(lhs, rhs); },
     [&](num_var *lhs) { child_state->weak_assign(lhs, rhs); }, false, true);
 }
 
@@ -1078,8 +1107,8 @@ void analysis::summary_memory_state::update(gdsl::rreil::store const *store) {
   auto temp = assign_temporary(&addr.get_lin(), addr.get_size());
   ptr_set_t aliases = child_state->queryAls(temp->get_var());
 
-  converter rhs_cv(store->get_size(),
-    [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
+  converter rhs_cv(store->get_size(), [&](shared_ptr<gdsl::rreil::id> id, size_t offset,
+                                        size_t size) { return transLE(id, offset, size); });
   num_expr *rhs = rhs_cv.conv_expr(&store->get_rhs());
   this->store(aliases, store->get_size(), rhs);
   delete rhs;
@@ -1093,8 +1122,9 @@ void analysis::summary_memory_state::update(gdsl::rreil::store const *store) {
 }
 
 void analysis::summary_memory_state::assume(gdsl::rreil::sexpr const *cond) {
-  converter cv(
-    0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
+  converter cv(0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
+  });
   expr_cmp_result_t ecr = cv.conv_expr_cmp(cond);
   child_state->assume(ecr.primary);
   for(auto add : ecr.additional)
@@ -1115,8 +1145,9 @@ void analysis::summary_memory_state::assume(gdsl::rreil::sexpr const *cond) {
 }
 
 void analysis::summary_memory_state::assume_not(gdsl::rreil::sexpr const *cond) {
-  converter cv(
-    0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
+  converter cv(0, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
+  });
   expr_cmp_result_t ecr = cv.conv_expr_cmp(cond);
   num_expr_cmp *ec_primary_not = ecr.primary->negate();
   child_state->assume(ec_primary_not);
@@ -1181,7 +1212,8 @@ void analysis::summary_memory_state::rename() {
       id_map[region_it->first.get()].insert((analysis::id_shared_t *)&region_it->first);
       auto field_it = region_it->second.begin();
       while(field_it != region_it->second.end()) {
-        id_map[field_it->second.num_id.get()].insert((analysis::id_shared_t *)&field_it->second.num_id);
+        id_map[field_it->second.num_id.get()].insert(
+          (analysis::id_shared_t *)&field_it->second.num_id);
         field_it++;
       }
       region_it++;
@@ -1352,7 +1384,8 @@ api::num_vars *analysis::summary_memory_state::vars() {
   return _vars;
 }
 
-std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_temporary(gdsl::rreil::expr const *e, int_t size) {
+std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_temporary(
+  gdsl::rreil::expr const *e, int_t size) {
   return assign_temporary(size, [&](converter &cv) { return cv.conv_expr(e); });
 }
 
@@ -1366,26 +1399,32 @@ std::unique_ptr<managed_temporary> analysis::summary_memory_state::assign_tempor
   return assign_temporary(size, [&](converter &cv) { return cv.conv_expr(se); });
 }
 
-summy::vs_shared_t analysis::summary_memory_state::queryVal(gdsl::rreil::linear const *l, size_t size) {
-  converter cv(
-    size, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) { return transLE(id, offset, size); });
+summy::vs_shared_t analysis::summary_memory_state::queryVal(
+  gdsl::rreil::linear const *l, size_t size) {
+  converter cv(size, [&](shared_ptr<gdsl::rreil::id> id, size_t offset, size_t size) {
+    return transLE(id, offset, size);
+  });
   num_linear *nl = cv.conv_linear(l);
+  cout << *nl << endl;
   summy::vs_shared_t result = child_state->queryVal(nl);
   delete nl;
   return result;
 }
 
-summy::vs_shared_t analysis::summary_memory_state::queryVal(gdsl::rreil::expr const *e, size_t size) {
+summy::vs_shared_t analysis::summary_memory_state::queryVal(
+  gdsl::rreil::expr const *e, size_t size) {
   unique_ptr<managed_temporary> temp = assign_temporary(e, size);
   summy::vs_shared_t result = child_state->queryVal(temp->get_var());
   return result;
 }
 
-api::num_linear *analysis::summary_memory_state::dereference(api::num_var *v, int64_t offset, size_t size) {
+api::num_linear *analysis::summary_memory_state::dereference(
+  api::num_var *v, int64_t offset, size_t size) {
   return transLE(&relation::get_deref, v->get_id(), offset, size);
 }
 
-std::set<summy::vs_shared_t> analysis::summary_memory_state::queryPts(std::unique_ptr<managed_temporary> &address) {
+std::set<summy::vs_shared_t> analysis::summary_memory_state::queryPts(
+  std::unique_ptr<managed_temporary> &address) {
   throw string("analysis::summary_memory_state::queryPts(std::unique_ptr<managed_temporary>&)");
   //  std::set<summy::vs_shared_t> result;
   //  ptr_set_t aliases = child_state->queryAls(address->get_var());
@@ -1423,4 +1462,3 @@ const region_t &analysis::summary_memory_state::query_region_output(id_shared_t 
 const region_t &analysis::summary_memory_state::query_deref_output(id_shared_t id) {
   return output.deref[id];
 }
-
