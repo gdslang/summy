@@ -5,20 +5,20 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/analysis/domains/numeric/vsd_state.h>
+#include <assert.h>
+#include <bjutil/printer.h>
+#include <memory>
+#include <optional>
+#include <string>
 #include <summy/analysis/domains/api/api.h>
+#include <summy/analysis/domains/numeric/vsd_state.h>
+#include <summy/rreil/id/sm_id.h>
+#include <summy/rreil/id/special_ptr.h>
 #include <summy/value_set/value_set.h>
 #include <summy/value_set/vs_finite.h>
-#include <bjutil/printer.h>
-#include <summy/rreil/id/sm_id.h>
-#include <string>
-#include <memory>
-#include <assert.h>
-#include <summy/rreil/id/special_ptr.h>
-#include <optional>
 
-using summy::rreil::sm_id;
 using std::optional;
+using summy::rreil::sm_id;
 using summy::rreil::special_ptr;
 
 using namespace summy;
@@ -47,7 +47,8 @@ void value_sets::vsd_state::put(std::ostream &out) const {
   out << "}";
 }
 
-analysis::value_sets::vsd_state::vsd_state(std::shared_ptr<static_memory> sm, bool is_bottom, elements_t elements)
+analysis::value_sets::vsd_state::vsd_state(
+  std::shared_ptr<static_memory> sm, bool is_bottom, elements_t elements)
     : numeric_state(sm), _is_bottom(is_bottom), elements(elements),
       num_ev([&](num_var *nv) { return lookup(*nv->get_id()); }) {}
 
@@ -56,7 +57,7 @@ void analysis::value_sets::vsd_state::bottomify() {
   _is_bottom = true;
 }
 
-summy::vs_shared_t value_sets::vsd_state::lookup(gdsl::rreil::id const& id) {
+summy::vs_shared_t value_sets::vsd_state::lookup(gdsl::rreil::id const &id) {
   auto id_it = elements.find(id);
   if(id_it != elements.end())
     return id_it->second;
@@ -94,9 +95,10 @@ vsd_state *analysis::value_sets::vsd_state::join(domain_state *other, size_t cur
     for(auto &mapping_first : from) {
       auto mapping_second = to.find(mapping_first.first);
       if(mapping_second != to.end())
-        elems_new[mapping_first.first] = value_set::join(mapping_first.second, mapping_second->second);
-      //        cout << "join(" << *mapping_first.second << ", " << *mapping_second->second << ") = " <<
-      //        *elems_new[mapping_first.first] << endl;
+        elems_new[mapping_first.first] =
+          value_set::join(mapping_first.second, mapping_second->second);
+      //        cout << "join(" << *mapping_first.second << ", " << *mapping_second->second << ") =
+      //        " << *elems_new[mapping_first.first] << endl;
     }
   };
   join(elements, other_casted->elements);
@@ -116,7 +118,8 @@ vsd_state *analysis::value_sets::vsd_state::meet(domain_state *other, size_t cur
   for(auto &mapping_me : elements) {
     auto mapping_other = other_casted->elements.find(mapping_me.first);
     if(mapping_other != other_casted->elements.end())
-      elements_new.insert(make_pair(mapping_me.first, value_set::meet(mapping_me.second, mapping_other->second)));
+      elements_new.insert(
+        make_pair(mapping_me.first, value_set::meet(mapping_me.second, mapping_other->second)));
     else
       elements_new.insert(mapping_me);
   }
@@ -133,7 +136,8 @@ vsd_state *analysis::value_sets::vsd_state::widen(domain_state *other, size_t cu
   if(other_casted->is_bottom()) return new vsd_state(*this);
   elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
-    elements_new[mapping_other.first] = value_set::widen(lookup(*mapping_other.first), mapping_other.second);
+    elements_new[mapping_other.first] =
+      value_set::widen(lookup(*mapping_other.first), mapping_other.second);
   return new vsd_state(sm, elements_new);
 }
 
@@ -142,7 +146,8 @@ vsd_state *analysis::value_sets::vsd_state::narrow(domain_state *other, size_t c
   if(other_casted->is_bottom()) return new vsd_state(*this);
   elements_t elements_new;
   for(auto &mapping_other : other_casted->elements)
-    elements_new[mapping_other.first] = value_set::narrow(lookup(*mapping_other.first), mapping_other.second);
+    elements_new[mapping_other.first] =
+      value_set::narrow(lookup(*mapping_other.first), mapping_other.second);
   return new vsd_state(sm, elements_new);
 }
 
@@ -186,8 +191,8 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
           fp_term_build(lt->get_next(), count + 1);
           for(size_t i = 0; i < fp_lins.size(); i++) {
             if(i == count) continue;
-            fp_lins[i].lin =
-              new num_linear_term(-lt->get_scale(), new num_var(lt->get_var()->get_id()), fp_lins[i].lin);
+            fp_lins[i].lin = new num_linear_term(
+              -lt->get_scale(), new num_var(lt->get_var()->get_id()), fp_lins[i].lin);
           }
           fp_lins[count].var_scale = lt->get_scale();
         });
@@ -204,7 +209,8 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
       fp_term_for_lins(fp_lins, lin);
       vector<num_expr *> fp_exprs;
       for(fp_lin &fl : fp_lins)
-        fp_exprs.push_back(new num_expr_bin(fl.lin, DIV, new num_linear_vs(vs_finite::single(fl.var_scale))));
+        fp_exprs.push_back(
+          new num_expr_bin(fl.lin, DIV, new num_linear_vs(vs_finite::single(fl.var_scale))));
       //        fp_exprs.push_back(new num_expr_lin(l));
       fp_exprss.push_back(fp_exprs);
     }
@@ -265,7 +271,8 @@ void analysis::value_sets::vsd_state::assume(api::num_expr_cmp *cmp) {
       num_linear *opnd_neg = cmp->get_opnd()->negate();
       //      cout << "OPND: " << *cmp->get_opnd() << endl;
       //      cout << "NEGATED: " << *opnd_neg << endl;
-      num_linear *restriced_lower = converter::add(cmp->get_opnd(), make_shared<vs_open>(UPWARD, 1));
+      num_linear *restriced_lower =
+        converter::add(cmp->get_opnd(), make_shared<vs_open>(UPWARD, 1));
       num_linear *restriced_upper = converter::add(opnd_neg, make_shared<vs_open>(UPWARD, 1));
       assume_zero({restriced_lower, restriced_upper});
       delete opnd_neg;
@@ -328,7 +335,8 @@ void analysis::value_sets::vsd_state::fold(num_var_pairs_t vars) {
   throw string("analysis::value_sets::vsd_state::assume(num_var_pairs_t)");
 }
 
-void analysis::value_sets::vsd_state::copy_paste(api::num_var *to, api::num_var *from, numeric_state *from_state) {
+void analysis::value_sets::vsd_state::copy_paste(
+  api::num_var *to, api::num_var *from, numeric_state *from_state) {
   vsd_state *from_state_vsd = dynamic_cast<vsd_state *>(from_state);
 
   auto from_it = from_state_vsd->elements.find(from->get_id());
@@ -338,9 +346,9 @@ void analysis::value_sets::vsd_state::copy_paste(api::num_var *to, api::num_var 
 
 void vsd_state::join(gdsl::rreil::id &id, summy::vs_shared_t vs) {
   auto elements_it = elements.find(id);
-  if(elements_it == elements.end())
-    return;
-  auto joined = value_set::join(elements_it->second, vs);;
+  if(elements_it == elements.end()) return;
+  auto joined = value_set::join(elements_it->second, vs);
+  ;
   elements_it->second = joined;
 }
 
@@ -384,15 +392,16 @@ vsd_state *analysis::value_sets::vsd_state::top(std::shared_ptr<static_memory> s
 }
 
 ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
-//  cout << "queryAls() in vsd_state(" << *nv << ")" << endl;
+  //  cout << "queryAls() in vsd_state(" << *nv << "), value: ";
   vs_shared_t nv_val = queryVal(nv);
-//  cout << *nv_val << endl;
+  //  cout << *nv_val << endl;
 
   map<id_shared_t, vector<vs_shared_t>, id_less> symbol_offsets;
 
   value_set_visitor vsv(true);
   vsv._([&](vs_finite const *vf) {
-    //      if(elements.size() > 100) cout << "Warning in queryAls(): Ignoring some pointers" << endl;
+    //      if(elements.size() > 100) cout << "Warning in queryAls(): Ignoring some pointers" <<
+    //      endl;
     auto &elements = vf->get_elements();
     for(auto &e : elements) {
       void *address = (void *)e;
@@ -403,7 +412,7 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
       symbol symb;
       bool success;
       tie(success, symb) = sm->lookup(address);
-      if(success) {
+      if(success && symb.address != NULL) {
         vs_shared_t offset_bytes = vs_finite::single(e - (int64_t)symb.address);
         symbol_offsets[sm_id::from_symbol(symb)].push_back(offset_bytes);
       } else
@@ -413,7 +422,8 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
       //  vs_shared_t offset_bits = *vs_finite::single(8)*offset_bytes;
     }
   });
-  vsv._default([&](value_set const *v) { symbol_offsets[special_ptr::_nullptr].push_back(nv_val); });
+  vsv._default(
+    [&](value_set const *v) { symbol_offsets[special_ptr::_nullptr].push_back(nv_val); });
   nv_val->accept(vsv);
 
   ptr_set_t result;
@@ -430,8 +440,9 @@ ptr_set_t analysis::value_sets::vsd_state::queryAls(api::num_var *nv) {
     result.insert(ptr(so_it.first, offsets_vs.value()));
   }
 
-  //        if(result.size() > 0) cout << "+++" << result << endl;
-  //  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" << endl;
+  // if(result.size() > 0) cout << "+++" << result << endl;
+  //  if(result.size() > 0 && !all) cout << "Warning queryAls(): Ignoring a subset of values" <<
+  //  endl;
 
   return result;
 }

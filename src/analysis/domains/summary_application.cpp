@@ -217,7 +217,7 @@ void analysis::summary_application::process_region(
     };
 
     summary_memory_state::updater_t strong = [&](api::num_var *nv_fld_c) {
-      //        cout << *nv_fld_c << " <- " << aliases_c << endl;
+             cout << *nv_fld_c << " <- " << aliases_c << endl;
       ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
       return_site->child_state->kill({nv_fld_c});
       if(aliases_c.size() > 0) {
@@ -226,7 +226,7 @@ void analysis::summary_application::process_region(
         return_site->child_state->assign(nv_fld_c, value_summary_expr);
     };
     summary_memory_state::updater_t weak = [&](api::num_var *nv_fld_c) {
-      //        cout << "weak for " << *nv_fld_c << endl;
+             cout << "weak for " << *nv_fld_c << endl;
       ptr_set_t aliases_c_assignment = add_heapbad(nv_fld_c);
       if(aliases_c_assignment.size() > 0) {
         ptr_set_t aliases_joined_c = return_site->child_state->queryAls(nv_fld_c);
@@ -256,6 +256,8 @@ void analysis::summary_application::process_region(
 
 summary_memory_state *analysis::summary_application::apply_summary() {
   assert(!return_site);
+  
+  cout << "\033[1;31msummary_appl\033[0m" << endl;
 
   return_site = caller->copy();
   summary_memory_state *return_site = *(this->return_site);

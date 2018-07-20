@@ -112,6 +112,9 @@ void fixpoint::iterate() {
 
     //    cout << "\033[1;31mNext iteration\033[0m" << endl;
 
+    // if(node.id > 200 && node.id < 300)
+    //   cout << "Next node: " << node << endl;
+
     bool _continue = false;
     static optional<size_t> function_last;
     analysis_visitor av(true);
