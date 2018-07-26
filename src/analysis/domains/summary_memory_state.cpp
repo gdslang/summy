@@ -53,7 +53,7 @@ analysis::io_region::io_region(
 
 analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state *child_state,
   int64_t offset, size_t size, bool replacement, bool handle_conflicts,
-  std::function<ptr_set_t(id_shared_t)> ptr_set_ct) {
+  std::function<std::tuple<ptr_set_t, ptr_set_t>(id_shared_t)> ptr_set_ct) {
   //    cout << "INSERT offset=" << offset << ", size=" << size << ", replacement=" << replacement
   //    << ", handle_conflicts=" << handle_conflicts << endl;
   //  struct field_desc_t {
@@ -201,11 +201,11 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
   id_shared_t nid_in =
     name ? numeric_id::generate(name.value(), offset, size, true) : numeric_id::generate();
   num_var n_in(nid_in);
-  ptr_set_t ptr_set_fresh = ptr_set_ct(nid_in);
+  auto [ptr_set_fresh_input, ptr_set_fresh_output] = ptr_set_ct(nid_in);
   /*
    * Todo: assign?!
    */
-  child_state->assume(&n_in, ptr_set_fresh);
+  child_state->assume(&n_in, ptr_set_fresh_input);
 
   /*
    * We do not assign from the input to the output so that there is no equality relation between the
@@ -264,7 +264,7 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
     child_state->assign(n_out, temp_expr);
     delete temp_expr;
   } else if(!replacement && !fd_before && !fd_after) {
-    child_state->assume(n_out, ptr_set_fresh);
+    child_state->assume(n_out, ptr_set_fresh_output);
   } else {
     if(fd_before) {
       id_shared_t nid_out_before = name ? numeric_id::generate(name.value(),
@@ -310,10 +310,13 @@ analysis::io_region::rf_result analysis::io_region::retrieve_field(numeric_state
   int64_t offset, size_t size, bool replacement, bool handle_conflicts) {
   auto ptr_set_fresh = [](id_shared_t nid_in) {
     //    ptr _nullptr = ptr(special_ptr::_nullptr, vs_finite::zero);
-    ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
     ptr fresh =
       ptr(shared_ptr<gdsl::rreil::id>(new ptr_memory_id(nid_in->copy())), vs_finite::zero);
-    return ptr_set_t({badptr, fresh});
+    ptr_set_t ptrs_output{fresh};
+    ptr_set_t ptrs_input = ptrs_output;
+    ptr badptr = ptr(special_ptr::badptr, vs_finite::zero);
+    ptrs_input.insert(badptr);
+    return std::make_tuple(ptrs_input, ptrs_output);
   };
   return retrieve_field(child_state, offset, size, replacement, handle_conflicts, ptr_set_fresh);
 }
@@ -1405,7 +1408,6 @@ summy::vs_shared_t analysis::summary_memory_state::queryVal(
     return transLE(id, offset, size);
   });
   num_linear *nl = cv.conv_linear(l);
-  cout << *nl << endl;
   summy::vs_shared_t result = child_state->queryVal(nl);
   delete nl;
   return result;

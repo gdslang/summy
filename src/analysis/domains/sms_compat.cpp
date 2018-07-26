@@ -160,7 +160,8 @@ std::tuple<bool, num_var_pairs_t, id_set_t>(sms_compat::compatMatchSeparate)(boo
                   inserted =
                     io_ry->retrieve_field(y_n, ending_first.offset, ending_first.f.size, false, true, [](auto...) {
                       ptr _badptr = ptr(special_ptr::badptr, vs_finite::zero);
-                      return ptr_set_t({_badptr});
+                      ptr_set_t ptrs{_badptr};
+                      return std::make_tuple(ptrs, ptrs);
                     }).f.value();
 
                 if(copy_paste) {

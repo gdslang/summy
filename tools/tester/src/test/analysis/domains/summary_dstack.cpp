@@ -555,70 +555,71 @@ end: ret",
 TEST_F(summary_dstack_test, CallOffsets) {
   // test21.as using aliases
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
-g:\n\
-mov %r13, %r14\n\
-ret\n\
-\n\
-f:\n\
-//add $1, %r12\n\
-add $1, %r11\n\
-mov %r11, %r12\n\
-add $8, %r12\n\
-//add $8, %r11\n\
-ret\n\
-\n\
-main:\n\
-add $2, %r11\n\
-before_call:\n\
-call f\n\
-end: ret",
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, R"CODE(
+.byte 0
+g:
+mov %r13, %r14
+ret
+
+f:
+add $1, %r11
+mov %r11, %r12
+add $8, %r12
+ret
+
+main:
+add $2, %r11
+before_call:
+call f
+end: ret)CODE",
     false));
 
   ptr_set_t aliases_before_call_r11;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_before_call_r11, ar, "before_call", "R11"));
-  ASSERT_EQ(aliases_before_call_r11.size(), 2);
+  ASSERT_EQ(aliases_before_call_r11.size(), 1);
   ptr alias_before_call_r11 = unpack_singleton(aliases_before_call_r11);
 
   ptr_set_t aliases_r11;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_r11, ar, "end", "R11"));
-  ASSERT_EQ(aliases_r11.size(), 2);
+  ASSERT_EQ(aliases_r11.size(), 1);
   ASSERT_EQ(unpack_singleton(aliases_r11), ptr(alias_before_call_r11.id, vs_finite::single(3)));
 
   ptr_set_t aliases_r12;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_r12, ar, "end", "R12"));
-  ASSERT_EQ(aliases_r12.size(), 2);
+  ASSERT_EQ(aliases_r12.size(), 1);
   ASSERT_EQ(*unpack_singleton(aliases_r12).offset, vs_finite::single(11));
 }
 
 TEST_F(summary_dstack_test, 2Calls) {
   // test20.as using aliases
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
-f:\n\
-mov %r11, %r12\n\
-ret\n\
-\n\
-main:\n\
-mov %r14, %r14\n\
-mov %r15, %r15\n\
-start:\n\
-mov %r15, %r11\n\
-call f\n\
-mov %r12, %rax\n\
-mov %r14, %r11\n\
-call f\n\
-mov %r12, %rbx\n\
-end: ret",
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, R"CODE(
+.byte 0
+f:
+mov %r11, %r12
+ret
+
+main:
+mov %r14, %r14
+mov %r15, %r15
+start:
+mov %r15, %r11
+call f
+mov %r12, %rax
+mov %r14, %r11
+call f
+mov %r12, %rbx
+end: ret
+)CODE",
     false));
 
   ptr_set_t aliases_start_r14;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_r14, ar, "start", "R14"));
-  ASSERT_EQ(aliases_start_r14.size(), 2);
+  ASSERT_EQ(aliases_start_r14.size(), 1);
 
   ptr_set_t aliases_start_r15;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_r15, ar, "start", "R15"));
-  ASSERT_EQ(aliases_start_r15.size(), 2);
+  ASSERT_EQ(aliases_start_r15.size(), 1);
 
   ptr_set_t aliases_end_r14;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_r14, ar, "end", "R14"));
@@ -727,43 +728,45 @@ end: ret",
 
 TEST_F(summary_dstack_test, Call_2AliasesForOneVariableCaller) {
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
-g:\n\
-mov %r13, %r14\n\
-ret\n\
-\n\
-f:\n\
-mov %rax, (%rdx)\n\
-ret\n\
-\n\
-main:\n\
-mov %rcx, %rcx\n\
-mov %rdx, %rdx\n\
-start:\n\
-je if_end\n\
-mov %rcx, %rdx\n\
-if_end:\n\
-call f\n\
-end:\n\
-ret",
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, R"CODE(
+.byte 0
+g:
+mov %r13, %r14
+ret
+
+f:
+mov %rax, (%rdx)
+ret
+
+main:
+mov %rcx, %rcx
+mov %rdx, %rdx
+start:
+je if_end
+mov %rcx, %rdx
+if_end:
+call f
+end:
+ret
+)CODE",
     false));
 
   ptr_set_t aliases_start_c;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_c, ar, "start", "C"));
-  ASSERT_EQ(aliases_start_c.size(), 2);
+  ASSERT_EQ(aliases_start_c.size(), 1);
 
   ptr_set_t aliases_start_d;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_d, ar, "start", "D"));
-  ASSERT_EQ(aliases_start_d.size(), 2);
+  ASSERT_EQ(aliases_start_d.size(), 1);
 
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
-  ASSERT_EQ(aliases_end_a.size(), 2);
+  ASSERT_EQ(aliases_end_a.size(), 1);
 
   ptr_set_t aliases_start_c_end_deref;
   ASSERT_NO_FATAL_FAILURE(
     query_deref_als(aliases_start_c_end_deref, ar, "end", unpack_singleton(aliases_start_c)));
-  ASSERT_EQ(aliases_start_c_end_deref.size(), 3);
+  ASSERT_EQ(aliases_start_c_end_deref.size(), 2);
   ASSERT_NE(aliases_start_c_end_deref.find(unpack_singleton(aliases_end_a)),
     aliases_start_c_end_deref.end());
   ASSERT_EQ(aliases_start_c_end_deref.find(unpack_singleton(aliases_start_d)),
@@ -774,7 +777,7 @@ ret",
   ptr_set_t aliases_start_d_end_deref;
   ASSERT_NO_FATAL_FAILURE(
     query_deref_als(aliases_start_d_end_deref, ar, "end", unpack_singleton(aliases_start_c)));
-  ASSERT_EQ(aliases_start_d_end_deref.size(), 3);
+  ASSERT_EQ(aliases_start_d_end_deref.size(), 2);
   ASSERT_NE(aliases_start_d_end_deref.find(unpack_singleton(aliases_end_a)),
     aliases_start_d_end_deref.end());
   ASSERT_EQ(aliases_start_d_end_deref.find(unpack_singleton(aliases_start_d)),
@@ -785,46 +788,48 @@ ret",
 
 TEST_F(summary_dstack_test, Call_2AliasesForOneVariableCallerWithOffsetInCaller) {
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, ".byte 0\n\
-f:\n\
-mov %rax, (%rdx)\n\
-ret\n\
-\n\
-main:\n\
-mov %rcx, %rcx\n\
-mov %rdx, %rdx\n\
-start:\n\
-je if_end\n\
-mov %rcx, %rdx\n\
-if_end:\n\
-add $8, %rdx\n\
-call f\n\
-end:\n\
-ret",
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, R"CODE(
+.byte 0
+f:
+mov %rax, (%rdx)
+ret
+
+main:
+mov %rcx, %rcx
+mov %rdx, %rdx
+start:
+je if_end
+mov %rcx, %rdx
+if_end:
+add $8, %rdx
+call f
+end:
+ret
+)CODE",
     false));
 
   ptr_set_t aliases_start_c;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_c, ar, "start", "C"));
-  ASSERT_EQ(aliases_start_c.size(), 2);
+  ASSERT_EQ(aliases_start_c.size(), 1);
   ptr aliases_start_c_only = unpack_singleton(aliases_start_c);
   ptr aliases_start_c_only_plus_8 =
     ptr(aliases_start_c_only.id, *aliases_start_c_only.offset + vs_finite::single(8));
 
   ptr_set_t aliases_start_d;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_start_d, ar, "start", "D"));
-  ASSERT_EQ(aliases_start_d.size(), 2);
+  ASSERT_EQ(aliases_start_d.size(), 1);
   ptr aliases_start_d_only = unpack_singleton(aliases_start_d);
   ptr aliases_start_d_only_plus_8 =
     ptr(aliases_start_d_only.id, *aliases_start_d_only.offset + vs_finite::single(8));
 
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
-  ASSERT_EQ(aliases_end_a.size(), 2);
+  ASSERT_EQ(aliases_end_a.size(), 1);
 
   ptr_set_t aliases_start_c_end_deref;
   ASSERT_NO_FATAL_FAILURE(
     query_deref_als(aliases_start_c_end_deref, ar, "end", aliases_start_c_only_plus_8));
-  ASSERT_EQ(aliases_start_c_end_deref.size(), 3);
+  ASSERT_EQ(aliases_start_c_end_deref.size(), 2);
   ASSERT_NE(aliases_start_c_end_deref.find(unpack_singleton(aliases_end_a)),
     aliases_start_c_end_deref.end());
   ASSERT_EQ(
@@ -835,7 +840,7 @@ ret",
   ptr_set_t aliases_start_d_end_deref;
   ASSERT_NO_FATAL_FAILURE(
     query_deref_als(aliases_start_d_end_deref, ar, "end", aliases_start_d_only_plus_8));
-  ASSERT_EQ(aliases_start_d_end_deref.size(), 3);
+  ASSERT_EQ(aliases_start_d_end_deref.size(), 2);
   ASSERT_NE(aliases_start_d_end_deref.find(unpack_singleton(aliases_end_a)),
     aliases_start_d_end_deref.end());
   ASSERT_EQ(
@@ -846,26 +851,28 @@ ret",
 
 TEST_F(summary_dstack_test, StructuralCompat) {
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state_asm(ar, "main:\n\
-je else\n\
-mov %rbx, (%rax)\n\
-jmp end\n\
-else:\n\
-mov %rcx, (%rax)\n\
-end:\n\
-ret",
+  ASSERT_NO_FATAL_FAILURE(state_asm(ar, R"CODE(
+main:
+je else
+mov %rbx, (%rax)
+jmp end
+else:
+mov %rcx, (%rax)
+end:
+ret
+)CODE",
     false));
 
   ptr_set_t aliases_b;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_b, ar, "end", "B"));
-  ASSERT_EQ(aliases_b.size(), 2);
+  ASSERT_EQ(aliases_b.size(), 1);
   ptr_set_t aliases_c;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_c, ar, "end", "C"));
-  ASSERT_EQ(aliases_c.size(), 2);
+  ASSERT_EQ(aliases_c.size(), 1);
 
   ptr_set_t aliases_a_deref;
   ASSERT_NO_FATAL_FAILURE(query_deref_als(aliases_a_deref, ar, "end", "A"));
-  ASSERT_EQ(aliases_a_deref.size(), 3);
+  ASSERT_EQ(aliases_a_deref.size(), 2);
   ASSERT_NE(aliases_a_deref.find(unpack_singleton(aliases_b)), aliases_a_deref.end());
   ASSERT_NE(aliases_a_deref.find(unpack_singleton(aliases_c)), aliases_a_deref.end());
 
@@ -1454,33 +1461,33 @@ int main(int argc, char **argv) {\n\
 TEST_F(summary_dstack_test, ListTraverse) {
   // test_malloc2.c
   _analysis_result ar;
-  ASSERT_NO_FATAL_FAILURE(state(ar, "\n\
-#include <stdlib.h>\n\
-\n\
-struct node;\n\
-\n\
-struct node {\n\
-  struct node *next;\n\
-};\n\
-\n\
-int main(int argc, char **argv) {\n\
-  struct node head;\n\
-  struct node *last = head.next;\n\
-  for(int i = 0; i < argc; i++) {\n\
-    __asm volatile ( \"movq %0, %%r11\"\n\
-    : \"=a\" (last)\n\
-    : \"a\" (last)\n\
-    : \"r11\");\n\
-    __asm volatile ( \"before_reassignment:\" );\n\
-    last = last->next;\n\
-    __asm volatile ( \"movq %0, %%r11\"\n\
-    : \"=a\" (last)\n\
-    : \"a\" (last)\n\
-    : \"r11\");\n\
-    __asm volatile ( \"after_reassignment:\" );\n\
-  }\n\
-  return (int)last;\n\
-}",
+  ASSERT_NO_FATAL_FAILURE(state(ar, R"CODE(
+#include <stdlib.h>
+
+struct node;
+
+struct node {
+  struct node *next;
+};
+
+int main(int argc, char **argv) {
+  struct node head;
+  struct node *last = head.next;
+  for(int i = 0; i < argc; i++) {
+    __asm volatile ( "movq %0, %%r11"
+    : "=a" (last)
+    : "a" (last)
+    : "r11");
+    __asm volatile ( "before_reassignment:" );
+    last = last->next;
+    __asm volatile ( "movq %0, %%r11"
+    : "=a" (last)
+    : "a" (last)
+    : "r11");
+    __asm volatile ( "after_reassignment:" );
+  }
+  return (int)last;
+})CODE",
     C, false, 1, false));
 
   ptr_set_t r11_before_reassignment;
@@ -1489,7 +1496,7 @@ int main(int argc, char **argv) {\n\
 
   ptr_set_t r11_after_reassignment;
   ASSERT_NO_FATAL_FAILURE(query_als(r11_after_reassignment, ar, "after_reassignment", "R11"));
-  assert_ptrs(r11_after_reassignment, false, true, 0, 1);
+  assert_ptrs(r11_after_reassignment, false, false, 0, 1);
 
   ASSERT_EQ(ar.max_it, 4);
 }
@@ -1509,7 +1516,7 @@ nop\n",
   ptr_set_t aliases_end_a;
   ASSERT_NO_FATAL_FAILURE(query_als(aliases_end_a, ar, "end", "A"));
   optional<vs_shared_t> offset;
-  assert_ptrs(offset, aliases_end_a, true, true, 0, 1, string("A_q"));
+  assert_ptrs(offset, aliases_end_a, true, false, 0, 1, string("A_q"));
   ASSERT_EQ(*offset.value(), shared_ptr<value_set>(new vs_finite({0, 9999})));
 }
 

@@ -100,7 +100,7 @@ struct io_region {
    * is disabled, the region is never changed in case of a conflict.
    */
   rf_result retrieve_field(numeric_state *child_state, int64_t offset, size_t size, bool replacement,
-    bool handle_conflicts, std::function<ptr_set_t(id_shared_t)> ptr_set_ct);
+    bool handle_conflicts, std::function<std::tuple<ptr_set_t, ptr_set_t>(id_shared_t)> ptr_set_ct);
   rf_result retrieve_field(
     numeric_state *child_state, int64_t offset, size_t size, bool replacement, bool handle_conflicts);
 

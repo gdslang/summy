@@ -116,13 +116,14 @@ api::num_linear *analysis::als_state::replace_pointers(
     if(e_it != elements.end()) {
       id_set_t const &aliases = e_it->second;
 
+      // The following block ignores the bad pointer (if the corresponding check is not commented out!)
       bool has_bad = false;
       std::optional<id_shared_t> ptr = std::nullopt;
       for(id_shared_t alias : aliases) {
-        if(special_ptr::is_bad(alias)) {
-          has_bad = true;
-          continue;
-        }
+        // if(special_ptr::is_bad(alias)) {
+        //   has_bad = true;
+        //   continue;
+        // }
         if(ptr) {
           ptr = std::nullopt;
           break;
@@ -665,8 +666,8 @@ summy::vs_shared_t analysis::als_state::queryVal(api::num_var *nv) {
   //    return value_set::bottom;
   std::optional<vs_shared_t> acc = std::nullopt;
   for(auto alias : alias_set_it->second) {
-    if(special_ptr::is_bad(alias))
-      continue;
+    // if(special_ptr::is_bad(alias))
+    //   continue;
     num_var *alias_var = new num_var(alias);
     vs_shared_t ptr_value = child_state->queryVal(alias_var);
     delete alias_var;
