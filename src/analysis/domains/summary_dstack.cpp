@@ -542,7 +542,7 @@ std::map<size_t, std::shared_ptr<domain_state>> analysis::summary_dstack::transf
            */
 
           std::vector<std::set<mempath_assignment>> assignments_sets;
-          for(auto & [ context, from_parent_state ] : get_ctxful(from_parent)) {
+          for(auto & [context, from_parent_state] : get_ctxful(from_parent)) {
             auto s = dynamic_pointer_cast<global_state>(from_parent_state);
             size_t path_construction_errors = 0;
             auto keys_new =
