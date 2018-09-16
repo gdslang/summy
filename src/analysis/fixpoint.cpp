@@ -266,6 +266,7 @@ void fixpoint::iterate() {
               tie(boxed, widened) =
                 current_state_it->second->box(evaluated.get(), node.id);
               needs_postprocessing = widened || needs_postprocessing;
+              // needs_postprocessing = false;
               evaluated = shared_ptr<domain_state>(boxed);
             }
             //          cout << "Boxed: " << *evaluated << endl;

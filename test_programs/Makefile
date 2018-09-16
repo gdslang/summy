@@ -19,16 +19,26 @@ CPPFLAGS=$(CPPFLAGS_EXTRA) -g3 -c -mcmodel=large -O$(OPT) -std=c++11 -fno-inline
 SPRE=.
 BPRE=build
 
+SOURCES_S=$(shell find $(SPRE)/ -type f -name 'test*.s' -o -name 'example*.s')
+EXECUTABLES_S=$(notdir $(SOURCES_S:.s=))
 SOURCES_C=$(shell find $(SPRE)/ -type f -name 'test*.c' -o -name 'example*.c')
 EXECUTABLES_C=$(notdir $(SOURCES_C:.c=))
 SOURCES_CPP=$(shell find $(SPRE)/ -type f -name 'test*.cpp' -o -name 'example*.cpp')
 EXECUTABLES_CPP=$(notdir $(SOURCES_CPP:.cpp=))
 
-all: pre-build $(EXECUTABLES_C) $(EXECUTABLES_CPP)
+all: pre-build $(EXECUTABLES_S) $(EXECUTABLES_C) $(EXECUTABLES_CPP)
 
 BDIRS=$(BPRE)
 pre-build:
 	mkdir -p $(BDIRS)
+
+OBJECTS_S=$(SOURCES_S:$(SPRE)/%.s=$(BPRE)/%.o)
+
+$(EXECUTABLES_S): % : $(BPRE)/%.o
+	$(CC) $(LDFLAGS) $< $(LIBFLAGS) -o $@
+
+$(OBJECTS_S): $(BPRE)/%.o : $(SPRE)/%.s
+	$(CC) $(CFLAGS) $< -o $@
 
 OBJECTS_C=$(SOURCES_C:$(SPRE)/%.c=$(BPRE)/%.o)
 
@@ -50,4 +60,4 @@ example: all
 	./$(EXAMPLE)
 
 clean:
-	rm -rf $(BDIRS) $(EXECUTABLES_C) $(EXECUTABLES_CPP)
+	rm -rf $(BDIRS) $(EXECUTABLES_S) $(EXECUTABLES_C) $(EXECUTABLES_CPP)
