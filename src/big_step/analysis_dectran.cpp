@@ -5,20 +5,20 @@
  *      Author: Julian Kranz
  */
 
-#include <summy/cfg/node/node_visitor.h>
-#include <summy/cfg/node/address_node.h>
-#include <summy/transformers/transformer.h>
-#include <summy/transformers/decomposer.h>
-#include <summy/transformers/goto_ip_adder.h>
-#include <summy/transformers/ip_propagator.h>
-#include <summy/transformers/trivial_connector.h>
-#include <cppgdsl/gdsl.h>
 #include <cppgdsl/block.h>
-#include <cppgdsl/optimization.h>
+#include <cppgdsl/gdsl.h>
 #include <cppgdsl/instruction.h>
+#include <cppgdsl/optimization.h>
 #include <cppgdsl/rreil/statement/statement.h>
 #include <limits.h>
 #include <summy/big_step/analysis_dectran.h>
+#include <summy/cfg/node/address_node.h>
+#include <summy/cfg/node/node_visitor.h>
+#include <summy/transformers/decomposer.h>
+#include <summy/transformers/goto_ip_adder.h>
+#include <summy/transformers/ip_propagator.h>
+#include <summy/transformers/transformer.h>
+#include <summy/transformers/trivial_connector.h>
 #include <vector>
 
 using namespace gdsl::rreil;
@@ -47,11 +47,15 @@ size_t analysis_dectran::initial_cfg(
   return head_node;
 }
 
-analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap)
-    : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding, fmap), big_step::big_step(cfg), tc(&cfg), cfg() {}
+analysis_dectran::analysis_dectran(
+  gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding, function_map_t fmap)
+    : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding, fmap), big_step::big_step(cfg),
+      tc(&cfg), cfg() {}
 
-analysis_dectran::analysis_dectran(gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
-    : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding), big_step::big_step(cfg), tc(&cfg), cfg() {}
+analysis_dectran::analysis_dectran(
+  gdsl::gdsl &gdsl, bool blockwise_optimized, bool speculative_decoding)
+    : dectran(cfg, gdsl, blockwise_optimized, speculative_decoding), big_step::big_step(cfg),
+      tc(&cfg), cfg() {}
 
 void analysis_dectran::transduce(bool decode_multiple, std::optional<std::string> function_name) {
   size_t head_node = initial_cfg(cfg, decode_multiple, function_name);
@@ -60,7 +64,8 @@ void analysis_dectran::transduce(bool decode_multiple, std::optional<std::string
   f_heads.insert(head_node);
 }
 
-void analysis_dectran::transduce_function(size_t address, std::optional<std::string> function_name) {
+void analysis_dectran::transduce_function(
+  size_t address, std::optional<std::string> function_name) {
   if(gdsl.seek(address)) {
     throw string("Unable to seek to function");
   }

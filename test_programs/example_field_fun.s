@@ -10,11 +10,19 @@ main:
 	.cfi_offset 6, -16
 	movq	%rsp, %rbp
 
+  movb $42, %cl
+  movl %ecx, %edx
+  movl $42, %ecx
+
+  movl $42, %eax
   movl $42, %eax
   movq %rax, %rbx
   addl $1, %eax
   addq $1, %rax
   addl $1, %eax
+  callq *%rax
+  movl $main, %eax
+  movq $main, %rax
 
 	.cfi_def_cfa_register 6
 	movl	$0, %eax

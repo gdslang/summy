@@ -10,9 +10,7 @@
 using namespace std;
 using namespace cfg;
 
-big_step::big_step(class cfg &cfg) :
-    cfg(cfg) {
-}
+big_step::big_step(class cfg &cfg) : cfg(cfg) {}
 
 updates_t big_step::combine_updates(const updates_t edges_ana, const edge_set_t edges_fn) {
   vector<update> result = edges_ana;
@@ -20,7 +18,7 @@ updates_t big_step::combine_updates(const updates_t edges_ana, const edge_set_t 
     size_t from;
     size_t to;
     tie(from, to) = e_fn;
-    result.push_back( { update_kind::UPDATE, from, to });
+    result.push_back({update_kind::UPDATE, from, to});
   }
   return result;
 }

@@ -5,17 +5,16 @@
  *      Author: Julian Kranz
  */
 
-#include <optional>
 #include <algorithm>
 #include <assert.h>
 #include <cppgdsl/block.h>
 #include <cppgdsl/gdsl.h>
 #include <cppgdsl/gdsl_exception.h>
-#include <cppgdsl/gdsl_exception.h>
 #include <cppgdsl/instruction.h>
 #include <cppgdsl/optimization.h>
 #include <cppgdsl/rreil/statement/statement.h>
 #include <limits.h>
+#include <optional>
 #include <summy/big_step/dectran.h>
 #include <summy/cfg/cfg.h>
 #include <summy/cfg/node/address_node.h>
@@ -62,8 +61,8 @@ std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_tra
         try {
           return gdsl.decode_translate_block(gdsl::optimization_configuration::CONTEXT |
                                                gdsl::optimization_configuration::LIVENESS |
-                                               gdsl::optimization_configuration::FSUBST,// |
-//                                                gdsl::optimization_configuration::DELAYEDFSUBST,
+                                               gdsl::optimization_configuration::FSUBST, // |
+            //                                                gdsl::optimization_configuration::DELAYEDFSUBST,
             LONG_MAX);
         } catch(gdsl_exception &s) {
           cout << "GDSL Error @0x" << hex << gdsl.get_ip() << dec << ": " << s << endl;
@@ -122,8 +121,7 @@ std::vector<std::tuple<uint64_t, gdsl::rreil::statements_t>> dectran::decode_tra
   return prog;
 }
 
-size_t dectran::initial_cfg(
-  cfg::cfg &cfg, bool decode_multiple, std::optional<std::string> name) {
+size_t dectran::initial_cfg(cfg::cfg &cfg, bool decode_multiple, std::optional<std::string> name) {
   size_t ip = (size_t)gdsl.get_ip();
   auto fmap_it = fmap.find(ip);
   if(!name && fmap_it != fmap.end()) name = fmap_it->second;
